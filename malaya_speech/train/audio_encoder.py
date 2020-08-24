@@ -1,6 +1,7 @@
 from scipy.io.wavfile import read
 from scipy.signal import resample
 from scipy import interpolate
+import librosa
 
 
 def wav_to_array(file, sample_rate):
