@@ -1,6 +1,10 @@
 import tensorflow as tf
 
 
+def to_float(x):
+    return tf.cast(x, tf.float32)
+
+
 def weights_nonzero(labels):
     return to_float(tf.not_equal(labels, 0))
 
