@@ -22,3 +22,6 @@ def ctc_seq_accuracy(inputs, logits, label):
     correct_pred = tf.equal(prediction, mask_label)
     correct_index = tf.cast(correct_pred, tf.float32)
     return tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+
+
+#
