@@ -8,13 +8,21 @@ def pad_second_dim(x, desired_size):
     return tf.concat([x, padding], 1)
 
 
-def ctc_seq_accuracy(inputs, logits, label):
+def ctc_sequence_accuracy(
+    inputs, logits, label, beam_width = 1, merge_repeated = True
+):
     seq_lens = tf.count_nonzero(tf.reduce_sum(inputs, -1), 1, dtype = tf.int32)
     Y_seq_len = tf.count_nonzero(label, 1, dtype = tf.int32)
     filled = tf.fill(tf.shape(seq_lens), tf.reduce_max(Y_seq_len))
     seq_lens = tf.where(seq_lens < tf.reduce_max(Y_seq_len), filled, seq_lens)
 
-    decoded, log_prob = tf.nn.ctc_greedy_decoder(logits, seq_lens)
+    decoded, log_prob = tf.nn.ctc_beam_search_decoder(
+        logits,
+        seq_lens,
+        beam_width = beam_width,
+        merge_repeated = merge_repeated,
+    )
+
     decoded = tf.to_int32(decoded[0])
     preds = tf.sparse.to_dense(decoded)
     preds = preds[:, : tf.reduce_max(Y_seq_len)]

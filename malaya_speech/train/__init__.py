@@ -4,6 +4,10 @@ from tensorflow.python.distribute.cross_device_ops import (
 )
 from tensorflow.python.estimator.run_config import RunConfig
 from . import augmentation
+from . import accuracy
+from . import audio_encoder
+from . import char_encoder
+from . import loss
 
 
 def run_training(

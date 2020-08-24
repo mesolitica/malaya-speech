@@ -3,35 +3,29 @@ from scipy.signal import resample
 from scipy import interpolate
 
 
-class AudioEncoder(object):
-    def __init__(self, num_reserved_ids = 0, sample_rate = 16000):
-        assert num_reserved_ids == 0
-        self._sample_rate = sample_rate
+def wav_to_array(file, sample_rate):
+    old_samplerate, data = read(file)
+    if len(data.shape) == 2:
+        data = data[:, 0]
 
-    def encode(self, s):
+    if data.dtype not in [np.float32, np.float64]:
+        data = data.astype(np.float32) / np.iinfo(data.dtype).max
 
-        old_samplerate, data = read(s)
-        if len(data.shape) == 2:
-            data = data[:, 0]
+    if old_samplerate != self._sample_rate:
+        old_audio = data
+        duration = data.shape[0] / old_samplerate
 
-        if data.dtype not in [np.float32, np.float64]:
-            data = data.astype(np.float32) / np.iinfo(data.dtype).max
+        time_old = np.linspace(0, duration, old_audio.shape[0])
+        time_new = np.linspace(
+            0,
+            duration,
+            int(old_audio.shape[0] * self._sample_rate / old_samplerate),
+        )
 
-        if old_samplerate != self._sample_rate:
-            old_audio = data
-            duration = data.shape[0] / old_samplerate
+        interpolator = interpolate.interp1d(time_old, old_audio.T)
+        data = interpolator(time_new).T
 
-            time_old = np.linspace(0, duration, old_audio.shape[0])
-            time_new = np.linspace(
-                0,
-                duration,
-                int(old_audio.shape[0] * self._sample_rate / old_samplerate),
-            )
-
-            interpolator = interpolate.interp1d(time_old, old_audio.T)
-            data = interpolator(time_new).T
-
-        return data.tolist(), data.shape[0] / self._sample_rate
+    return data.tolist(), data.shape[0] / self._sample_rate
 
 
 def normalize(values):
