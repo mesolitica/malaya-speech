@@ -3,6 +3,7 @@ from tensorflow.python.distribute.cross_device_ops import (
     AllReduceCrossDeviceOps,
 )
 from tensorflow.python.estimator.run_config import RunConfig
+from . import augmentation
 
 
 def run_training(
