@@ -23,7 +23,7 @@ def run_training(
     eval_step = 10,
     eval_throttle = 120,
     eval_fn = None,
-    hooks = None,
+    train_hooks = None,
 ):
     tf.logging.set_verbosity(tf.logging.INFO)
 
@@ -51,7 +51,7 @@ def run_training(
     )
 
     train_spec = tf.estimator.TrainSpec(
-        input_fn = train_fn, max_steps = max_steps, hooks = hooks
+        input_fn = train_fn, max_steps = max_steps, hooks = train_hooks
     )
 
     if not eval_fn:
