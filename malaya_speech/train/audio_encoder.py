@@ -41,19 +41,9 @@ def normalize(values):
     return (values - np.mean(values)) / np.std(values)
 
 
-def calc_power_spectrogram(
+def power_spectrogram(
     audio_data, samplerate = 22050, n_mels = 128, n_fft = 512, hop_length = 180
 ):
-    """
-    Calculate power spectrogram from the given raw audio data
-    Args:
-    audio_data: numpyarray of raw audio wave
-    samplerate: the sample rate of the `audio_data`
-    n_mels: the number of mels to generate
-    n_fft: the window size of the fft
-    hop_length: the hop length for the window
-    Returns: the spectrogram in the form [time, n_mels]
-    """
     spectrogram = librosa.feature.melspectrogram(
         audio_data,
         sr = samplerate,
@@ -62,10 +52,7 @@ def calc_power_spectrogram(
         hop_length = hop_length,
     )
 
-    # convert to log scale (dB)
     log_spectrogram = librosa.power_to_db(spectrogram, ref = np.max)
-
-    # normalize
     normalized_spectrogram = normalize(log_spectrogram)
 
     v = normalized_spectrogram.T
