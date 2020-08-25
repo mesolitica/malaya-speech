@@ -72,6 +72,7 @@ def run_training(
 @check_type
 def prepare_dataset(
     generator,
+    data_dir: str,
     shards: List[Dict],
     shuffle: bool = True,
     already_shuffled: bool = False,
