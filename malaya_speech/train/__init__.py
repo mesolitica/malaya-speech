@@ -3,25 +3,30 @@ from tensorflow.python.distribute.cross_device_ops import (
     AllReduceCrossDeviceOps,
 )
 from tensorflow.python.estimator.run_config import RunConfig
+from herpetologist import check_type
+from typing import List, Dict
+
 from . import augmentation
 from . import model
 from . import accuracy
 from . import audio_encoder
 from . import char_encoder
 from . import loss
+from . import prepare_data
 
 
+@check_type
 def run_training(
     train_fn,
     model_fn,
-    model_dir,
-    num_gpus = 1,
-    log_step = 100,
-    summary_step = 100,
-    save_checkpoint_step = 1000,
-    max_steps = 10000,
-    eval_step = 10,
-    eval_throttle = 120,
+    model_dir: str,
+    num_gpus: int = 1,
+    log_step: int = 100,
+    summary_step: int = 100,
+    save_checkpoint_step: int = 1000,
+    max_steps: int = 10000,
+    eval_step: int = 10,
+    eval_throttle: int = 120,
     eval_fn = None,
     train_hooks = None,
 ):
@@ -62,3 +67,36 @@ def run_training(
     )
 
     tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+
+
+@check_type
+def prepare_dataset(
+    generator,
+    shards: List[Dict],
+    shuffle: bool = True,
+    already_shuffled: bool = False,
+):
+    prepare_data.check_shard(shards)
+    filepath_fns = {
+        'train': prepare_data.training_filepaths,
+        'dev': prepare_data.dev_filepaths,
+        'test': prepare_data.test_filepaths,
+    }
+
+    split_paths = [
+        (
+            split['split'],
+            filepath_fns[split['split']](
+                data_dir, split['shards'], shuffled = already_shuffled
+            ),
+        )
+        for split in shards
+    ]
+    all_paths = []
+    for _, paths in split_paths:
+        all_paths.extend(paths)
+
+    prepare_data.generate_files(generator, all_paths)
+
+    if shuffle:
+        prepare_data.shuffle_dataset(all_paths)
