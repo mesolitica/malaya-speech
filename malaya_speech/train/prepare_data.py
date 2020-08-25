@@ -32,6 +32,15 @@ def read_records(filename):
     return records
 
 
+def write_records(records, out_filename):
+    writer = tf.python_io.TFRecordWriter(out_filename)
+    for count, record in enumerate(records):
+        writer.write(record)
+        if count > 0 and count % 100000 == 0:
+            tf.logging.info('write: %d', count)
+    writer.close()
+
+
 def _shuffle_single(fname, extra_fn = None):
     """Shuffle a single file of records.
   Args:
