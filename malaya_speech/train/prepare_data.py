@@ -54,6 +54,16 @@ def shuffle_dataset(filenames, extra_fn = None):
     tf.logging.info('Data shuffled.')
 
 
+def sharded_name(base_name, shard, total_shards):
+    return '%s-%.5d-of-%.5d' % (base_name, shard, total_shards)
+
+
+def shard_filepath(fname, num_shards):
+    return [
+        sharded_name(fname, shard, num_shards) for shard in range(num_shards)
+    ]
+
+
 def outputs_exist(filenames):
     for out_fname in filenames:
         out_fname = out_fname.replace(UNSHUFFLED_SUFFIX, '')
