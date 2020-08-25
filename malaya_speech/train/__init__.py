@@ -74,6 +74,7 @@ def prepare_dataset(
     generator,
     data_dir: str,
     shards: List[Dict],
+    prefix: str = 'dataset',
     shuffle: bool = True,
     already_shuffled: bool = False,
 ):
@@ -88,7 +89,7 @@ def prepare_dataset(
         (
             split['split'],
             filepath_fns[split['split']](
-                data_dir, split['shards'], shuffled = already_shuffled
+                prefix, data_dir, split['shards'], shuffled = already_shuffled
             ),
         )
         for split in shards
