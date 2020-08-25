@@ -22,6 +22,16 @@ import random
 UNSHUFFLED_SUFFIX = '-unshuffled'
 
 
+def read_records(filename):
+    reader = tf.python_io.tf_record_iterator(filename)
+    records = []
+    for record in reader:
+        records.append(record)
+        if len(records) % 100000 == 0:
+            tf.logging.info('read: %d', len(records))
+    return records
+
+
 def _shuffle_single(fname, extra_fn = None):
     """Shuffle a single file of records.
   Args:
