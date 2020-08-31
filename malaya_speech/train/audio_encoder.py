@@ -46,20 +46,26 @@ def normalize(values):
 
 
 def power_spectrogram(
-    audio_data, samplerate = 16000, n_mels = 128, n_fft = 512, hop_length = 180
+    audio_data,
+    sample_rate = 16000,
+    n_mels = 128,
+    n_fft = 512,
+    hop_length = 180,
+    normalized = True,
 ):
     spectrogram = librosa.feature.melspectrogram(
         audio_data,
-        sr = samplerate,
+        sr = sample_rate,
         n_mels = n_mels,
         n_fft = n_fft,
         hop_length = hop_length,
     )
 
     log_spectrogram = librosa.power_to_db(spectrogram, ref = np.max)
-    normalized_spectrogram = normalize(log_spectrogram)
+    if normalized:
+        log_spectrogram = normalize(log_spectrogram)
 
-    v = normalized_spectrogram.T
+    v = log_spectrogram.T
     return v
 
 
@@ -71,6 +77,7 @@ def spectrogram(
     window_ms = 20.0,
     max_freq = None,
     eps = 1e-14,
+    normalized = False,
 ):
 
     if max_freq is None:
@@ -110,4 +117,10 @@ def spectrogram(
     # Compute spectrogram feature
     ind = np.where(freqs <= max_freq)[0][-1] + 1
     specgram = np.log(fft[:ind, :] + eps)
-    return np.transpose(specgram, (1, 0))
+
+    specgram = np.transpose(specgram, (1, 0)).astype(np.float32)
+
+    if normalized:
+        specgram = normalize(specgram)
+
+    return specgram

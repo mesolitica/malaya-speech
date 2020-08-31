@@ -18,7 +18,14 @@ def batch_norm(inputs, training):
 
 
 def _conv_bn_layer(
-    inputs, padding, filters, kernel_size, strides, layer_id, training
+    inputs,
+    padding,
+    filters,
+    kernel_size,
+    strides,
+    layer_id,
+    is_batch_norm,
+    training,
 ):
     inputs = tf.pad(
         inputs,
@@ -34,7 +41,10 @@ def _conv_bn_layer(
         name = 'cnn_{}'.format(layer_id),
     )(inputs)
 
-    return batch_norm(inputs, training)
+    if is_batch_norm:
+        return batch_norm(inputs, training)
+    else:
+        return inputs
 
 
 def _rnn_layer(
@@ -69,6 +79,7 @@ class Model:
         inputs,
         training,
         vocab_size = 256,
+        conv_batch_norm = True,
         rnn_type = 'gru',
         rnn_hidden_layers = 5,
         rnn_hidden_size = 512,
@@ -83,6 +94,7 @@ class Model:
             strides = (2, 2),
             layer_id = 1,
             training = training,
+            is_batch_norm = conv_batch_norm,
         )
 
         inputs = _conv_bn_layer(
@@ -93,6 +105,7 @@ class Model:
             strides = (2, 1),
             layer_id = 2,
             training = training,
+            is_batch_norm = conv_batch_norm,
         )
 
         batch_size = tf.shape(inputs)[0]
@@ -102,7 +115,7 @@ class Model:
         )
 
         rnn_cell = SUPPORTED_RNNS[rnn_type]
-        for layer_counter in range(num_rnn_layers):
+        for layer_counter in range(rnn_hidden_layers):
             is_batch_norm = layer_counter != 0
             inputs = _rnn_layer(
                 inputs,
@@ -115,6 +128,4 @@ class Model:
             )
 
         inputs = batch_norm(inputs, training)
-        self.logits = tf.keras.layers.Dense(
-            vocab_size, use_bias = True, activation = 'softmax'
-        )(inputs)
+        self.logits = tf.keras.layers.Dense(vocab_size, use_bias = True)(inputs)

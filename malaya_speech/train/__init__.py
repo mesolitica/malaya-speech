@@ -10,6 +10,7 @@ from . import augmentation
 from . import model
 from . import accuracy
 from . import audio_encoder
+from . import bytepair_encoder
 from . import char_encoder
 from . import loss
 from . import prepare_data
