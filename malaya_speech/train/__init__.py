@@ -13,6 +13,7 @@ from . import audio_encoder
 from . import char_encoder
 from . import loss
 from . import prepare_data
+from . import utils
 
 
 @check_type

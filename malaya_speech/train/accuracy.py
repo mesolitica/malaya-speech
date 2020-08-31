@@ -9,14 +9,14 @@ def pad_second_dim(x, desired_size):
 
 
 def ctc_sequence_accuracy(
-    logits, label, beam_width = 1, merge_repeated = True, max_length = 350
+    logits, label, input_lengths, beam_width = 1, merge_repeated = True
 ):
+    logits = tf.transpose(logits, [1, 0, 2])
     Y_seq_len = tf.count_nonzero(label, 1, dtype = tf.int32)
-    seq_lens = tf.fill(tf.shape(Y_seq_len), max_length)
 
     decoded, log_prob = tf.nn.ctc_beam_search_decoder(
         logits,
-        seq_lens,
+        input_lengths,
         beam_width = beam_width,
         merge_repeated = merge_repeated,
     )
