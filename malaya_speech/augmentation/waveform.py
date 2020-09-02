@@ -5,7 +5,7 @@ import scipy
 import json
 
 
-def change_pitch_speech(samples, low = 0.5, high = 1.0):
+def random_pitch(samples, low = 0.5, high = 1.0):
     y_pitch_speed = samples.copy()
     length_change = np.random.uniform(low = low, high = high)
     speed_fac = 1.0 / length_change
@@ -20,21 +20,13 @@ def change_pitch_speech(samples, low = 0.5, high = 1.0):
     return y_pitch_speed
 
 
-def change_amplitude(samples, low = 1.5, high = 3):
+def random_amplitude(samples, low = 1.5, high = 3):
     y_aug = samples.copy()
     dyn_change = np.random.uniform(low = low, high = high)
     return y_aug * dyn_change
 
 
-def add_noise(samples):
-    y_noise = samples.copy()
-    noise_amp = 0.01 * np.random.uniform() * np.amax(y_noise)
-    return y_noise.astype('float64') + noise_amp * np.random.normal(
-        size = y_noise.shape[0]
-    )
-
-
-def stretch(samples, low = 0.5, high = 1.3):
+def random_stretch(samples, low = 0.5, high = 1.3):
     input_length = len(samples)
     stretching = samples.copy()
     random_stretch = np.random.uniform(low = low, high = high)
@@ -42,3 +34,15 @@ def stretch(samples, low = 0.5, high = 1.3):
         stretching.astype('float'), random_stretch
     )
     return stretch
+
+
+def add_uniform_noise(samples):
+    y_noise = samples.copy()
+    noise_amp = 0.01 * np.random.uniform() * np.amax(y_noise)
+    return y_noise.astype('float64') + noise_amp * np.random.normal(
+        size = y_noise.shape[0]
+    )
+
+
+def add_noise(sample, noise, factor = 0.05):
+    y_noise = samples.copy()

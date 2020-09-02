@@ -31,7 +31,7 @@ def time_warp(mel_fbanks, W = 80):
     return warped_image
 
 
-def freq_mask(mel_fbanks, F = 27):
+def freq_mask(mel_fbanks, F = 0.1):
     """
     mel_fbanks: melspectrogram tensor.
         (1, timesteps or n, number of mel freq bins or v, 1)
@@ -40,7 +40,9 @@ def freq_mask(mel_fbanks, F = 27):
     fbank_size = tf.shape(mel_fbanks)
     n, v = fbank_size[1], fbank_size[2]
 
-    f = tf.random_uniform([], 0, F, tf.int32)
+    f = tf.random_uniform(
+        [], 0, tf.cast(tf.cast(v, tf.float32) * F, tf.int32), tf.int32
+    )
     f0 = tf.random_uniform([], 0, v - f, tf.int32)
     mask = tf.concat(
         (
@@ -54,7 +56,7 @@ def freq_mask(mel_fbanks, F = 27):
     return tf.to_float(masked)
 
 
-def time_mask(mel_fbanks, T = 100):
+def time_mask(mel_fbanks, T = 0.1):
     """
     mel_fbanks: melspectrogram tensor.
         (1, timesteps or n, number of mel freq bins or v, 1)
@@ -62,6 +64,7 @@ def time_mask(mel_fbanks, T = 100):
     """
     fbank_size = tf.shape(mel_fbanks)
     n, v = fbank_size[1], fbank_size[2]
+    T = tf.cast(tf.cast(n, tf.float32) * T, tf.int32)
 
     t = tf.random_uniform([], 0, T, tf.int32)
     t0 = tf.random_uniform([], 0, n - T, tf.int32)
