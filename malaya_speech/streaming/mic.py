@@ -107,15 +107,14 @@ class Audio:
         wf.writeframes(data)
         wf.close()
 
-    def vad_collector(self, padding_ms = 300, ratio = 0.75, frames = None):
+    def vad_collector(self, padding_ms = 300, ratio = 0.75):
         """
         Generator that yields series of consecutive audio frames comprising each utterence, separated by yielding a single None.
         Determines voice activity by ratio of frames in padding_ms. Uses a buffer to include padding_ms prior to being triggered.
         Example: (frame, ..., frame, None, frame, ..., frame, None, ...)
                     |---utterence---|        |---utterence---|
         """
-        if frames is None:
-            frames = self.frame_generator()
+        frames = self.frame_generator()
         num_padding_frames = padding_ms // self.frame_duration_ms
         ring_buffer = collections.deque(maxlen = num_padding_frames)
         triggered = False
@@ -148,6 +147,7 @@ class Audio:
 
 
 def record(
+    vad,
     model = None,
     device = None,
     filename: str = None,
@@ -161,9 +161,9 @@ def record(
             'pyaudio not installed. Please install it by `pip install pyaudio` and try again.'
         )
 
-    audio = Audio(device = device, format = pyaudio.paInt16)
+    audio = Audio(vad, device = device, format = pyaudio.paInt16)
     frames = audio.vad_collector()
-    wav_data = bytearray()
+
     if spinner:
         from halo import Halo
 
@@ -172,6 +172,9 @@ def record(
         )
     else:
         print('Listening (ctrl-C to exit) ... \n')
+
+    results = []
+    wav_data = bytearray()
 
     try:
         for frame in frames:
@@ -187,16 +190,7 @@ def record(
                 duration = buffered.shape[0] / audio.input_rate
 
                 if duration >= min_length:
-
-                    if filename is None:
-                        filename_temp = datetime.now().strftime(
-                            'savewav_%Y-%m-%d_%H-%M-%S_%f.wav'
-                        )
-                    else:
-                        filename_temp = filename
-
-                    print(f'saved audio to {filename_temp}')
-                    audio.write_wav(filename_temp, wav_data)
+                    results.append(wav_data)
                     wav_data = bytearray()
 
     except KeyboardInterrupt:
@@ -209,7 +203,7 @@ def record(
             filename_temp = filename
 
         print(f'saved audio to {filename_temp}')
-        audio.write_wav(filename_temp, wav_data)
+        audio.write_wav(filename_temp, b''.join(results))
 
     if spinner:
         spinner.stop()

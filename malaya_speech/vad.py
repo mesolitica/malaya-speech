@@ -2,6 +2,7 @@ from malaya_speech.utils.astype import to_byte, to_ndarray
 from malaya_speech.model.interface import FRAME
 import numpy as np
 from herpetologist import check_type
+from typing import List, Tuple
 
 
 class VAD:
@@ -42,3 +43,30 @@ def webrtc(aggressiveness: int = 3, minimum_amplitude: int = 10):
 
     vad = webrtcvad.Vad(aggressiveness)
     return WEBRTC(vad, minimum_amplitude)
+
+
+def group_vad(frames: List[Tuple[FRAME, bool]]):
+    results, result, last = [], [], None
+
+    for frame in frames:
+        if last is None:
+            last = frame[1]
+            result.append(frame[0])
+        elif last == frame[1]:
+            result.append(frame[0])
+        else:
+            a, duration = [], 0
+            for r in result:
+                a.extend(r.array)
+                duration += r.duration
+            results.append((FRAME(a, result[0].timestamp, duration), last))
+            result = [frame[0]]
+            last = frame[1]
+
+    if len(result):
+        a, duration = [], 0
+        for r in result:
+            a.extend(r.array)
+            duration += r.duration
+        results.append((FRAME(a, result[0].timestamp, duration), last))
+    return results
