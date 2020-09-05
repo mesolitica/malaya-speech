@@ -2,34 +2,44 @@
 
 import threading, collections, queue, os, os.path
 import numpy as np
-from malaya_speech.utils.vad import webrtc
 import wave
 from datetime import datetime
+from malaya_speech.utils.validator import check_pipeline
+from herpetologist import check_type
 
 RATE_PROCESS = 16000
 CHANNELS = 1
 BLOCKS_PER_SECOND = 50
 
 
-class Audio(webrtc.VAD):
+class Audio:
+    @check_type
     def __init__(
         self,
+        vad,
         callback = None,
         device = None,
         format = None,
-        input_rate = RATE_PROCESS,
-        sample_rate = RATE_PROCESS,
-        channels = CHANNELS,
-        blocks_per_second = BLOCKS_PER_SECOND,
+        input_rate: int = RATE_PROCESS,
+        sample_rate: int = RATE_PROCESS,
+        channels: int = CHANNELS,
+        blocks_per_second: int = BLOCKS_PER_SECOND,
     ):
+
+        check_pipeline(vad, 'vad')
+
         import pyaudio
 
-        super().__init__(
-            input_rate = input_rate,
-            sample_rate = sample_rate,
-            channels = channels,
-            blocks_per_second = blocks_per_second,
+        self.vad = vad
+        self.input_rate = input_rate
+        self.sample_rate = sample_rate
+        self.channels = channels
+        self.blocks_per_second = blocks_per_second
+        self.block_size = int(self.sample_rate / float(self.blocks_per_second))
+        self.block_size_input = int(
+            self.input_rate / float(self.blocks_per_second)
         )
+        self.frame_duration_ms = 1000 * self.block_size // self.sample_rate
 
         def proxy_callback(in_data, frame_count, time_info, status):
             if self.chunk is not None:
@@ -96,6 +106,45 @@ class Audio(webrtc.VAD):
         wf.setframerate(self.sample_rate)
         wf.writeframes(data)
         wf.close()
+
+    def vad_collector(self, padding_ms = 300, ratio = 0.75, frames = None):
+        """
+        Generator that yields series of consecutive audio frames comprising each utterence, separated by yielding a single None.
+        Determines voice activity by ratio of frames in padding_ms. Uses a buffer to include padding_ms prior to being triggered.
+        Example: (frame, ..., frame, None, frame, ..., frame, None, ...)
+                    |---utterence---|        |---utterence---|
+        """
+        if frames is None:
+            frames = self.frame_generator()
+        num_padding_frames = padding_ms // self.frame_duration_ms
+        ring_buffer = collections.deque(maxlen = num_padding_frames)
+        triggered = False
+
+        for frame in frames:
+            if len(frame) < 640:
+                return
+
+            is_speech = self.vad(frame, self.sample_rate)
+
+            if not triggered:
+                ring_buffer.append((frame, is_speech))
+                num_voiced = len([f for f, speech in ring_buffer if speech])
+                if num_voiced > ratio * ring_buffer.maxlen:
+                    triggered = True
+                    for f, s in ring_buffer:
+                        yield f
+                    ring_buffer.clear()
+
+            else:
+                yield frame
+                ring_buffer.append((frame, is_speech))
+                num_unvoiced = len(
+                    [f for f, speech in ring_buffer if not speech]
+                )
+                if num_unvoiced > ratio * ring_buffer.maxlen:
+                    triggered = False
+                    yield None
+                    ring_buffer.clear()
 
 
 def record(

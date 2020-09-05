@@ -1,44 +1,7 @@
 from scipy.io.wavfile import read
-from scipy.signal import resample
 from scipy import interpolate
 import librosa
 import numpy as np
-import soundfile as sf
-
-
-def change_samplerate(data, old_samplerate, new_samplerate):
-    old_audio = data
-    duration = data.shape[0] / old_samplerate
-    time_old = np.linspace(0, duration, old_audio.shape[0])
-    time_new = np.linspace(
-        0, duration, int(old_audio.shape[0] * new_samplerate / old_samplerate)
-    )
-
-    interpolator = interpolate.interp1d(time_old, old_audio.T)
-    data = interpolator(time_new).T
-    return data
-
-
-def read_audio(data, old_samplerate, sample_rate = 16000):
-    if len(data.shape) == 2:
-        data = data[:, 0]
-    if data.dtype not in [np.float32, np.float64]:
-        data = data.astype(np.float32) / np.iinfo(data.dtype).max
-
-    if old_samplerate != sample_rate:
-        data = change_samplerate(data, old_samplerate, sample_rate)
-
-    return data.tolist(), data.shape[0] / sample_rate
-
-
-def wav_to_array(file, sample_rate = 16000):
-    old_samplerate, data = read(file)
-    return read_audio(data, old_samplerate, sample_rate)
-
-
-def flac_to_array(file, sample_rate = 16000):
-    data, old_samplerate = sf.read(file)
-    return read_audio(data, old_samplerate, sample_rate)
 
 
 def normalize(values):
@@ -124,3 +87,28 @@ def spectrogram(
         specgram = normalize(specgram)
 
     return specgram
+
+
+def mfcc_delta(signal, freq = 16000, n_mfcc = 5, size = 512, step = 16):
+    # Mel Frequency Cepstral Coefficents
+    mfcc = librosa.feature.mfcc(
+        y = signal, sr = freq, n_mfcc = n_mfcc, n_fft = size, hop_length = step
+    )
+    mfcc_delta = librosa.feature.delta(mfcc)
+    mfcc_delta2 = librosa.feature.delta(mfcc, order = 2)
+
+    # Root Mean Square Energy
+    mel_spectogram = librosa.feature.melspectrogram(
+        y = signal, sr = freq, n_fft = size, hop_length = step
+    )
+    rmse = librosa.feature.rms(
+        S = mel_spectogram, frame_length = size, hop_length = step
+    )
+
+    mfcc = np.asarray(mfcc)
+    mfcc_delta = np.asarray(mfcc_delta)
+    mfcc_delta2 = np.asarray(mfcc_delta2)
+    rmse = np.asarray(rmse)
+
+    features = np.concatenate((mfcc, mfcc_delta, mfcc_delta2, rmse), axis = 0)
+    return features
