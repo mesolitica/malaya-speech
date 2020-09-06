@@ -15,6 +15,9 @@ class WEBRTC(VAD):
         self.sample_rate = sample_rate
         self.minimum_amplitude = minimum_amplitude
 
+        self.minimum_sample = 30
+        self.maximum_sample = 30
+
     def is_speech(self, frame):
 
         if isinstance(frame, FRAME):
