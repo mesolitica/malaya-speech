@@ -10,11 +10,12 @@ class VAD:
 
 
 class WEBRTC(VAD):
-    def __init__(self, vad, minimum_amplitude: int = 10):
+    def __init__(self, vad, sample_rate = 16000, minimum_amplitude: int = 100):
         self.vad = vad
+        self.sample_rate = sample_rate
         self.minimum_amplitude = minimum_amplitude
 
-    def is_speech(self, frame, sample_rate):
+    def is_speech(self, frame):
 
         if isinstance(frame, FRAME):
             frame = frame.array
@@ -24,16 +25,18 @@ class WEBRTC(VAD):
         minimum = np.mean(np.abs(to_ndarray(frame)))
 
         return (
-            self.vad.is_speech(frame, sample_rate)
+            self.vad.is_speech(frame, self.sample_rate)
             and minimum >= self.minimum_amplitude
         )
 
-    def __call__(self, frame, sample_rate):
-        return self.is_speech(frame, sample_rate)
+    def __call__(self, frame):
+        return self.is_speech(frame)
 
 
 @check_type
-def webrtc(aggressiveness: int = 3, minimum_amplitude: int = 10):
+def webrtc(
+    aggressiveness: int = 3, sample_rate = 16000, minimum_amplitude: int = 100
+):
     try:
         import webrtcvad
     except:
@@ -42,7 +45,7 @@ def webrtc(aggressiveness: int = 3, minimum_amplitude: int = 10):
         )
 
     vad = webrtcvad.Vad(aggressiveness)
-    return WEBRTC(vad, minimum_amplitude)
+    return WEBRTC(vad, sample_rate, minimum_amplitude)
 
 
 def group_vad(frames: List[Tuple[FRAME, bool]]):

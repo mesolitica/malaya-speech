@@ -1,7 +1,14 @@
 from malaya_speech.model.interface import FRAME
+from herpetologist import check_type
 
 
-def frames(frame_duration_ms, audio, sample_rate):
+@check_type
+def frames(
+    audio,
+    frame_duration_ms: int = 30,
+    sample_rate: int = 16000,
+    append_ending_trail: bool = True,
+):
     """
     Generates audio frames from PCM audio data.
     Takes the desired frame duration in milliseconds, the PCM data, and
@@ -12,7 +19,15 @@ def frames(frame_duration_ms, audio, sample_rate):
     offset = 0
     timestamp = 0.0
     duration = float(n) / sample_rate
+    results = []
     while offset + n < len(audio):
-        yield FRAME(audio[offset : offset + n], timestamp, duration)
+        results.append(FRAME(audio[offset : offset + n], timestamp, duration))
         timestamp += duration
         offset += n
+    if append_ending_trail:
+        results.append(
+            FRAME(
+                audio[offset:], timestamp, len(audio) / sample_rate - timestamp
+            )
+        )
+    return results

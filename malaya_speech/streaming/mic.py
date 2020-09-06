@@ -7,7 +7,6 @@ from datetime import datetime
 from malaya_speech.utils.validator import check_pipeline
 from herpetologist import check_type
 
-RATE_PROCESS = 16000
 CHANNELS = 1
 BLOCKS_PER_SECOND = 50
 
@@ -20,8 +19,8 @@ class Audio:
         callback = None,
         device = None,
         format = None,
-        input_rate: int = RATE_PROCESS,
-        sample_rate: int = RATE_PROCESS,
+        input_rate: int = 16000,
+        sample_rate: int = 16000,
         channels: int = CHANNELS,
         blocks_per_second: int = BLOCKS_PER_SECOND,
     ):
@@ -123,7 +122,7 @@ class Audio:
             if len(frame) < 640:
                 return
 
-            is_speech = self.vad(frame, self.sample_rate)
+            is_speech = self.vad(frame)
 
             if not triggered:
                 ring_buffer.append((frame, is_speech))
@@ -150,6 +149,8 @@ def record(
     vad,
     model = None,
     device = None,
+    input_rate: int = 16000,
+    sample_rate: int = 16000,
     filename: str = None,
     min_length: float = 1.5,
     spinner: bool = True,
@@ -161,7 +162,13 @@ def record(
             'pyaudio not installed. Please install it by `pip install pyaudio` and try again.'
         )
 
-    audio = Audio(vad, device = device, format = pyaudio.paInt16)
+    audio = Audio(
+        vad,
+        device = device,
+        input_rate = input_rate,
+        sample_rate = sample_rate,
+        format = pyaudio.paInt16,
+    )
     frames = audio.vad_collector()
 
     if spinner:
@@ -209,3 +216,4 @@ def record(
         spinner.stop()
 
     audio.destroy()
+    return filename_temp

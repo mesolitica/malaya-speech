@@ -1,0 +1,475 @@
+import functools
+import logging
+from collections import deque
+from tornado.locks import Condition
+from .orderset import OrderedWeakrefSet
+
+_global_sinks = set()
+logger = logging.getLogger(__name__)
+zipping = zip
+
+
+def identity(x):
+    return x
+
+
+class Pipeline(object):
+    _graphviz_shape = 'ellipse'
+    _graphviz_style = 'rounded,filled'
+    _graphviz_fillcolor = 'white'
+    _graphviz_orientation = 0
+
+    str_list = ['func', 'predicate', 'n', 'interval']
+
+    __name__ = 'pipeline'
+
+    def __init__(self, upstream = None, upstreams = None, name = None):
+        self.downstreams = OrderedWeakrefSet()
+        if upstreams is not None:
+            self.upstreams = list(upstreams)
+        else:
+            self.upstreams = [upstream]
+
+        for upstream in self.upstreams:
+            if upstream:
+                upstream.downstreams.add(self)
+
+        self.name = name
+        self.checkpoint = {}
+
+    def __str__(self):
+        s_list = []
+        if self.name:
+            s_list.append('{}; {}'.format(self.name, self.__class__.__name__))
+        else:
+            s_list.append(self.__class__.__name__)
+
+        for m in self.str_list:
+            s = ''
+            at = getattr(self, m, None)
+            if at:
+                if not callable(at):
+                    s = str(at)
+                elif hasattr(at, '__name__'):
+                    s = getattr(self, m).__name__
+                elif hasattr(at.__class__, '__name__'):
+                    s = getattr(self, m).__class__.__name__
+                else:
+                    s = None
+            if s:
+                s_list.append('{}={}'.format(m, s))
+        if len(s_list) <= 2:
+            s_list = [term.split('=')[-1] for term in s_list]
+
+        text = '<'
+        text += s_list[0]
+        if len(s_list) > 1:
+            text += ': '
+            text += ', '.join(s_list[1:])
+        text += '>'
+        return text
+
+    __repr__ = __str__
+
+    @classmethod
+    def register_api(cls, modifier = identity):
+        def _(func):
+            @functools.wraps(func)
+            def wrapped(*args, **kwargs):
+                return func(*args, **kwargs)
+
+            setattr(cls, func.__name__, modifier(wrapped))
+            return func
+
+        return _
+
+    def _climb(self, source, name, x):
+
+        for upstream in list(source.upstreams):
+            if not upstream:
+                source.checkpoint[name] = x
+            else:
+                self._climb(upstream, name, x)
+
+    def _emit(self, x):
+
+        name = type(self).__name__
+        if hasattr(self, 'func'):
+            name = self.func.__name__
+            if self.name:
+                name = f'{name}_{self.name}'
+        self._climb(self, name, x)
+
+        result = []
+        for downstream in list(self.downstreams):
+            r = downstream.update(x, who = self)
+            if type(r) is list:
+                result.extend(r)
+            else:
+                result.append(r)
+
+        return [element for element in result if element is not None]
+
+    def update(self, x, who = None):
+        self._emit(x)
+
+    @property
+    def upstream(self):
+        if len(self.upstreams) != 1:
+            raise ValueError('Pipeline has multiple upstreams')
+        else:
+            return self.upstreams[0]
+
+    def visualize(self, filename = 'pipeline.png', **kwargs):
+        """
+        Render the computation of this object's task graph using graphviz.
+
+        Requires ``graphviz`` to be installed.
+
+        Parameters
+        ----------
+        filename : str, optional
+            The name of the file to write to disk.
+        kwargs:
+            Graph attributes to pass to graphviz like ``rankdir="LR"``
+        """
+        from .graph import visualize
+
+        return visualize(self, filename, **kwargs)
+
+    def emit(self, x):
+        result = self._emit(x)
+        self.checkpoint.pop('Pipeline', None)
+        return self.checkpoint
+
+    def __call__(self, x):
+        return self.emit(x)
+
+
+@Pipeline.register_api()
+class map(Pipeline):
+    def __init__(self, upstream, func, *args, **kwargs):
+        self.func = func
+        name = kwargs.pop('name', None)
+        self.kwargs = kwargs
+        self.args = args
+
+        if hasattr(upstream, 'func'):
+            upstream_name = upstream.func
+        else:
+            upstream_name = upstream
+
+        if hasattr(upstream_name, '__name__'):
+            upstream_name = upstream_name.__name__
+        else:
+            upstream_name = str(upstream_name)
+
+        if hasattr(func, '__name__'):
+            func_name = func.__name__
+        else:
+            func_name = str(func)
+
+        if upstream_name == func_name:
+            raise ValueError('upstream and downstream is the same module.')
+
+        Pipeline.__init__(self, upstream, name = name)
+        _global_sinks.add(self)
+
+    def update(self, x, who = None):
+        try:
+            result = self.func(x, *self.args, **self.kwargs)
+        except Exception as e:
+            logger.exception(e)
+            raise
+        else:
+            return self._emit(result)
+
+
+@Pipeline.register_api()
+class partition(Pipeline):
+    """ Partition stream into tuples of equal size
+
+    Examples
+    --------
+    >>> source = Pipeline()
+    >>> source.partition(3).sink(print)
+    >>> for i in range(10):
+    ...     source.emit(i)
+    (0, 1, 2)
+    (3, 4, 5)
+    (6, 7, 8)
+    """
+
+    _graphviz_shape = 'diamond'
+
+    def __init__(self, upstream, n, **kwargs):
+        self.n = n
+        self.buffer = []
+        Pipeline.__init__(self, upstream, **kwargs)
+
+        _global_sinks.add(self)
+
+    def update(self, x, who = None):
+        self.buffer.append(x)
+        if len(self.buffer) == self.n:
+            result, self.buffer = self.buffer, []
+            return self._emit(tuple(result))
+        else:
+            return []
+
+
+@Pipeline.register_api()
+class sliding_window(Pipeline):
+    """ 
+    Produce overlapping tuples of size n
+
+    Parameters
+    ----------
+    return_partial : bool
+        If True, yield tuples as soon as any events come in, each tuple being
+        smaller or equal to the window size. If False, only start yielding
+        tuples once a full window has accrued.
+
+    Examples
+    --------
+    >>> source = Pipeline()
+    >>> source.sliding_window(3, return_partial=False).sink(print)
+    >>> for i in range(8):
+    ...     source.emit(i)
+    (0, 1, 2)
+    (1, 2, 3)
+    (2, 3, 4)
+    (3, 4, 5)
+    (4, 5, 6)
+    (5, 6, 7)
+    """
+
+    _graphviz_shape = 'diamond'
+
+    def __init__(self, upstream, n, return_partial = True, **kwargs):
+        self.n = n
+        self.buffer = deque(maxlen = n)
+        self.partial = return_partial
+        Pipeline.__init__(self, upstream, **kwargs)
+
+        _global_sinks.add(self)
+
+    def update(self, x, who = None):
+        self.buffer.append(x)
+        if self.partial or len(self.buffer) == self.n:
+            return self._emit(tuple(self.buffer))
+        else:
+            return []
+
+
+@Pipeline.register_api()
+class foreach_map(Pipeline):
+    """ 
+    Apply a function to every element in a tuple in the stream.
+
+    Parameters
+    ----------
+    func: callable
+    *args :
+        The arguments to pass to the function.
+    **kwargs:
+        Keyword arguments to pass to func
+    Examples
+    --------
+    >>> source = Pipeline()
+    >>> source.foreach_map(lambda x: 2*x).sink(print)
+    >>> for i in range(3):
+    ...     source.emit((i, i))
+    (0, 0)
+    (2, 2)
+    (4, 4)
+    """
+
+    def __init__(self, upstream, func, *args, **kwargs):
+        self.func = func
+        name = kwargs.pop('stream_name', None)
+        self.kwargs = kwargs
+        self.args = args
+
+        Pipeline.__init__(self, upstream, name = name)
+        _global_sinks.add(self)
+
+    def update(self, x, who = None):
+        try:
+            result = [self.func(e, *self.args, **self.kwargs) for e in x]
+        except Exception as e:
+            logger.exception(e)
+            raise
+        else:
+            return self._emit(result)
+
+
+@Pipeline.register_api()
+class flatten(Pipeline):
+    """ Flatten streams of lists or iterables into a stream of elements
+
+    Examples
+    --------
+    >>> source = Pipeline()
+    >>> source.flatten().map(print)
+    >>> for x in [[1, 2, 3], [4, 5], [6, 7, 7]]:
+    ...     source.emit(x)
+    1
+    2
+    3
+    4
+    5
+    6
+    7
+
+    See Also
+    --------
+    partition
+    """
+
+    def update(self, x, who = None):
+        L = []
+        for item in x:
+            y = self._emit(item)
+            if type(y) is list:
+                L.extend(y)
+            else:
+                L.append(y)
+        return L
+
+
+@Pipeline.register_api()
+class zip(Pipeline):
+
+    _graphviz_orientation = 270
+    _graphviz_shape = 'triangle'
+
+    def __init__(self, *upstreams, **kwargs):
+        self.maxsize = kwargs.pop('maxsize', 10)
+        self.condition = Condition()
+        self.literals = [
+            (i, val)
+            for i, val in enumerate(upstreams)
+            if not isinstance(val, Pipeline)
+        ]
+
+        self.buffers = {
+            upstream: deque()
+            for upstream in upstreams
+            if isinstance(upstream, Pipeline)
+        }
+
+        upstreams2 = [
+            upstream for upstream in upstreams if isinstance(upstream, Pipeline)
+        ]
+
+        Pipeline.__init__(self, upstreams = upstreams2, **kwargs)
+        _global_sinks.add(self)
+
+    def _add_upstream(self, upstream):
+        # Override method to handle setup of buffer for new stream
+        self.buffers[upstream] = deque()
+        super(zip, self)._add_upstream(upstream)
+
+    def _remove_upstream(self, upstream):
+        # Override method to handle removal of buffer for stream
+        self.buffers.pop(upstream)
+        super(zip, self)._remove_upstream(upstream)
+
+    def pack_literals(self, tup):
+        """ Fill buffers for literals whenever we empty them """
+        inp = list(tup)[::-1]
+        out = []
+        for i, val in self.literals:
+            while len(out) < i:
+                out.append(inp.pop())
+            out.append(val)
+
+        while inp:
+            out.append(inp.pop())
+
+        return out
+
+    def update(self, x, who = None):
+        L = self.buffers[who]  # get buffer for stream
+        L.append(x)
+        if len(L) == 1 and all(self.buffers.values()):
+            tup = tuple(self.buffers[up][0] for up in self.upstreams)
+            for buf in self.buffers.values():
+                buf.popleft()
+            self.condition.notify_all()
+            if self.literals:
+                tup = self.pack_literals(tup)
+
+            return self._emit(tup)
+        elif len(L) > self.maxsize:
+            return self.condition.wait()
+
+
+@Pipeline.register_api()
+class foreach_zip(Pipeline):
+
+    _graphviz_orientation = 270
+    _graphviz_shape = 'triangle'
+
+    def __init__(self, *upstreams, **kwargs):
+        self.maxsize = kwargs.pop('maxsize', 10)
+        self.condition = Condition()
+        self.literals = [
+            (i, val)
+            for i, val in enumerate(upstreams)
+            if not isinstance(val, Pipeline)
+        ]
+
+        self.buffers = {
+            upstream: deque()
+            for upstream in upstreams
+            if isinstance(upstream, Pipeline)
+        }
+
+        upstreams2 = [
+            upstream for upstream in upstreams if isinstance(upstream, Pipeline)
+        ]
+
+        Pipeline.__init__(self, upstreams = upstreams2, **kwargs)
+        _global_sinks.add(self)
+
+    def _add_upstream(self, upstream):
+        # Override method to handle setup of buffer for new stream
+        self.buffers[upstream] = deque()
+        super(zip, self)._add_upstream(upstream)
+
+    def _remove_upstream(self, upstream):
+        # Override method to handle removal of buffer for stream
+        self.buffers.pop(upstream)
+        super(zip, self)._remove_upstream(upstream)
+
+    def pack_literals(self, tup):
+        """ Fill buffers for literals whenever we empty them """
+        inp = list(tup)[::-1]
+        out = []
+        for i, val in self.literals:
+            while len(out) < i:
+                out.append(inp.pop())
+            out.append(val)
+
+        while inp:
+            out.append(inp.pop())
+
+        return out
+
+    def update(self, x, who = None):
+        L = self.buffers[who]  # get buffer for stream
+        L.append(x)
+        if len(L) == 1 and all(self.buffers.values()):
+            tup = tuple(self.buffers[up][0] for up in self.upstreams)
+            for buf in self.buffers.values():
+                buf.popleft()
+            self.condition.notify_all()
+            if self.literals:
+                tup = self.pack_literals(tup)
+
+            tup = tuple(zipping(*tup))
+            return self._emit(tup)
+        elif len(L) > self.maxsize:
+            return self.condition.wait()

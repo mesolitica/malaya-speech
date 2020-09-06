@@ -44,5 +44,37 @@ def add_uniform_noise(samples):
     )
 
 
-def add_noise(sample, noise, factor = 0.05):
+def add_noise(samples, noise, random_sample = True, factor = 0.1):
     y_noise = samples.copy()
+    if len(y_noise) > len(noise):
+        noise = np.tile(noise, int(np.ceil(len(y_noise) / len(noise))))
+    else:
+        if random_sample:
+            noise = noise[np.random.randint(0, len(noise) - len(y_noise) + 1) :]
+    return y_noise + noise[: len(y_noise)] * factor
+
+
+# from https://stackoverflow.com/questions/33933842/how-to-generate-noise-in-frequency-range-with-numpy
+def fftnoise(f):
+    f = np.array(f, dtype = 'complex')
+    Np = (len(f) - 1) // 2
+    phases = np.random.rand(Np) * 2 * np.pi
+    phases = np.cos(phases) + 1j * np.sin(phases)
+    f[1 : Np + 1] *= phases
+    f[-1 : -1 - Np : -1] = np.conj(f[1 : Np + 1])
+    return np.fft.ifft(f).real
+
+
+def add_band_limited_noise(
+    samples,
+    min_freq = 2000,
+    max_freq = 12000,
+    sample_size = 1024,
+    samplerate = 1,
+):
+    y_noise = samples.copy()
+    freqs = np.abs(np.fft.fftfreq(samples, 1 / samplerate))
+    f = np.zeros(sample_size)
+    f[np.logical_and(freqs >= min_freq, freqs <= max_freq)] = 1
+    noise = fftnoise(f)
+    return add_noise(samples, noise, factor = 1.0)
