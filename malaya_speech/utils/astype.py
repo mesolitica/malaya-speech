@@ -44,6 +44,6 @@ def int_to_float(array, type = np.float32):
         return array
 
     if array.dtype not in [np.float32, np.float64]:
-        array = array.astype(np.float32) / np.iinfo(array.dtype).max
+        array = array.astype(np.float32) / np.max(np.abs(array))
 
     return array
