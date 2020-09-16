@@ -6,7 +6,7 @@ from tensorflow.python.estimator.run_config import RunConfig
 from herpetologist import check_type
 from typing import List, Dict
 
-from . import model
+
 from . import accuracy
 from . import loss
 from . import prepare_data

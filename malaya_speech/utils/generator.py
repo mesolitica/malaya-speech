@@ -1,4 +1,4 @@
-from malaya_speech.model.interface import FRAME
+from malaya_speech.model.frame import FRAME
 from herpetologist import check_type
 
 

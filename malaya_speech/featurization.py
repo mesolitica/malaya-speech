@@ -89,7 +89,7 @@ def spectrogram(
     return specgram
 
 
-def mfcc_delta(signal, freq = 16000, n_mfcc = 5, size = 512, step = 16):
+def mfcc_delta(signal, freq = 16000, n_mfcc = 42, size = 512, step = 16):
     # Mel Frequency Cepstral Coefficents
     mfcc = librosa.feature.mfcc(
         y = signal, sr = freq, n_mfcc = n_mfcc, n_fft = size, hop_length = step
@@ -111,4 +111,4 @@ def mfcc_delta(signal, freq = 16000, n_mfcc = 5, size = 512, step = 16):
     rmse = np.asarray(rmse)
 
     features = np.concatenate((mfcc, mfcc_delta, mfcc_delta2, rmse), axis = 0)
-    return features
+    return features.T

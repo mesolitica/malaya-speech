@@ -1,5 +1,5 @@
 from malaya_speech.utils.astype import to_byte, to_ndarray
-from malaya_speech.model.interface import FRAME
+from malaya_speech.model.frame import FRAME
 import numpy as np
 from herpetologist import check_type
 from typing import List, Tuple

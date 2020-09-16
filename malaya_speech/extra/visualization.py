@@ -1,6 +1,49 @@
-from malaya_speech.model.interface import FRAME
+from itertools import cycle, product
+from malaya_speech.model.frame import FRAME
 from herpetologist import check_type
 from typing import List, Tuple
+
+
+def get_ax(
+    ax = None, xlim = (0, 1000), ylim = (0, 1), yaxis = False, time = True
+):
+    try:
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+    except:
+        raise ValueError(
+            'seaborn and matplotlib not installed. Please install it by `pip install matplotlib seaborn` and try again.'
+        )
+
+    if ax is None:
+        ax = plt.gca()
+    ax.set_xlim(xlim)
+    if time:
+        ax.set_xlabel('Time')
+    else:
+        ax.set_xticklabels([])
+    ax.set_ylim(ylim)
+    ax.axes.get_yaxis().set_visible(yaxis)
+    return ax
+
+
+def get_styles(size):
+    try:
+        from matplotlib.cm import get_cmap
+    except:
+        raise ValueError(
+            'matplotlib not installed. Please install it by `pip install matplotlib` and try again.'
+        )
+
+    linewidth = [3, 1]
+    linestyle = ['solid', 'dashed', 'dotted']
+
+    cm = get_cmap('Set1')
+    colors = [cm(1.0 * i / 8) for i in range(9)]
+
+    style_generator = cycle(product(linestyle, linewidth, colors))
+    styles = [next(style_generator) for _ in range(size)]
+    return styles
 
 
 def visualize_vad(

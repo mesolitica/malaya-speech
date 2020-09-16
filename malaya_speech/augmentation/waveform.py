@@ -33,7 +33,7 @@ def random_stretch(samples, low = 0.5, high = 1.3):
     stretching = librosa.effects.time_stretch(
         stretching.astype('float'), random_stretch
     )
-    return stretch
+    return stretching
 
 
 def add_uniform_noise(samples):
