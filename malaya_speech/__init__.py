@@ -9,6 +9,7 @@ from . import enhancement
 from . import featurization
 from . import gender
 from . import noise_reduction
+from . import speaker_vector
 from . import stt
 from . import vad
 

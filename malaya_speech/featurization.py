@@ -112,3 +112,119 @@ def mfcc_delta(signal, freq = 16000, n_mfcc = 42, size = 512, step = 16):
 
     features = np.concatenate((mfcc, mfcc_delta, mfcc_delta2, rmse), axis = 0)
     return features.T
+
+
+# for VGGVOX V1
+def build_buckets(max_sec, step_sec, frame_step):
+    buckets = {}
+    frames_per_sec = int(1 / frame_step)
+    end_frame = int(max_sec * frames_per_sec)
+    step_frame = int(step_sec * frames_per_sec)
+    for i in range(0, end_frame + 1, step_frame):
+        s = i
+        s = np.floor((s - 7 + 2) / 2) + 1  # conv1
+        s = np.floor((s - 3) / 2) + 1  # mpool1
+        s = np.floor((s - 5 + 2) / 2) + 1  # conv2
+        s = np.floor((s - 3) / 2) + 1  # mpool2
+        s = np.floor((s - 3 + 2) / 1) + 1  # conv3
+        s = np.floor((s - 3 + 2) / 1) + 1  # conv4
+        s = np.floor((s - 3 + 2) / 1) + 1  # conv5
+        s = np.floor((s - 3) / 2) + 1  # mpool5
+        s = np.floor((s - 1) / 1) + 1  # fc6
+        if s > 0:
+            buckets[i] = int(s)
+    return buckets
+
+
+# for VGGVOX V1
+def get_buckets(max_sec = 10, bucket_step = 1, frame_step = 0.01):
+    return build_buckets(max_sec, bucket_step, frame_step)
+
+
+# https://github.com/christianvazquez7/ivector/blob/master/MSRIT/rm_dc_n_dither.m
+# for VGGVOX V1
+def remove_dc_and_dither(sin, sample_rate):
+    if sample_rate == 16e3:
+        alpha = 0.99
+    elif sample_rate == 8e3:
+        alpha = 0.999
+    else:
+        print('Sample rate must be 16kHz or 8kHz only')
+        exit(1)
+    sin = lfilter([1, -1], [1, -alpha], sin)
+    dither = (
+        np.random.random_sample(len(sin))
+        + np.random.random_sample(len(sin))
+        - 1
+    )
+    spow = np.std(dither)
+    sout = sin + 1e-6 * spow * dither
+    return sout
+
+
+# for VGGVOX V1
+def vggvox_v1(
+    signal,
+    sample_rate = 16000,
+    preemphasis_alpha = 0.97,
+    frame_len = 0.025,
+    frame_step = 0.01,
+    num_fft = 512,
+    buckets = None,
+):
+    signal *= 2 ** 15
+    signal = remove_dc_and_dither(signal, sample_rate)
+    signal = sigproc.preemphasis(signal, coeff = preemphasis_alpha)
+    frames = sigproc.framesig(
+        signal,
+        frame_len = frame_len * sample_rate,
+        frame_step = frame_step * sample_rate,
+        winfunc = np.hamming,
+    )
+    fft = abs(np.fft.fft(frames, n = num_fft))
+    fft_norm = normalize_frames(fft.T)
+
+    if buckets:
+        rsize = max(k for k in buckets if k <= fft_norm.shape[1])
+        rstart = int((fft_norm.shape[1] - rsize) / 2)
+        out = fft_norm[:, rstart : rstart + rsize]
+        return out
+
+    else:
+        return fft_norm
+
+
+# for VGGVOX V2
+def lin_spectogram_from_wav(wav, hop_length, win_length, n_fft = 1024):
+    linear = librosa.stft(
+        wav, n_fft = n_fft, win_length = win_length, hop_length = hop_length
+    )  # linear spectrogram
+    return linear.T
+
+
+def vggvox_v2(
+    signal,
+    win_length = 400,
+    sr = 16000,
+    hop_length = 160,
+    n_fft = 512,
+    spec_len = 250,
+    mode = 'train',
+):
+    wav = np.append(signal, signal[::-1])
+    linear_spect = lin_spectogram_from_wav(wav, hop_length, win_length, n_fft)
+    mag, _ = librosa.magphase(linear_spect)  # magnitude
+    mag_T = mag.T
+    freq, time = mag_T.shape
+    if mode == 'train':
+        if time > spec_len:
+            randtime = np.random.randint(0, time - spec_len)
+            spec_mag = mag_T[:, randtime : randtime + spec_len]
+        else:
+            spec_mag = np.pad(mag_T, ((0, 0), (0, spec_len - time)), 'constant')
+    else:
+        spec_mag = mag_T
+    # preprocessing, subtract mean, divided by time-wise var
+    mu = np.mean(spec_mag, 0, keepdims = True)
+    std = np.std(spec_mag, 0, keepdims = True)
+    return (spec_mag - mu) / (std + 1e-5)
