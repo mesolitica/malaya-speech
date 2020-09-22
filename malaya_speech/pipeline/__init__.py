@@ -154,24 +154,6 @@ class map(Pipeline):
         self.kwargs = kwargs
         self.args = args
 
-        if hasattr(upstream, 'func'):
-            upstream_name = upstream.func
-        else:
-            upstream_name = upstream
-
-        if hasattr(upstream_name, '__name__'):
-            upstream_name = upstream_name.__name__
-        else:
-            upstream_name = str(upstream_name)
-
-        if hasattr(func, '__name__'):
-            func_name = func.__name__
-        else:
-            func_name = str(func)
-
-        if upstream_name == func_name:
-            raise ValueError('upstream and downstream is the same module.')
-
         Pipeline.__init__(self, upstream, name = name)
         _global_sinks.add(self)
 
@@ -183,6 +165,34 @@ class map(Pipeline):
             raise
         else:
             return self._emit(result)
+
+
+@Pipeline.register_api()
+class batching(Pipeline):
+    """ Batching stream into tuples
+
+    Examples
+    --------
+    >>> source = Pipeline()
+    >>> source.batching(3).sink(print)
+    >>> source.emit([1,2,3,4,5])
+    ([1, 2], [3, 4], [5])
+    """
+
+    _graphviz_shape = 'diamond'
+
+    def __init__(self, upstream, n, **kwargs):
+        self.n = n
+        Pipeline.__init__(self, upstream, **kwargs)
+
+        _global_sinks.add(self)
+
+    def update(self, x, who = None):
+        result = []
+        for i in range(0, len(x), self.n):
+            index = min(i + self.n, len(x))
+            result.append(x[i:index])
+        return self._emit(tuple(result))
 
 
 @Pipeline.register_api()

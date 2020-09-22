@@ -67,7 +67,7 @@ def load_graph(frozen_graph_filename, **kwargs):
             graph_def = tf.GraphDef()
             graph_def.ParseFromString(f.read())
         except Exception as e:
-            path = frozen_graph_filename.split('Malaya/')[1]
+            path = frozen_graph_filename.split('Malaya-Speech/')[1]
             path = '/'.join(path.split('/')[:-1])
             raise Exception(
                 f"{e}, file corrupted due to some reasons, please run malaya.clear_cache('{path}') and try again"

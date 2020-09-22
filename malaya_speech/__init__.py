@@ -6,7 +6,7 @@ import logging
 
 home = os.path.join(str(Path.home()), 'Malaya-Speech')
 version = '0.0.1'
-bump_version = '3.8.2'
+bump_version = '0.0.1'
 version_path = os.path.join(home, 'version')
 __version__ = bump_version
 path = os.path.dirname(__file__)
@@ -88,15 +88,6 @@ if not os.path.isfile(version_path):
 else:
     with open(version_path, 'r') as fopen:
         cached_version = fopen.read()
-    try:
-        if float(cached_version) < 1:
-            _delete_folder(home)
-            with open(version_path, 'w') as fopen:
-                fopen.write(version)
-    except:
-        _delete_folder(home)
-        with open(version_path, 'w') as fopen:
-            fopen.write(version)
 
 
 def print_cache(location = None):
@@ -153,11 +144,11 @@ def clear_cache(location):
     location = os.path.join(home, location)
     if not os.path.exists(location):
         raise Exception(
-            'folder not exist, please check path from malaya.print_cache()'
+            'folder not exist, please check path from malaya_speech.print_cache()'
         )
     if not os.path.isdir(location):
         raise Exception(
-            'Please use parent directory, please check path from malaya.print_cache()'
+            'Please use parent directory, please check path from malaya_speech.print_cache()'
         )
     _delete_folder(location)
     return True

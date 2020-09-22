@@ -162,7 +162,7 @@ def remove_dc_and_dither(sin, sample_rate):
     return sout
 
 
-# for VGGVOX V1
+# for VGGVox v1
 def vggvox_v1(
     signal,
     sample_rate = 16000,
@@ -194,7 +194,7 @@ def vggvox_v1(
         return fft_norm
 
 
-# for VGGVOX V2
+# for VGGVox v2
 def lin_spectogram_from_wav(wav, hop_length, win_length, n_fft = 1024):
     linear = librosa.stft(
         wav, n_fft = n_fft, win_length = win_length, hop_length = hop_length
