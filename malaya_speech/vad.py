@@ -1,4 +1,3 @@
-import numpy as np
 from malaya_speech.model.webrtc import WEBRTC
 from malaya_speech.model.frame import FRAME
 from malaya_speech.path import PATH_VAD, S3_PATH_VAD
