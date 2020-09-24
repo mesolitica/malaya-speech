@@ -171,6 +171,7 @@ def vggvox_v1(
     frame_step = 0.01,
     num_fft = 512,
     buckets = None,
+    **kwargs
 ):
     signal *= 2 ** 15
     signal = remove_dc_and_dither(signal, sample_rate)
@@ -210,6 +211,7 @@ def vggvox_v2(
     n_fft = 512,
     spec_len = 250,
     mode = 'train',
+    **kwargs
 ):
     wav = np.append(signal, signal[::-1])
     linear_spect = lin_spectogram_from_wav(wav, hop_length, win_length, n_fft)

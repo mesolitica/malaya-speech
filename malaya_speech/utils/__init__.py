@@ -252,6 +252,20 @@ def add_neutral(x, alpha = 1e-2):
     return np.concatenate([x_divide, 1 - sum_axis], axis = 1)
 
 
+def describe_availability(dict, transpose = True):
+    try:
+        import pandas as pd
+
+        df = pd.DataFrame(dict)
+
+        if transpose:
+            return df.T
+        else:
+            return df
+    except:
+        return dict
+
+
 from . import astype
 from . import bytepair
 from . import char

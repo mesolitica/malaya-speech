@@ -1,3 +1,7 @@
+from herpetologist import check_type
+
+
+@check_type
 def load(file: str):
     from malaya_speech.model.annotation import ANNOTATION
     from malaya_speech.model.frame import SEGMENT

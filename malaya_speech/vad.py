@@ -1,45 +1,47 @@
-from malaya_speech.utils.astype import to_byte, to_ndarray
-from malaya_speech.model.frame import FRAME
 import numpy as np
+from malaya_speech.model.webrtc import WEBRTC
+from malaya_speech.model.frame import FRAME
+from malaya_speech.path import PATH_VAD, S3_PATH_VAD
+from malaya_speech.supervised import classification
 from herpetologist import check_type
 from typing import List, Tuple
 
+_availability = {
+    'vggvox-v1': {'Size (MB)': 70.8, 'Accuracy': 0},
+    'vggvox-v2': {'Size (MB)': 31.1, 'Accuracy': 0},
+}
 
-class VAD:
-    __name__ = 'vad'
 
+def available_model():
+    from malaya_speech.utils import describe_availability
 
-class WEBRTC(VAD):
-    def __init__(self, vad, sample_rate = 16000, minimum_amplitude: int = 100):
-        self.vad = vad
-        self.sample_rate = sample_rate
-        self.minimum_amplitude = minimum_amplitude
-
-        self.minimum_sample = 30
-        self.maximum_sample = 30
-
-    def is_speech(self, frame):
-
-        if isinstance(frame, FRAME):
-            frame = frame.array
-
-        frame = to_byte(frame)
-
-        minimum = np.mean(np.abs(to_ndarray(frame)))
-
-        return (
-            self.vad.is_speech(frame, self.sample_rate)
-            and minimum >= self.minimum_amplitude
-        )
-
-    def __call__(self, frame):
-        return self.is_speech(frame)
+    return describe_availability(_availability)
 
 
 @check_type
 def webrtc(
-    aggressiveness: int = 3, sample_rate = 16000, minimum_amplitude: int = 100
+    aggressiveness: int = 3,
+    sample_rate: int = 16000,
+    minimum_amplitude: int = 100,
 ):
+    """
+    Load WebRTC VAD model.
+
+    Parameters
+    ----------
+    aggressiveness: int, optional (default=3)
+        an integer between 0 and 3.
+        0 is the least aggressive about filtering out non-speech, 3 is the most aggressive.
+    sample_rate: int, optional (default=16000)
+        sample rate for samples.
+    minimum_amplitude: int, optional (default=100)
+        minimum_amplitude to assume a sample is a voice activity. Else, automatically False.
+
+    Returns
+    -------
+    result : malaya_speech.model.webrtc.WEBRTC class
+    """
+
     try:
         import webrtcvad
     except:
@@ -49,6 +51,21 @@ def webrtc(
 
     vad = webrtcvad.Vad(aggressiveness)
     return WEBRTC(vad, sample_rate, minimum_amplitude)
+
+
+@check_type
+def deep_model(model: str = 'vggvox-v2', **kwargs):
+    model = model.lower()
+    if model not in _availability:
+        raise Exception(
+            'model not supported, please check supported models from malaya_speech.vad.available_model()'
+        )
+
+    settings = {'vggvox-v2': {'hop_length': 24}}
+
+    return classification.load(
+        PATH_VAD, S3_PATH_VAD, model, 'vad', settings[model]
+    )
 
 
 def group_vad(frames: List[Tuple[FRAME, bool]]):

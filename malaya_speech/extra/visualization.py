@@ -49,8 +49,8 @@ def get_styles(size):
 def visualize_vad(
     signal,
     preds: List[Tuple[FRAME, bool]],
-    sample_rate = 16000,
-    figsize = (15, 7),
+    sample_rate: int = 16000,
+    figsize: Tuple[int, int] = (15, 7),
 ):
     try:
         import seaborn as sns

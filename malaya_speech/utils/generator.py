@@ -26,8 +26,8 @@ def frames(
     Returns
     -------
     result: List[malaya_speech.model.frame.FRAME]
-
     """
+
     n = int(sample_rate * (frame_duration_ms / 1000.0))
     offset = 0
     timestamp = 0.0

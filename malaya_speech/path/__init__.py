@@ -15,3 +15,6 @@ S3_PATH_SPEAKER_VECTOR = {
     'vggvox-v1': {'model': 'v1/speaker-vector/pretrained-vggvox-v1.pb'},
     'vggvox-v2': {'model': 'v1/speaker-vector/pretrained-vggvox-v2.pb'},
 }
+
+PATH_VAD = {}
+S3_PATH_VAD = {}
