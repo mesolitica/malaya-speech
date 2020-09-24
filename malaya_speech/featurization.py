@@ -219,11 +219,10 @@ def vggvox_v2(
     mag_T = mag.T
     freq, time = mag_T.shape
     if mode == 'train':
-        if time > spec_len:
-            randtime = np.random.randint(0, time - spec_len)
-            spec_mag = mag_T[:, randtime : randtime + spec_len]
-        else:
+        if time < spec_len:
             spec_mag = np.pad(mag_T, ((0, 0), (0, spec_len - time)), 'constant')
+        else:
+            spec_mag = mag_T
     else:
         spec_mag = mag_T
     # preprocessing, subtract mean, divided by time-wise var
