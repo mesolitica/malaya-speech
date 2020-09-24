@@ -64,7 +64,7 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
     settings = {'vggvox-v2': {'hop_length': 24}}
 
     return classification.load(
-        PATH_VAD, S3_PATH_VAD, model, 'vad', settings[model]
+        PATH_VAD, S3_PATH_VAD, model, 'vad', settings[model], [False, True]
     )
 
 

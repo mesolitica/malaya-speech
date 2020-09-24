@@ -96,8 +96,9 @@ class Pipeline(object):
         name = type(self).__name__
         if hasattr(self, 'func'):
             name = self.func.__name__
-            if self.name:
-                name = f'{name}_{self.name}'
+        if self.name:
+            name = f'{name}_{self.name}'
+
         self._climb(self, name, x)
 
         result = []
@@ -174,7 +175,7 @@ class batching(Pipeline):
     Examples
     --------
     >>> source = Pipeline()
-    >>> source.batching(3).sink(print)
+    >>> source.batching(2).sink(print)
     >>> source.emit([1,2,3,4,5])
     ([1, 2], [3, 4], [5])
     """
@@ -322,15 +323,8 @@ class flatten(Pipeline):
     --------
     >>> source = Pipeline()
     >>> source.flatten().map(print)
-    >>> for x in [[1, 2, 3], [4, 5], [6, 7, 7]]:
-    ...     source.emit(x)
-    1
-    2
-    3
-    4
-    5
-    6
-    7
+    >>> source.emit([[1, 2, 3], [4, 5], [6, 7, 7]])
+    [1, 2, 3, 4, 5, 6, 7, 7]
 
     See Also
     --------
@@ -340,12 +334,11 @@ class flatten(Pipeline):
     def update(self, x, who = None):
         L = []
         for item in x:
-            y = self._emit(item)
-            if type(y) is list:
-                L.extend(y)
+            if isinstance(item, list) or isinstance(item, tuple):
+                L.extend(item)
             else:
-                L.append(y)
-        return L
+                L.append(item)
+        return self._emit(L)
 
 
 @Pipeline.register_api()

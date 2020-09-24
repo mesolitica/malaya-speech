@@ -1,7 +1,11 @@
 import numpy as np
+from malaya_speech.model.frame import FRAME
 
 
 def to_ndarray(array):
+
+    if isinstance(array, FRAME):
+        array = array.array
 
     if isinstance(array, list) or isinstance(array, tuple):
         array = np.array(array)
@@ -11,6 +15,10 @@ def to_ndarray(array):
 
 
 def to_byte(array):
+
+    if isinstance(array, FRAME):
+        array = array.array
+
     if isinstance(array, bytes):
         return array
 
