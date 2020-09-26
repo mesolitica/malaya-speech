@@ -29,7 +29,7 @@ class SPEAKER2VEC:
         return self._sess.run(self._logits, feed_dict = {self._X: inputs})
 
     def __call__(self, inputs):
-        return self.vectorize
+        return self.vectorize(inputs)
 
 
 class CLASSIFICATION:

@@ -72,6 +72,27 @@ class ANNOTATION:
         mode: str = 'intersection',
     ):
 
+        """
+        Crop sample by time.
+
+        Parameters
+        ----------
+        from_t: float, optional (default=None)
+            if None, will take self.min
+        to_t: float, optional (default=None)
+            if None, will take self.max
+        mode: str, optional (default='intersection')
+            crop mode supported. Allowed values:
+
+            * ``'intersection'`` - sampling with crop if middle of the track.
+            * ``'strict'`` - sampling with strictly method, will not crop the track.
+            * ``'loose'`` - sampling with loose method, will take entire track.
+
+        Returns
+        -------
+        result : malaya_speech.model.annotation.ANNOTATION class
+        """
+
         mode = mode.lower()
         if mode not in ['intersection', 'strict', 'loose']:
             raise ValueError(

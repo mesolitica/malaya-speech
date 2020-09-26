@@ -39,5 +39,10 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
         )
 
     return classification.load(
-        PATH_SPEAKER_VECTOR, S3_PATH_SPEAKER_VECTOR, model, 'speaker-vector', {}
+        PATH_SPEAKER_VECTOR,
+        S3_PATH_SPEAKER_VECTOR,
+        model,
+        'speaker-vector',
+        {},
+        {},
     )

@@ -95,9 +95,18 @@ class Pipeline(object):
 
         name = type(self).__name__
         if hasattr(self, 'func'):
-            name = self.func.__name__
+            if 'lambda' in self.func.__name__:
+                if not self.name:
+                    name = self.func.__name__
+                else:
+                    name = ''
+            else:
+                name = self.func.__name__
         if self.name:
-            name = f'{name}_{self.name}'
+            if len(name):
+                name = f'{name}_{self.name}'
+            else:
+                name = self.name
 
         self._climb(self, name, x)
 
@@ -298,7 +307,7 @@ class foreach_map(Pipeline):
 
     def __init__(self, upstream, func, *args, **kwargs):
         self.func = func
-        name = kwargs.pop('stream_name', None)
+        name = kwargs.pop('name', None)
         self.kwargs = kwargs
         self.args = args
 
@@ -330,6 +339,14 @@ class flatten(Pipeline):
     --------
     partition
     """
+
+    def __init__(self, upstream, *args, **kwargs):
+        name = kwargs.pop('name', None)
+        self.kwargs = kwargs
+        self.args = args
+
+        Pipeline.__init__(self, upstream, name = name)
+        _global_sinks.add(self)
 
     def update(self, x, who = None):
         L = []
