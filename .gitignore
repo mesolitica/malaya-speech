@@ -1,7 +1,7 @@
 build
 dist
-malaya.egg-info
-malaya_gpu.egg-info
+malaya_speech.egg-info
+malaya_speech_gpu.egg-info
 .ipynb_checkpoints
 malaya/__pycache__
 *__pycache__
