@@ -21,7 +21,12 @@ setuptools.setup(
     url = 'https://github.com/huseinzol05/malaya-speech-gpu',
     download_url = 'https://github.com/huseinzol05/malaya-speech-gpu/archive/master.zip',
     keywords = ['nlp', 'bm'],
-    install_requires = ['tensorflow-gpu>=1.14,<2.0', 'numpy', 'librosa'],
+    install_requires = [
+        'tensorflow-gpu>=1.14,<2.0',
+        'numpy',
+        'librosa',
+        'soundfile',
+    ],
     license = 'MIT',
     classifiers = [
         'Programming Language :: Python :: 3.6',
