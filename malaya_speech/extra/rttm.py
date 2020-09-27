@@ -3,6 +3,17 @@ from herpetologist import check_type
 
 @check_type
 def load(file: str):
+    """
+    Load RTTM file.
+
+    Parameters
+    ----------
+    file: str
+
+    Returns
+    -------
+    result : Dict[str, malaya_speech.model.annotation.ANNOTATION]
+    """
     from malaya_speech.model.annotation import ANNOTATION
     from malaya_speech.model.frame import SEGMENT
 

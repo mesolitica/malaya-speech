@@ -1,6 +1,6 @@
 from malaya_speech.utils import check_file, load_graph, generate_session
 from malaya_speech.model.tf import SPEAKER2VEC, CLASSIFICATION
-from malaya_speech import featurization
+from malaya_speech.utils import featurization
 
 
 def load(path, s3_path, model, name, extra, label, **kwargs):

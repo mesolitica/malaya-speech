@@ -52,6 +52,19 @@ def visualize_vad(
     sample_rate: int = 16000,
     figsize: Tuple[int, int] = (15, 7),
 ):
+    """
+    Visualize signal given VAD labels. Green means got voice activity, while Red is not.
+
+    Parameters
+    -----------
+    signal: list / np.array
+    preds: List[Tuple[FRAME, bool]]
+    sample_rate: int, optional (default=16000)
+    figsize: Tuple[int, int], optional (default=(15, 7))
+        matplotlib figure size.
+
+    """
+
     try:
         import seaborn as sns
         import matplotlib.pyplot as plt

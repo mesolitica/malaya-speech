@@ -1,16 +1,3 @@
-.. raw:: html
-
-    <p align="center">
-        <a href="#readme">
-            <img alt="logo" width="50%" src="https://malaya-dataset.s3-ap-southeast-1.amazonaws.com/malaya-speech.png">
-        </a>
-    </p>
-    <p align="center">
-        <a href="https://github.com/huseinzol05/Malaya-Speech/blob/master/LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/huseinzol05/malaya-speech.svg?color=blue"></a>
-    </p>
-
-=========
-
 **Malaya-Speech** is a Speech-Toolkit library for bahasa Malaysia, powered by Deep Learning Tensorflow.
 
 Documentation
@@ -75,9 +62,3 @@ Acknowledgement
 ----------------
 
 Thanks to `Im Big <https://www.facebook.com/imbigofficial/>`_, `LigBlou <https://www.facebook.com/ligblou>`_, `Mesolitica <https://mesolitica.com/>`_ and `KeyReply <https://www.keyreply.com/>`_ for sponsoring AWS, GCP and private cloud to train Malaya models.
-
-.. raw:: html
-
-    <a href="#readme">
-        <img alt="logo" width="50%" src="https://malaya-dataset.s3-ap-southeast-1.amazonaws.com/ligblou-mesolitca-keyreply.png">
-    </a>

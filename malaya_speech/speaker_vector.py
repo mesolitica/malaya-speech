@@ -9,6 +9,9 @@ _availability = {
 
 
 def available_model():
+    """
+    List available speaker vector deep models.
+    """
     from malaya_speech.utils import describe_availability
 
     return describe_availability(_availability)

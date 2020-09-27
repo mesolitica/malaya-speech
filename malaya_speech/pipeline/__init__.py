@@ -290,10 +290,21 @@ class foreach_map(Pipeline):
     Parameters
     ----------
     func: callable
+    method: str, optional (default='sync')
+        method to process each elements.
+
+        * ``'sync'`` - loop one-by-one to process.
+        * ``'async'`` - async process all elements at the same time.
+        * ``'thread'`` - multithreading level to process all elements at the same time. 
+                         Default is 1 worker. Override `worker_size=n` to increase.
+        * ``'process'`` - multiprocessing level to process all elements at the same time. 
+                          Default is 1 worker. Override `worker_size=n` to increase.
+
     *args :
         The arguments to pass to the function.
     **kwargs:
-        Keyword arguments to pass to func
+        Keyword arguments to pass to func.
+
     Examples
     --------
     >>> source = Pipeline()
@@ -305,18 +316,73 @@ class foreach_map(Pipeline):
     (4, 4)
     """
 
-    def __init__(self, upstream, func, *args, **kwargs):
+    def __init__(self, upstream, func, method = 'sync', *args, **kwargs):
+        method = method.lower()
+        if method not in ['sync', 'async', 'thread', 'process']:
+            raise ValueError(
+                'method only supported [`sync`, `async`, `thread`, `process`]'
+            )
         self.func = func
         name = kwargs.pop('name', None)
+        worker_size = kwargs.pop('worker_size', 1)
+        self.worker_size = worker_size
         self.kwargs = kwargs
         self.args = args
+        self.method = method
+        if self.method == 'async':
+            try:
+                from tornado import gen
+            except:
+                raise ValueError(
+                    'tornado not installed. Please install it by `pip install tornado` and try again.'
+                )
+
+        if self.method in ['thread', 'process']:
+            try:
+                import dask.bag as db
+            except:
+                raise ValueError(
+                    'dask not installed. Please install it by `pip install dask` and try again.'
+                )
 
         Pipeline.__init__(self, upstream, name = name)
         _global_sinks.add(self)
 
     def update(self, x, who = None):
         try:
-            result = [self.func(e, *self.args, **self.kwargs) for e in x]
+            if self.method == 'async':
+                from tornado import gen
+
+                @gen.coroutine
+                def function(e, *args, **kwargs):
+                    return self.func(e, *args, **kwargs)
+
+                @gen.coroutine
+                def loop():
+                    r = yield [
+                        function(e, *self.args, **self.kwargs) for e in x
+                    ]
+                    return r
+
+                result = loop().result()
+
+            if self.method in ['thread', 'process']:
+                import dask.bag as db
+
+                bags = db.from_sequence(x)
+                mapped = bags.map(self.func, *self.args, **self.kwargs)
+
+                if self.method == 'thread':
+                    scheduler = 'threads'
+
+                if self.method == 'process':
+                    scheduler = 'processes'
+
+                result = mapped.compute(
+                    scheduler = scheduler, num_workers = self.worker_size
+                )
+            if self.method == 'sync':
+                result = [self.func(e, *self.args, **self.kwargs) for e in x]
         except Exception as e:
             logger.exception(e)
             raise

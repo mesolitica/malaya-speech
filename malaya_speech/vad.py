@@ -12,6 +12,9 @@ _availability = {
 
 
 def available_model():
+    """
+    List available VAD deep models.
+    """
     from malaya_speech.utils import describe_availability
 
     return describe_availability(_availability)
@@ -54,6 +57,21 @@ def webrtc(
 
 @check_type
 def deep_model(model: str = 'vggvox-v2', **kwargs):
+    """
+    Load VAD model.
+
+    Parameters
+    ----------
+    model : str, optional (default='vggvox-v2')
+        Model architecture supported. Allowed values:
+
+        * ``'vggvox-v1'`` - finetuned VGGVox V1.
+        * ``'vggvox-v2'`` - finetuned VGGVox V2.
+
+    Returns
+    -------
+    result : malaya_speech.model.tf.CLASSIFICATION class
+    """
     model = model.lower()
     if model not in _availability:
         raise Exception(
@@ -68,6 +86,17 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
 
 
 def group_vad(frames: List[Tuple[FRAME, bool]]):
+    """
+    Group multiple frames based on label.
+
+    Parameters
+    ----------
+    frames: List[Tuple[FRAME, bool]]
+
+    Returns
+    -------
+    result : List[FRAME]
+    """
     results, result, last = [], [], None
 
     for frame in frames:

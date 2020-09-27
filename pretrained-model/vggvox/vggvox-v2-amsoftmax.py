@@ -9,7 +9,7 @@ import librosa
 import numpy as np
 
 
-def load_wav(vid_path, sr = 16000, mode = 'eval'):
+def load_wav(vid_path, sr = 16000, mode = 'train'):
     wav, sr_ret = librosa.load(vid_path, sr = sr)
     assert sr_ret == sr
     if mode == 'train':
@@ -107,9 +107,11 @@ def frames(audio, frame_duration_ms: int = 30, sample_rate: int = 16000):
     return results
 
 
-files = glob('../voxceleb/wav/*.wav')
-random.shuffle(files)
-len(files)
+def random_sample(sample, sr, length = 500):
+    sr = int(sr / 1000)
+    r = np.random.randint(0, len(sample) - (sr * length))
+    return sample[r : r + sr * length]
+
 
 import pickle
 
@@ -121,20 +123,14 @@ def get_id(file):
     return file.split('/')[-1].split('-')[1]
 
 
-from collections import defaultdict
-
-speakers = defaultdict(list)
-
-for no, file in enumerate(files):
-    speaker = get_id(file)
-    speakers[speaker].append(no)
-
-unique_speakers = sorted(list(speakers.keys()))
-
 import json
 
-with open('indices.json', 'w') as fopen:
-    json.dump({'files': files, 'speakers': speakers}, fopen)
+with open('indices.json') as fopen:
+    data = json.load(fopen)
+
+files = data['files']
+speakers = data['speakers']
+unique_speakers = sorted(list(speakers.keys()))
 
 from sklearn.utils import shuffle
 import itertools
@@ -142,47 +138,29 @@ import itertools
 cycle_files = itertools.cycle(files)
 
 
-def generate(
-    partition = 100, batch_size = 32, sample_rate = 16000, max_length = 5
-):
+def generate(batch_size = 48, sample_rate = 16000, max_length = 5):
     while True:
-        batch_files = [next(cycle_files) for _ in range(partition)]
+        batch_files = [next(cycle_files) for _ in range(batch_size)]
         X, Y = [], []
         for file in batch_files:
-            y = unique_speakers.index(get_id(file))
-            w = load_wav(file)
-            if len(w) / sample_rate > max_length:
-                X.append(w[: sample_rate * max_length])
-                Y.append(y)
-            for _ in range(random.randint(1, 3)):
-                f = frames(w, random.randint(500, max_length * 1000))
-                X.extend(f)
-                Y.extend([y] * len(f))
-
-        for k in range(len(X)):
-            if random.randint(0, 1):
-                for _ in range(random.randint(1, 5)):
-                    x = add_noise(
-                        X[k], random.choice(noises), random.uniform(0.1, 0.6)
-                    )
-                    X.append(x)
-                    Y.append(Y[k])
-
-        actual_X, actual_Y = [], []
-
-        for k in range(len(X)):
             try:
-                actual_X.append(load_data(X[k]))
-                actual_Y.append(Y[k])
-            except:
+                y = unique_speakers.index(get_id(file))
+                w = load_wav(file)
+                if len(w) / sample_rate > max_length:
+                    w = random_sample(
+                        w, sample_rate, random.randint(500, max_length * 1000)
+                    )
+
+                if random.randint(0, 1):
+                    w = add_noise(
+                        w, random.choice(noises), random.uniform(0.1, 0.6)
+                    )
+                X.append(load_data(w))
+                Y.append(y)
+            except Exception as e:
                 pass
 
-        X, Y = shuffle(actual_X, actual_Y)
-
-        for k in range(0, len(X), batch_size):
-            batch_x = X[k : k + batch_size]
-            batch_y = Y[k : k + batch_size]
-            yield padding_sequence_nd(batch_x), batch_y
+        yield padding_sequence_nd(X), Y
 
 
 g = generate()
@@ -698,17 +676,27 @@ def vggvox_resnet2d_icassp(
         name = 'fc6',
     )(x)
 
-    x_l2 = keras.layers.Lambda(lambda x: K.l2_normalize(x, 1))(x)
+    # x_l2 = keras.layers.Lambda(lambda x: K.l2_normalize(x, 1))(x)
+    # y = keras.layers.Dense(
+    #     num_class,
+    #     kernel_initializer = 'orthogonal',
+    #     use_bias = False,
+    #     trainable = True,
+    #     kernel_constraint = keras.constraints.unit_norm(),
+    #     kernel_regularizer = keras.regularizers.l2(weight_decay),
+    #     bias_regularizer = keras.regularizers.l2(weight_decay),
+    #     name = 'prediction',
+    # )(x_l2)
+
     y = keras.layers.Dense(
         num_class,
         kernel_initializer = 'orthogonal',
         use_bias = False,
         trainable = True,
-        kernel_constraint = keras.constraints.unit_norm(),
         kernel_regularizer = keras.regularizers.l2(weight_decay),
         bias_regularizer = keras.regularizers.l2(weight_decay),
         name = 'prediction',
-    )(x_l2)
+    )(x)
 
     if mode == 'eval':
         y = keras.layers.Lambda(lambda x: keras.backend.l2_normalize(x, 1))(x)
@@ -717,7 +705,7 @@ def vggvox_resnet2d_icassp(
 
 
 class Model:
-    def __init__(self, epochs, num_warmup_steps = 0, init_lr = 1e-2):
+    def __init__(self, epochs, num_warmup_steps = 0, init_lr = 1e-4):
         self.X = tf.placeholder(tf.float32, [None, 257, None, 1])
         self.Y = tf.placeholder(tf.int32, [None])
         self.batch_size = tf.shape(self.X)[0]
@@ -741,9 +729,10 @@ class Model:
         self.margin = 0.35
 
         y_true = tf.one_hot(self.Y, len(unique_speakers))
-        y_pred = (
-            y_true * (self.logits - self.margin) + (1 - y_true) * self.logits
-        ) * self.scale
+        # y_pred = (
+        #     y_true * (self.logits - self.margin) + (1 - y_true) * self.logits
+        # ) * self.scale
+        y_pred = self.logits
         cost = tf.nn.softmax_cross_entropy_with_logits(
             labels = y_true, logits = y_pred
         )

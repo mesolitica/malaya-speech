@@ -229,3 +229,42 @@ def vggvox_v2(
     mu = np.mean(spec_mag, 0, keepdims = True)
     std = np.std(spec_mag, 0, keepdims = True)
     return (spec_mag - mu) / (std + 1e-5)
+
+
+def scale_mel(
+    y,
+    sr = 16000,
+    n_fft = 2048,
+    hop_length = 200,
+    win_length = 1000,
+    n_mels = 256,
+    ref_db = 20,
+    max_db = 100,
+    factor = 15,
+):
+    mel = librosa.feature.melspectrogram(
+        y = y,
+        sr = sr,
+        S = None,
+        n_fft = n_fft,
+        hop_length = hop_length,
+        win_length = win_length,
+        window = 'hann',
+        center = True,
+        pad_mode = 'reflect',
+        power = 1.0,
+        n_mels = n_mels,
+    )
+    mel = factor * np.log10(mel)
+    mel = np.clip((mel - ref_db + max_db) / max_db, 1e-11, 1)
+    return mel
+
+
+def unscale_mel(mel, ref_db = 20, max_db = 100, factor = 15):
+    inv_mel = ((mel * max_db) - max_db + ref_db) / factor
+    inv_mel = np.power(10, inv_mel)
+    return inv_mel
+
+
+def mel_to_spectrogram(mel, sr = 16000, n_fft = 2048):
+    return librosa.feature.inverse.mel_to_stft(mel, sr = sr, n_fft = n_fft)

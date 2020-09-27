@@ -269,7 +269,9 @@ def describe_availability(dict, transpose = True):
 from . import astype
 from . import bytepair
 from . import char
+from . import featurization
 from . import generator
+from . import griffin_lim
 from . import read
 from . import validator
 from . import padding
