@@ -1,7 +1,58 @@
 import os
 
 
-def train(text, model_path: str, vocab_size: int = 500):
+class BYTEPAIR:
+    def __init__(self, model, encode_type):
+        self.model = model
+        self._encode_type = encode_type
+
+    def encode(self, string):
+        """
+        Encode string to integer representation.
+
+        Parameters
+        -----------
+        string: str
+
+        Returns
+        --------
+        result: List[int]
+        """
+        return self.model.encode(string, output_type = self._encode_type) + [1]
+
+    def decode(self, ids):
+        """
+        Decode integer representation to string.
+
+        Parameters
+        -----------
+        ids: List[int]
+
+        Returns
+        --------
+        result: str
+        """
+        ids = [i for i in ids if i > 1]
+        return self.model.decode(ids)[0]
+
+
+def train(text, model_path: str = 'bpe.model', vocab_size: int = 200):
+    """
+    Train YouTokenToMe bytepair encoding.
+
+    Parameters
+    ----------
+    text: List[str] / Tuple[str] / str
+        Can be List[str] or Tuple[str] or file name.
+    model_path: str, optional (default='bpe.model')
+        model name.
+    vocab_size: int, optional (default=200)
+
+    Returns
+    -------
+    result : yttm.BPE
+    """
+
     try:
         import youtokentome as yttm
     except:
@@ -18,24 +69,38 @@ def train(text, model_path: str, vocab_size: int = 500):
 
         text = 'temp.txt'
 
-    return yttm.BPE.train(
-        data = text, vocab_size = vocab_size, model = model_path
+    bpe = yttm.BPE.train(
+        data = text,
+        vocab_size = vocab_size,
+        model = model_path,
+        pad_id = 0,
+        unk_id = 3,
+        bos_id = 2,
+        eos_id = 1,
     )
 
+    if delete:
+        try:
+            os.remove(text)
+        except:
+            pass
 
-class BYTEPAIR:
-    def __init__(self, model, encode_type):
-        self.model = model
-        self._encode_type = encode_type
-
-    def encode(self, string):
-        return self.model.encode(string, output_type = self._encode_type)
-
-    def decode(self, ids):
-        return self.model.decode(ids)
+    return bpe
 
 
-def load(model_path):
+def load(model_path: str):
+    """
+    Load YouTokenToMe bytepair encoding.
+
+    Parameters
+    ----------
+    model_path: str
+        model name.
+
+    Returns
+    -------
+    result : yttm.BPE
+    """
     try:
         import youtokentome as yttm
     except:

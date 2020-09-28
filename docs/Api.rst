@@ -9,6 +9,48 @@ malaya_speech
 .. automodule:: malaya
     :members:
 
+malaya_speech.utils.astype
+--------------------------
+
+.. automodule:: malaya_speech.utils.astype
+    :members:
+
+malaya_speech.utils.bytepair
+-------------------------------
+
+.. automodule:: malaya_speech.utils.bytepair
+    :members:
+
+malaya_speech.utils.char
+--------------------------
+
+.. automodule:: malaya_speech.utils.char
+    :members:
+
+malaya_speech.utils.generator
+------------------------------
+
+.. automodule:: malaya_speech.utils.generator
+    :members:
+
+malaya_speech.utils.griffin_lim
+---------------------------------
+
+.. automodule:: malaya_speech.utils.griffin_lim
+    :members:
+
+malaya_speech.utils.group
+--------------------------
+
+.. automodule:: malaya_speech.utils.group
+    :members:
+
+malaya_speech.utils.padding
+---------------------------
+
+.. automodule:: malaya_speech.utils.padding
+    :members:
+
 malaya_speech.extra.rttm
 --------------------------
 

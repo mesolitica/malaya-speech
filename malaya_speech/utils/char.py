@@ -23,6 +23,17 @@ def strip_ids(ids, ids_to_strip):
 
 
 def encode(string, add_eos = True):
+    """
+    Encode string to integer representation based on ascii table.
+
+    Parameters
+    -----------
+    string: str
+
+    Returns
+    --------
+    result: List[int]
+    """
     numres = NUM_RESERVED_TOKENS
     if six.PY2:
         if isinstance(s, unicode):
@@ -36,6 +47,17 @@ def encode(string, add_eos = True):
 
 
 def decode(ids, strip_extraneous = False):
+    """
+    Decode integer representation to string based on ascii table.
+
+    Parameters
+    -----------
+    ids: List[int]
+
+    Returns
+    --------
+    result: str
+    """
     if strip_extraneous:
         ids = strip_ids(ids, list(range(NUM_RESERVED_TOKENS or 0)))
     numres = NUM_RESERVED_TOKENS

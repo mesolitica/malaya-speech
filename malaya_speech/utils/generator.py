@@ -44,11 +44,3 @@ def frames(
             )
         )
     return results
-
-
-def combine_frames(frames: List[FRAME]):
-    a, duration = [], 0
-    for r in frames:
-        a.extend(r.array)
-        duration += r.duration
-    return FRAME(a, frames[0].timestamp, duration)

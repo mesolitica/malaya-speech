@@ -272,6 +272,7 @@ from . import char
 from . import featurization
 from . import generator
 from . import griffin_lim
+from . import group
 from . import read
 from . import validator
 from . import padding

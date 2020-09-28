@@ -3,6 +3,17 @@ import numpy as np
 
 
 def librosa(spectrogram, n_iter = 100, win_length = 1000, hop_length = 200):
+    """
+    Change spectrogram into waveform using Librosa.
+
+    Parameters
+    ----------
+    spectrogram: np.array
+
+    Returns
+    --------
+    result: np.array
+    """
     return librosa_.griffinlim(
         spectrogram,
         n_iter = n_iter,

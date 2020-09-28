@@ -15,9 +15,20 @@
 #
 import os
 import sys
+from unittest.mock import MagicMock
+
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+        return MagicMock()
+
 
 SOURCE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__name__)))
 sys.path.insert(0, SOURCE_DIR)
+
+MOCK_MODULES = ['librosa', 'librosa.display', 'soundfile']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- Project information -----------------------------------------------------
 

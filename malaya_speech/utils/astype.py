@@ -3,6 +3,17 @@ from malaya_speech.model.frame import FRAME
 
 
 def to_ndarray(array):
+    """
+    Change list / tuple / bytes into np.array
+
+    Parameters
+    ----------
+    array: list / tuple / bytes
+
+    Returns
+    -------
+    result : np.array
+    """
 
     if isinstance(array, FRAME):
         array = array.array
@@ -15,6 +26,17 @@ def to_ndarray(array):
 
 
 def to_byte(array):
+    """
+    Change list / tuple / np.array into bytes
+
+    Parameters
+    ----------
+    array: ist / tuple / np.array
+
+    Returns
+    -------
+    result : bytes
+    """
 
     if isinstance(array, FRAME):
         array = array.array
@@ -33,6 +55,18 @@ def to_byte(array):
 
 
 def float_to_int(array, type = np.int16):
+    """
+    Change np.array float32 / float64 into np.int16
+
+    Parameters
+    ----------
+    array: np.array
+    type: np.int16
+
+    Returns
+    -------
+    result : np.array
+    """
 
     array = to_ndarray(array)
 
@@ -45,13 +79,25 @@ def float_to_int(array, type = np.int16):
 
 
 def int_to_float(array, type = np.float32):
+    """
+    Change np.array int16 into np.float32
+
+    Parameters
+    ----------
+    array: np.array
+    type: np.float32
+
+    Returns
+    -------
+    result : np.array
+    """
 
     array = to_ndarray(array)
 
     if array.dtype == type:
         return array
 
-    if array.dtype not in [np.float32, np.float64]:
+    if array.dtype not in [np.float16, np.float32, np.float64]:
         array = array.astype(np.float32) / np.max(np.abs(array))
 
     return array
