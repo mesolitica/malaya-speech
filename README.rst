@@ -38,22 +38,31 @@ Features
 
 -  **Emotion Detection**
 
-   Detect emotions in speech using Pretrained Malaya-Speech models.
+   Detect emotions in speech using Finetuned VGGVox and Inception-V4-Vox Malaya-Speech models.
 -  **Gender Detection**
 
-   Detect genders in speech using Pretrained Malaya-Speech models.
+   Detect genders in speech using Finetuned VGGVox and Inception-V4-Vox Malaya-Speech models.
 -  **Noise Reduction**
 
-   Reduce multilevel noises using Pretrained Malaya-Speech models.
+   Reduce multilevel noises using Pretrained Vocoder Malaya-Speech models.
+-  **Speaker Change**
+
+   Detect changing speakers using Finetuned VGGVox and Inception-V4-Vox Malaya-Speech models.
+-  **Speaker overlap**
+
+   Detect overlap speakers using Finetuned VGGVox and Inception-V4-Vox Malaya-Speech models.
 -  **Speaker Vector**
 
    Calculate similarity between speakers using Pretrained Malaya-Speech models.
 -  **Speech Enhancement**
 
-   enhance speech using Pretrained Malaya-Speech models.
+   enhance speech using Pretrained Vocoder Malaya-Speech models.
+-  **Speech to Text**
+
+   End-to-End Speech to Text using Pretrained STT Malaya-Speech models.
 -  **Voice Activity Detection**
 
-   Detect voice activities using Pretrained Malaya-Speech models.
+   Detect voice activities using Finetuned VGGVox and Inception-V4-Vox Malaya-Speech models.
 
 References
 -----------
