@@ -241,6 +241,7 @@ def scale_mel(
     ref_db = 20,
     max_db = 100,
     factor = 15,
+    scale = True,
 ):
     mel = librosa.feature.melspectrogram(
         y = y,
@@ -255,8 +256,9 @@ def scale_mel(
         power = 1.0,
         n_mels = n_mels,
     )
-    mel = factor * np.log10(mel)
-    mel = np.clip((mel - ref_db + max_db) / max_db, 1e-11, 1)
+    if scale:
+        mel = factor * np.log10(mel)
+        mel = np.clip((mel - ref_db + max_db) / max_db, 1e-11, 1)
     return mel
 
 
@@ -267,4 +269,6 @@ def unscale_mel(mel, ref_db = 20, max_db = 100, factor = 15):
 
 
 def mel_to_spectrogram(mel, sr = 16000, n_fft = 2048):
-    return librosa.feature.inverse.mel_to_stft(mel, sr = sr, n_fft = n_fft)
+    return librosa.feature.inverse.mel_to_stft(
+        mel, sr = sr, n_fft = n_fft, power = 1.0
+    )

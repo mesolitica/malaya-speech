@@ -127,7 +127,7 @@ def random_stretch(sample, low = 0.5, high = 1.3):
 
 
 def random_sample(sample, sr, length = 500):
-    sr = int(sr / 100)
+    sr = int(sr / 1000)
     r = np.random.randint(0, len(sample) - (sr * length))
     return sample[r : r + sr * length]
 

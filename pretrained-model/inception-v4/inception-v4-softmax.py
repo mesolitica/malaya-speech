@@ -648,45 +648,6 @@ import random
 cycle_files = itertools.cycle(files)
 
 
-# def generate(partition = 100, sample_rate = 16000, max_length = 5):
-#     while True:
-#         batch_files = [next(cycle_files) for _ in range(partition)]
-#         X, Y = [], []
-#         for file in batch_files:
-#             y = unique_speakers.index(get_id(file))
-#             w = load_wav(file)
-#             if len(w) / sample_rate > max_length:
-#                 X.append(w[: sample_rate * max_length])
-#                 Y.append(y)
-#             for _ in range(random.randint(1, 3)):
-#                 f = frames(w, random.randint(500, max_length * 1000))
-#                 X.extend(f)
-#                 Y.extend([y] * len(f))
-
-#         for k in range(len(X)):
-#             if random.randint(0, 1):
-#                 for _ in range(random.randint(1, 5)):
-#                     x = add_noise(
-#                         X[k], random.choice(noises), random.uniform(0.1, 0.6)
-#                     )
-#                     X.append(x)
-#                     Y.append(Y[k])
-
-#         actual_X, actual_Y = [], []
-
-#         for k in range(len(X)):
-#             try:
-#                 actual_X.append(load_data(X[k]))
-#                 actual_Y.append(Y[k])
-#             except:
-#                 pass
-
-#         X, Y = shuffle(actual_X, actual_Y)
-
-#         for k in range(len(X)):
-#             yield {'inputs': np.expand_dims(X[k], -1), 'targets': [Y[k]]}
-
-
 def generate(sample_rate = 16000, max_length = 5):
     while True:
         file = next(cycle_files)
@@ -742,88 +703,6 @@ def get_dataset(batch_size = 32, shuffle_size = 5):
     return get
 
 
-# def model(
-#     inputs,
-#     is_training = True,
-#     dropout_keep_prob = 0.8,
-#     reuse = None,
-#     scope = 'InceptionV4',
-# ):
-#     with tf.variable_scope(
-#         scope, 'InceptionV4', [inputs], reuse = reuse
-#     ) as scope:
-#         with slim.arg_scope(
-#             [slim.batch_norm, slim.dropout], is_training = is_training
-#         ):
-#             net, end_points = inception_v4_base(inputs, scope = scope)
-#             return net
-
-
-# def model2(
-#     inputs,
-#     num_classes = 2,
-#     is_training = True,
-#     vlad_clusters = 8,
-#     ghost_clusters = 2,
-#     bottleneck_dim = 512,
-# ):
-#     with slim.arg_scope(inception_utils.inception_arg_scope()):
-#         net = model(inputs, is_training = is_training)
-
-#     x_fc = keras.layers.Conv2D(
-#         bottleneck_dim,
-#         (6, 1),
-#         strides = (1, 1),
-#         activation = 'relu',
-#         kernel_initializer = 'orthogonal',
-#         use_bias = True,
-#         trainable = True,
-#         kernel_regularizer = keras.regularizers.l2(weight_decay),
-#         bias_regularizer = keras.regularizers.l2(weight_decay),
-#         name = 'x_fc',
-#     )(net)
-
-#     x_k_center = keras.layers.Conv2D(
-#         vlad_clusters + ghost_clusters,
-#         (6, 1),
-#         strides = (1, 1),
-#         kernel_initializer = 'orthogonal',
-#         use_bias = True,
-#         trainable = True,
-#         kernel_regularizer = keras.regularizers.l2(weight_decay),
-#         bias_regularizer = keras.regularizers.l2(weight_decay),
-#         name = 'gvlad_center_assignment',
-#     )(net)
-#     x = VladPooling(
-#         k_centers = vlad_clusters,
-#         g_centers = ghost_clusters,
-#         mode = 'gvlad',
-#         name = 'gvlad_pool',
-#     )([x_fc, x_k_center])
-
-#     x = keras.layers.Dense(
-#         bottleneck_dim,
-#         activation = 'relu',
-#         kernel_initializer = 'orthogonal',
-#         use_bias = True,
-#         trainable = True,
-#         kernel_regularizer = keras.regularizers.l2(weight_decay),
-#         bias_regularizer = keras.regularizers.l2(weight_decay),
-#         name = 'fc6',
-#     )(x)
-
-#     logits = keras.layers.Dense(
-#         num_classes,
-#         kernel_initializer = 'orthogonal',
-#         use_bias = False,
-#         trainable = True,
-#         kernel_regularizer = keras.regularizers.l2(weight_decay),
-#         bias_regularizer = keras.regularizers.l2(weight_decay),
-#         name = 'prediction',
-#     )(x)
-#     return logits
-
-
 def model(
     inputs,
     is_training = True,
@@ -848,10 +727,6 @@ def model(
                 stride = 1,
                 padding = 'SAME',
             ):
-
-                # Final pooling and prediction
-                # TODO(sguada,arnoegw): Consider adding a parameter global_pool which
-                # can be set to False to disable pooling here (as in resnet_*()).
                 with tf.variable_scope('Logits'):
                     # 8 x 8 x 1536
                     kernel_size = net.get_shape()[1:3]
@@ -900,17 +775,6 @@ def model_fn(features, labels, mode, params):
     with slim.arg_scope(inception_utils.inception_arg_scope()):
         logits = model(features['inputs'], num_classes = len(unique_speakers))
 
-    # logits = model2(features['inputs'], len(unique_speakers))
-
-    # scale = 30
-    # margin = 0.35
-    # y_true = tf.one_hot(Y, len(unique_speakers))
-    # y_pred = (y_true * (logits - margin) + (1 - y_true) * logits) * scale
-    # cost = tf.nn.softmax_cross_entropy_with_logits(
-    #     labels = y_true, logits = y_pred
-    # )
-    # loss = tf.reduce_mean(cost)
-
     loss = tf.reduce_mean(
         tf.nn.sparse_softmax_cross_entropy_with_logits(
             logits = logits, labels = Y
@@ -940,8 +804,6 @@ def model_fn(features, labels, mode, params):
         optimizer = tf.train.RMSPropOptimizer(
             learning_rate, decay = 0.9, momentum = 0.9, epsilon = 1.0
         )
-        # optimizer = tf.train.AdamOptimizer(learning_rate)
-        # optimizer = tf.train.GradientDescentOptimizer(learning_rate)
 
         train_op = optimizer.minimize(loss, global_step = global_step)
         estimator_spec = tf.estimator.EstimatorSpec(

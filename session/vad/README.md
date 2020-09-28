@@ -1,3 +1,9 @@
+# Voice Activity Detection
+
+Finetuned available pretrained Malaya-Speech speaker vector models to do Voice Activity Detection.
+
+**This directory is very lack of comments, understand Tensorflow, Tensorflow estimator, Tensorflow Dataset really helpful**.
+
 ## how-to
 
 1. Generate dataset [prepare-vad-dataset.ipynb](prepare-vad-dataset.ipynb).
