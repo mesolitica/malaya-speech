@@ -78,8 +78,17 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
             'model not supported, please check supported models from malaya_speech.vad.available_model()'
         )
 
-    settings = {'vggvox-v2': {'hop_length': 24}}
+    settings = {
+        'vggvox-v1': {'frame_len': 0.005, 'frame_step': 0.0005},
+        'vggvox-v2': {'hop_length': 24},
+    }
 
     return classification.load(
-        PATH_VAD, S3_PATH_VAD, model, 'vad', settings[model], [False, True]
+        path = PATH_VAD,
+        s3_path = S3_PATH_VAD,
+        model = model,
+        name = 'vad',
+        extra = settings[model],
+        label = [False, True],
+        **kwargs
     )

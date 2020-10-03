@@ -13,6 +13,8 @@ Trained on Voxceleb. Provided 2 versions,
 
 2. Load generated Tensorflow checkpoints and run prediction, [v1-tf.ipynb](v1-tf.ipynb) or [v2-tf.ipynb](v2-tf.ipynb).
 
+3. Freeze the models for production, [export-v1.ipynb](export-v1.ipynb) or [export-v2.ipynb](export-v2.ipynb)
+
 ## Download
 
 **These checkpoints are mirrored**.

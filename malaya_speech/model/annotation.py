@@ -135,7 +135,7 @@ class ANNOTATION:
 
         return cropped
 
-    def plot(self):
+    def plot(self, ax = None):
 
         try:
             import seaborn as sns
@@ -208,9 +208,11 @@ class ANNOTATION:
         styles = get_styles(len(self.labels))
         styles = {label: style for label, style in zip(self.labels, styles)}
 
-        figsize = plt.rcParams['figure.figsize']
-        plt.rcParams['figure.figsize'] = (20, 2)
-        fig, ax = plt.subplots()
+        if ax is None:
+            figsize = plt.rcParams['figure.figsize']
+            plt.rcParams['figure.figsize'] = (20, 2)
+            fig, ax = plt.subplots()
+
         labels = self.labels
         xlim = (self.min, self.max)
         segments = [s for s, _ in self.itertracks(yield_label = False)]
@@ -236,3 +238,4 @@ class ANNOTATION:
             borderaxespad = 0.0,
             frameon = False,
         )
+        return ax

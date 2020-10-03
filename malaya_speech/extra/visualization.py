@@ -5,7 +5,12 @@ from typing import List, Tuple
 
 
 def get_ax(
-    ax = None, xlim = (0, 1000), ylim = (0, 1), yaxis = False, time = True
+    ax = None,
+    xlim = (0, 1000),
+    ylim = (0, 1),
+    yaxis = False,
+    time = True,
+    **kwargs
 ):
     try:
         import seaborn as sns
@@ -51,6 +56,7 @@ def visualize_vad(
     preds: List[Tuple[FRAME, bool]],
     sample_rate: int = 16000,
     figsize: Tuple[int, int] = (15, 7),
+    ax = None,
 ):
     """
     Visualize signal given VAD labels. Green means got voice activity, while Red is not.
@@ -73,9 +79,10 @@ def visualize_vad(
             'seaborn and matplotlib not installed. Please install it by `pip install matplotlib seaborn` and try again.'
         )
 
-    fig = plt.figure(figsize = figsize)
-    sns.set()
-    ax = fig.add_subplot(1, 1, 1)
+    if ax is None:
+        sns.set()
+        fig = plt.figure(figsize = figsize)
+        ax = fig.add_subplot(1, 1, 1)
     ax.plot([i / sample_rate for i in range(len(signal))], signal)
     for predictions in preds:
         color = 'g' if predictions[1] else 'r'
@@ -88,3 +95,44 @@ def visualize_vad(
     plt.xticks(size = 15)
     plt.yticks(size = 15)
     plt.show()
+
+
+def plot_classification(
+    preds,
+    description,
+    ax = None,
+    fontsize_text = 14,
+    x_text = 0.05,
+    y_text = 0.2,
+    **kwargs
+):
+    """
+    Visualize probability / boolean.
+    
+    Parameters
+    -----------
+    preds: List[Tuple[FRAME, bool / float]]
+    description: str
+    ax: ax, optional (default = None)
+    fontsize_text: int, optional (default = 14)
+    x_text: float, optional (default = 0.05)
+    y_text: float, optional (default = 0.2)
+    """
+
+    if ax is None:
+        fig = plt.figure(figsize = figsize)
+        ax = fig.add_subplot(1, 1, 1)
+
+    bool_map = {False: 0.1, True: 0.9}
+
+    x = [i[0].timestamp for i in preds]
+    y = [bool_map.get(i[1], i[1]) for i in preds]
+
+    min_timestamp = min(x)
+    max_timestamp = max([i[0].timestamp + i[0].duration for i in preds])
+    ax = get_ax(ax, xlim = (min_timestamp, max_timestamp), **kwargs)
+    ax.plot(x, y)
+    ax.text(
+        x[int(len(x) * x_text)], y_text, description, fontsize = fontsize_text
+    )
+    return ax

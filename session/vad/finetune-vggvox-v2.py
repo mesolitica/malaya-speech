@@ -65,7 +65,7 @@ def load_data(
     wav,
     win_length = 400,
     sr = 16000,
-    hop_length = 16,
+    hop_length = 24,
     n_fft = 512,
     spec_len = 250,
     mode = 'train',
@@ -128,9 +128,8 @@ def parse(serialized_example):
     return features
 
 
-def get_dataset(path, batch_size = 16, shuffle_size = 5, thread_count = 24):
+def get_dataset(files, batch_size = 16, shuffle_size = 5, thread_count = 24):
     def get():
-        files = glob(path)
         dataset = tf.data.TFRecordDataset(files)
         dataset = dataset.map(parse, num_parallel_calls = thread_count)
         dataset = dataset.padded_batch(
@@ -762,8 +761,12 @@ train_hooks = [
         ['train_accuracy', 'train_loss'], every_n_iter = 1
     )
 ]
-train_dataset = get_dataset('vad2/data/vad-train-*', batch_size = 64)
-dev_dataset = get_dataset('vad2/data/vad-dev-*', batch_size = 32)
+
+train_files = glob('vad2/data/vad-train-*') + glob('noise/data/vad-train-*')
+train_dataset = get_dataset(train_files, batch_size = 64)
+
+dev_files = glob('vad2/data/vad-dev-*') + glob('noise/data/vad-dev-*')
+dev_dataset = get_dataset(dev_files, batch_size = 32)
 
 save_directory = 'output-vggvox-v2-vad'
 

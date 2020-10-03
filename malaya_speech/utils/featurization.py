@@ -1,7 +1,9 @@
+from scipy.signal import lfilter, butter
 from scipy.io.wavfile import read
 from scipy import interpolate
-import librosa
 import numpy as np
+import librosa
+import decimal
 
 
 def normalize(values):
@@ -114,7 +116,7 @@ def mfcc_delta(signal, freq = 16000, n_mfcc = 42, size = 512, step = 16):
     return features.T
 
 
-# for VGGVOX V1
+# for VGGVox v1
 def build_buckets(max_sec, step_sec, frame_step):
     buckets = {}
     frames_per_sec = int(1 / frame_step)
@@ -136,13 +138,22 @@ def build_buckets(max_sec, step_sec, frame_step):
     return buckets
 
 
-# for VGGVOX V1
+# for VGGVox v1
 def get_buckets(max_sec = 10, bucket_step = 1, frame_step = 0.01):
     return build_buckets(max_sec, bucket_step, frame_step)
 
 
 # https://github.com/christianvazquez7/ivector/blob/master/MSRIT/rm_dc_n_dither.m
-# for VGGVOX V1
+# for VGGVox v1
+def round_half_up(number):
+    return int(
+        decimal.Decimal(number).quantize(
+            decimal.Decimal('1'), rounding = decimal.ROUND_HALF_UP
+        )
+    )
+
+
+# for VGGVox v1
 def remove_dc_and_dither(sin, sample_rate):
     if sample_rate == 16e3:
         alpha = 0.99
@@ -163,6 +174,68 @@ def remove_dc_and_dither(sin, sample_rate):
 
 
 # for VGGVox v1
+def preemphasis(signal, coeff = 0.95):
+    return np.append(signal[0], signal[1:] - coeff * signal[:-1])
+
+
+# for VGGVox v1
+def rolling_window(a, window, step = 1):
+    # http://ellisvalentiner.com/post/2017-03-21-np-strides-trick
+    shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
+    strides = a.strides + (a.strides[-1],)
+    return np.lib.stride_tricks.as_strided(a, shape = shape, strides = strides)[
+        ::step
+    ]
+
+
+# for VGGVox v1
+def framesig(
+    sig,
+    frame_len,
+    frame_step,
+    winfunc = lambda x: numpy.ones((x,)),
+    stride_trick = True,
+):
+    slen = len(sig)
+    frame_len = int(round_half_up(frame_len))
+    frame_step = int(round_half_up(frame_step))
+    if slen <= frame_len:
+        numframes = 1
+    else:
+        numframes = 1 + int(
+            math.ceil((1.0 * slen - frame_len) / frame_step)
+        )  # LV
+
+    padlen = int((numframes - 1) * frame_step + frame_len)
+
+    zeros = np.zeros((padlen - slen,))
+    padsignal = np.concatenate((sig, zeros))
+    if stride_trick:
+        win = winfunc(frame_len)
+        frames = rolling_window(
+            padsignal, window = frame_len, step = frame_step
+        )
+    else:
+        indices = (
+            numpy.tile(numpy.arange(0, frame_len), (numframes, 1))
+            + numpy.tile(
+                numpy.arange(0, numframes * frame_step, frame_step),
+                (frame_len, 1),
+            ).T
+        )
+        indices = numpy.array(indices, dtype = numpy.int32)
+        frames = padsignal[indices]
+        win = numpy.tile(winfunc(frame_len), (numframes, 1))
+
+    return frames * win
+
+
+# for VGGVox v1
+def normalize_frames(m, epsilon = 1e-12):
+    return np.array([(v - np.mean(v)) / max(np.std(v), epsilon) for v in m])
+
+
+# for VGGVox v1
 def vggvox_v1(
     signal,
     sample_rate = 16000,
@@ -173,10 +246,11 @@ def vggvox_v1(
     buckets = None,
     **kwargs
 ):
+    signal = signal.copy()
     signal *= 2 ** 15
     signal = remove_dc_and_dither(signal, sample_rate)
-    signal = sigproc.preemphasis(signal, coeff = preemphasis_alpha)
-    frames = sigproc.framesig(
+    signal = preemphasis(signal, coeff = preemphasis_alpha)
+    frames = framesig(
         signal,
         frame_len = frame_len * sample_rate,
         frame_step = frame_step * sample_rate,
@@ -192,7 +266,7 @@ def vggvox_v1(
         return out
 
     else:
-        return fft_norm
+        return fft_norm.astype('float32')
 
 
 # for VGGVox v2
@@ -210,7 +284,7 @@ def vggvox_v2(
     hop_length = 160,
     n_fft = 512,
     spec_len = 250,
-    mode = 'train',
+    mode = 'eval',
     **kwargs
 ):
     wav = np.append(signal, signal[::-1])
@@ -272,3 +346,11 @@ def mel_to_spectrogram(mel, sr = 16000, n_fft = 2048):
     return librosa.feature.inverse.mel_to_stft(
         mel, sr = sr, n_fft = n_fft, power = 1.0
     )
+
+
+def inverse_mu_law(x, mu = 255.0):
+    x = np.array(x).astype(np.float32)
+    out = (x + 0.5) * 2.0 / (mu + 1)
+    out = np.sign(out) / mu * ((1 + mu) ** np.abs(out) - 1)
+    out = np.where(np.equal(x, 0), x, out)
+    return out

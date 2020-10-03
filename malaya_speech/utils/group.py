@@ -57,3 +57,13 @@ def group_frames(frames):
             duration += r.duration
         results.append((FRAME(a, result[0].timestamp, duration), last))
     return results
+
+
+def min_max_boundary(i, scale):
+    minimum = i * scale
+    maximum = (i + 1) * scale
+    return int(minimum), int(maximum)
+
+
+# minimum, maximum = min_max_boundary(0, 391520 / 241)
+# int(0 * 241 / 391520)

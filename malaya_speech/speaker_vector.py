@@ -4,7 +4,8 @@ from herpetologist import check_type
 
 _availability = {
     'vggvox-v1': {'Size (MB)': 70.8, 'Embedding Size': 1024, 'EER': 0.1407},
-    'vggvox-v2': {'Size (MB)': 31.1, 'Embedding Size': 512, 'EER': 0.0445},
+    'vggvox-v2': {'Size (MB)': 43.2, 'Embedding Size': 512, 'EER': 0.0445},
+    'inception-v4': {'Size (MB)': 43.2, 'Embedding Size': 512, 'EER': 0.49482},
 }
 
 
@@ -29,6 +30,7 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
 
         * ``'vggvox-v1'`` - VGGVox V1, embedding size 1024.
         * ``'vggvox-v2'`` - VGGVox V2, embedding size 512.
+        * ``'inception-v4'`` - Inception V4, embedding size 512.
 
     Returns
     -------
@@ -42,10 +44,11 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
         )
 
     return classification.load(
-        PATH_SPEAKER_VECTOR,
-        S3_PATH_SPEAKER_VECTOR,
-        model,
-        'speaker-vector',
-        {},
-        {},
+        path = PATH_SPEAKER_VECTOR,
+        s3_path = S3_PATH_SPEAKER_VECTOR,
+        model = model,
+        name = 'speaker-vector',
+        extra = {},
+        label = {},
+        **kwargs
     )

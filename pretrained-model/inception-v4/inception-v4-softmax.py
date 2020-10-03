@@ -645,6 +645,7 @@ from sklearn.utils import shuffle
 import itertools
 import random
 
+random.shuffle(files)
 cycle_files = itertools.cycle(files)
 
 

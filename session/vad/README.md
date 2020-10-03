@@ -8,11 +8,25 @@ Finetuned available pretrained Malaya-Speech speaker vector models to do Voice A
 
 1. Generate dataset [prepare-vad-dataset.ipynb](prepare-vad-dataset.ipynb).
 
-2. Run any finetuning scripts.
+2. Run any finetuning scripts,
+
+**VGGVOX v1**,
+
+```bash
+python3 finetune-vggvox-v1.py
+```
+
+**VGGVOX v2**,
+
+```bash
+python3 finetune-vggvox-v2.py
+```
+
+3. Export the model for production, example for vggvox-v2, [export-vggvox-v2.ipynb](export-vggvox-v2.ipynb)
 
 ## Download
 
-1. VGGVox V2, last update 24th September 2020, https://f000.backblazeb2.com/file/malaya-speech-model/output-vggvox-v2-vad.tar.gz
+1. VGGVox V2, last update 24th September 2020, https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/output-vggvox-v2-vad-300k.tar.gz
 
 ```
 INFO:tensorflow:Saving dict for global step 300000: accuracy = 0.959375, global_step = 300000, loss = 0.3547514
@@ -22,3 +36,5 @@ INFO:tensorflow:train_accuracy = 0.9500685, train_loss = 0.35372886 (7.245 sec)
 INFO:tensorflow:loss = 0.35372886, step = 299999 (7.246 sec)
 INFO:tensorflow:Loss for final step: 0.35372886.
 ```
+
+Tensorboard, https://tensorboard.dev/experiment/Fd45NqegSRKHVi5Lj69RNg/#scalars
