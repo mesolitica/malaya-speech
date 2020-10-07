@@ -181,6 +181,10 @@ def vggvox_v1(
         return out
 
     else:
+        if fft_norm.shape[1] < 100:
+            fft_norm = np.pad(
+                fft_norm, ((0, 0), (0, 100 - fft_norm.shape[1])), 'constant'
+            )
         return fft_norm.astype('float32')
 
 

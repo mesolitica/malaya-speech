@@ -1,13 +1,11 @@
 from malaya_speech.model.webrtc import WEBRTC
-from malaya_speech.model.frame import FRAME
 from malaya_speech.path import PATH_VAD, S3_PATH_VAD
 from malaya_speech.supervised import classification
 from herpetologist import check_type
-from typing import List, Tuple
 
 _availability = {
-    'vggvox-v1': {'Size (MB)': 70.8, 'Accuracy': 0},
-    'vggvox-v2': {'Size (MB)': 31.1, 'Accuracy': 0.959375},
+    'vggvox-v1': {'Size (MB)': 70.8, 'Accuracy': 0.95},
+    'vggvox-v2': {'Size (MB)': 31.1, 'Accuracy': 0.9594},
 }
 
 

@@ -1,7 +1,9 @@
 import numpy as np
 
 
-def padding_sequence_1d(seq, maxlen = None, padding: str = 'post', pad_int = 0):
+def padding_sequence_1d(
+    seq, maxlen = None, padding: str = 'post', pad_int = 0, return_len = False
+):
     """
     padding sequence of 1d to become 2d array.
 
@@ -24,17 +26,26 @@ def padding_sequence_1d(seq, maxlen = None, padding: str = 'post', pad_int = 0):
 
     if not maxlen:
         maxlen = max([len(s) for s in seq])
-    padded_seqs = []
+
+    padded_seqs, length = [], []
     for s in seq:
         if padding == 'post':
             padded_seqs.append(s + [pad_int] * (maxlen - len(s)))
         if padding == 'pre':
             padded_seqs.append([pad_int] * (maxlen - len(s)) + s)
-    return padded_seqs
+        length.append(len(s))
+    if return_len:
+        return np.array(padded_seqs), length
+    return np.array(padded_seqs)
 
 
 def padding_sequence_nd(
-    seq, maxlen = None, padding: str = 'post', pad_val = 0.0, dim: int = 1
+    seq,
+    maxlen = None,
+    padding: str = 'post',
+    pad_val = 0.0,
+    dim: int = 1,
+    return_len = False,
 ):
     """
     padding sequence of nd to become (n+1)d array.
@@ -60,7 +71,7 @@ def padding_sequence_nd(
     if not maxlen:
         maxlen = max([np.shape(s)[dim] for s in seq])
 
-    padded_seqs = []
+    padded_seqs, length = [], []
     for s in seq:
         npad = [[0, 0] for _ in range(len(s.shape))]
         if padding == 'pre':
@@ -76,4 +87,8 @@ def padding_sequence_nd(
                 constant_values = pad_val,
             )
         )
+        length.append(s.shape[dim])
+
+    if return_len:
+        return np.array(padded_seqs), length
     return np.array(padded_seqs)

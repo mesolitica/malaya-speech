@@ -16,12 +16,8 @@ This will train inception v4 from scratch to classify more than 5k unique speake
 
 ## Download
 
-1. https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/inception-v4-30-09-2020.tar.gz
+1. Last update, 4th October 2020, [inception-v4-voxceleb-04-10-2020.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/inception-v4-voxceleb-04-10-2020.tar.gz)
 
-```
-INFO:tensorflow:train_accuracy = 0.8714181, train_loss = 1.0315295 (0.912 sec)
-INFO:tensorflow:loss = 0.5727377, step = 257612 (0.912 sec)
-INFO:tensorflow:global_step/sec: 1.03318
-INFO:tensorflow:train_accuracy = 0.87141764, train_loss = 0.6480751 (0.968 sec)
-INFO:tensorflow:loss = 0.39287624, step = 257613 (0.968 se
-```
+  - 410k steps.
+  - accuracy = 0.9166667, global_step = 401000, loss = 0.33683872
+  - Tensorboard, https://tensorboard.dev/experiment/4qWmM4JeTeerdJXkrHViBg/

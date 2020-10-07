@@ -42,9 +42,12 @@ Features
 -  **Gender Detection**
 
    Detect genders in speech using Finetuned VGGVox and Inception-V4-Vox Malaya-Speech models.
+-  **Language Detection**
+
+   Detect hyperlocal languages in speech using Finetuned VGGVox and Inception-V4-Vox Malaya-Speech models.
 -  **Noise Reduction**
 
-   Reduce multilevel noises using Pretrained Vocoder Malaya-Speech models.
+   Reduce multilevel noises using Pretrained Mel-Spectrogram UNET and WaveNet Malaya-Speech models.
 -  **Speaker Change**
 
    Detect changing speakers using Finetuned VGGVox and Inception-V4-Vox Malaya-Speech models.
@@ -56,7 +59,7 @@ Features
    Calculate similarity between speakers using Pretrained Malaya-Speech models.
 -  **Speech Enhancement**
 
-   enhance speech using Pretrained Vocoder Malaya-Speech models.
+   enhance speech using Pretrained Mel-Spectrogram UNET and WaveNet Malaya-Speech models.
 -  **Speech to Text**
 
    End-to-End Speech to Text using Pretrained STT Malaya-Speech models.

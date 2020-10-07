@@ -1,11 +1,16 @@
 import numpy as np
 from itertools import groupby
-from sortedcontainers import SortedDict
 from malaya_speech.model.frame import SEGMENT
 
 
 class ANNOTATION:
     def __init__(self, uri: str = None):
+        try:
+            from sortedcontainers import SortedDict
+        except:
+            raise ValueError(
+                'sortedcontainers not installed. Please install it by `pip install sortedcontainers` and try again.'
+            )
         self._uri = uri
         self._tracks = SortedDict()
 

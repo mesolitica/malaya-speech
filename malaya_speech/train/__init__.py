@@ -49,22 +49,25 @@ def run_training(
         save_checkpoints_steps = save_checkpoint_step,
         save_summary_steps = summary_step,
     )
+
     estimator = tf.estimator.Estimator(
         model_fn = model_fn, params = {}, config = run_config
     )
 
-    train_spec = tf.estimator.TrainSpec(
-        input_fn = train_fn, max_steps = max_steps, hooks = train_hooks
-    )
+    if eval_fn:
+        train_spec = tf.estimator.TrainSpec(
+            input_fn = train_fn, max_steps = max_steps, hooks = train_hooks
+        )
 
-    if not eval_fn:
-        eval_fn = train_fn
+        eval_spec = tf.estimator.EvalSpec(
+            input_fn = eval_fn, steps = eval_step, throttle_secs = eval_throttle
+        )
+        tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
-    eval_spec = tf.estimator.EvalSpec(
-        input_fn = eval_fn, steps = eval_step, throttle_secs = eval_throttle
-    )
-
-    tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+    else:
+        estimator.train(
+            input_fn = train_fn, max_steps = max_steps, hooks = train_hooks
+        )
 
 
 @check_type

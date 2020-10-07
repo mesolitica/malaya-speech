@@ -6,6 +6,8 @@ _availability = {
     'vggvox-v2': {'Size (MB)': 31.1, 'Accuracy': 0},
 }
 
+labels = ['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral']
+
 
 def available_model():
     """

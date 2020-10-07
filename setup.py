@@ -26,6 +26,9 @@ setuptools.setup(
         'numpy',
         'librosa',
         'soundfile',
+        'herpetologist',
+        'dataclasses',
+        'python_speech_features',
     ],
     license = 'MIT',
     classifiers = [

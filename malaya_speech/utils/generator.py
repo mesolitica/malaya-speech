@@ -33,11 +33,11 @@ def frames(
     timestamp = 0.0
     duration = float(n) / sample_rate
     results = []
-    while offset + n < len(audio):
+    while offset + n <= len(audio):
         results.append(FRAME(audio[offset : offset + n], timestamp, duration))
         timestamp += duration
         offset += n
-    if append_ending_trail:
+    if append_ending_trail and offset < len(audio):
         results.append(
             FRAME(
                 audio[offset:], timestamp, len(audio) / sample_rate - timestamp

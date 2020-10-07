@@ -26,15 +26,10 @@ python3 finetune-vggvox-v2.py
 
 ## Download
 
-1. VGGVox V2, last update 24th September 2020, https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/output-vggvox-v2-vad-300k.tar.gz
-
-```
-INFO:tensorflow:Saving dict for global step 300000: accuracy = 0.959375, global_step = 300000, loss = 0.3547514
-INFO:tensorflow:Saving 'checkpoint_path' summary for global step 300000: output-vggvox-v2-vad/model.ckpt-300000
-INFO:tensorflow:global_step/sec: 0.138016
-INFO:tensorflow:train_accuracy = 0.9500685, train_loss = 0.35372886 (7.245 sec)
-INFO:tensorflow:loss = 0.35372886, step = 299999 (7.246 sec)
-INFO:tensorflow:Loss for final step: 0.35372886.
-```
+1. VGGVox V2, last update 24th September 2020, [output-vggvox-v2-vad-300k.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/output-vggvox-v2-vad-300k.tar.gz)
 
 Tensorboard, https://tensorboard.dev/experiment/Fd45NqegSRKHVi5Lj69RNg/#scalars
+
+2. VGGVox V1, last update 7th October 2020, [vggvox-v1-vad-170k.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/vggvox-v1-vad-170k.tar.gz)
+
+Training Tensorboard, https://tensorboard.dev/experiment/Ej1t6x9sQ8CPdiw1fv4lew/#scalars

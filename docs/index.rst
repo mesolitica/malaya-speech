@@ -29,6 +29,12 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+   :caption: Enhancement Module
+
+   load-speech-enhancement
+
+.. toctree::
+   :maxdepth: 2
    :caption: Voice Activity Module
 
    load-vad

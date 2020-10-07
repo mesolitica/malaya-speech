@@ -6,6 +6,8 @@ _availability = {
     'vggvox-v2': {'Size (MB)': 31.1, 'Accuracy': 0},
 }
 
+labels = ['male', 'female', 'not a gender']
+
 
 def available_model():
     """

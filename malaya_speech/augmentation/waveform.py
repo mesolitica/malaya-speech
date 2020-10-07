@@ -12,10 +12,12 @@ def sox_augment_low(
     hf_damping = 1,
     room_scale = 1,
     stereo_depth = 1,
+    negate = 1,
 ):
     from pysndfx import AudioEffectsChain
 
-    y = int_to_float(y)
+    if negate:
+        min_bass_gain = -min_bass_gain
     apply_audio_effects = (
         AudioEffectsChain()
         .lowshelf(gain = min_bass_gain, frequency = 300, slope = 0.1)
@@ -41,13 +43,19 @@ def sox_augment_high(
     hf_damping = 1,
     room_scale = 1,
     stereo_depth = 1,
+    negate = 1,
 ):
     from pysndfx import AudioEffectsChain
 
-    y = int_to_float(y)
+    if negate:
+        min_bass_gain = -min_bass_gain
     apply_audio_effects = (
         AudioEffectsChain()
-        .highshelf(gain = -min_bass_gain, frequency = 300, slope = 0.1)
+        .highshelf(
+            gain = -min_bass_gain * (1 - expit(np.max(y))),
+            frequency = 300,
+            slope = 0.1,
+        )
         .reverb(
             reverberance = reverberance,
             hf_damping = hf_damping,
@@ -72,10 +80,8 @@ def sox_augment_combine(
     room_scale = 1,
     stereo_depth = 1,
 ):
-
     from pysndfx import AudioEffectsChain
 
-    y = int_to_float(y)
     apply_audio_effects = (
         AudioEffectsChain()
         .lowshelf(gain = min_bass_gain_low, frequency = 300, slope = 0.1)

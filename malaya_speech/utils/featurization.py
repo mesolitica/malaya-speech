@@ -4,6 +4,7 @@ from scipy import interpolate
 import numpy as np
 import librosa
 import decimal
+import math
 
 
 def normalize(values):
@@ -244,7 +245,8 @@ def vggvox_v1(
     frame_step = 0.01,
     num_fft = 512,
     buckets = None,
-    **kwargs
+    minlen = 100,
+    **kwargs,
 ):
     signal = signal.copy()
     signal *= 2 ** 15
@@ -266,6 +268,10 @@ def vggvox_v1(
         return out
 
     else:
+        if fft_norm.shape[1] < minlen:
+            fft_norm = np.pad(
+                fft_norm, ((0, 0), (0, minlen - fft_norm.shape[1])), 'constant'
+            )
         return fft_norm.astype('float32')
 
 
@@ -285,7 +291,7 @@ def vggvox_v2(
     n_fft = 512,
     spec_len = 250,
     mode = 'eval',
-    **kwargs
+    **kwargs,
 ):
     wav = np.append(signal, signal[::-1])
     linear_spect = lin_spectogram_from_wav(wav, hop_length, win_length, n_fft)
@@ -309,7 +315,7 @@ def scale_mel(
     y,
     sr = 16000,
     n_fft = 2048,
-    hop_length = 200,
+    hop_length = 100,
     win_length = 1000,
     n_mels = 256,
     ref_db = 20,
@@ -331,14 +337,15 @@ def scale_mel(
         n_mels = n_mels,
     )
     if scale:
-        mel = factor * np.log10(mel)
+        mel = factor * np.log10(mel + 1e-8)
         mel = np.clip((mel - ref_db + max_db) / max_db, 1e-11, 1)
     return mel
 
 
 def unscale_mel(mel, ref_db = 20, max_db = 100, factor = 15):
     inv_mel = ((mel * max_db) - max_db + ref_db) / factor
-    inv_mel = np.power(10, inv_mel)
+    inv_mel = np.power(10, inv_mel) - 1e-8
+    inv_mel[inv_mel < 5e-6] = 0.0
     return inv_mel
 
 
