@@ -1,7 +1,6 @@
 import numpy as np
 import soundfile as sf
 from scipy.io.wavfile import read
-from scipy.signal import resample
 from scipy import interpolate
 from herpetologist import check_type
 from malaya_speech.utils.astype import float_to_int

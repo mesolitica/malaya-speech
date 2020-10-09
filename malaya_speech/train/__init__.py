@@ -25,12 +25,19 @@ def run_training(
     max_steps: int = 10000,
     eval_step: int = 10,
     eval_throttle: int = 120,
-    eval_fn = None,
+    use_tpu: bool = False,
+    tpu_name: str = None,
+    tpu_zone: str = None,
+    gcp_project: str = None,
+    iterations_per_loop: int = 100,
+    num_tpu_cores: int = 8,
+    train_batch_size: int = 128,
     train_hooks = None,
+    eval_fn = None,
 ):
     tf.logging.set_verbosity(tf.logging.INFO)
 
-    if num_gpus > 1:
+    if num_gpus > 1 and not use_tpu:
         dist_strategy = tf.contrib.distribute.MirroredStrategy(
             num_gpus = num_gpus,
             auto_shard_dataset = True,
@@ -41,18 +48,48 @@ def run_training(
     else:
         dist_strategy = None
 
-    run_config = RunConfig(
-        train_distribute = dist_strategy,
-        eval_distribute = dist_strategy,
-        log_step_count_steps = log_step,
-        model_dir = model_dir,
-        save_checkpoints_steps = save_checkpoint_step,
-        save_summary_steps = summary_step,
-    )
+    if use_tpu:
+        tpu_cluster_resolver = tf.contrib.cluster_resolver.TPUClusterResolver(
+            tpu_name, zone = tpu_zone, project = gcp_project
+        )
+        is_per_host = tf.contrib.tpu.InputPipelineConfig.PER_HOST_V2
+        run_config = tf.contrib.tpu.RunConfig(
+            cluster = tpu_cluster_resolver,
+            master = None,
+            model_dir = model_dir,
+            save_checkpoints_steps = save_checkpoint_step,
+            tpu_config = tf.contrib.tpu.TPUConfig(
+                iterations_per_loop = iterations_per_loop,
+                num_shards = num_tpu_cores,
+                per_host_input_for_training = is_per_host,
+            ),
+        )
+    else:
 
-    estimator = tf.estimator.Estimator(
-        model_fn = model_fn, params = {}, config = run_config
-    )
+        run_config = RunConfig(
+            train_distribute = dist_strategy,
+            eval_distribute = dist_strategy,
+            log_step_count_steps = log_step,
+            model_dir = model_dir,
+            save_checkpoints_steps = save_checkpoint_step,
+            save_summary_steps = summary_step,
+        )
+
+    if use_tpu:
+        estimator = tf.contrib.tpu.TPUEstimator(
+            use_tpu = use_tpu,
+            model_fn = model_fn,
+            config = run_config,
+            train_batch_size = train_batch_size,
+            eval_batch_size = None,
+        )
+        eval_fn = None
+
+    else:
+
+        estimator = tf.estimator.Estimator(
+            model_fn = model_fn, params = {}, config = run_config
+        )
 
     if eval_fn:
         train_spec = tf.estimator.TrainSpec(

@@ -5,7 +5,7 @@ from herpetologist import check_type
 _availability = {
     'vggvox-v1': {'Size (MB)': 70.8, 'Embedding Size': 1024, 'EER': 0.1407},
     'vggvox-v2': {'Size (MB)': 43.2, 'Embedding Size': 512, 'EER': 0.0445},
-    'inception-v4': {'Size (MB)': 43.2, 'Embedding Size': 512, 'EER': 0.49482},
+    'inception-v4': {'Size (MB)': 181, 'Embedding Size': 512, 'EER': 0.49482},
 }
 
 

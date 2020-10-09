@@ -16,18 +16,18 @@ from pysndfx import AudioEffectsChain
 from scipy.special import expit
 import dask.bag as db
 
-files = (
-    glob('../speech-bahasa/LibriSpeech/*/*/*/*.flac')
-    + glob('../youtube/clean-wav/*.wav')
-    + glob('../podcast/clean-wav/*.wav')
-)
+# files = glob('../speech-bahasa/LibriSpeech/*/*/*/*.flac') + glob(
+#     '../youtube/clean-wav/*.wav'
+# )
+
+files = glob('../youtube/clean-wav/*.wav')
 files = list(set(files))
 random.shuffle(files)
 print(len(files))
 
 import pickle
 
-with open('../youtube/ambient.pkl', 'rb') as fopen:
+with open('../youtube/ambients.pkl', 'rb') as fopen:
     ambient = pickle.load(fopen)
 
 
@@ -353,7 +353,6 @@ import mp
 
 def calc(signal):
 
-    y = scale_mel(signal)
     choice = random.randint(0, 5)
     if choice == 0:
         x = sox_augment_high(
@@ -394,16 +393,22 @@ def calc(signal):
     if choice == 4:
         x = sox_reverb(
             signal,
-            reverberance = random.randint(2, 80),
+            reverberance = random.randint(10, 80),
             hf_damping = 10,
-            room_scale = random.randint(2, 90),
+            room_scale = random.randint(10, 90),
         )
     if choice == 5:
         x = signal
 
     if random.randint(0, 1):
-        x = add_uniform_noise(x, power = random.uniform(0.005, 0.02))
+        x = add_uniform_noise(x, power = random.uniform(0.005, 0.01))
 
+    return x
+
+
+def calc_mel(signal):
+    x, signal = signal
+    y = scale_mel(signal)
     x = scale_mel(x)
     z = y.T - x.T
     return x.T, z
@@ -417,54 +422,78 @@ def loop(files):
     return results
 
 
-def generate(batch_size = 100, sub = 100, core = 40, repeat = 5):
+def loop_mel(files):
+    files = files[0]
+    results = []
+    for f in files:
+        results.append(calc_mel(f))
+    return results
+
+
+def generate(batch_size = 100, core = 16, repeat = 2):
     while True:
         random.shuffle(files)
         for i in range(0, len(files), batch_size):
             batch_files = files[i : i + batch_size]
+            print(batch_files)
             print('before wavs')
             wavs = [read_file(f)[0] for f in batch_files]
             print('after wavs')
 
-            for k in range(0, len(wavs), sub):
-                samples = []
-                print('before iterating wavs')
-                for wav in wavs[k : k + sub]:
-                    if random.random() < 0.7:
-                        signal = wav.copy()
-
-                        if random.randint(0, 1):
-                            signal_ = random.choice(wavs)
-                            signal = add_noise(
-                                signal,
-                                signal_,
-                                factor = random.uniform(0.6, 1.0),
-                            )
-
-                    else:
-                        signal = combine_speakers(wavs, random.randint(2, 6))[0]
+            samples = []
+            print('before iterating wavs')
+            for wav in wavs:
+                if random.random() < 0.7:
+                    signal = wav.copy()
 
                     if random.randint(0, 1):
-                        signal_ = random.choice(ambient)
+                        signal_ = random.choice(wavs)
                         signal = add_noise(
-                            signal, signal_, factor = random.uniform(0.1, 0.4)
+                            signal, signal_, factor = random.uniform(0.6, 1.0)
                         )
 
-                    signal = random_sampling(
-                        signal, 16000, random.randint(60000, 180000)
-                    )
+                else:
+                    r = random.randint(2, 6)
+                    signal = combine_speakers(wavs, min(len(wavs), r))[0]
 
-                    samples.extend(sampling(signal, random.randint(600, 1200)))
-
-                print('len samples', len(samples))
-                results = mp.multiprocessing(
-                    samples, loop, cores = min(len(samples), core)
+                signal = random_sampling(
+                    signal, 16000, random.randint(60000, 200000)
                 )
-                print('after len samples', len(samples))
-                for _ in range(repeat):
-                    random.shuffle(results)
-                    for r in results:
-                        yield {'inputs': r[0], 'targets': r[1]}
+
+                samples.append(signal)
+
+            R = []
+            for s in samples:
+                if random.random() > 0.8:
+                    signal_ = random.choice(ambient)
+                    s = add_noise(s, signal_, factor = random.uniform(0.1, 0.3))
+                R.append(s)
+
+            print('len samples', len(samples))
+            results = mp.multiprocessing(
+                R, loop, cores = min(len(samples), core)
+            )
+            print('after len samples', len(samples))
+
+            X, Y = [], []
+            for i in range(len(samples)):
+                X.extend(sampling(results[i], 1200))
+                Y.extend(sampling(samples[i], 1200))
+            # return samples, results, X, Y
+
+            combined = list(zip(X, Y))
+            print('len combined', len(combined))
+            results = mp.multiprocessing(
+                combined, loop_mel, cores = min(len(combined), core)
+            )
+            print('after len combined', len(combined))
+
+            for _ in range(repeat):
+                #     random.shuffle(results)
+                for r in results:
+                    yield {'inputs': r[0], 'targets': r[1]}
+
+            del wavs, samples, R, results, combined
 
 
 def get_dataset(batch_size = 32, shuffle_size = 128, prefetch_size = 128):

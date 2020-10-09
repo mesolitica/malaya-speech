@@ -2,11 +2,21 @@ from malaya_speech.supervised import classification
 from herpetologist import check_type
 
 _availability = {
-    'vggvox-v1': {'Size (MB)': 70.8, 'Accuracy': 0},
-    'vggvox-v2': {'Size (MB)': 31.1, 'Accuracy': 0},
+    'vggvox-v1': {'Size (MB)': 70.8, 'Accuracy': 0.95},
+    'vggvox-v2': {'Size (MB)': 31.1, 'Accuracy': 0.9594},
+    'inception-v4': {'Size (MB)': 181, 'Accuracy': 0.9594},
 }
 
-labels = ['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral']
+labels = [
+    'angry',
+    'disgust',
+    'fear',
+    'happy',
+    'sad',
+    'surprise',
+    'neutral',
+    'not an emotion',
+]
 
 
 def available_model():
