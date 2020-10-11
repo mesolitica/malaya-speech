@@ -1,5 +1,8 @@
 from malaya_speech.model.frame import FRAME
+from collections import defaultdict
 from typing import List
+import operator
+import numpy as np
 
 
 def combine_frames(frames: List[FRAME]):
@@ -31,7 +34,7 @@ def group_frames(frames):
 
     Returns
     -------
-    result : List[FRAME]
+    result : List[Tuple[FRAME, label]]
     """
     results, result, last = [], [], None
 
@@ -56,6 +59,50 @@ def group_frames(frames):
             a.extend(r.array)
             duration += r.duration
         results.append((FRAME(a, result[0].timestamp, duration), last))
+    return results
+
+
+def group_frames_threshold(frames, threshold_to_stop: float = 0.3):
+    """
+    Group multiple frames based on label and threshold to stop.
+
+    Parameters
+    ----------
+    frames: List[Tuple[FRAME, label]]
+    threshold_to_stop: float, optional (default = 0.2)
+
+    Returns
+    -------
+    result : List[Tuple[FRAME, label]]
+    """
+    d = defaultdict(float)
+
+    label, results, result = None, [], []
+    for i in frames:
+        d[i[1]] += i[0].duration
+        result.append(i[0])
+        if i[0].duration > threshold_to_stop:
+            a = np.concatenate([i.array for i in result])
+            durations = sum([i.duration for i in result])
+            results.append(
+                (
+                    FRAME(a, result[0].timestamp, durations),
+                    max(d.items(), key = operator.itemgetter(1))[0],
+                )
+            )
+            d = defaultdict(float)
+            result = []
+
+    if len(result):
+        a = np.concatenate([i.array for i in result])
+        durations = sum([i.duration for i in result])
+        results.append(
+            (
+                FRAME(a, result[0].timestamp, durations),
+                max(d.items(), key = operator.itemgetter(1))[0],
+            )
+        )
+
     return results
 
 

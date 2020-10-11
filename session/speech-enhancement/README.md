@@ -24,6 +24,6 @@ python3 inception-v3-unet.py
 
 ## Download
 
-1. Resnet34-UNET, last update 7th October 2020, [output-resnet34-unet-50k.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/output-resnet34-unet-50k.tar.gz)
+1. Resnet34-UNET, last update 7th October 2020, [resnet34-unet-100k.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/resnet34-unet-100k.tar.gz)
 
-Tensorboard, https://tensorboard.dev/experiment/Fd45NqegSRKHVi5Lj69RNg/#scalars
+Tensorboard, https://tensorboard.dev/experiment/OjXkwPdqReOB4zEpYRT3sQ/

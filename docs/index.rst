@@ -29,6 +29,12 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+   :caption: Classification Module
+
+   load-language-detection
+
+.. toctree::
+   :maxdepth: 2
    :caption: Enhancement Module
 
    load-speech-enhancement

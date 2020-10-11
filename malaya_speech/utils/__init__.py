@@ -70,7 +70,7 @@ def load_graph(frozen_graph_filename, **kwargs):
             path = frozen_graph_filename.split('Malaya-Speech/')[1]
             path = '/'.join(path.split('/')[:-1])
             raise Exception(
-                f"{e}, file corrupted due to some reasons, please run malaya.clear_cache('{path}') and try again"
+                f"{e}, file corrupted due to some reasons, please run malaya_speech.clear_cache('{path}') and try again"
             )
 
     # https://github.com/onnx/tensorflow-onnx/issues/77#issuecomment-445066091
@@ -252,7 +252,13 @@ def add_neutral(x, alpha = 1e-2):
     return np.concatenate([x_divide, 1 - sum_axis], axis = 1)
 
 
-def describe_availability(dict, transpose = True):
+def describe_availability(dict, transpose = True, text = ''):
+    if len(text):
+        import logging
+
+        logging.basicConfig(level = logging.INFO)
+
+        logging.info(text)
     try:
         import pandas as pd
 

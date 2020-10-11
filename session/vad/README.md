@@ -28,8 +28,12 @@ python3 finetune-vggvox-v2.py
 
 1. VGGVox V2, last update 24th September 2020, [output-vggvox-v2-vad-300k.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/output-vggvox-v2-vad-300k.tar.gz)
 
-Tensorboard, https://tensorboard.dev/experiment/Fd45NqegSRKHVi5Lj69RNg/#scalars
+Tensorboard, https://tensorboard.dev/experiment/Fd45NqegSRKHVi5Lj69RNg/
 
 2. VGGVox V1, last update 7th October 2020, [vggvox-v1-vad-170k.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/vggvox-v1-vad-170k.tar.gz)
 
-Training Tensorboard, https://tensorboard.dev/experiment/Ej1t6x9sQ8CPdiw1fv4lew/#scalars
+Tensorboard, https://tensorboard.dev/experiment/Ej1t6x9sQ8CPdiw1fv4lew/
+
+3. Inception V4, last update 10th October 2020, [inception-v4-vad-300k.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/inception-v4-vad-300k.tar.gz)
+
+Tensorboard, https://tensorboard.dev/experiment/UJvCrLsyQjSlS3OrdXBe4Q/

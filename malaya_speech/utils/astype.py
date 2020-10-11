@@ -74,7 +74,11 @@ def float_to_int(array, type = np.int16):
         return array
 
     if array.dtype not in [np.int16, np.int32, np.int64]:
-        array = type(array / np.max(np.abs(array)) * np.iinfo(type).max)
+        if np.max(np.abs(array)) == 0:
+            array[:] = 0
+            array = type(array * np.iinfo(type).max)
+        else:
+            array = type(array / np.max(np.abs(array)) * np.iinfo(type).max)
     return array
 
 
@@ -98,6 +102,10 @@ def int_to_float(array, type = np.float32):
         return array
 
     if array.dtype not in [np.float16, np.float32, np.float64]:
-        array = array.astype(np.float32) / np.max(np.abs(array))
+        if np.max(np.abs(array)) == 0:
+            array = array.astype(np.float32)
+            array[:] = 0
+        else:
+            array = array.astype(np.float32) / np.max(np.abs(array))
 
     return array

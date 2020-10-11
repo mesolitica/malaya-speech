@@ -5,7 +5,7 @@ from herpetologist import check_type
 _availability = {
     'vggvox-v1': {'Size (MB)': 70.8, 'Embedding Size': 1024, 'EER': 0.1407},
     'vggvox-v2': {'Size (MB)': 43.2, 'Embedding Size': 512, 'EER': 0.0445},
-    'inception-v4': {'Size (MB)': 181, 'Embedding Size': 512, 'EER': 0.49482},
+    'deep-speaker': {'Size (MB)': 96.7, 'Embedding Size': 512, 'EER': 0.2187},
 }
 
 
@@ -15,7 +15,10 @@ def available_model():
     """
     from malaya_speech.utils import describe_availability
 
-    return describe_availability(_availability)
+    return describe_availability(
+        _availability,
+        text = 'tested on VoxCeleb2 test set. Lower EER is better.',
+    )
 
 
 @check_type
@@ -28,9 +31,9 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
     model : str, optional (default='vggvox-v2')
         Model architecture supported. Allowed values:
 
-        * ``'vggvox-v1'`` - VGGVox V1, embedding size 1024.
-        * ``'vggvox-v2'`` - VGGVox V2, embedding size 512.
-        * ``'inception-v4'`` - Inception V4, embedding size 512.
+        * ``'vggvox-v1'`` - VGGVox V1, embedding size 1024, exported from https://github.com/linhdvu14/vggvox-speaker-identification
+        * ``'vggvox-v2'`` - VGGVox V2, embedding size 512, exported from https://github.com/WeidiXie/VGG-Speaker-Recognition
+        * ``'deep-speaker'`` - Deep Speaker, embedding size 512, exported from https://github.com/philipperemy/deep-speaker
 
     Returns
     -------

@@ -12,8 +12,8 @@ class SPEAKER2VEC:
         self._vectorizer = vectorizer
         self._sess = sess
         self._extra = extra
-        self.__name__ = name
         self.__model__ = model
+        self.__name__ = name
 
     def vectorize(self, inputs):
         inputs = [
@@ -23,9 +23,7 @@ class SPEAKER2VEC:
 
         inputs = [self._vectorizer(input, **self._extra) for input in inputs]
         inputs = padding_sequence_nd(inputs)
-
-        if 'vggvox' in self.__model__:
-            inputs = np.expand_dims(inputs, -1)
+        inputs = np.expand_dims(inputs, -1)
 
         return self._sess.run(self._logits, feed_dict = {self._X: inputs})
 
@@ -52,9 +50,7 @@ class CLASSIFICATION:
 
         inputs = [self._vectorizer(input, **self._extra) for input in inputs]
         inputs = padding_sequence_nd(inputs)
-
-        if 'vggvox' in self.__model__:
-            inputs = np.expand_dims(inputs, -1)
+        inputs = np.expand_dims(inputs, -1)
 
         return self._sess.run(self._logits, feed_dict = {self._X: inputs})
 

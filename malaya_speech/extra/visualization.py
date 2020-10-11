@@ -1,7 +1,9 @@
+import numpy as np
 from itertools import cycle, product
 from malaya_speech.model.frame import FRAME
 from herpetologist import check_type
 from typing import List, Tuple
+from itertools import groupby
 
 
 def get_ax(
@@ -55,8 +57,9 @@ def visualize_vad(
     signal,
     preds: List[Tuple[FRAME, bool]],
     sample_rate: int = 16000,
-    figsize: Tuple[int, int] = (15, 7),
+    figsize: Tuple[int, int] = (15, 3),
     ax = None,
+    **kwargs
 ):
     """
     Visualize signal given VAD labels. Green means got voice activity, while Red is not.
@@ -83,6 +86,18 @@ def visualize_vad(
         sns.set()
         fig = plt.figure(figsize = figsize)
         ax = fig.add_subplot(1, 1, 1)
+        plot = True
+    else:
+        min_timestamp = min([i[0].timestamp for i in preds])
+        max_timestamp = max([i[0].timestamp + i[0].duration for i in preds])
+
+        ax = get_ax(
+            ax,
+            xlim = (min_timestamp, max_timestamp),
+            ylim = (np.min(signal), np.max(signal)),
+            **kwargs
+        )
+        plot = False
     ax.plot([i / sample_rate for i in range(len(signal))], signal)
     for predictions in preds:
         color = 'g' if predictions[1] else 'r'
@@ -90,11 +105,12 @@ def visualize_vad(
         ax.axvspan(
             p.timestamp, p.timestamp + p.duration, alpha = 0.5, color = color
         )
-    plt.xlabel('Time (s)', size = 20)
-    plt.ylabel('Amplitude', size = 20)
-    plt.xticks(size = 15)
-    plt.yticks(size = 15)
-    plt.show()
+    if plot:
+        plt.xlabel('Time (s)', size = 20)
+        plt.ylabel('Amplitude', size = 20)
+        plt.xticks(size = 15)
+        plt.yticks(size = 15)
+        plt.show()
 
 
 def plot_classification(
@@ -104,6 +120,7 @@ def plot_classification(
     fontsize_text = 14,
     x_text = 0.05,
     y_text = 0.2,
+    ylim = (0.1, 0.9),
     **kwargs
 ):
     """
@@ -111,7 +128,7 @@ def plot_classification(
     
     Parameters
     -----------
-    preds: List[Tuple[FRAME, bool / float]]
+    preds: List[Tuple[FRAME, label]]
     description: str
     ax: ax, optional (default = None)
     fontsize_text: int, optional (default = 14)
@@ -119,20 +136,90 @@ def plot_classification(
     y_text: float, optional (default = 0.2)
     """
 
+    try:
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+    except:
+        raise ValueError(
+            'seaborn and matplotlib not installed. Please install it by `pip install matplotlib seaborn` and try again.'
+        )
+
     if ax is None:
         fig = plt.figure(figsize = figsize)
         ax = fig.add_subplot(1, 1, 1)
 
-    bool_map = {False: 0.1, True: 0.9}
+    if isinstance(preds[0], float):
+        hline = False
+    else:
+        hline = True
 
-    x = [i[0].timestamp for i in preds]
-    y = [bool_map.get(i[1], i[1]) for i in preds]
-
-    min_timestamp = min(x)
+    min_timestamp = min([i[0].timestamp for i in preds])
     max_timestamp = max([i[0].timestamp + i[0].duration for i in preds])
     ax = get_ax(ax, xlim = (min_timestamp, max_timestamp), **kwargs)
-    ax.plot(x, y)
+
+    if hline:
+        x = [i[1] for i in preds]
+        labels = sorted(list(set(x)))
+        styles = get_styles(len(labels))
+        styles = {label: style for label, style in zip(labels, styles)}
+        xs = [labels.index(i[1]) for i in preds]
+        a = np.array(xs)
+        std = (a - np.min(a)) / (np.max(a) - np.min(a))
+        scaled = std * (ylim[1] - ylim[0]) + ylim[0]
+
+        for i in range(len(preds)):
+            linestyle, linewidth, color = styles[x[i]]
+            ax.hlines(
+                scaled[i],
+                preds[i][0].timestamp,
+                preds[i][0].timestamp + preds[i][0].duration,
+                color,
+                linewidth = linewidth,
+                linestyle = linestyle,
+                label = x[i],
+            )
+            ax.vlines(
+                preds[i][0].timestamp,
+                scaled[i] + 0.05,
+                scaled[i] - 0.05,
+                color,
+                linewidth = 1,
+                linestyle = 'solid',
+            )
+            ax.vlines(
+                preds[i][0].timestamp + preds[i][0].duration,
+                scaled[i] + 0.05,
+                scaled[i] - 0.05,
+                color,
+                linewidth = 1,
+                linestyle = 'solid',
+            )
+        H, L = ax.get_legend_handles_labels()
+
+        HL = groupby(
+            sorted(zip(H, L), key = lambda h_l: h_l[1]),
+            key = lambda h_l: h_l[1],
+        )
+        H, L = zip(*list((next(h_l)[0], l) for l, h_l in HL))
+        ax.legend(
+            H,
+            L,
+            bbox_to_anchor = (0, 1),
+            loc = 3,
+            ncol = 5,
+            borderaxespad = 0.0,
+            frameon = False,
+        )
+
+    else:
+        x = [i[0].timestamp for i in preds]
+        y = [bool_map.get(i[1], i[1]) for i in preds]
+        ax.plot(x, y)
+
+    x = [i[0].timestamp for i in preds]
+
     ax.text(
         x[int(len(x) * x_text)], y_text, description, fontsize = fontsize_text
     )
+
     return ax

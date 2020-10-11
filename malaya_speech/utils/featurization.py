@@ -289,11 +289,15 @@ def vggvox_v2(
     sr = 16000,
     hop_length = 160,
     n_fft = 512,
-    spec_len = 250,
-    mode = 'eval',
+    spec_len = 100,
+    mode = 'train',
+    concat = True,
     **kwargs,
 ):
-    wav = np.append(signal, signal[::-1])
+    if concat:
+        wav = np.append(signal, signal[::-1])
+    else:
+        wav = signal
     linear_spect = lin_spectogram_from_wav(wav, hop_length, win_length, n_fft)
     mag, _ = librosa.magphase(linear_spect)  # magnitude
     mag_T = mag.T
@@ -353,6 +357,14 @@ def mel_to_spectrogram(mel, sr = 16000, n_fft = 2048):
     return librosa.feature.inverse.mel_to_stft(
         mel, sr = sr, n_fft = n_fft, power = 1.0
     )
+
+
+def mu_law(x, mu = 255, int8 = False):
+    out = np.sign(x) * np.log(1 + mu * np.abs(x)) / np.log(1 + mu)
+    out = np.floor(out * 128)
+    if int8:
+        out = out.astype(np.int8)
+    return out
 
 
 def inverse_mu_law(x, mu = 255.0):
