@@ -5,6 +5,25 @@ import scipy
 import json
 
 
+def sox_reverb(
+    y, reverberance = 1, hf_damping = 1, room_scale = 1, stereo_depth = 1
+):
+    from pysndfx import AudioEffectsChain
+
+    apply_audio_effects = AudioEffectsChain().reverb(
+        reverberance = reverberance,
+        hf_damping = hf_damping,
+        room_scale = room_scale,
+        stereo_depth = stereo_depth,
+        pre_delay = 20,
+        wet_gain = 0,
+        wet_only = False,
+    )
+    y_enhanced = apply_audio_effects(y)
+
+    return y_enhanced
+
+
 def sox_augment_low(
     y,
     min_bass_gain = 5,
@@ -49,6 +68,7 @@ def sox_augment_high(
 
     if negate:
         min_bass_gain = -min_bass_gain
+
     apply_audio_effects = (
         AudioEffectsChain()
         .highshelf(
@@ -132,15 +152,19 @@ def random_stretch(sample, low = 0.5, high = 1.3):
     return stretching
 
 
-def random_sample(sample, sr, length = 500):
+def random_sampling(sample, sr, length = 500):
     sr = int(sr / 1000)
-    r = np.random.randint(0, len(sample) - (sr * length))
+    up = len(sample) - (sr * length)
+    if up < 1:
+        r = 0
+    else:
+        r = np.random.randint(0, up)
     return sample[r : r + sr * length]
 
 
-def add_uniform_noise(sample):
+def add_uniform_noise(sample, power = 0.01):
     y_noise = sample.copy()
-    noise_amp = 0.01 * np.random.uniform() * np.amax(y_noise)
+    noise_amp = power * np.random.uniform() * np.amax(y_noise)
     return y_noise.astype('float64') + noise_amp * np.random.normal(
         size = y_noise.shape[0]
     )
