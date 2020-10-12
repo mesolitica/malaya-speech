@@ -5,6 +5,7 @@ import numpy as np
 import librosa
 import decimal
 import math
+from python_speech_features import fbank
 
 
 def normalize(values):
@@ -373,3 +374,21 @@ def inverse_mu_law(x, mu = 255.0):
     out = np.sign(out) / mu * ((1 + mu) ** np.abs(out) - 1)
     out = np.where(np.equal(x, 0), x, out)
     return out
+
+
+def mfcc_fbank(signal, sample_rate):
+    filter_banks, energies = fbank(signal, samplerate = sample_rate, nfilt = 64)
+    frames_features = normalize_frames(filter_banks)
+    return np.array(frames_features, dtype = np.float32)
+
+
+def read_mfcc(signal, sr = 16000, voice_only = True, **kwargs):
+    if voice_only:
+        energy = np.abs(signal)
+        silence_threshold = np.percentile(energy, 95)
+        offsets = np.where(energy > silence_threshold)[0]
+        audio_voice_only = signal[offsets[0] : offsets[-1]]
+    else:
+        audio_voice_only = signal
+    mfcc = mfcc_fbank(audio_voice_only, sr)
+    return mfcc

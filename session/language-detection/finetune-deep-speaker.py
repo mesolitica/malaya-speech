@@ -1,26 +1,24 @@
 import os
 
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '../gcs/mesolitica-storage.json'
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 import tensorflow as tf
 import malaya_speech.train as train
-import malaya_speech.train.model.vggvox_v2 as vggvox_v2
+import malaya_speech.train.model.deep_speaker as deep_speaker
 import malaya_speech
 
 
 def calc(v):
 
-    r = malaya_speech.utils.featurization.vggvox_v2(
-        v, mode = 'train', concat = False
-    )
+    r = malaya_speech.utils.featurization.read_mfcc(v, voice_only = False)
     return r
 
 
-def preprocess_inputs(example, n_mels = 257):
+def preprocess_inputs(example, dimension = 64):
     s = tf.compat.v1.numpy_function(calc, [example['inputs']], tf.float32)
 
-    s = tf.reshape(s, (n_mels, -1, 1))
+    s = tf.reshape(s, (-1, 64, 1))
     example['inputs'] = s
 
     return example
@@ -76,14 +74,14 @@ def model_fn(
     mode,
     params,
     learning_rate = 1e-5,
-    init_checkpoint = '../vggvox-speaker-identification/v2/vggvox.ckpt',
+    init_checkpoint = '../deep-speaker/out/vggvox.ckpt',
 ):
     Y = tf.cast(features['targets'][:, 0], tf.int32)
 
-    resnet = vggvox_v2.model.Resnet1D(
+    model = deep_speaker.model.Model(
         features['input'], num_class = 7, mode = 'train'
     )
-    logits = resnet.logits
+    logits = model.logits
 
     loss = tf.reduce_mean(
         tf.nn.sparse_softmax_cross_entropy_with_logits(
@@ -138,7 +136,7 @@ files = tf.io.gfile.glob(
 )
 train_dataset = get_dataset(files)
 
-save_directory = 'output-vggvox-v2-language-detection'
+save_directory = 'output-deep-speaker-language-detection'
 
 train.run_training(
     train_fn = train_dataset,
