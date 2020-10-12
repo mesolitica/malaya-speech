@@ -20,7 +20,6 @@ coverage.xml
 .coverage
 .coveragerc
 htmlcov
-test
 .pytest_cache
 misc/crawl/isu*
 a.py
