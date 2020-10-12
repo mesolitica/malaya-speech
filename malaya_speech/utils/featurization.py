@@ -318,46 +318,39 @@ def vggvox_v2(
 
 def scale_mel(
     y,
-    sr = 16000,
-    n_fft = 2048,
-    hop_length = 100,
-    win_length = 1000,
+    sr = 22050,
+    n_fft = 1024,
+    hop_length = 256,
+    win_length = None,
     n_mels = 256,
     ref_db = 20,
-    max_db = 100,
-    factor = 15,
+    max_db = 200,
+    factor = 13,
+    fmin = 80,
+    fmax = 7600,
     scale = True,
 ):
-    mel = librosa.feature.melspectrogram(
-        y = y,
-        sr = sr,
-        S = None,
-        n_fft = n_fft,
-        hop_length = hop_length,
-        win_length = win_length,
+    D = librosa.stft(
+        y,
+        n_fft = 1024,
+        hop_length = 256,
+        win_length = None,
         window = 'hann',
-        center = True,
         pad_mode = 'reflect',
-        power = 1.0,
-        n_mels = n_mels,
     )
+    S, _ = librosa.magphase(D)
+    mel_basis = librosa.filters.mel(
+        sr = sr, n_fft = n_fft, n_mels = n_mels, fmin = fmin, fmax = fmax
+    )
+    mel = np.log10(np.maximum(np.dot(mel_basis, S), 1e-10))
     if scale:
-        mel = factor * np.log10(mel + 1e-8)
-        mel = np.clip((mel - ref_db + max_db) / max_db, 1e-11, 1)
+        mel = np.clip(((factor * mel) - ref_db + max_db) / max_db, 1e-11, 1)
     return mel
 
 
-def unscale_mel(mel, ref_db = 20, max_db = 100, factor = 15):
+def unscale_mel(mel, ref_db = 20, max_db = 200, factor = 13):
     inv_mel = ((mel * max_db) - max_db + ref_db) / factor
-    inv_mel = np.power(10, inv_mel) - 1e-8
-    inv_mel[inv_mel < 5e-6] = 0.0
     return inv_mel
-
-
-def mel_to_spectrogram(mel, sr = 16000, n_fft = 2048):
-    return librosa.feature.inverse.mel_to_stft(
-        mel, sr = sr, n_fft = n_fft, power = 1.0
-    )
 
 
 def mu_law(x, mu = 255, int8 = False):

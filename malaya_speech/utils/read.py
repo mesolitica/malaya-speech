@@ -6,7 +6,7 @@ from herpetologist import check_type
 from malaya_speech.utils.astype import float_to_int
 
 
-def change_samplerate(data, old_samplerate, new_samplerate):
+def resample(data, old_samplerate, new_samplerate):
     old_audio = data
     duration = data.shape[0] / old_samplerate
     time_old = np.linspace(0, duration, old_audio.shape[0])
@@ -19,25 +19,25 @@ def change_samplerate(data, old_samplerate, new_samplerate):
     return data
 
 
-def read_audio(data, old_samplerate, sample_rate = 16000):
+def read_audio(data, old_samplerate, sample_rate = 22050):
     if len(data.shape) == 2:
         data = data[:, 0]
 
     if old_samplerate != sample_rate:
-        data = change_samplerate(data, old_samplerate, sample_rate)
+        data = resample(data, old_samplerate, sample_rate)
 
     return data.tolist(), sample_rate
 
 
 @check_type
-def wav(file: str, sample_rate: int = 16000):
+def wav(file: str, sample_rate: int = 22050):
     """
     Read wav file.
 
     Parameters
     ----------
     file: str
-    sample_rate: int, (default=16000)
+    sample_rate: int, (default=22050)
         new sample rate. If input sample rate is not same, will interpolate automatically.
 
     Returns
@@ -51,14 +51,14 @@ def wav(file: str, sample_rate: int = 16000):
 
 
 @check_type
-def flac(file: str, sample_rate: int = 16000):
+def flac(file: str, sample_rate: int = 22050):
     """
     Read flac file.
 
     Parameters
     ----------
     file: str
-    sample_rate: int, (default=16000)
+    sample_rate: int, (default=22050)
         new sample rate. If input sample rate is not same, will interpolate automatically.
 
     Returns
