@@ -3,6 +3,7 @@ import librosa
 import os
 import scipy
 import json
+from scipy.special import expit
 
 
 def sox_reverb(
