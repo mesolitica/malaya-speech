@@ -8,6 +8,8 @@ import malaya_speech.train as train
 import malaya_speech.train.model.deep_speaker as deep_speaker
 import malaya_speech
 
+DIMENSION = 64
+
 
 def calc(v):
 
@@ -15,10 +17,10 @@ def calc(v):
     return r
 
 
-def preprocess_inputs(example, dimension = 64):
+def preprocess_inputs(example):
     s = tf.compat.v1.numpy_function(calc, [example['inputs']], tf.float32)
 
-    s = tf.reshape(s, (-1, 64, 1))
+    s = tf.reshape(s, (-1, DIMENSION, 1))
     example['inputs'] = s
 
     return example
@@ -54,7 +56,7 @@ def get_dataset(files, batch_size = 32, shuffle_size = 1024, thread_count = 24):
         dataset = dataset.padded_batch(
             batch_size,
             padded_shapes = {
-                'inputs': tf.TensorShape([n_mels, None, 1]),
+                'inputs': tf.TensorShape([None, DIMENSION, 1]),
                 'targets': tf.TensorShape([None]),
             },
             padding_values = {
@@ -68,18 +70,13 @@ def get_dataset(files, batch_size = 32, shuffle_size = 1024, thread_count = 24):
     return get
 
 
-def model_fn(
-    features,
-    labels,
-    mode,
-    params,
-    learning_rate = 1e-5,
-    init_checkpoint = '../deep-speaker/out/vggvox.ckpt',
-):
+def model_fn(features, labels, mode, params):
+    learning_rate = (1e-5,)
+    init_checkpoint = '../deep-speaker/out/vggvox.ckpt'
     Y = tf.cast(features['targets'][:, 0], tf.int32)
 
     model = deep_speaker.model.Model(
-        features['input'], num_class = 7, mode = 'train'
+        features['inputs'], num_class = 7, mode = 'train'
     )
     logits = model.logits
 
@@ -100,7 +97,7 @@ def model_fn(
     variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
     variables = [v for v in variables if 'prediction' not in v.name]
 
-    assignment_map, initialized_variable_names = get_assignment_map_from_checkpoint(
+    assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
         variables, init_checkpoint
     )
 
