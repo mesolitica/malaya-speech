@@ -2,6 +2,11 @@ import librosa
 import numpy as np
 import python_speech_features
 
+_availability = {
+    'resnet34-unet': {'Size (MB)': 97.8, 'MSE': 0.0003},
+    'inception-v3-unet': {'Size (MB)': 120, 'MSE': 0.0003},
+}
+
 from malaya_speech.utils.astype import int_to_float
 
 # https://github.com/dodiku/noise_reduction/blob/master/noise.py

@@ -5,54 +5,43 @@ from malaya_speech.path import (
 from malaya_speech.supervised import unet
 from herpetologist import check_type
 
-_unet_availability = {
-    'resnet34': {'Size (MB)': 97.8, 'MSE': 0.0003},
-    'inception-v3': {'Size (MB)': 120, 'MSE': 0.0003},
+_availability = {
+    'resnet34-unet': {'Size (MB)': 97.8, 'MSE': 0.0003},
+    'inception-v3-unet': {'Size (MB)': 120, 'MSE': 0.0003},
 }
 
-_vocoder_availability = {'wavenet': {'Size (MB)': 70.8, 'MSE': 0.0003}}
 
-
-def available_unet():
+def available_model():
     """
-    List available Speech Enhancement UNET models.
+    List available Speech Enhancement deep learning models.
     """
     from malaya_speech.utils import describe_availability
 
-    return describe_availability(_unet_availability)
-
-
-def available_vocoder():
-    """
-    List available Speech Enhancement UNET models.
-    """
-    from malaya_speech.utils import describe_availability
-
-    return describe_availability(_vocoder_availability)
+    return describe_availability(_availability)
 
 
 @check_type
-def unet(model: str = 'resnet34', **kwargs):
+def deep_model(model: str = 'resnet34-unet', **kwargs):
     """
-    Load Speech Enhancement UNET model.
+    Load Speech Enhancement deep learning model.
 
     Parameters
     ----------
     model : str, optional (default='wavenet')
         Model architecture supported. Allowed values:
 
-        * ``'resnet34'`` - pretrained resnet34 UNET.
-        * ``'inception-v3'`` - pretrained inception V3 UNET.
+        * ``'resnet34-unet'`` - pretrained resnet34 UNET.
+        * ``'inception-v3-unet'`` - pretrained inception V3 UNET.
 
     Returns
     -------
-    result : malaya_speech.model.tf.UNET class
+    result : malaya_speech.model.tf.SEGMENTATION class
     """
 
     model = model.lower()
     if model not in _unet_availability:
         raise Exception(
-            'model not supported, please check supported models from malaya_speech.speech_enhancement.available_unet()'
+            'model not supported, please check supported models from malaya_speech.speech_enhancement.available_model()'
         )
 
     return unet.load(
@@ -62,27 +51,3 @@ def unet(model: str = 'resnet34', **kwargs):
         name = 'speech-enhancement',
         **kwargs
     )
-
-
-@check_type
-def vocoder(model: str = 'wavenet', **kwargs):
-    """
-    Load Speech Enhancement vocoder model.
-
-    Parameters
-    ----------
-    model : str, optional (default='wavenet')
-        Model architecture supported. Allowed values:
-
-        * ``'wavenet'`` - pretrained wavenet.
-
-    Returns
-    -------
-    result : malaya_speech.model.tf.VOCODER class
-    """
-
-    model = model.lower()
-    if model not in _vocoder_availability:
-        raise Exception(
-            'model not supported, please check supported models from malaya_speech.speech_enhancement.available_vocoder()'
-        )

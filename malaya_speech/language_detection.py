@@ -8,7 +8,9 @@ from herpetologist import check_type
 _availability = {
     'vggvox-v1': {'Size (MB)': 70.8, 'Accuracy': 0.90204},
     'vggvox-v2': {'Size (MB)': 30.9, 'Accuracy': 0.90204},
+    'deep-speaker': {'Size (MB)': 30.9, 'Accuracy': 0.90204},
 }
+
 labels = [
     'english',
     'indonesian',
@@ -43,6 +45,7 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
 
         * ``'vggvox-v1'`` - finetuned VGGVox V1.
         * ``'vggvox-v2'`` - finetuned VGGVox V2.
+        * ``'deep-speaker'`` - finetuned Deep Speaker.
 
     Returns
     -------
