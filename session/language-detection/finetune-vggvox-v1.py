@@ -8,16 +8,18 @@ import malaya_speech.train as train
 import malaya_speech.train.model.vggvox_v1 as vggvox_v1
 import malaya_speech
 
+DIMENSION = 512
+
 
 def calc(v):
     r = malaya_speech.utils.featurization.vggvox_v1(v)
     return r
 
 
-def preprocess_inputs(example, dimension = 512):
+def preprocess_inputs(example):
     s = tf.compat.v1.numpy_function(calc, [example['inputs']], tf.float32)
 
-    s = tf.reshape(s, (dimension, -1, 1))
+    s = tf.reshape(s, (DIMENSION, -1, 1))
     example['inputs'] = s
 
     return example
@@ -53,7 +55,7 @@ def get_dataset(files, batch_size = 32, shuffle_size = 1024, thread_count = 24):
         dataset = dataset.padded_batch(
             batch_size,
             padded_shapes = {
-                'inputs': tf.TensorShape([dimension, None, 1]),
+                'inputs': tf.TensorShape([DIMENSION, None, 1]),
                 'targets': tf.TensorShape([None]),
             },
             padding_values = {
@@ -67,14 +69,9 @@ def get_dataset(files, batch_size = 32, shuffle_size = 1024, thread_count = 24):
     return get
 
 
-def model_fn(
-    features,
-    labels,
-    mode,
-    params,
-    learning_rate = 1e-5,
-    init_checkpoint = '../vggvox-speaker-identification/v1/vggvox.ckpt',
-):
+def model_fn(features, labels, mode, params):
+    learning_rate = 1e-5
+    init_checkpoint = '../vggvox-speaker-identification/v1/vggvox.ckpt'
     Y = tf.cast(features['targets'][:, 0], tf.int32)
 
     resnet = vggvox_v1.model.Resnet1D(

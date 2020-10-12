@@ -71,7 +71,7 @@ def get_dataset(files, batch_size = 32, shuffle_size = 1024, thread_count = 24):
 
 
 def model_fn(features, labels, mode, params):
-    learning_rate = (1e-5,)
+    learning_rate = 1e-5
     init_checkpoint = '../deep-speaker/out/vggvox.ckpt'
     Y = tf.cast(features['targets'][:, 0], tf.int32)
 
