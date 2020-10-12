@@ -1,40 +1,47 @@
 import tensorflow as tf
 
 
-def to_float(x):
-    return tf.cast(x, tf.float32)
+def calculate_3d_loss(y_gt, y_pred, loss_fn):
+    """Calculate 3d loss, normally it's mel-spectrogram loss."""
+    y_gt_T = tf.shape(y_gt)[1]
+    y_pred_T = tf.shape(y_pred)[1]
+
+    # there is a mismath length when training multiple GPU.
+    # we need slice the longer tensor to make sure the loss
+    # calculated correctly.
+    # if y_gt_T > y_pred_T:
+    #     y_gt = tf.slice(y_gt, [0, 0, 0], [-1, y_pred_T, -1])
+    # elif y_pred_T > y_gt_T:
+    #     y_pred = tf.slice(y_pred, [0, 0, 0], [-1, y_gt_T, -1])
+
+    loss = loss_fn(y_gt, y_pred)
+    # if isinstance(loss, tuple) is False:
+    #     loss = tf.reduce_mean(
+    #         loss, list(range(1, len(loss.shape)))
+    #     )  # shape = [B]
+    # else:
+    #     loss = list(loss)
+    #     for i in range(len(loss)):
+    #         loss[i] = tf.reduce_mean(
+    #             loss[i], list(range(1, len(loss[i].shape)))
+    #         )  # shape = [B]
+    return loss
 
 
-def weights_nonzero(labels):
-    return to_float(tf.not_equal(labels, 0))
+def calculate_2d_loss(y_gt, y_pred, loss_fn):
+    """Calculate 2d loss, normally it's durrations/f0s/energys loss."""
+    y_gt_T = tf.shape(y_gt)[1]
+    y_pred_T = tf.shape(y_pred)[1]
 
+    # there is a mismath length when training multiple GPU.
+    # we need slice the longer tensor to make sure the loss
+    # calculated correctly.
+    # if
+    # if y_gt_T > y_pred_T:
+    #     y_gt = tf.slice(y_gt, [0, 0], [-1, y_pred_T])
+    # elif y_pred_T > y_gt_T:
+    #     y_pred = tf.slice(y_pred, [0, 0], [-1, y_gt_T])
 
-def ctc_loss(logits, targets, input_lengths, weights_fn = weights_nonzero):
-    with tf.name_scope('ctc_loss', values = [logits, targets]):
-        targets_mask = 1 - tf.to_int32(tf.equal(targets, 0))
-        targets_lengths = tf.reduce_sum(targets_mask, axis = 1)
+    loss = loss_fn(y_gt, y_pred)
 
-        sparse_targets = tf.keras.backend.ctc_label_dense_to_sparse(
-            targets, targets_lengths
-        )
-        xent = tf.nn.ctc_loss(
-            sparse_targets, logits, input_lengths, time_major = False
-        )
-        weights = weights_fn(targets)
-        return tf.reduce_mean(xent), tf.reduce_sum(xent), tf.reduce_sum(weights)
-
-
-def keras_ctc_loss(
-    logits, targets, input_lengths, weights_fn = weights_nonzero
-):
-    logits = tf.nn.softmax(logits)
-    targets_mask = 1 - tf.to_int32(tf.equal(targets, 0))
-    targets_lengths = tf.reduce_sum(targets_mask, axis = 1)
-    xent = tf.keras.backend.ctc_batch_cost(
-        targets,
-        logits,
-        tf.expand_dims(input_lengths, -1),
-        tf.expand_dims(targets_lengths, -1),
-    )
-    weights = weights_fn(targets)
-    return tf.reduce_mean(xent), tf.reduce_sum(xent), tf.reduce_sum(weights)
+    return loss

@@ -14,14 +14,13 @@ import soundfile as sf
 import random
 from pysndfx import AudioEffectsChain
 from scipy.special import expit
-import dask.bag as db
 from itertools import cycle
 
-# files = glob('../speech-bahasa/LibriSpeech/*/*/*/*.flac') + glob(
-#     '../youtube/clean-wav/*.wav'
-# )
+files = glob('../speech-bahasa/LibriSpeech/*/*/*/*.flac') + glob(
+    '../youtube/clean-wav/*.wav'
+)
 
-files = glob('../youtube/clean-wav/*.wav')
+# files = glob('../youtube/clean-wav/*.wav')
 files = list(set(files))
 random.shuffle(files)
 print(len(files))
@@ -577,7 +576,7 @@ def model_fn(features, labels, mode, params):
 import malaya_speech.train as train
 
 train_hooks = [tf.train.LoggingTensorHook(['train_loss'], every_n_iter = 1)]
-train_dataset = get_dataset(batch_size = 32)
+train_dataset = get_dataset(batch_size = 16)
 
 save_directory = 'output-resnet34-unet'
 

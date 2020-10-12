@@ -25,22 +25,34 @@ Features
 
 -  **Emotion Detection**
 
-   Detect emotions in speech using Pretrained Malaya-Speech models.
+   Detect emotions in speech using Finetuned VGGVox Malaya-Speech models.
 -  **Gender Detection**
 
-   Detect genders in speech using Pretrained Malaya-Speech models.
+   Detect genders in speech using Finetuned VGGVox Malaya-Speech models.
+-  **Language Detection**
+
+   Detect hyperlocal languages in speech using Finetuned VGGVox Malaya-Speech models.
 -  **Noise Reduction**
 
-   Reduce multilevel noises using Pretrained Malaya-Speech models.
+   Reduce multilevel noises using Pretrained Mel-Spectrogram UNET and WaveNet Malaya-Speech models.
+-  **Speaker Change**
+
+   Detect changing speakers using Finetuned VGGVox Malaya-Speech models.
+-  **Speaker overlap**
+
+   Detect overlap speakers using Finetuned VGGVox Malaya-Speech models.
 -  **Speaker Vector**
 
    Calculate similarity between speakers using Pretrained Malaya-Speech models.
 -  **Speech Enhancement**
 
-   enhance speech using Pretrained Malaya-Speech models.
+   enhance speech using Pretrained Mel-Spectrogram UNET and WaveNet Malaya-Speech models.
+-  **Speech to Text**
+
+   End-to-End Speech to Text using Pretrained STT Malaya-Speech models.
 -  **Voice Activity Detection**
 
-   Detect voice activities using Pretrained Malaya-Speech models.
+   Detect voice activities using Finetuned VGGVox Malaya-Speech models.
 
 References
 -----------
@@ -61,4 +73,4 @@ If you use our software for research, please cite:
 Acknowledgement
 ----------------
 
-Thanks to `Im Big <https://www.facebook.com/imbigofficial/>`_, `LigBlou <https://www.facebook.com/ligblou>`_, `Mesolitica <https://mesolitica.com/>`_ and `KeyReply <https://www.keyreply.com/>`_ for sponsoring AWS, GCP and private cloud to train Malaya models.
+Thanks to `Mesolitica <https://mesolitica.com/>`_ and `KeyReply <https://www.keyreply.com/>`_ for sponsoring AWS, GCP and private cloud to train Malaya models.

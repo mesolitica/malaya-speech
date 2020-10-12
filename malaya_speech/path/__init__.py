@@ -37,14 +37,19 @@ S3_PATH_SPEAKER_VECTOR = {
 }
 
 PATH_SPEECH_ENHANCEMENT = {
-    'resnet34-unet': {
+    'resnet34': {
         'model': home + '/speech-enhancement/resnet34-unet.pb',
         'version': 'v1',
-    }
+    },
+    'inception-v3': {
+        'model': home + '/speech-enhancement/inception-v3-unet.pb',
+        'version': 'v1',
+    },
 }
 
 S3_PATH_SPEECH_ENHANCEMENT = {
-    'resnet34-unet': {'model': 'v1/speech-enhancement/resnet34-unet.pb'}
+    'resnet34': {'model': 'v1/speech-enhancement/resnet34-unet.pb'},
+    'inception-v3': {'model': 'v1/speech-enhancement/inception-v3-unet.pb'},
 }
 
 PATH_VAD = {

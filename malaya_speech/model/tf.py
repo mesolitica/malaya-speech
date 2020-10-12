@@ -16,6 +16,17 @@ class SPEAKER2VEC:
         self.__name__ = name
 
     def vectorize(self, inputs):
+        """
+        Vectorize inputs.
+
+        Parameters
+        ----------
+        inputs: List[np.array]
+
+        Returns
+        -------
+        result: np.array
+        """
         inputs = [
             input.array if isinstance(input, FRAME) else input
             for input in inputs
@@ -38,11 +49,22 @@ class CLASSIFICATION:
         self._vectorizer = vectorizer
         self._sess = sess
         self._extra = extra
-        self._label = label
+        self.labels = label
         self.__model__ = model
         self.__name__ = name
 
     def predict_proba(self, inputs):
+        """
+        Predict inputs, will return probability.
+
+        Parameters
+        ----------
+        inputs: List[np.array]
+
+        Returns
+        -------
+        result: np.array
+        """
         inputs = [
             input.array if isinstance(input, FRAME) else input
             for input in inputs
@@ -55,8 +77,18 @@ class CLASSIFICATION:
         return self._sess.run(self._logits, feed_dict = {self._X: inputs})
 
     def predict(self, inputs):
+        """
+        Predict inputs, will return labels.
+
+        Parameters
+        ----------
+        inputs: List[np.array]
+        Returns
+        -------
+        result: List[str]
+        """
         probs = np.argmax(self.predict_proba(inputs), axis = 1)
-        return [self._label[p] for p in probs]
+        return [self.labels[p] for p in probs]
 
     def __call__(self, input):
         return self.predict([input])[0]
@@ -71,6 +103,17 @@ class UNET:
         self.__name__ = name
 
     def predict(self, inputs):
+        """
+        Enhance inputs, will return melspectrogram.
+
+        Parameters
+        ----------
+        inputs: List[np.array]
+
+        Returns
+        -------
+        result: List
+        """
         inputs = [
             input.array if isinstance(input, FRAME) else input
             for input in inputs

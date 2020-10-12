@@ -1,11 +1,13 @@
 import librosa
 import numpy as np
 import python_speech_features
-from pysndfx import AudioEffectsChain
+
 from malaya_speech.utils.astype import int_to_float
 
 # https://github.com/dodiku/noise_reduction/blob/master/noise.py
 def reduce_noise_power(y, sr = 16000):
+    from pysndfx import AudioEffectsChain
+
     y = int_to_float(y)
     cent = librosa.feature.spectral_centroid(y = y, sr = sr)
 
@@ -24,6 +26,8 @@ def reduce_noise_power(y, sr = 16000):
 
 # https://github.com/dodiku/noise_reduction/blob/master/noise.py
 def reduce_noise_centroid_s(y, sr = 16000):
+    from pysndfx import AudioEffectsChain
+
     y = int_to_float(y)
     cent = librosa.feature.spectral_centroid(y = y, sr = sr)
 
@@ -44,6 +48,8 @@ def reduce_noise_centroid_s(y, sr = 16000):
 
 # https://github.com/dodiku/noise_reduction/blob/master/noise.py
 def reduce_noise_centroid_mb(y, sr = 16000):
+    from pysndfx import AudioEffectsChain
+
     y = int_to_float(y)
     cent = librosa.feature.spectral_centroid(y = y, sr = sr)
 
@@ -73,6 +79,8 @@ def reduce_noise_centroid_mb(y, sr = 16000):
 
 # https://github.com/dodiku/noise_reduction/blob/master/noise.py
 def reduce_noise_mfcc_down(y, sr = 16000):
+    from pysndfx import AudioEffectsChain
+
     y = int_to_float(y)
     hop_length = 512
 
@@ -105,6 +113,8 @@ def reduce_noise_mfcc_down(y, sr = 16000):
 
 # https://github.com/dodiku/noise_reduction/blob/master/noise.py
 def reduce_noise_mfcc_up(y, sr = 16000):
+    from pysndfx import AudioEffectsChain
+
     y = int_to_float(y)
     hop_length = 512
     mfcc = python_speech_features.base.logfbank(y)
@@ -132,17 +142,16 @@ def reduce_noise_mfcc_up(y, sr = 16000):
     return y_speach_boosted
 
 
-# https://github.com/dodiku/noise_reduction/blob/master/noise.py
-def reduce_noise_median(y, sr = 16000):
-    y = int_to_float(y)
-    y = sp.signal.medfilt(y, 3)
-    return y
-
-
-def trim_silence(y, return_trimmed_length = False):
+def trim_silence(
+    y,
+    top_db = 20,
+    frame_length = 2,
+    hop_length = 500,
+    return_trimmed_length = False,
+):
     y = int_to_float(y)
     y_trimmed, index = librosa.effects.trim(
-        y, top_db = 20, frame_length = 2, hop_length = 500
+        y, top_db = top_db, frame_length = frame_length, hop_length = hop_length
     )
     trimmed_length = librosa.get_duration(y) - librosa.get_duration(y_trimmed)
 

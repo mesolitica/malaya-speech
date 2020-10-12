@@ -190,6 +190,7 @@ from . import language_detection
 from . import noise_reduction
 from . import speaker_vector
 from . import speech_enhancement
+from . import stack
 from . import stt
 from . import vad
 
