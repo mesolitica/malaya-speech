@@ -3,6 +3,43 @@ import numpy as np
 
 
 def from_mel(
+    mel_,
+    sr = 22050,
+    n_fft = 2048,
+    n_iter = 32,
+    win_length = 1000,
+    hop_length = 100,
+    fmin = 80,
+    fmax = 7600,
+):
+    """
+    Change melspectrogram into waveform using Librosa.
+
+    Parameters
+    ----------
+    spectrogram: np.array
+
+    Returns
+    --------
+    result: np.array
+    """
+    return librosa.feature.inverse.mel_to_audio(
+        mel_,
+        sr = sr,
+        n_fft = n_fft,
+        hop_length = hop_length,
+        win_length = win_length,
+        window = 'hann',
+        center = True,
+        pad_mode = 'reflect',
+        power = 1.0,
+        n_iter = n_iter,
+        fmin = 80,
+        fmax = 7600,
+    )
+
+
+def from_mel_vocoder(
     mel,
     sr = 22050,
     n_fft = 1024,

@@ -319,6 +319,47 @@ def vggvox_v2(
 def scale_mel(
     y,
     sr = 22050,
+    n_fft = 2048,
+    hop_length = 100,
+    win_length = 1000,
+    n_mels = 256,
+    ref_db = 20,
+    max_db = 100,
+    fmin = 80,
+    fmax = 7600,
+    factor = 15,
+    scale = True,
+):
+    mel = librosa.feature.melspectrogram(
+        y = y,
+        sr = sr,
+        S = None,
+        n_fft = n_fft,
+        hop_length = hop_length,
+        win_length = win_length,
+        window = 'hann',
+        center = True,
+        pad_mode = 'reflect',
+        power = 1.0,
+        n_mels = n_mels,
+        fmin = fmin,
+        fmax = fmax,
+    )
+    if scale:
+        mel = factor * np.log10(mel)
+        mel = np.clip((mel - ref_db + max_db) / max_db, 1e-11, 1)
+    return mel
+
+
+def unscale_mel(mel, ref_db = 20, max_db = 100, factor = 15):
+    inv_mel = ((mel * max_db) - max_db + ref_db) / factor
+    inv_mel = np.power(10, inv_mel)
+    return inv_mel
+
+
+def scale_mel_vocoder(
+    y,
+    sr = 22050,
     n_fft = 1024,
     hop_length = 256,
     win_length = None,
@@ -348,7 +389,7 @@ def scale_mel(
     return mel
 
 
-def unscale_mel(mel, ref_db = 20, max_db = 200, factor = 13):
+def unscale_mel_vocoder(mel, ref_db = 20, max_db = 200, factor = 13):
     inv_mel = ((mel * max_db) - max_db + ref_db) / factor
     return inv_mel
 

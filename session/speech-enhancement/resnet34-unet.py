@@ -1,7 +1,7 @@
 import os
 import warnings
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
 warnings.filterwarnings('ignore')
 
 from glob import glob
@@ -14,7 +14,10 @@ import segmentation_models as sm
 import malaya_speech.utils.featurization as featurization
 import malaya_speech.augmentation.waveform as augmentation
 import malaya_speech.train as train
+import malaya_speech
 import mp
+from tqdm import tqdm
+import soundfile as sf
 
 
 def get_data(
@@ -34,13 +37,16 @@ def get_data(
     return file_cycle, ambient
 
 
+file_cycle, ambient = get_data()
+
+
 def combine_speakers(files, n = 5):
     w_samples = random.sample(files, n)
     y = [w_samples[0]]
-    left = w_samples[0]
+    left = w_samples[0].copy()
     for i in range(1, n):
 
-        right = w_samples[i]
+        right = w_samples[i].copy()
 
         overlap = random.uniform(0.01, 1.5)
         left_len = int(overlap * len(left))
@@ -123,7 +129,9 @@ def calc(signal):
         x = signal
 
     if random.randint(0, 1):
-        x = augmentation.add_uniform_noise(x, power = random.uniform(0.005, 0.01))
+        x = augmentation.add_uniform_noise(
+            x, power = random.uniform(0.005, 0.015)
+        )
 
     return x
 
@@ -152,18 +160,26 @@ def loop_mel(files):
     return results
 
 
-def generate(batch_size = 100, core = 16, repeat = 2):
-    file_cycle, ambient = get_data()
+def read_file(file):
+    y, sr = sf.read(file)
+    print(file, len(y) / sr / 60)
+
+    y = augmentation.random_sampling(y, sr, random.randint(30000, 180000))
+    return y
+
+
+def generate(batch_size = 40, core = 16, repeat = 2):
+
     while True:
         batch_files = [next(file_cycle) for _ in range(batch_size)]
         print(batch_files)
         print('before wavs')
-        wavs = [read_file(f)[0] for f in batch_files]
+        wavs = [read_file(f) for f in tqdm(batch_files)]
         print('after wavs')
 
         samples = []
         print('before iterating wavs')
-        for wav in wavs:
+        for wav in tqdm(wavs):
             if random.random() < 0.7:
                 signal = wav.copy()
 
@@ -174,17 +190,14 @@ def generate(batch_size = 100, core = 16, repeat = 2):
                     )
 
             else:
-                r = random.randint(2, 6)
+                r = random.randint(2, 4)
                 signal = combine_speakers(wavs, min(len(wavs), r))[0]
-
-            signal = augmentation.random_sampling(
-                signal, 22050, random.randint(60000, 240000)
-            )
 
             samples.append(signal)
 
         R = []
-        for s in samples:
+        print('before iterating samples')
+        for s in tqdm(samples):
             if random.random() > 0.8:
                 signal_ = random.choice(ambient)
                 s = augmentation.add_noise(
@@ -212,6 +225,28 @@ def generate(batch_size = 100, core = 16, repeat = 2):
             for r in results:
                 yield {'inputs': r[0], 'targets': r[1]}
 
+        del wavs, samples, R, results, combined
+
+
+DIMENSION = 256
+
+
+def parse(example):
+    x = tf.compat.v1.numpy_function(
+        featurization.scale_mel, [example['inputs']], tf.float32
+    )
+    x = tf.transpose(tf.reshape(x, (DIMENSION, -1)))
+
+    y = tf.compat.v1.numpy_function(
+        featurization.scale_mel, [example['targets']], tf.float32
+    )
+    y = tf.transpose(tf.reshape(y, (DIMENSION, -1)))
+
+    z = y - x
+    example['inputs'] = x
+    example['targets'] = z
+    return example
+
 
 def get_dataset(batch_size = 32, shuffle_size = 128, prefetch_size = 128):
     def get():
@@ -223,6 +258,8 @@ def get_dataset(batch_size = 32, shuffle_size = 128, prefetch_size = 128):
                 'targets': tf.TensorShape([None, 256]),
             },
         )
+
+        dataset = dataset.shuffle(shuffle_size)
 
         dataset = dataset.padded_batch(
             batch_size,
@@ -270,7 +307,7 @@ def model_fn(features, labels, mode, params):
             learning_rate,
             global_step,
             epochs,
-            end_learning_rate = 1e-6,
+            end_learning_rate = 1e-7,
             power = 1.0,
             cycle = False,
         )
@@ -291,7 +328,7 @@ def model_fn(features, labels, mode, params):
 
 
 train_hooks = [tf.train.LoggingTensorHook(['train_loss'], every_n_iter = 1)]
-train_dataset = get_dataset(batch_size = 16)
+train_dataset = get_dataset(batch_size = 32)
 
 save_directory = 'output-resnet34-unet'
 
@@ -299,7 +336,7 @@ train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
     model_dir = save_directory,
-    num_gpus = 3,
+    num_gpus = 2,
     log_step = 1,
     save_checkpoint_step = 2500,
     max_steps = epochs,
