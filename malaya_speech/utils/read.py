@@ -3,7 +3,6 @@ import soundfile as sf
 from scipy.io.wavfile import read
 from scipy import interpolate
 from herpetologist import check_type
-from malaya_speech.utils.astype import float_to_int
 
 
 def resample(data, old_samplerate, new_samplerate):
@@ -23,49 +22,50 @@ def read_audio(data, old_samplerate, sample_rate = 22050):
     if len(data.shape) == 2:
         data = data[:, 0]
 
-    if old_samplerate != sample_rate:
+    if old_samplerate != sample_rate and sample_rate is not None:
         data = resample(data, old_samplerate, sample_rate)
+    else:
+        sample_rate = old_samplerate
 
-    return data.tolist(), sample_rate
+    return data, sample_rate
 
 
 @check_type
-def wav(file: str, sample_rate: int = 22050):
+def wav(file: str, sr: int = 16000):
     """
     Read wav file.
 
     Parameters
     ----------
     file: str
-    sample_rate: int, (default=22050)
-        new sample rate. If input sample rate is not same, will interpolate automatically.
+    sr: int, (default=16000)
+        new sample rate. If input sample rate is not same, will resample automatically.
 
     Returns
     -------
-    result: (y, new_sample_rate)
+    result: (y, sr)
     """
-
-    old_samplerate, data = read(file)
-    y, sr = read_audio(data, old_samplerate, sample_rate)
-    return float_to_int(y), sr
+    data, old_samplerate = sf.read(file)
+    y, sr = read_audio(data, old_samplerate, sr)
+    return y, sr
 
 
 @check_type
-def flac(file: str, sample_rate: int = 22050):
+def flac(file: str, sr: int = 16000):
     """
     Read flac file.
 
     Parameters
     ----------
     file: str
-    sample_rate: int, (default=22050)
-        new sample rate. If input sample rate is not same, will interpolate automatically.
+    sr: int, (default=16000)
+        new sample rate. If input sample rate is not same, will resample automatically.
 
     Returns
     -------
-    result: (y, new_sample_rate)
+    result: (y, sr)
     """
 
     data, old_samplerate = sf.read(file)
-    y, sr = read_audio(data, old_samplerate, sample_rate)
-    return float_to_int(y), sr
+    y, sr = read_audio(data, old_samplerate, sr)
+    return y, sr

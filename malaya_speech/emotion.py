@@ -4,7 +4,7 @@ from herpetologist import check_type
 _availability = {
     'vggvox-v1': {'Size (MB)': 70.8, 'Accuracy': 0.95},
     'vggvox-v2': {'Size (MB)': 31.1, 'Accuracy': 0.9594},
-    'inception-v4': {'Size (MB)': 181, 'Accuracy': 0.9594},
+    'deep-speaker': {'Size (MB)': 30.9, 'Accuracy': 0.90204},
 }
 
 labels = [
@@ -25,7 +25,9 @@ def available_model():
     """
     from malaya_speech.utils import describe_availability
 
-    return describe_availability(_availability)
+    return describe_availability(
+        _availability, text = 'last accuracy during training session.'
+    )
 
 
 @check_type
@@ -38,8 +40,9 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
     model : str, optional (default='vggvox-v2')
         Model architecture supported. Allowed values:
 
-        * ``'vggvox-v1'`` - VGGVox V1, embedding size 1024.
-        * ``'vggvox-v2'`` - VGGVox V2, embedding size 512.
+        * ``'vggvox-v1'`` - finetuned VGGVox V1.
+        * ``'vggvox-v2'`` - finetuned VGGVox V2.
+        * ``'deep-speaker'`` - finetuned Deep Speaker.
 
     Returns
     -------

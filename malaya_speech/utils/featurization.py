@@ -318,15 +318,13 @@ def vggvox_v2(
 
 def scale_mel(
     y,
-    sr = 22050,
+    sr = 16000,
     n_fft = 2048,
     hop_length = 100,
     win_length = 1000,
     n_mels = 256,
     ref_db = 20,
     max_db = 100,
-    fmin = 80,
-    fmax = 7600,
     factor = 15,
     scale = True,
 ):
@@ -342,18 +340,17 @@ def scale_mel(
         pad_mode = 'reflect',
         power = 1.0,
         n_mels = n_mels,
-        fmin = fmin,
-        fmax = fmax,
     )
     if scale:
-        mel = factor * np.log10(mel)
+        mel = factor * np.log10(mel + 1e-8)
         mel = np.clip((mel - ref_db + max_db) / max_db, 1e-11, 1)
     return mel
 
 
 def unscale_mel(mel, ref_db = 20, max_db = 100, factor = 15):
     inv_mel = ((mel * max_db) - max_db + ref_db) / factor
-    inv_mel = np.power(10, inv_mel)
+    inv_mel = np.power(10, inv_mel) - 1e-8
+    inv_mel[inv_mel < 5e-6] = 0.0
     return inv_mel
 
 

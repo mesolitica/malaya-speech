@@ -15,9 +15,29 @@ import malaya_speech.utils.featurization as featurization
 import malaya_speech.augmentation.waveform as augmentation
 import malaya_speech.train as train
 import malaya_speech
-import mp
 from tqdm import tqdm
 import soundfile as sf
+from multiprocessing import Pool
+import itertools
+
+
+def chunks(l, n):
+    for i in range(0, len(l), n):
+        yield (l[i : i + n], i // n)
+
+
+def multiprocessing(strings, function, cores = 6, returned = True):
+    df_split = chunks(strings, len(strings) // cores)
+    pool = Pool(cores)
+    print('initiate pool map')
+    pooled = pool.map(function, df_split)
+    print('gather from pool')
+    pool.close()
+    pool.join()
+    print('closed pool')
+
+    if returned:
+        return list(itertools.chain(*pooled))
 
 
 def get_data(
@@ -168,7 +188,7 @@ def read_file(file):
     return y
 
 
-def generate(batch_size = 40, core = 16, repeat = 2):
+def generate(batch_size = 40, core = 20, repeat = 2):
 
     while True:
         batch_files = [next(file_cycle) for _ in range(batch_size)]
@@ -206,17 +226,17 @@ def generate(batch_size = 40, core = 16, repeat = 2):
             R.append(s)
 
         print('len samples', len(samples))
-        results = mp.multiprocessing(R, loop, cores = min(len(samples), core))
+        results = multiprocessing(R, loop, cores = min(len(samples), core))
         print('after len samples', len(samples))
 
         X, Y = [], []
         for o in range(len(samples)):
-            X.extend(sampling(results[o], 2600))
-            Y.extend(sampling(samples[o], 2600))
+            X.extend(sampling(results[o], 1000))
+            Y.extend(sampling(samples[o], 1000))
 
         combined = list(zip(X, Y))
         print('len combined', len(combined))
-        results = mp.multiprocessing(
+        results = multiprocessing(
             combined, loop_mel, cores = min(len(combined), core)
         )
         print('after len combined', len(combined))
@@ -272,13 +292,13 @@ def get_dataset(batch_size = 32, shuffle_size = 128, prefetch_size = 128):
                 'targets': tf.constant(0, dtype = tf.float32),
             },
         )
-        dataset = dataset.prefetch(prefetch_size)
+        # dataset = dataset.prefetch(prefetch_size)
         return dataset
 
     return get
 
 
-init_lr = 1e-4
+init_lr = 1e-5
 epochs = 500000
 
 
@@ -292,11 +312,29 @@ def model_fn(features, labels, mode, params):
     )
     Y = tf.expand_dims(features['inputs'], -1)
     logits = model(Y)
-    loss = tf.compat.v1.losses.huber_loss(
+    huber = tf.compat.v1.losses.huber_loss(
         features['targets'], logits[:, :, :, 0]
     )
-    loss = tf.reduce_mean(loss)
+    z = tf.expand_dims(features['targets'], -1)
+    ssim = 1 - tf.image.ssim(
+        logits,
+        z,
+        max_val = 1.5,
+        filter_size = 11,
+        filter_sigma = 1.5,
+        k1 = 0.01,
+        k2 = 0.03,
+    )
+    ssim = tf.reduce_mean(ssim)
+    huber = tf.reduce_mean(huber)
+    loss = huber + ssim
     tf.identity(loss, 'train_loss')
+    tf.identity(huber, 'train_huber')
+    tf.identity(ssim, 'train_ssim')
+
+    tf.summary.scalar('train_huber', huber)
+    tf.summary.scalar('train_ssim', ssim)
+    tf.summary.scalar('train_loss', loss)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
         global_step = tf.train.get_or_create_global_step()
@@ -327,7 +365,11 @@ def model_fn(features, labels, mode, params):
     return estimator_spec
 
 
-train_hooks = [tf.train.LoggingTensorHook(['train_loss'], every_n_iter = 1)]
+train_hooks = [
+    tf.train.LoggingTensorHook(
+        ['train_loss', 'train_huber', 'train_ssim'], every_n_iter = 1
+    )
+]
 train_dataset = get_dataset(batch_size = 32)
 
 save_directory = 'output-resnet34-unet'
@@ -338,7 +380,7 @@ train.run_training(
     model_dir = save_directory,
     num_gpus = 2,
     log_step = 1,
-    save_checkpoint_step = 2500,
+    save_checkpoint_step = 5000,
     max_steps = epochs,
     train_hooks = train_hooks,
     eval_step = 0,

@@ -35,7 +35,7 @@ def webrtc(
     sample_rate: int, optional (default=16000)
         sample rate for samples.
     minimum_amplitude: int, optional (default=100)
-        minimum_amplitude to assume a sample is a voice activity. Else, automatically False.
+        abs(minimum_amplitude) to assume a sample is a voice activity. Else, automatically False.
 
     Returns
     -------

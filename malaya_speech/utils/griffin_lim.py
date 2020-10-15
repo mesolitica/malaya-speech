@@ -4,13 +4,11 @@ import numpy as np
 
 def from_mel(
     mel_,
-    sr = 22050,
+    sr = 16000,
     n_fft = 2048,
     n_iter = 32,
     win_length = 1000,
     hop_length = 100,
-    fmin = 80,
-    fmax = 7600,
 ):
     """
     Change melspectrogram into waveform using Librosa.
@@ -34,8 +32,6 @@ def from_mel(
         pad_mode = 'reflect',
         power = 1.0,
         n_iter = n_iter,
-        fmin = 80,
-        fmax = 7600,
     )
 
 
