@@ -31,9 +31,9 @@ def read_audio(data, old_samplerate, sample_rate = 22050):
 
 
 @check_type
-def wav(file: str, sr: int = 16000):
+def load(file: str, sr: int = 16000):
     """
-    Read wav file.
+    Read sound file, any format supported by soundfile.read
 
     Parameters
     ----------
@@ -45,27 +45,6 @@ def wav(file: str, sr: int = 16000):
     -------
     result: (y, sr)
     """
-    data, old_samplerate = sf.read(file)
-    y, sr = read_audio(data, old_samplerate, sr)
-    return y, sr
-
-
-@check_type
-def flac(file: str, sr: int = 16000):
-    """
-    Read flac file.
-
-    Parameters
-    ----------
-    file: str
-    sr: int, (default=16000)
-        new sample rate. If input sample rate is not same, will resample automatically.
-
-    Returns
-    -------
-    result: (y, sr)
-    """
-
     data, old_samplerate = sf.read(file)
     y, sr = read_audio(data, old_samplerate, sr)
     return y, sr
