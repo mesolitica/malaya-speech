@@ -25,3 +25,5 @@ misc/crawl/isu*
 a.py
 savewav*
 pipeline.png
+test/out
+test/checkpoint

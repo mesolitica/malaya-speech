@@ -1,5 +1,25 @@
 from malaya_speech import home
 
+PATH_EMOTION = {
+    'vggvox-v1': {
+        'model': home + '/emotion/vggvox-v1/model.pb',
+        'version': 'v1',
+    },
+    'vggvox-v2': {
+        'model': home + '/emotion/vggvox-v2/model.pb',
+        'version': 'v1',
+    },
+    'deep-speaker': {
+        'model': home + '/emotion/deep-speaker/model.pb',
+        'version': 'v1',
+    },
+}
+S3_PATH_EMOTION = {
+    'vggvox-v1': {'model': 'v1/emotion/finetuned-vggvox-v1.pb'},
+    'vggvox-v2': {'model': 'v1/emotion/finetuned-vggvox-v2.pb'},
+    'deep-speaker': {'model': 'v1/emotion/finetuned-deep-speaker.pb'},
+}
+
 PATH_LANGUAGE_DETECTION = {
     'vggvox-v1': {
         'model': home + '/language-detection/vggvox-v1/model.pb',
@@ -9,10 +29,17 @@ PATH_LANGUAGE_DETECTION = {
         'model': home + '/language-detection/vggvox-v2/model.pb',
         'version': 'v1',
     },
+    'deep-speaker': {
+        'model': home + '/language-detection/deep-speaker/model.pb',
+        'version': 'v1',
+    },
 }
 S3_PATH_LANGUAGE_DETECTION = {
     'vggvox-v1': {'model': 'v1/language-detection/finetuned-vggvox-v1.pb'},
     'vggvox-v2': {'model': 'v1/language-detection/finetuned-vggvox-v2.pb'},
+    'deep-speaker': {
+        'model': 'v1/language-detection/finetuned-deep-speaker.pb'
+    },
 }
 
 PATH_SPEAKER_VECTOR = {

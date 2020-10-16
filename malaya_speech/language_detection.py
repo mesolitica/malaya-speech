@@ -6,9 +6,9 @@ from malaya_speech.supervised import classification
 from herpetologist import check_type
 
 _availability = {
-    'vggvox-v1': {'Size (MB)': 70.8, 'Accuracy': 0.90204},
+    'vggvox-v1': {'Size (MB)': 70.8, 'Accuracy': 0.86015},
     'vggvox-v2': {'Size (MB)': 30.9, 'Accuracy': 0.90204},
-    'deep-speaker': {'Size (MB)': 30.9, 'Accuracy': 0.90204},
+    'deep-speaker': {'Size (MB)': 96.9, 'Accuracy': 0.8945},
 }
 
 labels = [
@@ -57,7 +57,11 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
             'model not supported, please check supported models from malaya_speech.language_detection.available_model()'
         )
 
-    settings = {'vggvox-v1': {}, 'vggvox-v2': {'concat': False}}
+    settings = {
+        'vggvox-v1': {},
+        'vggvox-v2': {'concat': False},
+        'deep-speaker': {'voice_only': False},
+    }
 
     return classification.load(
         path = PATH_LANGUAGE_DETECTION,

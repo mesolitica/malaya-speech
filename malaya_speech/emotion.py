@@ -1,10 +1,11 @@
+from malaya_speech.path import PATH_EMOTION, S3_PATH_EMOTION
 from malaya_speech.supervised import classification
 from herpetologist import check_type
 
 _availability = {
     'vggvox-v1': {'Size (MB)': 70.8, 'Accuracy': 0.95},
-    'vggvox-v2': {'Size (MB)': 31.1, 'Accuracy': 0.9594},
-    'deep-speaker': {'Size (MB)': 30.9, 'Accuracy': 0.90204},
+    'vggvox-v2': {'Size (MB)': 31.1, 'Accuracy': 0.99},
+    'deep-speaker': {'Size (MB)': 30.9, 'Accuracy': 0.99},
 }
 
 labels = [
@@ -48,8 +49,25 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
     -------
     result : malaya_speech.model.tf.CLASSIFICATION class
     """
+
     model = model.lower()
     if model not in _availability:
         raise Exception(
             'model not supported, please check supported models from malaya_speech.emotion.available_model()'
         )
+
+    settings = {
+        'vggvox-v1': {},
+        'vggvox-v2': {'concat': False},
+        'deep-speaker': {'voice_only': False},
+    }
+
+    return classification.load(
+        path = PATH_EMOTION,
+        s3_path = S3_PATH_EMOTION,
+        model = model,
+        name = 'emotion',
+        extra = settings[model],
+        label = labels,
+        **kwargs
+    )

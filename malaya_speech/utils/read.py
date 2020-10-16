@@ -6,6 +6,21 @@ from herpetologist import check_type
 
 
 def resample(data, old_samplerate, new_samplerate):
+    """
+    Resample signal.
+
+    Parameters
+    ----------
+    data: np.array
+    old_samplerate: int
+        old sample rate.
+    new_samplerate: int
+        new sample rate.
+
+    Returns
+    -------
+    result: data
+    """
     old_audio = data
     duration = data.shape[0] / old_samplerate
     time_old = np.linspace(0, duration, old_audio.shape[0])

@@ -11,13 +11,12 @@ def frames(
     append_ending_trail: bool = True,
 ):
     """
-    Generates audio frames from PCM audio data.
-    Takes the desired frame duration in milliseconds, the PCM data, and the sample rate.
+    Generates audio frames from audio.
+    Takes the desired frame duration in milliseconds, the audio, and the sample rate.
 
     Parameters
     ----------
-
-    audio: np.array / list
+    audio: np.array
     frame_duration_ms: int, optional (default=30)
     sample_rate: int, optional (default=16000)
     append_ending_trail: bool, optional (default=True)
@@ -43,4 +42,59 @@ def frames(
                 audio[offset:], timestamp, len(audio) / sample_rate - timestamp
             )
         )
+    return results
+
+
+def mel_sampling(
+    audio, frame_duration_ms = 1200, overlap_ms = 100, sample_rate = 16000
+):
+    """
+    Generates audio frames from audio. This is for melspectrogram generative model.
+    Takes the desired frame duration in milliseconds, the audio, and the sample rate.
+
+    Parameters
+    ----------
+    audio: np.array
+    frame_duration_ms: int, optional (default=1200)
+    overlap_ms: int, optional (default=100)
+    sample_rate: int, optional (default=16000)
+
+    Returns
+    -------
+    result: List[np.array]
+    """
+
+    n = int(sample_rate * (frame_duration_ms / 1000.0))
+    n_overlap = int(sample_rate * (overlap_ms / 1000.0))
+    offset = 0
+    results = []
+    while offset + n <= len(audio):
+        results.append(audio[offset : offset + n])
+        offset += n - n_overlap
+    if offset < len(audio):
+        results.append(audio[offset:])
+
+    return results
+
+
+def combine_mel_sampling(samples, overlap_ms = 100, sample_rate = 16000):
+    """
+    To combine results from `mel_sampling`, output from melspectrogram generative model.
+
+    Parameters
+    ----------
+    samples: List[np.array]
+    overlap_ms: int, optional (default=100)
+    sample_rate: int, optional (default=16000)
+
+    Returns
+    -------
+    result: List[np.array]
+    """
+    n_overlap = int(sample_rate * (overlap_ms / 1000.0))
+    results = []
+    for no, sample in enumerate(samples):
+        if no:
+            sample = sample[n_overlap:]
+        results.append(sample)
     return results
