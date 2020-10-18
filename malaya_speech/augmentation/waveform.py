@@ -137,10 +137,20 @@ def random_pitch(sample, low = 0.5, high = 1.0):
     return y_pitch_speed
 
 
-def random_amplitude(sample, low = 1.5, high = 3):
+def random_amplitude(sample, low = 3, high = 5):
     y_aug = sample.copy()
     dyn_change = np.random.uniform(low = low, high = high)
-    return y_aug * dyn_change
+    y_aug = y_aug * dyn_change
+    return np.clip(y_aug, -1, 1)
+
+
+def random_amplitude_threshold(sample, low = 3, high = 5, threshold = 0.4):
+    y_aug = sample.copy()
+    dyn_change = np.random.uniform(low = low, high = high)
+    y_aug[np.abs(y_aug) >= threshold] = (
+        y_aug[np.abs(y_aug) >= threshold] * dyn_change
+    )
+    return np.clip(y_aug, -1, 1)
 
 
 def random_stretch(sample, low = 0.5, high = 1.3):
@@ -163,22 +173,36 @@ def random_sampling(sample, sr, length = 500):
     return sample[r : r + sr * length]
 
 
-def add_uniform_noise(sample, power = 0.01):
+def add_uniform_noise(sample, power = 0.01, return_noise = False):
     y_noise = sample.copy()
     noise_amp = power * np.random.uniform() * np.amax(y_noise)
-    return y_noise.astype('float64') + noise_amp * np.random.normal(
-        size = y_noise.shape[0]
-    )
+    noise = noise_amp * np.random.normal(size = y_noise.shape[0])
+    y_noise = y_noise + noise
+    noise = noise / np.max(np.abs(y_noise))
+    y_noise = y_noise / np.max(np.abs(y_noise))
+    if return_noise:
+        return y_noise, noise
+    else:
+        return y_noise
 
 
-def add_noise(sample, noise, random_sample = True, factor = 0.1):
+def add_noise(
+    sample, noise, random_sample = True, factor = 0.1, return_noise = False
+):
     y_noise = sample.copy()
     if len(y_noise) > len(noise):
         noise = np.tile(noise, int(np.ceil(len(y_noise) / len(noise))))
     else:
         if random_sample:
             noise = noise[np.random.randint(0, len(noise) - len(y_noise) + 1) :]
-    return y_noise + noise[: len(y_noise)] * factor
+    noise = noise[: len(y_noise)] * factor
+    y_noise = y_noise + noise
+    noise = noise / np.max(np.abs(y_noise))
+    y_noise = y_noise / np.max(np.abs(y_noise))
+    if return_noise:
+        return y_noise, noise
+    else:
+        return y_noise
 
 
 # from https://stackoverflow.com/questions/33933842/how-to-generate-noise-in-frequency-range-with-numpy

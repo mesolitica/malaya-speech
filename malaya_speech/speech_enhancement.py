@@ -39,7 +39,7 @@ def deep_model(model: str = 'resnet34-unet', **kwargs):
     """
 
     model = model.lower()
-    if model not in _unet_availability:
+    if model not in _availability:
         raise Exception(
             'model not supported, please check supported models from malaya_speech.speech_enhancement.available_model()'
         )

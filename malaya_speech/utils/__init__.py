@@ -280,6 +280,7 @@ from . import generator
 from . import griffin_lim
 from . import group
 from . import read
+from . import tf_featurization
 from . import validator
 from . import padding
 

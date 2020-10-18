@@ -46,7 +46,7 @@ def frames(
 
 
 def mel_sampling(
-    audio, frame_duration_ms = 1200, overlap_ms = 100, sample_rate = 16000
+    audio, frame_duration_ms = 1200, overlap_ms = 200, sample_rate = 16000
 ):
     """
     Generates audio frames from audio. This is for melspectrogram generative model.
@@ -56,7 +56,7 @@ def mel_sampling(
     ----------
     audio: np.array
     frame_duration_ms: int, optional (default=1200)
-    overlap_ms: int, optional (default=100)
+    overlap_ms: int, optional (default=200)
     sample_rate: int, optional (default=16000)
 
     Returns
@@ -77,14 +77,16 @@ def mel_sampling(
     return results
 
 
-def combine_mel_sampling(samples, overlap_ms = 100, sample_rate = 16000):
+def combine_mel_sampling(
+    samples, overlap_ms = 200, sample_rate = 16000, padded_ms = 50
+):
     """
     To combine results from `mel_sampling`, output from melspectrogram generative model.
 
     Parameters
     ----------
     samples: List[np.array]
-    overlap_ms: int, optional (default=100)
+    overlap_ms: int, optional (default=200)
     sample_rate: int, optional (default=16000)
 
     Returns
@@ -92,9 +94,10 @@ def combine_mel_sampling(samples, overlap_ms = 100, sample_rate = 16000):
     result: List[np.array]
     """
     n_overlap = int(sample_rate * (overlap_ms / 1000.0))
+    n_padded = int(sample_rate * (padded_ms / 1000.0))
     results = []
     for no, sample in enumerate(samples):
         if no:
-            sample = sample[n_overlap:]
-        results.append(sample)
+            sample = sample[n_overlap - n_padded :]
+        results.append(sample[:-n_padded])
     return results

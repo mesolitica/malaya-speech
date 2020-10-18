@@ -1,7 +1,7 @@
 import os
 import warnings
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1,3'
 warnings.filterwarnings('ignore')
 
 from glob import glob
@@ -19,6 +19,7 @@ from tqdm import tqdm
 import soundfile as sf
 from multiprocessing import Pool
 import itertools
+import librosa
 
 
 def chunks(l, n):
@@ -40,12 +41,12 @@ def multiprocessing(strings, function, cores = 6, returned = True):
         return list(itertools.chain(*pooled))
 
 
-def get_data(
-    pattern = '../youtube/clean-wav/*.wav',
-    ambient_file = '../youtube/ambients.pkl',
-):
-
-    files = glob(pattern)
+def get_data(ambient_file = '../youtube/ambients.pkl',):
+    librispeech = random.sample(
+        glob('../speech-bahasa/LibriSpeech/*/*/*/*.flac'), 10000
+    )
+    clean_wav = glob('../youtube/clean-wav/*.wav')
+    files = librispeech + clean_wav
     files = list(set(files))
     random.shuffle(files)
     print('total files', len(files))
@@ -85,7 +86,23 @@ def combine_speakers(files, n = 5):
     return left, y
 
 
-def sampling(combined, frame_duration_ms = 700, sample_rate = 22050):
+def random_amplitude(sample, low = 3, high = 5):
+    y_aug = sample.copy()
+    dyn_change = np.random.uniform(low = low, high = high)
+    y_aug = y_aug * dyn_change
+    return np.clip(y_aug, -1, 1)
+
+
+def random_amplitude_threshold(sample, low = 3, high = 5, threshold = 0.4):
+    y_aug = sample.copy()
+    dyn_change = np.random.uniform(low = low, high = high)
+    y_aug[np.abs(y_aug) >= threshold] = (
+        y_aug[np.abs(y_aug) >= threshold] * dyn_change
+    )
+    return np.clip(y_aug, -1, 1)
+
+
+def sampling(combined, frame_duration_ms = 700, sample_rate = 16000):
     n = int(sample_rate * (frame_duration_ms / 1000.0))
     offset = 0
     results = []
@@ -100,7 +117,7 @@ def sampling(combined, frame_duration_ms = 700, sample_rate = 22050):
 
 def calc(signal):
 
-    choice = random.randint(0, 5)
+    choice = random.randint(0, 8)
     if choice == 0:
 
         x = augmentation.sox_augment_high(
@@ -146,7 +163,20 @@ def calc(signal):
             room_scale = random.randint(10, 90),
         )
     if choice == 5:
+        x = random_amplitude(signal)
+
+    if choice in [6, 7]:
+        x = random_amplitude_threshold(
+            signal, threshold = random.uniform(0.35, 0.8)
+        )
+
+    if choice == 8:
         x = signal
+
+    if choice not in [6, 7] and random.random() >= 0.7:
+        x = random_amplitude_threshold(
+            x, low = 1.0, high = 2.0, threshold = random.uniform(0.6, 0.9)
+        )
 
     if random.randint(0, 1):
         x = augmentation.add_uniform_noise(
@@ -181,14 +211,19 @@ def loop_mel(files):
 
 
 def read_file(file):
-    y, sr = sf.read(file)
+    y, sr = malaya_speech.load(file)
+
+    if sr != 16000:
+        y = malaya_speech.resample(y, sr, 16000)
+
+    sr = 16000
     print(file, len(y) / sr / 60)
 
     y = augmentation.random_sampling(y, sr, random.randint(30000, 180000))
     return y
 
 
-def generate(batch_size = 40, core = 20, repeat = 2):
+def generate(batch_size = 50, core = 16, repeat = 2):
 
     while True:
         batch_files = [next(file_cycle) for _ in range(batch_size)]
@@ -231,8 +266,8 @@ def generate(batch_size = 40, core = 20, repeat = 2):
 
         X, Y = [], []
         for o in range(len(samples)):
-            X.extend(sampling(results[o], 1000))
-            Y.extend(sampling(samples[o], 1000))
+            X.extend(malaya_speech.generator.mel_sampling(results[o], 1200))
+            Y.extend(malaya_speech.generator.mel_sampling(samples[o], 1200))
 
         combined = list(zip(X, Y))
         print('len combined', len(combined))
@@ -279,7 +314,7 @@ def get_dataset(batch_size = 32, shuffle_size = 128, prefetch_size = 128):
             },
         )
 
-        dataset = dataset.shuffle(shuffle_size)
+        # dataset = dataset.shuffle(shuffle_size)
 
         dataset = dataset.padded_batch(
             batch_size,
@@ -298,7 +333,7 @@ def get_dataset(batch_size = 32, shuffle_size = 128, prefetch_size = 128):
     return get
 
 
-init_lr = 1e-5
+init_lr = 1e-4
 epochs = 500000
 
 
@@ -327,28 +362,33 @@ def model_fn(features, labels, mode, params):
     )
     ssim = tf.reduce_mean(ssim)
     huber = tf.reduce_mean(huber)
-    loss = huber + ssim
+    loss_L1 = tf.reduce_mean(tf.abs(features['targets'] - logits[:, :, :, 0]))
+    loss = loss_L1
+
+    global_step = tf.train.get_or_create_global_step()
+    learning_rate = tf.constant(value = init_lr, shape = [], dtype = tf.float32)
+    learning_rate = tf.train.polynomial_decay(
+        learning_rate,
+        global_step,
+        epochs,
+        end_learning_rate = 1e-7,
+        power = 1.0,
+        cycle = False,
+    )
+
     tf.identity(loss, 'train_loss')
     tf.identity(huber, 'train_huber')
     tf.identity(ssim, 'train_ssim')
+    tf.identity(loss_L1, 'train_loss_L1')
 
     tf.summary.scalar('train_huber', huber)
     tf.summary.scalar('train_ssim', ssim)
     tf.summary.scalar('train_loss', loss)
+    tf.summary.scalar('learning_rate', learning_rate)
+    tf.summary.scalar('loss_L1', loss_L1)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
-        global_step = tf.train.get_or_create_global_step()
-        learning_rate = tf.constant(
-            value = init_lr, shape = [], dtype = tf.float32
-        )
-        learning_rate = tf.train.polynomial_decay(
-            learning_rate,
-            global_step,
-            epochs,
-            end_learning_rate = 1e-7,
-            power = 1.0,
-            cycle = False,
-        )
+
         optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
 
         train_op = optimizer.minimize(loss, global_step = global_step)
@@ -372,7 +412,7 @@ train_hooks = [
 ]
 train_dataset = get_dataset(batch_size = 32)
 
-save_directory = 'output-resnet34-unet'
+save_directory = 'output-resnet34-unet-ssim'
 
 train.run_training(
     train_fn = train_dataset,

@@ -107,11 +107,8 @@ def get_session(generator, inputs, targets, **kwargs):
         'discrim_loss': model.discrim_loss,
         'gen_loss_GAN': model.gen_loss_GAN,
         'gen_loss_L1': model.gen_loss_L1,
+        'summary': summaries,
     }
-    fetches['discrim_loss'] = model.discrim_loss
-    fetches['gen_loss_GAN'] = model.gen_loss_GAN
-    fetches['gen_loss_L1'] = model.gen_loss_L1
-    fetches['summary'] = summaries
 
     sess.run(tf.global_variables_initializer())
 
