@@ -46,7 +46,7 @@ def read_audio(data, old_samplerate, sample_rate = 22050):
 
 
 @check_type
-def load(file: str, sr: int = 16000):
+def load(file: str, sr: int = 16000, scale: bool = True):
     """
     Read sound file, any format supported by soundfile.read
 
@@ -55,6 +55,8 @@ def load(file: str, sr: int = 16000):
     file: str
     sr: int, (default=16000)
         new sample rate. If input sample rate is not same, will resample automatically.
+    scale: bool, (default=True)
+        Scale to -1 and 1.
 
     Returns
     -------
@@ -62,4 +64,6 @@ def load(file: str, sr: int = 16000):
     """
     data, old_samplerate = sf.read(file)
     y, sr = read_audio(data, old_samplerate, sr)
+    if scale:
+        y = y / np.max(np.abs(y))
     return y, sr

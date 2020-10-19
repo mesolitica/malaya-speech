@@ -5,6 +5,26 @@ _availability = {
     'deep-speaker': {'Size (MB)': 30.9, 'Accuracy': 0.99},
 }
 
+labels = [
+    '0 speaker',
+    '1 speaker',
+    '2 speakers',
+    '3 speakers',
+    '4 speakers',
+    '5 speakers',
+    '6 speakers',
+    '7 speakers',
+    '8 speakers',
+    '9 speakers',
+    '10 speakers',
+    '11 speakers',
+    '12 speakers',
+    '13 speakers',
+    '14 speakers',
+    '15 speakers',
+    'more than 15 speakers',
+]
+
 
 def available_model():
     """

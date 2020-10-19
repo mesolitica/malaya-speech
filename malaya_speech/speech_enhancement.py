@@ -6,8 +6,8 @@ from malaya_speech.supervised import unet
 from herpetologist import check_type
 
 _availability = {
+    'unet': {'Size (MB)': 97.8, 'MSE': 0.0003},
     'resnet34-unet': {'Size (MB)': 97.8, 'MSE': 0.0003},
-    'inception-v3-unet': {'Size (MB)': 120, 'MSE': 0.0003},
 }
 
 
