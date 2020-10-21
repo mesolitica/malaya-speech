@@ -134,3 +134,21 @@ class UNET:
 
     def __call__(self, inputs):
         return self.predict(inputs)
+
+
+class UNET_STFT:
+    def __init__(self, X, logits, instruments, sess, model, name):
+        self._X = X
+        self._logits = {
+            instrument: logits[no] for no, instrument in instruments
+        }
+        self._instruments = instruments
+        self._sess = sess
+        self.__model__ = model
+        self.__name__ = name
+
+    def predict(self, input):
+        return self._sess.run(self._logits, feed_dict = {self._X: x})
+
+    def __call__(self, input):
+        return self.predict(input)

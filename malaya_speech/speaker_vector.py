@@ -43,7 +43,7 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
     model = model.lower()
     if model not in _availability:
         raise Exception(
-            'model not supported, please check supported models from malaya_speech.speaker_vector.available_model()'
+            'model not supported, please check supported models from `malaya_speech.speaker_vector.available_model()`.'
         )
 
     return classification.load(

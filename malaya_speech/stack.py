@@ -57,7 +57,7 @@ class STACK:
 
         if aggregate not in dict_function:
             raise ValueError(
-                'aggregate is not supported, please check supported functions from malaya_speech.stack.available_aggregate_function()'
+                'aggregate is not supported, please check supported functions from `malaya_speech.stack.available_aggregate_function()`.'
             )
         results = []
         for i in range(len(self._models)):
@@ -94,7 +94,7 @@ class STACK:
 
         if aggregate not in dict_function:
             raise ValueError(
-                'aggregate is not supported, please check supported functions from malaya_speech.stack.available_aggregate_function()'
+                'aggregate is not supported, please check supported functions from `malaya_speech.stack.available_aggregate_function()`.'
             )
         probs = np.argmax(self.predict_proba(inputs), axis = 1)
         return [self._models[0].labels[p] for p in probs]

@@ -29,7 +29,8 @@ def available_model():
     from malaya_speech.utils import describe_availability
 
     return describe_availability(
-        _availability, text = 'last accuracy during training session.'
+        _availability,
+        text = 'last accuracy during training session before early stopping.',
     )
 
 
@@ -54,7 +55,7 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
     model = model.lower()
     if model not in _availability:
         raise Exception(
-            'model not supported, please check supported models from malaya_speech.language_detection.available_model()'
+            'model not supported, please check supported models from `malaya_speech.language_detection.available_model()`.'
         )
 
     settings = {

@@ -31,7 +31,9 @@ Contents:
    :maxdepth: 2
    :caption: Classification Module
 
-   load-language-detection
+   load-emotion
+   load-gender
+   load-language-detection   
 
 .. toctree::
    :maxdepth: 2

@@ -20,6 +20,26 @@ S3_PATH_EMOTION = {
     'deep-speaker': {'model': 'v1/emotion/finetuned-deep-speaker.pb'},
 }
 
+PATH_GENDER = {
+    'vggvox-v1': {
+        'model': home + '/gender/vggvox-v1/model.pb',
+        'version': 'v1',
+    },
+    'vggvox-v2': {
+        'model': home + '/gender/vggvox-v2/model.pb',
+        'version': 'v1',
+    },
+    'deep-speaker': {
+        'model': home + '/gender/deep-speaker/model.pb',
+        'version': 'v1',
+    },
+}
+S3_PATH_GENDER = {
+    'vggvox-v1': {'model': 'v1/gender/finetuned-vggvox-v1.pb'},
+    'vggvox-v2': {'model': 'v1/gender/finetuned-vggvox-v2.pb'},
+    'deep-speaker': {'model': 'v1/gender/finetuned-deep-speaker.pb'},
+}
+
 PATH_LANGUAGE_DETECTION = {
     'vggvox-v1': {
         'model': home + '/language-detection/vggvox-v1/model.pb',
@@ -40,6 +60,19 @@ S3_PATH_LANGUAGE_DETECTION = {
     'deep-speaker': {
         'model': 'v1/language-detection/finetuned-deep-speaker.pb'
     },
+}
+
+PATH_NOISE_REDUCTION = {
+    'unet': {'model': home + '/noise-reduction/unet.pb', 'version': 'v1'},
+    'resnet34-unet': {
+        'model': home + '/noise-reduction/resnet34-unet.pb',
+        'version': 'v1',
+    },
+}
+
+S3_PATH_NOISE_REDUCTION = {
+    'unet': {'model': 'v1/noise-reduction/unet.pb'},
+    'resnet34-unet': {'model': 'v1/noise-reduction/resnet34-unet.pb'},
 }
 
 PATH_SPEAKER_VECTOR = {

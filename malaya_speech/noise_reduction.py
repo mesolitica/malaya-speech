@@ -1,13 +1,69 @@
+from malaya_speech.path import PATH_NOISE_REDUCTION, S3_PATH_NOISE_REDUCTION
+from malaya_speech.supervised import unet
+from malaya_speech.utils.astype import int_to_float
+from herpetologist import check_type
 import librosa
 import numpy as np
 import python_speech_features
 
 _availability = {
-    'resnet34-unet': {'Size (MB)': 97.8, 'MSE': 0.0003},
-    'inception-v3-unet': {'Size (MB)': 120, 'MSE': 0.0003},
+    'unet': {
+        'Size (MB)': 78.9,
+        'SUM MAE': 0.0003,
+        'MAE_SPEAKER': 0,
+        'MAE_NOISE': 0,
+    },
+    'resnet34-unet': {
+        'Size (MB)': 97.8,
+        'SUM MAE': 0.0003,
+        'MAE_SPEAKER': 0,
+        'MAE_NOISE': 0,
+    },
 }
 
-from malaya_speech.utils.astype import int_to_float
+
+def available_model():
+    """
+    List available Noise Reduction deep learning models.
+    """
+    from malaya_speech.utils import describe_availability
+
+    return describe_availability(_availability)
+
+
+@check_type
+def deep_model(model: str = 'resnet34-unet', **kwargs):
+    """
+    Load Noise Reduction deep learning model.
+
+    Parameters
+    ----------
+    model : str, optional (default='wavenet')
+        Model architecture supported. Allowed values:
+
+        * ``'unet'`` - pretrained UNET.
+        * ``'resnet34-unet'`` - pretrained resnet34 UNET.
+
+    Returns
+    -------
+    result : malaya_speech.model.tf.UNET_STFT class
+    """
+
+    model = model.lower()
+    if model not in _availability:
+        raise Exception(
+            'model not supported, please check supported models from `malaya_speech.noise_reduction.available_model()`.'
+        )
+
+    return unet.load_stft(
+        path = PATH_NOISE_REDUCTION,
+        s3_path = S3_PATH_NOISE_REDUCTION,
+        model = model,
+        name = 'noise-reduction',
+        instruments = ['voice', 'noise'],
+        **kwargs
+    )
+
 
 # https://github.com/dodiku/noise_reduction/blob/master/noise.py
 def reduce_noise_power(y, sr = 16000):

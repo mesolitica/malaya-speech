@@ -3,9 +3,8 @@ from malaya_speech.supervised import classification
 from herpetologist import check_type
 
 _availability = {
-    'vggvox-v1': {'Size (MB)': 70.8, 'Accuracy': 0.95},
-    'vggvox-v2': {'Size (MB)': 31.1, 'Accuracy': 0.99},
-    'deep-speaker': {'Size (MB)': 30.9, 'Accuracy': 0.99},
+    'vggvox-v2': {'Size (MB)': 31.1, 'Accuracy': 0.9509},
+    'deep-speaker': {'Size (MB)': 96.9, 'Accuracy': 0.9315},
 }
 
 labels = [
@@ -27,7 +26,8 @@ def available_model():
     from malaya_speech.utils import describe_availability
 
     return describe_availability(
-        _availability, text = 'last accuracy during training session.'
+        _availability,
+        text = 'last accuracy during training session before early stopping.',
     )
 
 
@@ -41,7 +41,6 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
     model : str, optional (default='vggvox-v2')
         Model architecture supported. Allowed values:
 
-        * ``'vggvox-v1'`` - finetuned VGGVox V1.
         * ``'vggvox-v2'`` - finetuned VGGVox V2.
         * ``'deep-speaker'`` - finetuned Deep Speaker.
 
@@ -53,7 +52,7 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
     model = model.lower()
     if model not in _availability:
         raise Exception(
-            'model not supported, please check supported models from malaya_speech.emotion.available_model()'
+            'model not supported, please check supported models from `malaya_speech.emotion.available_model()`.'
         )
 
     settings = {

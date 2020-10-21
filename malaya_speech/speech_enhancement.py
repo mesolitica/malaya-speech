@@ -5,9 +5,20 @@ from malaya_speech.path import (
 from malaya_speech.supervised import unet
 from herpetologist import check_type
 
+
 _availability = {
-    'unet': {'Size (MB)': 97.8, 'MSE': 0.0003},
-    'resnet34-unet': {'Size (MB)': 97.8, 'MSE': 0.0003},
+    'unet': {
+        'Size (MB)': 97.8,
+        'SUM MAE': 0.0003,
+        'MAE_SPEAKER': 0,
+        'MAE_NOISE': 0,
+    },
+    'resnet34-unet': {
+        'Size (MB)': 97.8,
+        'SUM MAE': 0.0003,
+        'MAE_SPEAKER': 0,
+        'MAE_NOISE': 0,
+    },
 }
 
 
@@ -35,19 +46,20 @@ def deep_model(model: str = 'resnet34-unet', **kwargs):
 
     Returns
     -------
-    result : malaya_speech.model.tf.SEGMENTATION class
+    result : malaya_speech.model.tf.UNET_STFT class
     """
 
     model = model.lower()
     if model not in _availability:
         raise Exception(
-            'model not supported, please check supported models from malaya_speech.speech_enhancement.available_model()'
+            'model not supported, please check supported models from `malaya_speech.speech_enhancement.available_model()`.'
         )
 
-    return unet.load(
+    return unet.load_stft(
         path = PATH_SPEECH_ENHANCEMENT,
         s3_path = S3_PATH_SPEECH_ENHANCEMENT,
         model = model,
         name = 'speech-enhancement',
+        instruments = ['voice', 'noise'],
         **kwargs
     )
