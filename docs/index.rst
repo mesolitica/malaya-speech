@@ -38,7 +38,8 @@ Contents:
 .. toctree::
    :maxdepth: 2
    :caption: Enhancement Module
-
+   
+   load-noise-reduction
    load-speech-enhancement
 
 .. toctree::

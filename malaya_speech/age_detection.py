@@ -3,7 +3,18 @@ _availability = {
     'deep-speaker': {'Size (MB)': 30.9, 'Accuracy': 0.90204},
 }
 
-labels = ['not an age']
+labels = [
+    'teens',
+    'twenties',
+    'thirties',
+    'fourties',
+    'fifties',
+    'sixties',
+    'seventies',
+    'eighties',
+    'nineties',
+    'not an age',
+]
 
 
 def available_model():

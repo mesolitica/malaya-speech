@@ -5,6 +5,141 @@ separation_exponent = 2
 EPSILON = 1e-10
 
 
+class SpeechFeaturizer:
+    def __init__(self, speech_config: dict):
+        self.sample_rate = speech_config['sample_rate']
+        self.frame_length = int(
+            self.sample_rate * (speech_config['frame_ms'] / 1000)
+        )
+        self.frame_step = int(
+            self.sample_rate * (speech_config['stride_ms'] / 1000)
+        )
+        self.num_feature_bins = speech_config['num_feature_bins']
+        self.feature_type = speech_config['feature_type']
+        self.preemphasis = speech_config['preemphasis']
+        self.normalize_signal = speech_config['normalize_signal']
+        self.normalize_feature = speech_config['normalize_feature']
+        self.normalize_per_feature = speech_config['normalize_per_feature']
+
+    @property
+    def nfft(self) -> int:
+        return 2 ** (self.frame_length - 1).bit_length()
+
+
+# https://github.com/TensorSpeech/TensorFlowASR/blob/main/tensorflow_asr/featurizers/speech_featurizers.py#L370
+class TFSpeechFeaturizer(SpeechFeaturizer):
+    def vectorize(self, signal):
+        if self.normalize_signal:
+            signal = tf_normalize_signal(signal)
+        signal = preemphasis(signal, self.preemphasis)
+        if self.feature_type == 'mfcc':
+            features = self.compute_mfcc(signal)
+        elif self.feature_type == 'log_mel_spectrogram':
+            features = self.compute_log_mel_spectrogram(signal)
+        elif self.feature_type == 'spectrogram':
+            features = self.compute_spectrogram(signal)
+        elif self.feature_type == 'log_gammatone_spectrogram':
+            features = self.compute_log_gammatone_spectrogram(signal)
+        else:
+            raise ValueError(
+                "feature_type must be either 'mfcc', "
+                "'log_mel_spectrogram', 'log_gammatone_spectrogram' "
+                "or 'spectrogram'"
+            )
+
+        features = tf.expand_dims(features, axis = -1)
+
+        if self.normalize_feature:
+            features = normalize_audio_feature(
+                features, per_feature = self.normalize_per_feature
+            )
+        return features
+
+    def stft(self, signal):
+        return tf.square(
+            tf.abs(
+                tf.signal.stft(
+                    signal,
+                    frame_length = self.frame_length,
+                    frame_step = self.frame_step,
+                    fft_length = self.nfft,
+                )
+            )
+        )
+
+    def power_to_db(self, S, ref = 1.0, amin = 1e-10, top_db = 80.0):
+        if amin <= 0:
+            raise ValueError('amin must be strictly positive')
+
+        ref_value = np.abs(ref)
+        log_spec = 10.0 * log10(tf.maximum(amin, magnitude))
+        log_spec -= 10.0 * log10(tf.maximum(amin, ref_value))
+        if top_db is not None:
+            if top_db < 0:
+                raise ValueError('top_db must be non-negative')
+            log_spec = tf.maximum(log_spec, tf.reduce_max(log_spec) - top_db)
+
+        return log_spec
+
+    def compute_log_mel_spectrogram(self, signal):
+        spectrogram = self.stft(signal)
+        linear_to_weight_matrix = tf.signal.linear_to_mel_weight_matrix(
+            num_mel_bins = self.num_feature_bins,
+            num_spectrogram_bins = spectrogram.shape[-1],
+            sample_rate = self.sample_rate,
+            lower_edge_hertz = 0.0,
+            upper_edge_hertz = (self.sample_rate / 2),
+        )
+        mel_spectrogram = tf.tensordot(spectrogram, linear_to_weight_matrix, 1)
+        return self.power_to_db(mel_spectrogram)
+
+    def compute_spectrogram(self, signal):
+        S = self.stft(signal)
+        spectrogram = self.power_to_db(S)
+        return spectrogram[:, : self.num_feature_bins]
+
+    def compute_mfcc(self, signal):
+        log_mel_spectrogram = self.compute_log_mel_spectrogram(signal)
+        return tf.signal.mfccs_from_log_mel_spectrograms(log_mel_spectrogram)
+
+    def compute_log_gammatone_spectrogram(self, signal):
+        S = self.stft(signal)
+
+        gammatone = fft_weights(
+            self.nfft,
+            self.sample_rate,
+            self.num_feature_bins,
+            width = 1.0,
+            fmin = 0,
+            fmax = int(self.sample_rate / 2),
+            maxlen = (self.nfft / 2 + 1),
+        )
+
+        gammatone_spectrogram = tf.tensordot(S, gammatone, 1)
+
+        return self.power_to_db(gammatone_spectrogram)
+
+
+def normalize_audio_features(audio_feature: tf.Tensor, per_feature = False):
+    axis = 0 if per_feature else None
+    mean = tf.reduce_mean(audio_feature, axis = axis)
+    std_dev = tf.math.reduce_std(audio_feature, axis = axis) + 1e-9
+    return (audio_feature - mean) / std_dev
+
+
+def normalize_signal(signal):
+    gain = 1.0 / (tf.reduce_max(tf.abs(signal), axis = -1) + 1e-9)
+    return signal * gain
+
+
+def preemphasis(signal, coeff = 0.97):
+    if not coeff or coeff <= 0.0:
+        return signal
+    s0 = tf.expand_dims(signal[0], axis = -1)
+    s1 = signal[1:] - coeff * signal[:-1]
+    return tf.concat([s0, s1], axis = -1)
+
+
 def pad_and_partition(tensor, segment_len):
     tensor_size = tf.math.floormod(tf.shape(tensor)[0], segment_len)
     pad_size = tf.math.floormod(segment_len - tensor_size, segment_len)
