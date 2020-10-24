@@ -5,6 +5,49 @@ from malaya_speech.model.frame import FRAME
 from malaya_speech.utils.padding import sequence_nd as padding_sequence_nd
 
 
+class SPEAKERNET:
+    def __init__(
+        self, X, X_len, logits, vectorizer, sess, model, extra, label, name
+    ):
+        self._X = X
+        self._X_len = X_len
+        self._logits = logits
+        self._vectorizer = vectorizer
+        self._sess = sess
+        self._extra = extra
+        self.__model__ = model
+        self.__name__ = name
+
+    def vectorize(self, inputs):
+        """
+        Vectorize inputs.
+
+        Parameters
+        ----------
+        inputs: List[np.array]
+
+        Returns
+        -------
+        result: np.array
+        """
+        inputs = [
+            input.array if isinstance(input, FRAME) else input
+            for input in inputs
+        ]
+
+        inputs = [self._vectorizer(input) for input in inputs]
+        inputs, lengths = padding_sequence_nd(
+            inputs, dim = 0, return_len = True
+        )
+
+        return self._sess.run(
+            self._logits, feed_dict = {self._X: inputs, self._X_len: lengths}
+        )
+
+    def __call__(self, inputs):
+        return self.vectorize(inputs)
+
+
 class SPEAKER2VEC:
     def __init__(self, X, logits, vectorizer, sess, model, extra, label, name):
         self._X = X

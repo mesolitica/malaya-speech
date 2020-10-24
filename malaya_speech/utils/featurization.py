@@ -49,6 +49,9 @@ class SpeakerNetFeaturizer:
         features = normalize_batch(np.expand_dims(features, 0))[0]
         return features.T
 
+    def __call__(self, signal):
+        return self.vectorize(signal)
+
 
 def normalize_batch(x, CONSTANT = 1e-5):
     x_mean = np.zeros((1, x.shape[1]), dtype = x.dtype)

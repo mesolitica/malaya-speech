@@ -26,6 +26,9 @@ class STTFeaturizer:
     def nfft(self) -> int:
         return 2 ** (self.frame_length - 1).bit_length()
 
+    def __call__(self, signal):
+        return self.vectorize(signal)
+
     def vectorize(self, signal):
         if self.normalize_signal:
             signal = normalize_signal(signal)
