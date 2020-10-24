@@ -24,11 +24,11 @@ setuptools.setup(
     install_requires = [
         'tensorflow>=1.14,<2.0',
         'numpy',
-        'scipy',
         'librosa',
         'soundfile',
         'herpetologist',
         'dataclasses',
+        'python_speech_features',
     ],
     license = 'MIT',
     classifiers = [

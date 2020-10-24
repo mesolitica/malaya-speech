@@ -8,4 +8,5 @@ from .conformer import (
 )
 from .ctc_featurizer import config as ctc_featurizer_config
 from .melgan import config as melgan_config
+from .speakernet_featurizer import config as speakernet_featurizer_config
 from .transducer_featurizer import config as transducer_featurizer_config

@@ -126,7 +126,7 @@ def log10(x):
     return numerator / denominator
 
 
-def normalize_audio_features(audio_feature: tf.Tensor, per_feature = False):
+def normalize_audio_features(audio_feature, per_feature = False):
     axis = 0 if per_feature else None
     mean = tf.reduce_mean(audio_feature, axis = axis)
     std_dev = tf.math.reduce_std(audio_feature, axis = axis) + 1e-9

@@ -7,6 +7,7 @@ from . import melgan
 from . import mini_jasper
 from . import pix2pix
 from . import quartznet
+from . import speakernet
 from . import transducer
 from . import unet
 from . import vggvox_v1

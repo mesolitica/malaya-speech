@@ -5,6 +5,7 @@ from tensorflow.python.distribute.cross_device_ops import (
 from tensorflow.python.estimator.run_config import RunConfig
 from herpetologist import check_type
 from typing import List, Dict
+import numpy as np
 import collections
 import re
 
@@ -177,3 +178,9 @@ def get_assignment_map_from_checkpoint(tvars, init_checkpoint):
         )
 
     return (assignment_map, initialized_variable_names)
+
+
+def calculate_parameters(variables):
+    return np.sum(
+        [np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()]
+    )

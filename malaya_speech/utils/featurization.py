@@ -8,6 +8,57 @@ import math
 from python_speech_features import fbank
 
 
+class SpeakerNetFeaturizer:
+    def __init__(self, speech_config):
+        self.sample_rate = speech_config['sample_rate']
+        self.frame_length = int(
+            self.sample_rate * (speech_config['frame_ms'] / 1000)
+        )
+        self.frame_step = int(
+            self.sample_rate * (speech_config['stride_ms'] / 1000)
+        )
+        self.n_fft = speech_config['n_fft']
+        self.num_feature_bins = speech_config['num_feature_bins']
+        self.preemphasis = speech_config['preemphasis']
+        self.normalize_signal = speech_config['normalize_signal']
+        self.normalize_feature = speech_config['normalize_feature']
+        self.normalize_per_feature = speech_config['normalize_per_feature']
+
+        self.mel_basis = librosa.filters.mel(
+            self.sample_rate,
+            self.n_fft,
+            n_mels = self.num_feature_bins,
+            fmin = 0,
+            fmax = self.sample_rate / 2,
+        )
+
+    def vectorize(self, signal):
+        signal = preemphasis(signal, self.preemphasis)
+        spect = np.abs(
+            librosa.stft(
+                signal,
+                n_fft = self.n_fft,
+                hop_length = self.frame_step,
+                win_length = self.frame_length,
+            )
+        )
+        spect = np.power(spect, 2)
+        mel = np.matmul(self.mel_basis, spect)
+        log_zero_guard_value = 2 ** -24
+        features = np.log(mel + log_zero_guard_value)
+        features = normalize_batch(np.expand_dims(features, 0))[0]
+        return features.T
+
+
+def normalize_batch(x, CONSTANT = 1e-5):
+    x_mean = np.zeros((1, x.shape[1]), dtype = x.dtype)
+    x_std = np.zeros((1, x.shape[1]), dtype = x.dtype)
+    x_mean[0, :] = x[0].mean(axis = 1)
+    x_std[0, :] = x[0].std(axis = 1)
+    x_std += CONSTANT
+    return (x - np.expand_dims(x_mean, 2)) / np.expand_dims(x_std, 2)
+
+
 def normalize(values):
     return (values - np.mean(values)) / np.std(values)
 
