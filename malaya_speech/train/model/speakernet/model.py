@@ -83,7 +83,7 @@ class Model:
         logits = self.model.encode(input_dict)['outputs']
 
         def affine(x, output_size):
-            f = tf.layers.dense(pooled, 512)
+            f = tf.layers.dense(x, 512)
             f = tf.compat.v1.layers.batch_normalization(f)
             return tf.nn.relu(f)
 
