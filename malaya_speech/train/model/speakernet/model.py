@@ -77,10 +77,8 @@ config = {
 
 
 class Model:
-    def __init__(self, inputs, mode = 'train'):
+    def __init__(self, inputs, inputs_length, mode = 'train'):
         self.model = abstract.TDNNEncoder(config, None, mode = mode)
-        inputs_length = tf.cast(tf.shape(inputs)[0], tf.int32)
-        inputs_length = tf.expand_dims(inputs_length, 0)
         input_dict = {'source_tensors': [inputs, inputs_length]}
         logits = self.model.encode(input_dict)['outputs']
 
