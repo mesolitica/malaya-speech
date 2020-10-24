@@ -4,7 +4,6 @@ from malaya_speech.utils.astype import int_to_float
 from herpetologist import check_type
 import librosa
 import numpy as np
-import python_speech_features
 
 _availability = {
     'unet': {
@@ -87,7 +86,12 @@ def reduce_noise_power(y, sr = 16000):
 
 # https://github.com/dodiku/noise_reduction/blob/master/noise.py
 def reduce_noise_centroid_s(y, sr = 16000):
-    from pysndfx import AudioEffectsChain
+    try:
+        from pysndfx import AudioEffectsChain
+    except Exception as e:
+        raise ModuleNotFoundError(
+            'pysndfx not installed. Please install it by `pip install pysndfx` and try again.'
+        )
 
     y = int_to_float(y)
     cent = librosa.feature.spectral_centroid(y = y, sr = sr)
@@ -109,7 +113,12 @@ def reduce_noise_centroid_s(y, sr = 16000):
 
 # https://github.com/dodiku/noise_reduction/blob/master/noise.py
 def reduce_noise_centroid_mb(y, sr = 16000):
-    from pysndfx import AudioEffectsChain
+    try:
+        from pysndfx import AudioEffectsChain
+    except Exception as e:
+        raise ModuleNotFoundError(
+            'pysndfx not installed. Please install it by `pip install pysndfx` and try again.'
+        )
 
     y = int_to_float(y)
     cent = librosa.feature.spectral_centroid(y = y, sr = sr)
@@ -140,7 +149,13 @@ def reduce_noise_centroid_mb(y, sr = 16000):
 
 # https://github.com/dodiku/noise_reduction/blob/master/noise.py
 def reduce_noise_mfcc_down(y, sr = 16000):
-    from pysndfx import AudioEffectsChain
+    try:
+        from pysndfx import AudioEffectsChain
+        import python_speech_features
+    except Exception as e:
+        raise ModuleNotFoundError(
+            'pysndfx, python_speech_features not installed. Please install it by `pip install pysndfx python_speech_features` and try again.'
+        )
 
     y = int_to_float(y)
     hop_length = 512
@@ -174,7 +189,13 @@ def reduce_noise_mfcc_down(y, sr = 16000):
 
 # https://github.com/dodiku/noise_reduction/blob/master/noise.py
 def reduce_noise_mfcc_up(y, sr = 16000):
-    from pysndfx import AudioEffectsChain
+    try:
+        from pysndfx import AudioEffectsChain
+        import python_speech_features
+    except Exception as e:
+        raise ModuleNotFoundError(
+            'pysndfx, python_speech_features not installed. Please install it by `pip install pysndfx python_speech_features` and try again.'
+        )
 
     y = int_to_float(y)
     hop_length = 512

@@ -45,7 +45,7 @@ def webrtc(
     try:
         import webrtcvad
     except:
-        raise ValueError(
+        raise ModuleNotFoundError(
             'webrtcvad not installed. Please install it by `pip install webrtcvad` and try again.'
         )
 
