@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def padding_sequence_1d(
+def sequence_1d(
     seq, maxlen = None, padding: str = 'post', pad_int = 0, return_len = False
 ):
     """
@@ -29,6 +29,8 @@ def padding_sequence_1d(
 
     padded_seqs, length = [], []
     for s in seq:
+        if isinstance(s, np.ndarray):
+            s = s.tolist()
         if padding == 'post':
             padded_seqs.append(s + [pad_int] * (maxlen - len(s)))
         if padding == 'pre':
@@ -39,7 +41,7 @@ def padding_sequence_1d(
     return np.array(padded_seqs)
 
 
-def padding_sequence_nd(
+def sequence_nd(
     seq,
     maxlen = None,
     padding: str = 'post',

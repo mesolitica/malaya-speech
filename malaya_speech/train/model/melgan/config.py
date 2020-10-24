@@ -15,7 +15,7 @@
 """MelGAN Config object."""
 
 
-class MelGANGeneratorConfig(object):
+class GeneratorConfig(object):
     """Initialize MelGAN Generator Config."""
 
     def __init__(
@@ -51,7 +51,7 @@ class MelGANGeneratorConfig(object):
         self.initializer_seed = initializer_seed
 
 
-class MelGANDiscriminatorConfig(object):
+class DiscriminatorConfig(object):
     """Initialize MelGAN Discriminator Config."""
 
     def __init__(

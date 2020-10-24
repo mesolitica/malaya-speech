@@ -68,7 +68,9 @@ def combine_speakers(files, n = 5):
     w_samples = [
         random_sampling(
             read_wav(f)[0],
-            length = min(random.randint(20000 // n, 240_000 // n), 20000),
+            length = min(
+                random.randint(20000 // n, 240_000 // n), 100_000 // n
+            ),
         )
         for f in w_samples
     ]
@@ -160,7 +162,7 @@ def parallel(f):
         y = combine_speakers(s, len(s))[0]
     else:
         y = random_sampling(
-            read_wav(f)[0], length = random.randint(20000, 100_000)
+            read_wav(f)[0], length = random.randint(30000, 100_000)
         )
 
     n = combine_speakers(noises, random.randint(1, 20))[0]
@@ -246,7 +248,7 @@ class Model:
         self.cost = tf.reduce_sum(self.loss)
 
 
-init_lr = 1e-4
+init_lr = 1e-5
 epochs = 500_000
 
 

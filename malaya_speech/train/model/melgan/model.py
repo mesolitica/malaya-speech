@@ -183,7 +183,7 @@ class TFResidualStack(tf.keras.layers.Layer):
                 pass
 
 
-class TFMelGANGenerator(tf.keras.Model):
+class Generator(tf.keras.Model):
     """Tensorflow MelGAN generator module."""
 
     def __init__(self, config, **kwargs):
@@ -295,7 +295,7 @@ class TFMelGANGenerator(tf.keras.Model):
         self(fake_mels)
 
 
-class TFMelGANDiscriminator(tf.keras.layers.Layer):
+class Discriminator(tf.keras.layers.Layer):
     """Tensorflow MelGAN generator module."""
 
     def __init__(
@@ -430,7 +430,7 @@ class TFMelGANDiscriminator(tf.keras.layers.Layer):
                 pass
 
 
-class TFMelGANMultiScaleDiscriminator(tf.keras.Model):
+class MultiScaleDiscriminator(tf.keras.Model):
     """MelGAN multi-scale discriminator module."""
 
     def __init__(self, config, **kwargs):
@@ -444,7 +444,7 @@ class TFMelGANMultiScaleDiscriminator(tf.keras.Model):
         # add discriminator
         for i in range(config.scales):
             self.discriminator += [
-                TFMelGANDiscriminator(
+                Discriminator(
                     out_channels = config.out_channels,
                     kernel_sizes = config.kernel_sizes,
                     filters = config.filters,

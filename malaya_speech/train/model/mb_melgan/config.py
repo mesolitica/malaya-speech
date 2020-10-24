@@ -15,12 +15,12 @@
 """Multi-band MelGAN Config object."""
 
 from malaya_speech.train.model.melgan.config import (
-    MelGANDiscriminatorConfig,
-    MelGANGeneratorConfig,
+    DiscriminatorConfig,
+    GeneratorConfig,
 )
 
 
-class MultiBandMelGANGeneratorConfig(MelGANGeneratorConfig):
+class MultiBandGeneratorConfig(GeneratorConfig):
     """Initialize Multi-band MelGAN Generator Config."""
 
     def __init__(self, **kwargs):
@@ -31,7 +31,7 @@ class MultiBandMelGANGeneratorConfig(MelGANGeneratorConfig):
         self.beta = kwargs.pop('beta', 9.0)
 
 
-class MultiBandMelGANDiscriminatorConfig(MelGANDiscriminatorConfig):
+class MultiBandDiscriminatorConfig(DiscriminatorConfig):
     """Initialize Multi-band MelGAN Discriminator Config."""
 
     def __init__(self, **kwargs):

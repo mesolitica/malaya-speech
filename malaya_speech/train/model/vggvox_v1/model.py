@@ -166,7 +166,7 @@ class MODEL(Model):
         return x
 
 
-class Resnet1D:
+class Model:
     def __init__(self, inputs, num_class, mode = 'train'):
 
         model = MODEL(is_training = mode == 'train')

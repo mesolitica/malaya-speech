@@ -4,7 +4,7 @@ from . import discriminator
 
 EPS = 1e-12
 
-Model = collections.namedtuple(
+Model_Template = collections.namedtuple(
     'Model',
     'outputs, predict_real, predict_fake, discrim_loss, discrim_grads_and_vars, gen_loss_GAN, gen_loss_L1, gen_grads_and_vars, train, global_step',
 )
@@ -72,7 +72,7 @@ def create_model(
     global_step = tf.train.get_or_create_global_step()
     incr_global_step = tf.assign(global_step, global_step + 1)
 
-    return Model(
+    return Model_Template(
         predict_real = predict_real,
         predict_fake = predict_fake,
         discrim_loss = ema.average(discrim_loss),
@@ -86,30 +86,28 @@ def create_model(
     )
 
 
-def get_session(generator, inputs, targets, **kwargs):
+class Model:
+    def __init__(self, generator, inputs, targets, **kwargs):
+        self.sess = tf.InteractiveSession()
+        self.model = create_model(generator, inputs, targets)
 
-    sess = tf.InteractiveSession()
-    model = create_model(generator, inputs, targets)
+        tf.summary.scalar('discriminator_loss', self.model.discrim_loss)
+        tf.summary.scalar('generator_loss_GAN', self.model.gen_loss_GAN)
+        tf.summary.scalar('generator_loss_L1', self.model.gen_loss_L1)
 
-    tf.summary.scalar('discriminator_loss', model.discrim_loss)
-    tf.summary.scalar('generator_loss_GAN', model.gen_loss_GAN)
-    tf.summary.scalar('generator_loss_L1', model.gen_loss_L1)
+        self.summaries = tf.summary.merge_all()
 
-    summaries = tf.summary.merge_all()
+        with tf.name_scope('parameter_count'):
+            parameter_count = tf.reduce_sum(
+                [tf.reduce_prod(tf.shape(v)) for v in tf.trainable_variables()]
+            )
+        self.fetches = {
+            'train': self.model.train,
+            'global_step': self.model.global_step,
+            'discrim_loss': self.model.discrim_loss,
+            'gen_loss_GAN': self.model.gen_loss_GAN,
+            'gen_loss_L1': self.model.gen_loss_L1,
+            'summary': self.summaries,
+        }
 
-    with tf.name_scope('parameter_count'):
-        parameter_count = tf.reduce_sum(
-            [tf.reduce_prod(tf.shape(v)) for v in tf.trainable_variables()]
-        )
-    fetches = {
-        'train': model.train,
-        'global_step': model.global_step,
-        'discrim_loss': model.discrim_loss,
-        'gen_loss_GAN': model.gen_loss_GAN,
-        'gen_loss_L1': model.gen_loss_L1,
-        'summary': summaries,
-    }
-
-    sess.run(tf.global_variables_initializer())
-
-    return sess, fetches
+        self.sess.run(tf.global_variables_initializer())

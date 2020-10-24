@@ -13,13 +13,25 @@
 # limitations under the License.
 
 import tensorflow as tf
-from malaya_speech.train.utils import shape_list
+from ..utils import shape_list
 import typing
 
 
 def merge_two_last_dims(x):
     b, _, f, c = shape_list(x)
     return tf.reshape(x, shape = [b, -1, f * c])
+
+
+class SWISH(tf.keras.layers.Layer):
+    def __init__(self, name = 'swish_activation', **kwargs):
+        super(SWISH, self).__init__(name = name, **kwargs)
+
+    def call(self, inputs, **kwargs):
+        return tf.multiply(inputs, tf.nn.sigmoid(inputs))
+
+    def get_config(self):
+        conf = super(SWISH, self).get_config()
+        return conf
 
 
 class GLU(tf.keras.layers.Layer):
@@ -224,7 +236,9 @@ class PositionalEncodingConcat(tf.keras.layers.Layer):
 
     @staticmethod
     def encode(max_len, dmodel):
-        pos = tf.range(max_len - 1, -1, -1.0, dtype = tf.float32)
+        pos = tf.range(
+            tf.cast(max_len, tf.float32) - 1, -1, -1.0, dtype = tf.float32
+        )
 
         index = tf.range(0, dmodel, 2.0, dtype = tf.float32)
         index = 1 / tf.pow(10000.0, (index / dmodel))

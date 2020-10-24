@@ -15,6 +15,7 @@
 import tensorflow as tf
 from .layer import (
     GLU,
+    SWISH,
     VggSubsampling,
     Conv2dSubsampling,
     PositionalEncoding,
@@ -50,9 +51,7 @@ class FFModule(tf.keras.layers.Layer):
             kernel_regularizer = kernel_regularizer,
             bias_regularizer = bias_regularizer,
         )
-        self.swish = tf.keras.layers.Activation(
-            tf.keras.activations.swish, name = f'{name}_swish_activation'
-        )
+        self.swish = SWISH(name = f'{name}_swish_activation')
         self.do1 = tf.keras.layers.Dropout(dropout, name = f'{name}_dropout_1')
         self.ffn2 = tf.keras.layers.Dense(
             input_dim,
@@ -188,9 +187,7 @@ class ConvModule(tf.keras.layers.Layer):
             gamma_regularizer = kernel_regularizer,
             beta_regularizer = bias_regularizer,
         )
-        self.swish = tf.keras.layers.Activation(
-            tf.keras.activations.swish, name = f'{name}_swish_activation'
-        )
+        self.swish = SWISH(name = f'{name}_swish_activation')
         self.pw_conv_2 = tf.keras.layers.Conv2D(
             filters = input_dim,
             kernel_size = 1,
@@ -307,7 +304,7 @@ class ConformerBlock(tf.keras.layers.Layer):
         return conf
 
 
-class ConformerEncoder(tf.keras.Model):
+class Model(tf.keras.Model):
     def __init__(
         self,
         subsampling,
@@ -326,7 +323,7 @@ class ConformerEncoder(tf.keras.Model):
         name = 'conformer_encoder',
         **kwargs,
     ):
-        super(ConformerEncoder, self).__init__(name = name, **kwargs)
+        super(Model, self).__init__(name = name, **kwargs)
 
         subsampling_name = subsampling.pop('type', 'conv2d')
         if subsampling_name == 'vgg':
@@ -390,7 +387,7 @@ class ConformerEncoder(tf.keras.Model):
         return outputs
 
     def get_config(self):
-        conf = super(ConformerEncoder, self).get_config()
+        conf = super(Model, self).get_config()
         conf.update(self.conv_subsampling.get_config())
         conf.update(self.linear.get_config())
         conf.update(self.do.get_config())

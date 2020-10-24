@@ -1,12 +1,13 @@
 import tensorflow as tf
+import numpy as np
 from tensorflow.signal import stft, inverse_stft, hann_window
 
 separation_exponent = 2
 EPSILON = 1e-10
 
-
-class SpeechFeaturizer:
-    def __init__(self, speech_config: dict):
+# https://github.com/TensorSpeech/TensorFlowASR/blob/main/tensorflow_asr/featurizers/speech_featurizers.py#L370
+class STTFeaturizer:
+    def __init__(self, speech_config):
         self.sample_rate = speech_config['sample_rate']
         self.frame_length = int(
             self.sample_rate * (speech_config['frame_ms'] / 1000)
@@ -25,12 +26,9 @@ class SpeechFeaturizer:
     def nfft(self) -> int:
         return 2 ** (self.frame_length - 1).bit_length()
 
-
-# https://github.com/TensorSpeech/TensorFlowASR/blob/main/tensorflow_asr/featurizers/speech_featurizers.py#L370
-class TFSpeechFeaturizer(SpeechFeaturizer):
     def vectorize(self, signal):
         if self.normalize_signal:
-            signal = tf_normalize_signal(signal)
+            signal = normalize_signal(signal)
         signal = preemphasis(signal, self.preemphasis)
         if self.feature_type == 'mfcc':
             features = self.compute_mfcc(signal)
@@ -50,7 +48,7 @@ class TFSpeechFeaturizer(SpeechFeaturizer):
         features = tf.expand_dims(features, axis = -1)
 
         if self.normalize_feature:
-            features = normalize_audio_feature(
+            features = normalize_audio_features(
                 features, per_feature = self.normalize_per_feature
             )
         return features
@@ -70,6 +68,8 @@ class TFSpeechFeaturizer(SpeechFeaturizer):
     def power_to_db(self, S, ref = 1.0, amin = 1e-10, top_db = 80.0):
         if amin <= 0:
             raise ValueError('amin must be strictly positive')
+
+        magnitude = S
 
         ref_value = np.abs(ref)
         log_spec = 10.0 * log10(tf.maximum(amin, magnitude))
@@ -118,6 +118,12 @@ class TFSpeechFeaturizer(SpeechFeaturizer):
         gammatone_spectrogram = tf.tensordot(S, gammatone, 1)
 
         return self.power_to_db(gammatone_spectrogram)
+
+
+def log10(x):
+    numerator = tf.math.log(x)
+    denominator = tf.math.log(tf.constant(10, dtype = numerator.dtype))
+    return numerator / denominator
 
 
 def normalize_audio_features(audio_feature: tf.Tensor, per_feature = False):

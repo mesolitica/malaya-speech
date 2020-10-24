@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 from malaya_speech.utils import featurization
 from malaya_speech.model.frame import FRAME
-from malaya_speech.utils.padding import padding_sequence_nd
+from malaya_speech.utils.padding import sequence_nd as padding_sequence_nd
 
 
 class SPEAKER2VEC:
