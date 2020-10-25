@@ -10,7 +10,9 @@ import collections
 import re
 
 from . import loss
+from . import optimizer
 from . import prepare_data
+from . import schedule
 
 
 @check_type
