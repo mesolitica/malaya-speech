@@ -38,7 +38,14 @@ def ctc_sequence_accuracy(
 
 
 def ctc_sequence_accuracy_estimator(
-    logits, label, input_lengths, beam_width = 1, merge_repeated = True
+    logits,
+    label,
+    input_lengths,
+    beam_width = 1,
+    merge_repeated = True,
+    metrics_collections = None,
+    updates_collections = None,
+    name = None,
 ):
     accuracy = ctc_sequence_accuracy(
         logits = logits,

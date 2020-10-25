@@ -69,8 +69,8 @@ class Model:
         inputs,
         training = True,
         rnn_type = 'gru',
-        rnn_hidden_layers = 5,
-        rnn_hidden_size = 512,
+        rnn_hidden_layers = 3,
+        rnn_hidden_size = 256,
         is_bidirectional = True,
         **kwargs
     ):
