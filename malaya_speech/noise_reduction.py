@@ -8,15 +8,15 @@ import numpy as np
 _availability = {
     'unet': {
         'Size (MB)': 78.9,
-        'SUM MAE': 0.0003,
-        'MAE_SPEAKER': 0,
-        'MAE_NOISE': 0,
+        'SUM MAE': 1.0017848,
+        'MAE_SPEAKER': 0.70453936,
+        'MAE_NOISE': 0.29724538,
     },
     'resnet34-unet': {
         'Size (MB)': 97.8,
-        'SUM MAE': 0.0003,
-        'MAE_SPEAKER': 0,
-        'MAE_NOISE': 0,
+        'SUM MAE': 1.062583,
+        'MAE_SPEAKER': 0.7334868,
+        'MAE_NOISE': 0.32909623,
     },
 }
 
