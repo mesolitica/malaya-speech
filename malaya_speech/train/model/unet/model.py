@@ -123,10 +123,11 @@ class Model:
             )((batch12))
             output = Multiply(name = output_name)([up7, input_tensor])
             self.logits = output
-        self.logits = Conv2D(
-            1,
-            (4, 4),
-            dilation_rate = (2, 2),
-            padding = 'same',
-            kernel_initializer = kernel_initializer,
-        )((batch12))
+        else:
+            self.logits = Conv2D(
+                1,
+                (4, 4),
+                dilation_rate = (2, 2),
+                padding = 'same',
+                kernel_initializer = kernel_initializer,
+            )((batch12))
