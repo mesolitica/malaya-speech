@@ -19,10 +19,11 @@ def load(path, s3_path, model, name, extra, label, **kwargs):
         'speakernet': featurization.SpeakerNetFeaturizer(speakernet_config),
     }
 
-    if name == 'speaker-vector' and model == 'speakernet':
-        model_class = SPEAKERNET
-    elif name == 'speaker-vector':
-        model_class = SPEAKER2VEC
+    if name == 'speaker-vector':
+        if model == 'speakernet':
+            model_class = SPEAKERNET
+        else:
+            model_class = SPEAKER2VEC
     else:
         model_class = CLASSIFICATION
 
@@ -40,7 +41,6 @@ def load(path, s3_path, model, name, extra, label, **kwargs):
         )
 
     else:
-
         return model_class(
             X = g.get_tensor_by_name('import/Placeholder:0'),
             logits = g.get_tensor_by_name('import/logits:0'),

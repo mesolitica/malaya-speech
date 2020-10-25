@@ -10,7 +10,7 @@ Trained on Librispeech, https://github.com/philipperemy/deep-speaker
 
 2. Load generated Tensorflow checkpoints and run prediction, [deep-speaker-tf.ipynb](deep-speaker-tf.ipynb).
 
-3. Freeze the models for production, [export-v1.ipynb](export-v1.ipynb) or [export-v2.ipynb](export-v2.ipynb)
+3. Freeze the models for production, [export-deep-speaker.ipynb](export-deep-speaker.ipynb).
 
 ## Download
 

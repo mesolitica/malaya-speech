@@ -184,6 +184,7 @@ from . import augmentation
 from . import extra
 from . import streaming
 from . import utils
+from . import age_detection
 from . import emotion
 from . import gender
 from . import language_detection

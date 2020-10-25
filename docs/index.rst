@@ -31,6 +31,7 @@ Contents:
    :maxdepth: 2
    :caption: Classification Module
 
+   load-age-detection
    load-emotion
    load-gender
    load-language-detection   
@@ -40,7 +41,6 @@ Contents:
    :caption: Enhancement Module
    
    load-noise-reduction
-   load-speech-enhancement
 
 .. toctree::
    :maxdepth: 2

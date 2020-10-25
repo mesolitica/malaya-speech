@@ -1,5 +1,20 @@
 from malaya_speech import home
 
+PATH_AGE_DETECTION = {
+    'vggvox-v2': {
+        'model': home + '/age-detection/vggvox-v2/model.pb',
+        'version': 'v1',
+    },
+    'deep-speaker': {
+        'model': home + '/age-detection/deep-speaker/model.pb',
+        'version': 'v1',
+    },
+}
+S3_PATH_AGE_DETECTION = {
+    'vggvox-v2': {'model': 'v1/age-detection/finetuned-vggvox-v2.pb'},
+    'deep-speaker': {'model': 'v1/age-detection/finetuned-deep-speaker.pb'},
+}
+
 PATH_EMOTION = {
     'vggvox-v1': {
         'model': home + '/emotion/vggvox-v1/model.pb',
@@ -88,12 +103,22 @@ PATH_SPEAKER_VECTOR = {
         'model': home + '/speaker-vector/inception-v4/model.pb',
         'version': 'v1',
     },
+    'deep-speaker': {
+        'model': home + '/speaker-vector/deep-speaker/model.pb',
+        'version': 'v1',
+    },
+    'speakernet': {
+        'model': home + '/speaker-vector/speakernet/model.pb',
+        'version': 'v1',
+    },
 }
 
 S3_PATH_SPEAKER_VECTOR = {
     'vggvox-v1': {'model': 'v1/speaker-vector/pretrained-vggvox-v1.pb'},
     'vggvox-v2': {'model': 'v1/speaker-vector/pretrained-vggvox-v2.pb'},
     'inception-v4': {'model': 'v1/speaker-vector/pretrained-inception-v4.pb'},
+    'deep-speaker': {'model': 'v1/speaker-vector/pretrained-deep-speaker.pb'},
+    'speakernet': {'model': 'v1/speaker-vector/pretrained-speakernet.pb'},
 }
 
 PATH_SPEECH_ENHANCEMENT = {

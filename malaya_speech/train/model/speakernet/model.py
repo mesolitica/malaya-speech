@@ -5,7 +5,6 @@ residual_dense = False
 
 config = {
     'convnet_layers': [
-        # 1
         {
             'type': 'sep_conv1d',
             'repeat': 1,
@@ -29,7 +28,6 @@ config = {
             'dropout_keep_prob': 0.5,
             'residual': True,
         },
-        # 3
         {
             'type': 'sep_conv1d',
             'repeat': 2,
@@ -53,7 +51,6 @@ config = {
             'dropout_keep_prob': 0.5,
             'residual': True,
         },
-        # 5
         {
             'type': 'sep_conv1d',
             'repeat': 1,
@@ -66,7 +63,7 @@ config = {
             'residual': False,
         },
     ],
-    'dropout_keep_prob': 0.7,
+    'dropout_keep_prob': 1.0,
     'initializer': tf.contrib.layers.xavier_initializer,
     'initializer_params': {'uniform': False},
     'normalization': 'batch_norm',
@@ -77,7 +74,7 @@ config = {
 
 
 class Model:
-    def __init__(self, inputs, inputs_length, mode = 'train'):
+    def __init__(self, inputs, inputs_length, num_class = 7205, mode = 'train'):
         self.model = abstract.TDNNEncoder(config, None, mode = mode)
         input_dict = {'source_tensors': [inputs, inputs_length]}
         logits = self.model.encode(input_dict)['outputs']
@@ -95,4 +92,5 @@ class Model:
             axis = 1,
         )
         f = affine(pooled, 512)
-        self.logits = affine(f, 512)
+        f = affine(f, 512)
+        self.logits = tf.layers.dense(f, num_class, use_bias = False)

@@ -76,7 +76,12 @@ class SPEAKER2VEC:
         ]
 
         inputs = [self._vectorizer(input, **self._extra) for input in inputs]
-        inputs = padding_sequence_nd(inputs)
+
+        if self.__model__ == 'deep-speaker':
+            dim = 0
+        else:
+            dim = 1
+        inputs = padding_sequence_nd(inputs, dim = dim)
         inputs = np.expand_dims(inputs, -1)
 
         return self._sess.run(self._logits, feed_dict = {self._X: inputs})
@@ -114,7 +119,11 @@ class CLASSIFICATION:
         ]
 
         inputs = [self._vectorizer(input, **self._extra) for input in inputs]
-        inputs = padding_sequence_nd(inputs)
+        if self.__model__ == 'deep-speaker':
+            dim = 0
+        else:
+            dim = 1
+        inputs = padding_sequence_nd(inputs, dim = dim)
         inputs = np.expand_dims(inputs, -1)
 
         return self._sess.run(self._logits, feed_dict = {self._X: inputs})

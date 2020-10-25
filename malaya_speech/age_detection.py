@@ -1,6 +1,10 @@
+from malaya_speech.path import PATH_AGE_DETECTION, S3_PATH_AGE_DETECTION
+from malaya_speech.supervised import classification
+from herpetologist import check_type
+
 _availability = {
-    'vggvox-v2': {'Size (MB)': 30.9, 'Accuracy': 0.90204},
-    'deep-speaker': {'Size (MB)': 30.9, 'Accuracy': 0.90204},
+    'vggvox-v2': {'Size (MB)': 30.9, 'Accuracy': 0.57523},
+    'deep-speaker': {'Size (MB)': 96.9, 'Accuracy': 0.58584},
 }
 
 labels = [
@@ -32,7 +36,7 @@ def available_model():
 @check_type
 def deep_model(model: str = 'vggvox-v2', **kwargs):
     """
-    Load emotion detection deep model.
+    Load age detection deep model.
 
     Parameters
     ----------
@@ -60,10 +64,10 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
     }
 
     return classification.load(
-        path = PATH_EMOTION,
-        s3_path = S3_PATH_EMOTION,
+        path = PATH_AGE_DETECTION,
+        s3_path = S3_PATH_AGE_DETECTION,
         model = model,
-        name = 'emotion',
+        name = 'age-detection',
         extra = settings[model],
         label = labels,
         **kwargs
