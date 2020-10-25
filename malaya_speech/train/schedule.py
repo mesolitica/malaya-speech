@@ -4,7 +4,7 @@ import tensorflow as tf
 def transformer_schedule(step, d_model, warmup_steps = 4000, max_lr = None):
     arg1 = tf.math.rsqrt(step)
     arg2 = step * (warmup_steps ** -1.5)
-    lr = tf.math.rsqrt(self.d_model) * tf.math.minimum(arg1, arg2)
+    lr = tf.math.rsqrt(d_model) * tf.math.minimum(arg1, arg2)
     if max_lr is not None:
         return tf.math.minimum(max_lr, lr)
     return lr
