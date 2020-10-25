@@ -18,7 +18,7 @@ def calculate_input_length(inputs, logits, targets):
 
 
 # https://github.com/tensorflow/models/blob/master/research/deep_speech/deep_speech.py#L42
-def calculate_input_length_v2(inputs, logits):
+def calculate_input_length_deep_speech(inputs, logits):
     input_length = tf.count_nonzero(
         tf.reduce_sum(inputs, -1), 1, dtype = tf.int32
     )
