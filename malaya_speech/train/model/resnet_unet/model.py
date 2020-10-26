@@ -47,22 +47,22 @@ class Model:
     def __init__(
         self,
         input_tensor,
-        output_name = 'output',
-        params = {},
+        num_layers = 6,
+        num_initial_filters = 16,
         output_mask_logit = False,
+        logging = False,
     ):
-        conv_n_filters = params.get(
-            'conv_n_filters', [16, 32, 64, 128, 256, 512]
-        )
-        conv_activation_layer = _get_conv_activation_layer(params)
-        deconv_activation_layer = _get_deconv_activation_layer(params)
+        conv_activation_layer = _get_conv_activation_layer({})
+        deconv_activation_layer = _get_deconv_activation_layer({})
         kernel_initializer = he_uniform(seed = 50)
+
         conv2d_factory = partial(
             Conv2D,
-            strides = (1, 1),
+            strides = (2, 2),
             padding = 'same',
             kernel_initializer = kernel_initializer,
         )
+
         conv2d_transpose_factory = partial(
             Conv2DTranspose,
             strides = (2, 2),
@@ -72,68 +72,68 @@ class Model:
 
         def resnet_block(input_tensor, filter_size):
 
-            res = conv2d_factory(filter_size, (1, 1), use_bias = False)(
+            res = conv2d_factory(
+                filter_size, (1, 1), strides = (1, 1), use_bias = False
+            )(input_tensor)
+            conv1 = conv2d_factory(filter_size, (5, 5), strides = (1, 1))(
                 input_tensor
             )
-            conv1 = conv2d_factory(filter_size, (5, 5))(input_tensor)
             batch1 = BatchNormalization(axis = -1)(conv1)
             rel1 = conv_activation_layer(batch1)
-            conv2 = conv2d_factory(filter_size, (5, 5))(rel1)
+            conv2 = conv2d_factory(filter_size, (5, 5), strides = (1, 1))(rel1)
             batch2 = BatchNormalization(axis = -1)(conv2)
             resconnection = Add()([res, batch2])
             rel2 = conv_activation_layer(resconnection)
-            return rel2, MaxPooling2D(padding = 'same')(rel2)
+            return MaxPooling2D(padding = 'same')(rel2)
 
-        def de_resnet_block(left_tensor, right_tensor, filter_size):
+        enc_outputs = []
+        current_layer = input_tensor
+        for i in range(num_layers):
 
-            up = conv2d_transpose_factory(filter_size, (5, 5))((left_tensor))
-            merged = Concatenate(axis = -1)([up, right_tensor])
+            if i < num_layers - 1:
+                current_layer = resnet_block(
+                    current_layer, num_initial_filters * (2 ** i)
+                )
+                enc_outputs.append(current_layer)
+            else:
+                current_layer = conv2d_factory(
+                    num_initial_filters * (2 ** i), (5, 5)
+                )(current_layer)
 
-            res = conv2d_factory(filter_size, (1, 1), use_bias = False)(merged)
-            conv1 = conv2d_factory(filter_size, (5, 5))(merged)
-            batch1 = BatchNormalization(axis = -1)(conv1)
-            rel1 = deconv_activation_layer(batch1)
-            conv2 = conv2d_factory(filter_size, (5, 5))(rel1)
-            batch2 = BatchNormalization(axis = -1)(conv2)
-            resconnection = Add()([res, batch2])
-            rel2 = deconv_activation_layer(resconnection)
-            return rel2
+            if logging:
+                print(current_layer)
 
-        # print(input_tensor.shape)
-        conv1, rel1 = resnet_block(input_tensor, conv_n_filters[0])
-        # print(conv1.shape, rel1.shape)
-        conv2, rel2 = resnet_block(rel1, conv_n_filters[1])
-        # print(conv2.shape, rel2.shape)
-        conv3, rel3 = resnet_block(rel2, conv_n_filters[2])
-        # print(conv3.shape, rel3.shape)
-        conv4, rel4 = resnet_block(rel3, conv_n_filters[3])
-        # print(conv4.shape, rel4.shape)
-        conv5, rel5 = resnet_block(rel4, conv_n_filters[4])
-        # print(conv5.shape, rel5.shape)
-        conv6, _ = resnet_block(rel5, conv_n_filters[5])
-        # print(conv6.shape)
+        for i in range(num_layers - 1):
 
-        merge1 = Dropout(0.5)(de_resnet_block(conv6, conv5, conv_n_filters[4]))
-        # print(merge1.shape)
-        merge2 = Dropout(0.5)(de_resnet_block(merge1, conv4, conv_n_filters[3]))
-        # print(merge2.shape)
-        merge3 = de_resnet_block(merge2, conv3, conv_n_filters[2])
-        # print(merge3.shape)
-        merge4 = de_resnet_block(merge3, conv2, conv_n_filters[1])
-        # print(merge4.shape)
-        merge5 = de_resnet_block(merge4, conv1, conv_n_filters[0])
-        # print(merge5.shape)
+            current_layer = conv2d_transpose_factory(
+                num_initial_filters * (2 ** (num_layers - i - 2)), (5, 5)
+            )((current_layer))
+            current_layer = deconv_activation_layer(current_layer)
+            current_layer = BatchNormalization(axis = -1)(current_layer)
+            if i < 3:
+                current_layer = Dropout(0.5)(current_layer)
+            current_layer = Concatenate(axis = -1)(
+                [enc_outputs[-i - 1], current_layer]
+            )
+            if logging:
+                print(current_layer)
+
+        current_layer = conv2d_transpose_factory(1, (5, 5), strides = (2, 2))(
+            (current_layer)
+        )
+        current_layer = deconv_activation_layer(current_layer)
+        current_layer = BatchNormalization(axis = -1)(current_layer)
 
         if not output_mask_logit:
-            up7 = Conv2D(
+            last = Conv2D(
                 1,
                 (4, 4),
                 dilation_rate = (2, 2),
                 activation = 'sigmoid',
                 padding = 'same',
                 kernel_initializer = kernel_initializer,
-            )((merge5))
-            output = Multiply(name = output_name)([up7, input_tensor])
+            )((current_layer))
+            output = Multiply()([last, input_tensor])
             self.logits = output
         else:
             self.logits = Conv2D(
@@ -142,4 +142,4 @@ class Model:
                 dilation_rate = (2, 2),
                 padding = 'same',
                 kernel_initializer = kernel_initializer,
-            )((merge5))
+            )((current_layer))
