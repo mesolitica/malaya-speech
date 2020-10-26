@@ -62,6 +62,13 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+   :caption: Train ASR
+
+   prepare-sebut-perkataan-tfrecord
+   train-asr-quartznet
+
+.. toctree::
+   :maxdepth: 2
    :caption: Misc
 
    Donation

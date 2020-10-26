@@ -8,6 +8,7 @@ from . import melgan
 from . import mini_jasper
 from . import pix2pix
 from . import quartznet
+from . import resnet_unet
 from . import speakernet
 from . import transducer
 from . import unet
