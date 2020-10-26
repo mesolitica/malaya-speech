@@ -8,9 +8,9 @@ import numpy as np
 _availability = {
     'unet': {
         'Size (MB)': 78.9,
-        'SUM MAE': 1.0017848,
-        'MAE_SPEAKER': 0.70453936,
-        'MAE_NOISE': 0.29724538,
+        'SUM MAE': 0.860744,
+        'MAE_SPEAKER': 0.56171,
+        'MAE_NOISE': 0.299029,
     },
     'resnet34-unet': {
         'Size (MB)': 97.8,

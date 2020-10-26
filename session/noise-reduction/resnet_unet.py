@@ -10,7 +10,7 @@ import numpy as np
 import IPython.display as ipd
 import matplotlib.pyplot as plt
 import malaya_speech.augmentation.waveform as augmentation
-from malaya_speech.train.model import unet
+from malaya_speech.train.model import resnet_unet as unet
 from malaya_speech.utils import tf_featurization
 import malaya_speech.train as train
 import random
@@ -66,7 +66,9 @@ def combine_speakers(files, n = 5):
     w_samples = [
         random_sampling(
             read_wav(f)[0],
-            length = min(random.randint(20000 // n, 240_000 // n), 150_000),
+            length = min(
+                random.randint(20000 // n, 240_000 // n), 100_000 // n
+            ),
         )
         for f in w_samples
     ]
@@ -158,7 +160,7 @@ def parallel(f):
         y = combine_speakers(s, len(s))[0]
     else:
         y = random_sampling(
-            read_wav(f)[0], length = random.randint(20000, 120_000)
+            read_wav(f)[0], length = random.randint(30000, 100_000)
         )
 
     n = combine_speakers(noises, random.randint(1, 20))[0]
@@ -286,7 +288,7 @@ train_hooks = [
 ]
 train_dataset = get_dataset()
 
-save_directory = 'noise-reduction-unet'
+save_directory = 'noise-reduction-resnet-unet'
 
 train.run_training(
     train_fn = train_dataset,

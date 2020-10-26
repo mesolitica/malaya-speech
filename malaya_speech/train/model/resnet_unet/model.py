@@ -117,7 +117,7 @@ class Model:
         # print(merge1.shape)
         merge2 = Dropout(0.5)(de_resnet_block(merge1, conv4, conv_n_filters[3]))
         # print(merge2.shape)
-        merge3 = Dropout(0.5)(de_resnet_block(merge2, conv3, conv_n_filters[2]))
+        merge3 = de_resnet_block(merge2, conv3, conv_n_filters[2])
         # print(merge3.shape)
         merge4 = de_resnet_block(merge3, conv2, conv_n_filters[1])
         # print(merge4.shape)
