@@ -65,7 +65,10 @@ Contents:
    :caption: Train ASR
 
    prepare-sebut-perkataan-tfrecord
+   train-asr-cnn-rnn
+   train-asr-mini-jasper
    train-asr-quartznet
+   train-asr-mini-conformer
 
 .. toctree::
    :maxdepth: 2
