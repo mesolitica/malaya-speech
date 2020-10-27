@@ -50,6 +50,12 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+   :caption: Speaker Diarization Module
+
+   load-diarization
+
+.. toctree::
+   :maxdepth: 2
    :caption: Speaker Vector Module
 
    load-speaker-vector

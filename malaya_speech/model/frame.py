@@ -6,6 +6,8 @@ SEGMENT_PRECISION = 1e-6
 
 class FRAME:
     def __init__(self, array, timestamp, duration):
+        if not isinstance(array, np.ndarray):
+            array = np.array(array)
         self.array = array
         self.timestamp = timestamp
         self.duration = duration

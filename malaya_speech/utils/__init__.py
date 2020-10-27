@@ -275,6 +275,7 @@ def describe_availability(dict, transpose = True, text = ''):
 from . import astype
 from . import bytepair
 from . import char
+from . import dist
 from . import featurization
 from . import generator
 from . import griffin_lim

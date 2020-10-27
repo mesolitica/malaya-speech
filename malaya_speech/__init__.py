@@ -185,6 +185,7 @@ from . import extra
 from . import streaming
 from . import utils
 from . import age_detection
+from . import diarization
 from . import emotion
 from . import gender
 from . import language_detection
