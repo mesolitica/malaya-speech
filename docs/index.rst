@@ -74,7 +74,7 @@ Contents:
    train-asr-cnn-rnn
    train-asr-mini-jasper
    train-asr-quartznet
-   train-asr-mini-conformer
+   train-asr-small-conformer
 
 .. toctree::
    :maxdepth: 2
