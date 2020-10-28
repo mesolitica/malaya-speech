@@ -151,7 +151,7 @@ S3_PATH_SPEECH_ENHANCEMENT = {
 
 PATH_VAD = {
     'vggvox-v1': {'model': home + '/vad/vggvox-v1/model.pb', 'version': 'v1'},
-    'vggvox-v2': {'model': home + '/vad/vggvox-v2/model.pb', 'version': 'v2'},
+    'vggvox-v2': {'model': home + '/vad/vggvox-v2/model.pb', 'version': 'v1'},
     'inception-v4': {
         'model': home + '/vad/inception-v4/model.pb',
         'version': 'v1',
@@ -159,6 +159,6 @@ PATH_VAD = {
 }
 S3_PATH_VAD = {
     'vggvox-v1': {'model': 'v1/vad/finetuned-vggvox-v1.pb'},
-    'vggvox-v2': {'model': 'v2/vad/finetuned-vggvox-v2.pb'},
+    'vggvox-v2': {'model': 'v1/vad/finetuned-vggvox-v2.pb'},
     'inception-v4': {'model': 'v1/vad/finetuned-inception-v4.pb'},
 }

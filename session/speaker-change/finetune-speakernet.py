@@ -87,9 +87,12 @@ def model_fn(features, labels, mode, params):
     Y = tf.cast(features['targets'][:, 0], tf.int32)
 
     model = speakernet.Model(
-        features['inputs'], features['inputs_length'][:, 0], mode = 'train'
+        features['inputs'],
+        features['inputs_length'][:, 0],
+        num_class = 2,
+        mode = 'train',
     )
-    logits = tf.layers.dense(tf.nn.relu(model.logits), 2)
+    logits = model.logits
 
     loss = tf.reduce_mean(
         tf.nn.sparse_softmax_cross_entropy_with_logits(
@@ -106,7 +109,7 @@ def model_fn(features, labels, mode, params):
     tf.identity(accuracy[1], name = 'train_accuracy')
 
     variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-    variables = [v for v in variables if 'prediction' not in v.name]
+    variables = [v for v in variables if 'dense_2' not in v.name]
 
     assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
         variables, init_checkpoint
