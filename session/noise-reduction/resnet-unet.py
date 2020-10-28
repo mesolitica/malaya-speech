@@ -10,16 +10,14 @@ import numpy as np
 import IPython.display as ipd
 import matplotlib.pyplot as plt
 import malaya_speech.augmentation.waveform as augmentation
-from malaya_speech.train.model import unet
+from malaya_speech.train.model import resnet_unet as unet
 from malaya_speech.utils import tf_featurization
 import malaya_speech.train as train
-import segmentation_models as sm
 import random
 from glob import glob
 from itertools import cycle
 from multiprocessing import Pool
 import itertools
-from tensorflow.keras.layers import Multiply
 
 
 def chunks(l, n):
@@ -228,16 +226,7 @@ class Model:
         self.outputs = []
         for i in range(len(self.Y)):
             with tf.variable_scope(f'model_{i}'):
-                unet = sm.Unet(
-                    'resnet34',
-                    classes = 1,
-                    activation = 'sigmoid',
-                    input_shape = (512, 1024, 1),
-                    encoder_weights = None,
-                )
-                up = unet(D_X)
-                output = Multiply(name = 'output')([up, D_X])
-                self.outputs.append(output)
+                self.outputs.append(unet.Model(D_X, num_layers = 6).logits)
 
         self.loss = []
         for i in range(len(self.Y)):
@@ -248,7 +237,7 @@ class Model:
         self.cost = tf.reduce_sum(self.loss)
 
 
-init_lr = 1e-5
+init_lr = 1e-4
 epochs = 500_000
 
 
@@ -299,7 +288,7 @@ train_hooks = [
 ]
 train_dataset = get_dataset()
 
-save_directory = 'noise-reduction-resnet34-unet'
+save_directory = 'noise-reduction-resnet-unet'
 
 train.run_training(
     train_fn = train_dataset,

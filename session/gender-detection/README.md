@@ -6,7 +6,7 @@ Finetuned available pretrained Malaya-Speech speaker vector models to do Gender 
 
 ## how-to
 
-1. Generate dataset [prepare-gender-detection.ipynb](prepare-gender-detection.ipynb).
+1. Generate dataset [prepare/gender-detection.ipynb](prepare/gender-detection.ipynb).
 
 2. Run any finetuning scripts,
 
@@ -16,7 +16,7 @@ Finetuned available pretrained Malaya-Speech speaker vector models to do Gender 
 python3 finetune-vggvox-v2.py
 ```
 
-3. Export the model for production, example for vggvox-v2, [export-vggvox-v2-gender-detection.ipynb](export-vggvox-v2-gender-detection.ipynb)
+3. Export the model for production, example for vggvox-v2, [export/vggvox-v2.ipynb](export/vggvox.ipynb)
 
 ## Download
 

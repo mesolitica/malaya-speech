@@ -1,26 +1,37 @@
 import os
 
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '../gcs/mesolitica-storage.json'
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
-import tensorflow as tf
 import malaya_speech.train as train
-import malaya_speech.train.model.vggvox_v2 as vggvox_v2
 import malaya_speech
-from glob import glob
+import malaya_speech.train.model.speakernet as speakernet
+import tensorflow as tf
+import malaya_speech.config
 
-DIMENSION = 257
+config = malaya_speech.config.speakernet_featurizer_config
+new_config = {'frame_ms': 20, 'stride_ms': 0.3}
+featurizer = malaya_speech.featurization.SpeakerNetFeaturizer(
+    {**config, **new_config}
+)
+
+DIMENSION = 64
 
 
 def calc(v):
-    r = malaya_speech.featurization.vggvox_v2(v, mode = 'train')
+    r = featurizer(v)
     return r
 
 
 def preprocess_inputs(example):
     s = tf.compat.v1.numpy_function(calc, [example['inputs']], tf.float32)
-    s = tf.reshape(s, (DIMENSION, -1, 1))
+
+    s = tf.reshape(s, (-1, DIMENSION))
+    length = tf.cast(tf.shape(s)[0], tf.int32)
+    length = tf.expand_dims(length, 0)
     example['inputs'] = s
+    example['inputs_length'] = length
+
     return example
 
 
@@ -40,7 +51,7 @@ def parse(serialized_example):
 
     keys = list(features.keys())
     for k in keys:
-        if k not in ['inputs', 'targets']:
+        if k not in ['inputs', 'inputs_length', 'targets']:
             features.pop(k, None)
 
     return features
@@ -54,11 +65,13 @@ def get_dataset(files, batch_size = 32, shuffle_size = 1024, thread_count = 24):
         dataset = dataset.padded_batch(
             batch_size,
             padded_shapes = {
-                'inputs': tf.TensorShape([DIMENSION, None, 1]),
+                'inputs': tf.TensorShape([None, DIMENSION]),
+                'inputs_length': tf.TensorShape([None]),
                 'targets': tf.TensorShape([None]),
             },
             padding_values = {
                 'inputs': tf.constant(0, dtype = tf.float32),
+                'inputs_length': tf.constant(0, dtype = tf.int32),
                 'targets': tf.constant(0, dtype = tf.int64),
             },
         )
@@ -68,15 +81,15 @@ def get_dataset(files, batch_size = 32, shuffle_size = 1024, thread_count = 24):
     return get
 
 
-learning_rate = 1e-5
-init_checkpoint = '../vggvox-speaker-identification/v2/vggvox.ckpt'
-
-
 def model_fn(features, labels, mode, params):
+    learning_rate = 1e-5
+    init_checkpoint = '../speakernet/model.ckpt'
     Y = tf.cast(features['targets'][:, 0], tf.int32)
 
-    model = vggvox_v2.Model(features['inputs'], num_class = 10, mode = 'train')
-    logits = model.logits
+    model = speakernet.Model(
+        features['inputs'], features['inputs_length'][:, 0], mode = 'train'
+    )
+    logits = tf.layers.dense(tf.nn.relu(model.logits), 2)
 
     loss = tf.reduce_mean(
         tf.nn.sparse_softmax_cross_entropy_with_logits(
@@ -91,7 +104,6 @@ def model_fn(features, labels, mode, params):
     )
 
     tf.identity(accuracy[1], name = 'train_accuracy')
-    tf.summary.scalar('train_accuracy', accuracy[1])
 
     variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
     variables = [v for v in variables if 'prediction' not in v.name]
@@ -127,12 +139,17 @@ train_hooks = [
     )
 ]
 
-files = tf.io.gfile.glob(
-    'gs://mesolitica-general/speech/age-detection/data/*.tfrecords'
-)
-train_dataset = get_dataset(files)
+train_files = tf.io.gfile.glob(
+    'gs://mesolitica-general/vad/data/*.tfrecords'
+) + tf.io.gfile.glob('gs://mesolitica-general/vad-noise/data/*.tfrecords')
+train_dataset = get_dataset(train_files, batch_size = 64)
 
-save_directory = 'output-vggvox-v2-age'
+dev_files = tf.io.gfile.glob(
+    'gs://mesolitica-general/vad-test/data/*.tfrecords'
+)
+dev_dataset = get_dataset(dev_files, batch_size = 32)
+
+save_directory = 'output-speakernet-vad'
 
 train.run_training(
     train_fn = train_dataset,
@@ -142,5 +159,6 @@ train.run_training(
     log_step = 1,
     save_checkpoint_step = 25000,
     max_steps = 300000,
+    eval_fn = dev_dataset,
     train_hooks = train_hooks,
 )

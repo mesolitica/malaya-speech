@@ -467,7 +467,7 @@ def mfcc_fbank(signal, sample_rate):
     return np.array(frames_features, dtype = np.float32)
 
 
-def read_mfcc(signal, sr = 16000, voice_only = True, **kwargs):
+def deep_speaker(signal, sr = 16000, voice_only = True, **kwargs):
     if voice_only:
         energy = np.abs(signal)
         silence_threshold = np.percentile(energy, 95)

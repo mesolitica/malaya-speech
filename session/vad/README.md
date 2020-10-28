@@ -6,7 +6,7 @@ Finetuned available pretrained Malaya-Speech speaker vector models to do Voice A
 
 ## how-to
 
-1. Generate dataset [prepare-vad-dataset.ipynb](prepare-vad-dataset.ipynb).
+1. Generate dataset [prepare/vad-dataset.ipynb](prepare/vad-dataset.ipynb) and [prepare/vad-noise.ipynb](prepare/vad-noise.ipynb).
 
 2. Run any finetuning scripts,
 
@@ -22,7 +22,7 @@ python3 finetune-vggvox-v1.py
 python3 finetune-vggvox-v2.py
 ```
 
-3. Export the model for production, example for vggvox-v2, [export-vggvox-v2.ipynb](export-vggvox-v2.ipynb)
+3. Export the model for production, example for vggvox-v2, [export/vggvox-v2.ipynb](export/vggvox-v2.ipynb)
 
 ## Download
 

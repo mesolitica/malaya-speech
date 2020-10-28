@@ -14,13 +14,13 @@ Pretrained Malaya-Speech UNET models to do Noise Reduction.
 python3 unet.py
 ```
 
-**RESNET18-UNET**,
+**RESNET-UNET**,
 
 ```bash
-python3 resnet18-unet.py
+python3 resnet_unet.py
 ```
 
-3. Export the model for production, example for UNET, [export-noise-reduction-unet.ipynb](export-noise-reduction-unet.ipynb)
+3. Export the model for production, example for UNET, [export/unet.ipynb](export/unet.ipynb)
 
 ## Download
 

@@ -12,4 +12,4 @@ Exported from NEMO, https://github.com/NVIDIA/NeMo/blob/main/tutorials/speaker_r
 
 ## Download
 
-1. 32 MB, https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/deep-speaker.tar.gz
+1. 32 MB, https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/speakernet.tar.gz

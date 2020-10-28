@@ -6,7 +6,7 @@ Finetuned available pretrained Malaya-Speech speaker vector models to do Emotion
 
 ## how-to
 
-1. Generate dataset [prepare-language-detection.ipynb](prepare-language-detection.ipynb).
+1. Generate dataset [prepare/emotion.ipynb](prepare/emotion.ipynb).
 
 2. Run any finetuning scripts,
 
@@ -22,7 +22,7 @@ python3 finetune-vggvox-v1.py
 python3 finetune-vggvox-v2.py
 ```
 
-3. Export the model for production, example for vggvox-v2, [export-vggvox-v2-emotion-detection.ipynb](export-vggvox-v2-emotion-detection.ipynb)
+3. Export the model for production, example for vggvox-v2, [export/vggvox-v2.ipynb](export/vggvox-v2.ipynb)
 
 ## Download
 

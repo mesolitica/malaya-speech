@@ -1,8 +1,10 @@
+from malaya_speech.path import PATH_SPEAKER_CHANGE, S3_PATH_SPEAKER_CHANGE
+from malaya_speech.supervised import classification
 from herpetologist import check_type
 
 _availability = {
     'vggvox-v2': {'Size (MB)': 31.1, 'Accuracy': 0.9594},
-    'deep-speaker': {'Size (MB)': 30.9, 'Accuracy': 0.99},
+    'speakernet': {'Size (MB)': 30.9, 'Accuracy': 0.99},
 }
 
 
@@ -37,3 +39,18 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
         raise Exception(
             'model not supported, please check supported models from `malaya_speech.speaker_change.available_model()`.'
         )
+
+    settings = {
+        'vggvox-v2': {'hop_length': 24, 'concat': False, 'mode': 'eval'},
+        'speakernet': {'frame_ms': 20, 'stride_ms': 0.3},
+    }
+
+    return classification.load(
+        path = PATH_SPEAKER_CHANGE,
+        s3_path = S3_PATH_SPEAKER_CHANGE,
+        model = model,
+        name = 'speaker-change',
+        extra = settings[model],
+        label = [False, True],
+        **kwargs
+    )

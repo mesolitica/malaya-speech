@@ -15,8 +15,10 @@ def load(path, s3_path, model, name, extra, label, **kwargs):
     vectorizer_mapping = {
         'vggvox-v1': featurization.vggvox_v1,
         'vggvox-v2': featurization.vggvox_v2,
-        'deep-speaker': featurization.read_mfcc,
-        'speakernet': featurization.SpeakerNetFeaturizer(speakernet_config),
+        'deep-speaker': featurization.deep_speaker,
+        'speakernet': featurization.SpeakerNetFeaturizer(
+            {**speakernet_config, **extra}
+        ),
     }
 
     if name == 'speaker-vector':

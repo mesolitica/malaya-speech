@@ -90,6 +90,16 @@ S3_PATH_NOISE_REDUCTION = {
     'resnet34-unet': {'model': 'v1/noise-reduction/resnet34-unet.pb'},
 }
 
+PATH_SPEAKER_CHANGE = {
+    'vggvox-v2': {
+        'model': home + '/speaker-change/vggvox-v2/model.pb',
+        'version': 'v1',
+    }
+}
+S3_PATH_SPEAKER_CHANGE = {
+    'vggvox-v2': {'model': 'v1/speaker-change/finetuned-vggvox-v2.pb'}
+}
+
 PATH_SPEAKER_VECTOR = {
     'vggvox-v1': {
         'model': home + '/speaker-vector/vggvox-v1/model.pb',
@@ -141,7 +151,7 @@ S3_PATH_SPEECH_ENHANCEMENT = {
 
 PATH_VAD = {
     'vggvox-v1': {'model': home + '/vad/vggvox-v1/model.pb', 'version': 'v1'},
-    'vggvox-v2': {'model': home + '/vad/vggvox-v2/model.pb', 'version': 'v1'},
+    'vggvox-v2': {'model': home + '/vad/vggvox-v2/model.pb', 'version': 'v2'},
     'inception-v4': {
         'model': home + '/vad/inception-v4/model.pb',
         'version': 'v1',
@@ -149,6 +159,6 @@ PATH_VAD = {
 }
 S3_PATH_VAD = {
     'vggvox-v1': {'model': 'v1/vad/finetuned-vggvox-v1.pb'},
-    'vggvox-v2': {'model': 'v1/vad/finetuned-vggvox-v2.pb'},
+    'vggvox-v2': {'model': 'v2/vad/finetuned-vggvox-v2.pb'},
     'inception-v4': {'model': 'v1/vad/finetuned-inception-v4.pb'},
 }
