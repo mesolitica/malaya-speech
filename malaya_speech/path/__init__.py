@@ -94,10 +94,15 @@ PATH_SPEAKER_CHANGE = {
     'vggvox-v2': {
         'model': home + '/speaker-change/vggvox-v2/model.pb',
         'version': 'v1',
-    }
+    },
+    'speakernet': {
+        'model': home + '/speaker-change/speakernet/model.pb',
+        'version': 'v1',
+    },
 }
 S3_PATH_SPEAKER_CHANGE = {
-    'vggvox-v2': {'model': 'v1/speaker-change/finetuned-vggvox-v2.pb'}
+    'vggvox-v2': {'model': 'v1/speaker-change/finetuned-vggvox-v2.pb'},
+    'speakernet': {'model': 'v1/speaker-change/finetuned-speakernet.pb'},
 }
 
 PATH_SPEAKER_VECTOR = {

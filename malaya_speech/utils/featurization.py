@@ -54,7 +54,8 @@ class SpeakerNetFeaturizer:
         mel = np.matmul(self.mel_basis, spect)
         log_zero_guard_value = 2 ** -24
         features = np.log(mel + log_zero_guard_value)
-        features = normalize_batch(np.expand_dims(features, 0))[0]
+        if self.normalize_feature:
+            features = normalize_batch(np.expand_dims(features, 0))[0]
         return features.T
 
     def __call__(self, signal):

@@ -1,5 +1,10 @@
 from malaya_speech.utils import check_file, load_graph, generate_session
-from malaya_speech.model.tf import SPEAKER2VEC, SPEAKERNET, CLASSIFICATION
+from malaya_speech.model.tf import (
+    SPEAKERNET,
+    SPEAKER2VEC,
+    SPEAKERNET_CLASSIFICATION,
+    CLASSIFICATION,
+)
 from malaya_speech.utils import featurization
 
 
@@ -17,7 +22,7 @@ def load(path, s3_path, model, name, extra, label, **kwargs):
         'vggvox-v2': featurization.vggvox_v2,
         'deep-speaker': featurization.deep_speaker,
         'speakernet': featurization.SpeakerNetFeaturizer(
-            {**speakernet_config, **extra}
+            **{**speakernet_config, **extra}
         ),
     }
 
@@ -27,7 +32,10 @@ def load(path, s3_path, model, name, extra, label, **kwargs):
         else:
             model_class = SPEAKER2VEC
     else:
-        model_class = CLASSIFICATION
+        if model == 'speakernet':
+            model_class = SPEAKERNET_CLASSIFICATION
+        else:
+            model_class = CLASSIFICATION
 
     if model == 'speakernet':
         return model_class(

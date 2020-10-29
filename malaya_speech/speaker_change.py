@@ -4,7 +4,7 @@ from herpetologist import check_type
 
 _availability = {
     'vggvox-v2': {'Size (MB)': 31.1, 'Accuracy': 0.9594},
-    'speakernet': {'Size (MB)': 30.9, 'Accuracy': 0.99},
+    'speakernet': {'Size (MB)': 20.3, 'Accuracy': 0.99},
 }
 
 
@@ -18,7 +18,7 @@ def available_model():
 
 
 @check_type
-def deep_model(model: str = 'vggvox-v2', **kwargs):
+def deep_model(model: str = 'speakernet', **kwargs):
     """
     Load speaker change deep model.
 
@@ -28,7 +28,7 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
         Model architecture supported. Allowed values:
 
         * ``'vggvox-v2'`` - finetuned VGGVox V2.
-        * ``'deep-speaker'`` - finetuned Deep Speaker.
+        * ``'speakernet'`` - finetuned SpeakerNet.
 
     Returns
     -------
@@ -42,7 +42,7 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
 
     settings = {
         'vggvox-v2': {'hop_length': 24, 'concat': False, 'mode': 'eval'},
-        'speakernet': {'frame_ms': 20, 'stride_ms': 0.3},
+        'speakernet': {'frame_ms': 20, 'stride_ms': 1.5},
     }
 
     return classification.load(

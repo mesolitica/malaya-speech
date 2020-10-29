@@ -121,6 +121,7 @@ def plot_classification(
     x_text = 0.05,
     y_text = 0.2,
     ylim = (0.1, 0.9),
+    figsize: Tuple[int, int] = (15, 3),
     **kwargs
 ):
     """
@@ -148,7 +149,7 @@ def plot_classification(
         fig = plt.figure(figsize = figsize)
         ax = fig.add_subplot(1, 1, 1)
 
-    if isinstance(preds[0], float):
+    if isinstance(preds[0][1], float) or isinstance(preds[0][1], np.float32):
         hline = False
     else:
         hline = True
@@ -213,7 +214,7 @@ def plot_classification(
 
     else:
         x = [i[0].timestamp for i in preds]
-        y = [bool_map.get(i[1], i[1]) for i in preds]
+        y = [i[1] for i in preds]
         ax.plot(x, y)
 
     x = [i[0].timestamp for i in preds]

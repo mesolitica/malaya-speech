@@ -14,9 +14,9 @@ _availability = {
     },
     'resnet-unet': {
         'Size (MB)': 97.8,
-        'SUM MAE': 0.852318,
-        'MAE_SPEAKER': 0.55737,
-        'MAE_NOISE': 0.294939,
+        'SUM MAE': 0.8297041,
+        'MAE_SPEAKER': 0.54565,
+        'MAE_NOISE': 0.28404,
     },
 }
 

@@ -90,6 +90,63 @@ class SPEAKER2VEC:
         return self.vectorize(inputs)
 
 
+class SPEAKERNET_CLASSIFICATION:
+    def __init__(
+        self, X, X_len, logits, vectorizer, sess, model, extra, label, name
+    ):
+        self._X = X
+        self._X_len = X_len
+        self._logits = tf.nn.softmax(logits)
+        self._vectorizer = vectorizer
+        self._sess = sess
+        self._extra = extra
+        self.__model__ = model
+        self.__name__ = name
+
+    def predict_proba(self, inputs):
+        """
+        Predict inputs, will return probability.
+
+        Parameters
+        ----------
+        inputs: List[np.array]
+
+        Returns
+        -------
+        result: np.array
+        """
+        inputs = [
+            input.array if isinstance(input, FRAME) else input
+            for input in inputs
+        ]
+
+        inputs = [self._vectorizer(input) for input in inputs]
+        inputs, lengths = padding_sequence_nd(
+            inputs, dim = 0, return_len = True
+        )
+
+        return self._sess.run(
+            self._logits, feed_dict = {self._X: inputs, self._X_len: lengths}
+        )
+
+    def predict(self, inputs):
+        """
+        Predict inputs, will return labels.
+
+        Parameters
+        ----------
+        inputs: List[np.array]
+        Returns
+        -------
+        result: List[str]
+        """
+        probs = np.argmax(self.predict_proba(inputs), axis = 1)
+        return [self.labels[p] for p in probs]
+
+    def __call__(self, input):
+        return self.predict([input])[0]
+
+
 class CLASSIFICATION:
     def __init__(self, X, logits, vectorizer, sess, model, extra, label, name):
         self._X = X
