@@ -4,8 +4,16 @@ from malaya_speech.supervised import classification
 from herpetologist import check_type
 
 _availability = {
-    'vggvox-v1': {'Size (MB)': 70.8, 'Accuracy': 0.95},
-    'vggvox-v2': {'Size (MB)': 31.1, 'Accuracy': 0.9594},
+    'vggvox-v1': {
+        'Size (MB)': 70.8,
+        'Quantized Size (MB)': 70.8,
+        'Accuracy': 0.95,
+    },
+    'vggvox-v2': {
+        'Size (MB)': 31.1,
+        'Quantized Size (MB)': 70.8,
+        'Accuracy': 0.9594,
+    },
 }
 
 
@@ -54,7 +62,7 @@ def webrtc(
 
 
 @check_type
-def deep_model(model: str = 'vggvox-v2', **kwargs):
+def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     """
     Load VAD model.
 
@@ -65,6 +73,9 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
 
         * ``'vggvox-v1'`` - finetuned VGGVox V1.
         * ``'vggvox-v2'`` - finetuned VGGVox V2.
+    quantized : bool, optional (default=False)
+        if True, will load 8-bit quantized model. 
+        Quantized model not necessary faster, totally depends on the machine.
 
     Returns
     -------
@@ -88,5 +99,6 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
         name = 'vad',
         extra = settings[model],
         label = [False, True],
+        quantized = quantized,
         **kwargs
     )

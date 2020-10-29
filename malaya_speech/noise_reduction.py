@@ -8,15 +8,17 @@ import numpy as np
 _availability = {
     'unet': {
         'Size (MB)': 78.9,
+        'Quantized Size (MB)': 20,
         'SUM MAE': 0.860744,
         'MAE_SPEAKER': 0.56171,
         'MAE_NOISE': 0.299029,
     },
     'resnet-unet': {
-        'Size (MB)': 97.8,
-        'SUM MAE': 0.8297041,
-        'MAE_SPEAKER': 0.54565,
-        'MAE_NOISE': 0.28404,
+        'Size (MB)': 96.4,
+        'Quantized Size (MB)': 24.6,
+        'SUM MAE': 0.813386,
+        'MAE_SPEAKER': 0.53433,
+        'MAE_NOISE': 0.27905,
     },
 }
 
@@ -31,7 +33,7 @@ def available_model():
 
 
 @check_type
-def deep_model(model: str = 'resnet-unet', **kwargs):
+def deep_model(model: str = 'resnet-unet', quantized = False, **kwargs):
     """
     Load Noise Reduction deep learning model.
 
@@ -42,6 +44,9 @@ def deep_model(model: str = 'resnet-unet', **kwargs):
 
         * ``'unet'`` - pretrained UNET.
         * ``'resnet-unet'`` - pretrained resnet-UNET.
+    quantized : bool, optional (default=False)
+        if True, will load 8-bit quantized model. 
+        Quantized model not necessary faster, totally depends on the machine.
 
     Returns
     -------
@@ -60,6 +65,7 @@ def deep_model(model: str = 'resnet-unet', **kwargs):
         model = model,
         name = 'noise-reduction',
         instruments = ['voice', 'noise'],
+        quantized = quantized,
         **kwargs
     )
 

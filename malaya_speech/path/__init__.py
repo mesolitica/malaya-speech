@@ -78,16 +78,27 @@ S3_PATH_LANGUAGE_DETECTION = {
 }
 
 PATH_NOISE_REDUCTION = {
-    'unet': {'model': home + '/noise-reduction/unet.pb', 'version': 'v1'},
-    'resnet34-unet': {
-        'model': home + '/noise-reduction/resnet34-unet.pb',
+    'unet': {
+        'model': home + '/noise-reduction/unet.pb',
+        'quantized': home + '/noise-reduction/quantized/unet.pb',
+        'version': 'v1',
+    },
+    'resnet-unet': {
+        'model': home + '/noise-reduction/resnet-unet.pb',
+        'quantized': home + '/noise-reduction/quantized/resnet-unet.pb',
         'version': 'v1',
     },
 }
 
 S3_PATH_NOISE_REDUCTION = {
-    'unet': {'model': 'v1/noise-reduction/unet.pb'},
-    'resnet34-unet': {'model': 'v1/noise-reduction/resnet34-unet.pb'},
+    'unet': {
+        'model': 'v1/noise-reduction/unet.pb',
+        'quantized': 'v1/noise-reduction/unet.pb.quantized',
+    },
+    'resnet-unet': {
+        'model': 'v1/noise-reduction/resnet-unet.pb',
+        'quantized': 'v1/noise-reduction/resnet-unet.pb.quantized',
+    },
 }
 
 PATH_SPEAKER_CHANGE = {

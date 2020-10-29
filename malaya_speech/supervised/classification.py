@@ -8,14 +8,20 @@ from malaya_speech.model.tf import (
 from malaya_speech.utils import featurization
 
 
-def load(path, s3_path, model, name, extra, label, **kwargs):
+def load(path, s3_path, model, name, extra, label, quantized = False, **kwargs):
 
     import malaya_speech.config
 
     speakernet_config = malaya_speech.config.speakernet_featurizer_config
 
-    check_file(path[model], s3_path[model], **kwargs)
-    g = load_graph(path[model]['model'], **kwargs)
+    check_file(path[model], s3_path[model], quantized = quantized, **kwargs)
+
+    if quantized:
+        model_path = 'quantized'
+    else:
+        model_path = 'model'
+
+    g = load_graph(path[model][model_path], **kwargs)
 
     vectorizer_mapping = {
         'vggvox-v1': featurization.vggvox_v1,
