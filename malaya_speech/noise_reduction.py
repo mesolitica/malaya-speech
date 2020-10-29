@@ -12,11 +12,11 @@ _availability = {
         'MAE_SPEAKER': 0.56171,
         'MAE_NOISE': 0.299029,
     },
-    'resnet34-unet': {
+    'resnet-unet': {
         'Size (MB)': 97.8,
-        'SUM MAE': 1.062583,
-        'MAE_SPEAKER': 0.7334868,
-        'MAE_NOISE': 0.32909623,
+        'SUM MAE': 0.852318,
+        'MAE_SPEAKER': 0.55737,
+        'MAE_NOISE': 0.294939,
     },
 }
 
@@ -31,7 +31,7 @@ def available_model():
 
 
 @check_type
-def deep_model(model: str = 'resnet34-unet', **kwargs):
+def deep_model(model: str = 'resnet-unet', **kwargs):
     """
     Load Noise Reduction deep learning model.
 
@@ -41,7 +41,7 @@ def deep_model(model: str = 'resnet34-unet', **kwargs):
         Model architecture supported. Allowed values:
 
         * ``'unet'`` - pretrained UNET.
-        * ``'resnet34-unet'`` - pretrained resnet34 UNET.
+        * ``'resnet-unet'`` - pretrained resnet-UNET.
 
     Returns
     -------

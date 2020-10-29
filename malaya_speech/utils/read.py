@@ -65,5 +65,5 @@ def load(file: str, sr: int = 16000, scale: bool = True):
     data, old_samplerate = sf.read(file)
     y, sr = read_audio(data, old_samplerate, sr)
     if scale:
-        y = y / np.max(np.abs(y))
+        y = y / (np.max(np.abs(y)) + 1e-9)
     return y, sr

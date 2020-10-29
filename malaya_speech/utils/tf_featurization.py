@@ -7,20 +7,28 @@ EPSILON = 1e-10
 
 # https://github.com/TensorSpeech/TensorFlowASR/blob/main/tensorflow_asr/featurizers/speech_featurizers.py#L370
 class STTFeaturizer:
-    def __init__(self, speech_config):
-        self.sample_rate = speech_config['sample_rate']
-        self.frame_length = int(
-            self.sample_rate * (speech_config['frame_ms'] / 1000)
-        )
-        self.frame_step = int(
-            self.sample_rate * (speech_config['stride_ms'] / 1000)
-        )
-        self.num_feature_bins = speech_config['num_feature_bins']
-        self.feature_type = speech_config['feature_type']
-        self.preemphasis = speech_config['preemphasis']
-        self.normalize_signal = speech_config['normalize_signal']
-        self.normalize_feature = speech_config['normalize_feature']
-        self.normalize_per_feature = speech_config['normalize_per_feature']
+    def __init__(
+        self,
+        sample_rate = 16000,
+        frame_ms = 25,
+        stride_ms = 10,
+        num_feature_bins = 80,
+        feature_type = 'log_mel_spectrogram',
+        preemphasis = 0.97,
+        normalize_signal = True,
+        normalize_feature = True,
+        normalize_per_feature = False,
+        **kwargs,
+    ):
+        self.sample_rate = sample_rate
+        self.frame_length = int(self.sample_rate * (frame_ms / 1000))
+        self.frame_step = int(self.sample_rate * (stride_ms / 1000))
+        self.num_feature_bins = num_feature_bins
+        self.feature_type = feature_type
+        self.preemphasis = preemphasis
+        self.normalize_signal = normalize_signal
+        self.normalize_feature = normalize_feature
+        self.normalize_per_feature = normalize_per_feature
 
     @property
     def nfft(self) -> int:
