@@ -10,9 +10,9 @@ import tensorflow as tf
 import malaya_speech.config
 
 config = malaya_speech.config.speakernet_featurizer_config
-new_config = {'frame_ms': 20, 'stride_ms': 1.5}
+new_config = {'frame_ms': 20, 'stride_ms': 2}
 featurizer = malaya_speech.featurization.SpeakerNetFeaturizer(
-    {**config, **new_config}
+    **{**config, **new_config}
 )
 
 DIMENSION = 64

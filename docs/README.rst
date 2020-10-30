@@ -59,12 +59,6 @@ Features
 -  **Speaker Vector**
 
    Calculate similarity between speakers using Pretrained Malaya-Speech models.
--  **Speech Enhancement**
-
-   Enhance speech using Pretrained STFT UNET Malaya-Speech models.
--  **Speech to Text**
-
-   End-to-End Speech to Text using Pretrained STT Malaya-Speech models.
 -  **Voice Activity Detection**
 
    Detect voice activities using Finetuned Speaker Vector Malaya-Speech models.

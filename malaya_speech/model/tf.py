@@ -100,6 +100,7 @@ class SPEAKERNET_CLASSIFICATION:
         self._vectorizer = vectorizer
         self._sess = sess
         self._extra = extra
+        self.labels = label
         self.__model__ = model
         self.__name__ = name
 

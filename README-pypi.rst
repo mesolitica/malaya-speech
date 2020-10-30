@@ -22,7 +22,9 @@ Only **Python 3.6.x and above** and **Tensorflow 1.10 and above but not 2.0** ar
 
 Features
 --------
+-  **Speaker Diarization**
 
+   Diarizing speakers using Pretrained Speaker Vector Malaya-Speech models.
 -  **Emotion Detection**
 
    Detect emotions in speech using Finetuned Speaker Vector Malaya-Speech models.
@@ -44,12 +46,6 @@ Features
 -  **Speaker Vector**
 
    Calculate similarity between speakers using Pretrained Malaya-Speech models.
--  **Speech Enhancement**
-
-   Enhance speech using Pretrained STFT UNET Malaya-Speech models.
--  **Speech to Text**
-
-   End-to-End Speech to Text using Pretrained STT Malaya-Speech models.
 -  **Voice Activity Detection**
 
    Detect voice activities using Finetuned Speaker Vector Malaya-Speech models.

@@ -16,14 +16,14 @@ Finetuned available pretrained Malaya-Speech speaker vector models to do Speaker
 python3 finetune-vggvox-v2.py
 ```
 
-3. Export the model for production, example for vggvox-v2, [export/speakernet.ipynb](export/speakernet.ipynb)
+3. Export the model for production, example for vggvox-v2, [export/vggvox-v2.ipynb](export/vggvox-v2.ipynb)
 
 ## Download
 
-1. VGGVox V2, last update 24th September 2020, [vggvox-v2-language-detection-300k.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/vggvox-v2-language-detection-300k.tar.gz)
+1. VGGVox V2, last update 30th October 2020, [vggvox-v2-speaker-change-300k.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/vggvox-v2-speaker-change-300k.tar.gz)
 
-Tensorboard, https://tensorboard.dev/experiment/8f5ARY7EQqaTZgVVqrqA4Q/
+Tensorboard, https://tensorboard.dev/experiment/JTVlERcJTV6PsKCNDOpYfQ/
 
-2. VGGVox V1, last update 7th October 2020, [vggvox-v1-language-detection-140k.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/vggvox-v1-language-detection-140k.tar.gz)
+2. SpeakerNet, last update 30th October 2020, [speakernet-speaker-change-300k.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/speakernet-speaker-change-300k.tar.gz)
 
-Tensorboard, https://tensorboard.dev/experiment/bBsNGv7xROmmFAdDEvoE1A/
+Tensorboard, https://tensorboard.dev/experiment/mpsMJWD4QfW07H3v58hj2g/

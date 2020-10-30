@@ -35,6 +35,7 @@ Contents:
    load-emotion
    load-gender
    load-language-detection   
+   load-speaker-overlap
 
 .. toctree::
    :maxdepth: 2
@@ -52,6 +53,7 @@ Contents:
    :maxdepth: 2
    :caption: Speaker Diarization Module
 
+   load-speaker-change
    load-diarization
 
 .. toctree::

@@ -6,13 +6,18 @@ from herpetologist import check_type
 _availability = {
     'vggvox-v1': {
         'Size (MB)': 70.8,
-        'Quantized Size (MB)': 70.8,
+        'Quantized Size (MB)': 17.7,
         'Accuracy': 0.95,
     },
     'vggvox-v2': {
         'Size (MB)': 31.1,
-        'Quantized Size (MB)': 70.8,
+        'Quantized Size (MB)': 7.92,
         'Accuracy': 0.9594,
+    },
+    'speakernet': {
+        'Size (MB)': 20.3,
+        'Quantized Size (MB)': 5.18,
+        'Accuracy': 0.9,
     },
 }
 
@@ -90,6 +95,7 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     settings = {
         'vggvox-v1': {'frame_len': 0.005, 'frame_step': 0.0005},
         'vggvox-v2': {'hop_length': 24, 'concat': False, 'mode': 'eval'},
+        'speakernet': {'frame_ms': 20, 'stride_ms': 1.0},
     }
 
     return classification.load(

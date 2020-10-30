@@ -1,65 +1,36 @@
 import os
 
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '../gcs/mesolitica-storage.json'
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
-import tensorflow as tf
-import malaya_speech.train as train
-import malaya_speech.train.model.vggvox_v2 as vggvox_v2
 import malaya_speech
-from glob import glob
-import librosa
-import numpy as np
+import malaya_speech.train as train
+import malaya_speech.train.model.speakernet as speakernet
+import tensorflow as tf
+import malaya_speech.config
 
+config = malaya_speech.config.speakernet_featurizer_config
+new_config = {'frame_ms': 20, 'stride_ms': 0.5}
+featurizer = malaya_speech.featurization.SpeakerNetFeaturizer(
+    **{**config, **new_config}
+)
 
-def lin_spectogram_from_wav(wav, hop_length, win_length, n_fft = 1024):
-    linear = librosa.stft(
-        wav, n_fft = n_fft, win_length = win_length, hop_length = hop_length
-    )  # linear spectrogram
-    return linear.T
-
-
-def load_data(
-    wav,
-    win_length = 400,
-    sr = 16000,
-    hop_length = 50,
-    n_fft = 512,
-    spec_len = 250,
-    mode = 'train',
-):
-    linear_spect = lin_spectogram_from_wav(wav, hop_length, win_length, n_fft)
-    mag, _ = librosa.magphase(linear_spect)  # magnitude
-    mag_T = mag.T
-    freq, time = mag_T.shape
-    if mode == 'train':
-        if time > spec_len:
-            randtime = np.random.randint(0, time - spec_len)
-            spec_mag = mag_T[:, randtime : randtime + spec_len]
-        else:
-            spec_mag = np.pad(mag_T, ((0, 0), (0, spec_len - time)), 'constant')
-    else:
-        spec_mag = mag_T
-    # preprocessing, subtract mean, divided by time-wise var
-    mu = np.mean(spec_mag, 0, keepdims = True)
-    std = np.std(spec_mag, 0, keepdims = True)
-    return (spec_mag - mu) / (std + 1e-5)
-
-
-DIMENSION = 257
+DIMENSION = 64
 
 
 def calc(v):
-
-    r = load_data(v, mode = 'eval')
+    r = featurizer(v)
     return r
 
 
 def preprocess_inputs(example):
     s = tf.compat.v1.numpy_function(calc, [example['inputs']], tf.float32)
 
-    s = tf.reshape(s, (DIMENSION, -1, 1))
+    s = tf.reshape(s, (-1, DIMENSION))
+    length = tf.cast(tf.shape(s)[0], tf.int32)
+    length = tf.expand_dims(length, 0)
     example['inputs'] = s
+    example['inputs_length'] = length
 
     return example
 
@@ -80,7 +51,7 @@ def parse(serialized_example):
 
     keys = list(features.keys())
     for k in keys:
-        if k not in ['inputs', 'targets']:
+        if k not in ['inputs', 'inputs_length', 'targets']:
             features.pop(k, None)
 
     return features
@@ -94,11 +65,13 @@ def get_dataset(files, batch_size = 32, shuffle_size = 1024, thread_count = 24):
         dataset = dataset.padded_batch(
             batch_size,
             padded_shapes = {
-                'inputs': tf.TensorShape([DIMENSION, None, 1]),
+                'inputs': tf.TensorShape([None, DIMENSION]),
+                'inputs_length': tf.TensorShape([None]),
                 'targets': tf.TensorShape([None]),
             },
             padding_values = {
                 'inputs': tf.constant(0, dtype = tf.float32),
+                'inputs_length': tf.constant(0, dtype = tf.int32),
                 'targets': tf.constant(0, dtype = tf.int64),
             },
         )
@@ -108,15 +81,19 @@ def get_dataset(files, batch_size = 32, shuffle_size = 1024, thread_count = 24):
     return get
 
 
-learning_rate = 1e-5
-init_checkpoint = '../vggvox-speaker-identification/v2/vggvox.ckpt'
-
-
 def model_fn(features, labels, mode, params):
+    learning_rate = 1e-5
+    init_checkpoint = '../speakernet/model.ckpt'
     Y = tf.cast(features['targets'][:, 0], tf.int32)
-    model = vggvox_v2.Model(features['inputs'], num_class = 2, mode = 'train')
 
+    model = speakernet.Model(
+        features['inputs'],
+        features['inputs_length'][:, 0],
+        num_class = 2,
+        mode = 'train',
+    )
     logits = model.logits
+
     loss = tf.reduce_mean(
         tf.nn.sparse_softmax_cross_entropy_with_logits(
             logits = logits, labels = Y
@@ -130,10 +107,9 @@ def model_fn(features, labels, mode, params):
     )
 
     tf.identity(accuracy[1], name = 'train_accuracy')
-    tf.summary.scalar('train_accuracy', accuracy[1])
 
     variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-    variables = [v for v in variables if 'prediction' not in v.name]
+    variables = [v for v in variables if 'dense_2' not in v.name]
 
     assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
         variables, init_checkpoint
@@ -167,11 +143,11 @@ train_hooks = [
 ]
 
 files = tf.io.gfile.glob(
-    'gs://mesolitica-general/speaker-change/data/*.tfrecords'
+    'gs://mesolitica-general/speaker-overlap/data/*.tfrecords'
 )
 train_dataset = get_dataset(files)
 
-save_directory = 'output-vggvox-v2-speaker-change'
+save_directory = 'output-speakernet-speaker-overlap'
 
 train.run_training(
     train_fn = train_dataset,

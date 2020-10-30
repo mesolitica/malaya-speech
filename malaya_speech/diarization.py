@@ -9,9 +9,7 @@ from herpetologist import check_type
 def speaker_similarity(
     vad_results,
     speaker_vector,
-    speaker_change_results = None,
     similarity_threshold: float = 0.8,
-    speaker_change_threshold: float = 0.5,
     return_embedding: bool = False,
 ):
     """
@@ -38,13 +36,6 @@ def speaker_similarity(
         raise ValueError(
             'similarity_threshold must, 0 < similarity_threshold <= 1.0'
         )
-    if not 0 < speaker_change_threshold <= 1.0:
-        raise ValueError(
-            'speaker_change_threshold must, 0 < speaker_change_threshold <= 1.0'
-        )
-
-    if speaker_change_results:
-        pass
 
     speakers, embedding = [], []
     for result in vad_results:
@@ -84,8 +75,6 @@ def speaker_similarity(
 def affinity_propagation(
     vad_results,
     speaker_vector,
-    speaker_change_results = None,
-    speaker_change_threshold: float = 0.5,
     metric: str = 'cosine',
     damping: float = 0.8,
     preference: float = None,
@@ -100,23 +89,11 @@ def affinity_propagation(
         results from VAD.
     speaker_vector: callable
         speaker vector object.
-    speaker_change_results: List[Tuple[FRAME, float]], optional (default=None)
-        results from speaker change module, must in float result.
-    speaker_change_threshold: float, optional (default=0.5)
-        in one voice activity sample can be more than one speaker, split it using this threshold.
 
     Returns
     -------
     result : List[Tuple[FRAME, label]]
     """
-
-    if not 0 < speaker_change_threshold <= 1.0:
-        raise ValueError(
-            'speaker_change_threshold must, 0 < speaker_change_threshold <= 1.0'
-        )
-
-    if speaker_change_results:
-        pass
 
     affinity = CLUSTERING_AP(
         metric = metric, damping = damping, preference = preference

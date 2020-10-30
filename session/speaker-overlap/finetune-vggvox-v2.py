@@ -1,7 +1,7 @@
 import os
 
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '../gcs/mesolitica-storage.json'
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import tensorflow as tf
 import malaya_speech.train as train
@@ -23,7 +23,7 @@ def load_data(
     wav,
     win_length = 400,
     sr = 16000,
-    hop_length = 50,
+    hop_length = 30,
     n_fft = 512,
     spec_len = 250,
     mode = 'train',
@@ -167,11 +167,11 @@ train_hooks = [
 ]
 
 files = tf.io.gfile.glob(
-    'gs://mesolitica-general/speaker-change/data/*.tfrecords'
+    'gs://mesolitica-general/speaker-overlap/data/*.tfrecords'
 )
 train_dataset = get_dataset(files)
 
-save_directory = 'output-vggvox-v2-speaker-change'
+save_directory = 'output-vggvox-v2-speaker-overlap'
 
 train.run_training(
     train_fn = train_dataset,

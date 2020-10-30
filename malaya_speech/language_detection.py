@@ -6,7 +6,6 @@ from malaya_speech.supervised import classification
 from herpetologist import check_type
 
 _availability = {
-    'vggvox-v1': {'Size (MB)': 70.8, 'Accuracy': 0.86015},
     'vggvox-v2': {'Size (MB)': 30.9, 'Accuracy': 0.90204},
     'deep-speaker': {'Size (MB)': 96.9, 'Accuracy': 0.8945},
 }
@@ -35,7 +34,7 @@ def available_model():
 
 
 @check_type
-def deep_model(model: str = 'vggvox-v2', **kwargs):
+def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     """
     Load language detection deep model.
 
@@ -47,6 +46,9 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
         * ``'vggvox-v1'`` - finetuned VGGVox V1.
         * ``'vggvox-v2'`` - finetuned VGGVox V2.
         * ``'deep-speaker'`` - finetuned Deep Speaker.
+    quantized : bool, optional (default=False)
+        if True, will load 8-bit quantized model. 
+        Quantized model not necessary faster, totally depends on the machine.
 
     Returns
     -------
@@ -71,5 +73,6 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
         name = 'language-detection',
         extra = settings[model],
         label = labels,
+        quantized = quantized,
         **kwargs
     )

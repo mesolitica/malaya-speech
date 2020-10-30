@@ -23,7 +23,7 @@ def available_model():
 
 
 @check_type
-def deep_model(model: str = 'vggvox-v2', **kwargs):
+def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     """
     Load gender detection deep model.
 
@@ -34,6 +34,9 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
 
         * ``'vggvox-v2'`` - finetuned VGGVox V2.
         * ``'deep-speaker'`` - finetuned Deep Speaker.
+    quantized : bool, optional (default=False)
+        if True, will load 8-bit quantized model. 
+        Quantized model not necessary faster, totally depends on the machine.
 
     Returns
     -------
@@ -46,7 +49,6 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
         )
 
     settings = {
-        'vggvox-v1': {},
         'vggvox-v2': {'concat': False},
         'deep-speaker': {'voice_only': False},
     }
@@ -58,5 +60,6 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
         name = 'gender',
         extra = settings[model],
         label = labels,
+        quantized = quantized,
         **kwargs
     )
