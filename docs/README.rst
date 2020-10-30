@@ -40,6 +40,9 @@ Features
 -  **Speaker Diarization**
 
    Diarizing speakers using Pretrained Speaker Vector Malaya-Speech models.
+-  **Age Detection**
+
+   Detect age in speech using Finetuned Speaker Vector Malaya-Speech models.
 -  **Emotion Detection**
 
    Detect emotions in speech using Finetuned Speaker Vector Malaya-Speech models.
