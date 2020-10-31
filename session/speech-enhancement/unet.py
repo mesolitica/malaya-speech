@@ -95,10 +95,27 @@ def combine_speakers(files, n = 5):
     return left, y
 
 
+def random_amplitude(sample, low = 3, high = 5):
+    y_aug = sample.copy()
+    dyn_change = np.random.uniform(low = low, high = high)
+    y_aug = y_aug * dyn_change
+    return np.clip(y_aug, -1, 1)
+
+
+def random_amplitude_threshold(sample, low = 3, high = 5, threshold = 0.4):
+    y_aug = sample.copy()
+    dyn_change = np.random.uniform(low = low, high = high)
+    y_aug[np.abs(y_aug) >= threshold] = (
+        y_aug[np.abs(y_aug) >= threshold] * dyn_change
+    )
+    return np.clip(y_aug, -1, 1)
+
+
 def calc(signal, seed, add_uniform = False):
     random.seed(seed)
 
-    choice = random.randint(0, 5)
+    choice = random.randint(0, 8)
+    print('choice', choice)
     if choice == 0:
 
         x = augmentation.sox_augment_high(
@@ -143,10 +160,23 @@ def calc(signal, seed, add_uniform = False):
             hf_damping = 10,
             room_scale = random.randint(10, 90),
         )
-    if choice > 4:
-        x = signal.copy()
+    if choice == 5:
+        x = random_amplitude(signal)
 
-    if random.gauss(0.5, 0.14) > 0.7 and add_uniform:
+    if choice in [6, 7]:
+        x = random_amplitude_threshold(
+            signal, threshold = random.uniform(0.35, 0.8)
+        )
+
+    if choice == 8:
+        x = signal
+
+    if choice not in [6, 7] and random.gauss(0.5, 0.14) >= 0.6:
+        x = random_amplitude_threshold(
+            x, low = 1.0, high = 2.0, threshold = random.uniform(0.6, 0.9)
+        )
+
+    if random.gauss(0.5, 0.14) > 0.6 and add_uniform:
         x = augmentation.add_uniform_noise(
             x, power = random.uniform(0.005, 0.015)
         )
@@ -155,7 +185,7 @@ def calc(signal, seed, add_uniform = False):
 
 
 def parallel(f):
-    if random.gauss(0.5, 0.14) > 0.7:
+    if random.gauss(0.5, 0.14) > 0.6:
         s = random.sample(files, random.randint(2, 6))
         y = combine_speakers(s, len(s))[0]
     else:
@@ -165,7 +195,8 @@ def parallel(f):
 
     seed = random.randint(0, 100_000_000)
     x = calc(y, seed)
-    if random.gauss(0.5, 0.14) > 0.7:
+    if random.gauss(0.5, 0.14) > 0.6:
+        print('add small noise')
         n = combine_speakers(noises, random.randint(1, 20))[0]
         n = calc(n, seed, True)
         combined, noise = augmentation.add_noise(
@@ -231,7 +262,7 @@ class Model:
         self.outputs = []
         for i in range(len(self.Y)):
             with tf.variable_scope(f'model_{i}'):
-                self.outputs.append(unet.Model(D_X, num_layers = 6).logits)
+                self.outputs.append(unet.Model(D_X).logits)
 
         self.loss = []
         for i in range(len(self.Y)):
@@ -242,8 +273,9 @@ class Model:
         self.cost = tf.reduce_sum(self.loss)
 
 
-init_lr = 1e-4
+init_lr = 1e-5
 epochs = 500_000
+init_checkpoint = 'noise-reduction-unet/model.ckpt-500000'
 
 
 def model_fn(features, labels, mode, params):
@@ -258,12 +290,19 @@ def model_fn(features, labels, mode, params):
 
     global_step = tf.train.get_or_create_global_step()
 
+    variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+    assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
+        variables, init_checkpoint
+    )
+
+    tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
+
     learning_rate = tf.constant(value = init_lr, shape = [], dtype = tf.float32)
     learning_rate = tf.train.polynomial_decay(
         learning_rate,
         global_step,
         epochs,
-        end_learning_rate = 1e-6,
+        end_learning_rate = 1e-7,
         power = 1.0,
         cycle = False,
     )

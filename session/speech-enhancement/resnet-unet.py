@@ -95,10 +95,27 @@ def combine_speakers(files, n = 5):
     return left, y
 
 
+def random_amplitude(sample, low = 3, high = 5):
+    y_aug = sample.copy()
+    dyn_change = np.random.uniform(low = low, high = high)
+    y_aug = y_aug * dyn_change
+    return np.clip(y_aug, -1, 1)
+
+
+def random_amplitude_threshold(sample, low = 3, high = 5, threshold = 0.4):
+    y_aug = sample.copy()
+    dyn_change = np.random.uniform(low = low, high = high)
+    y_aug[np.abs(y_aug) >= threshold] = (
+        y_aug[np.abs(y_aug) >= threshold] * dyn_change
+    )
+    return np.clip(y_aug, -1, 1)
+
+
 def calc(signal, seed, add_uniform = False):
     random.seed(seed)
 
-    choice = random.randint(0, 5)
+    choice = random.randint(0, 8)
+    print('choice', choice)
     if choice == 0:
 
         x = augmentation.sox_augment_high(
@@ -143,10 +160,23 @@ def calc(signal, seed, add_uniform = False):
             hf_damping = 10,
             room_scale = random.randint(10, 90),
         )
-    if choice > 4:
-        x = signal.copy()
+    if choice == 5:
+        x = random_amplitude(signal)
 
-    if random.gauss(0.5, 0.14) > 0.7 and add_uniform:
+    if choice in [6, 7]:
+        x = random_amplitude_threshold(
+            signal, threshold = random.uniform(0.35, 0.8)
+        )
+
+    if choice == 8:
+        x = signal
+
+    if choice not in [6, 7] and random.gauss(0.5, 0.14) >= 0.6:
+        x = random_amplitude_threshold(
+            x, low = 1.0, high = 2.0, threshold = random.uniform(0.6, 0.9)
+        )
+
+    if random.gauss(0.5, 0.14) > 0.6 and add_uniform:
         x = augmentation.add_uniform_noise(
             x, power = random.uniform(0.005, 0.015)
         )
@@ -155,7 +185,7 @@ def calc(signal, seed, add_uniform = False):
 
 
 def parallel(f):
-    if random.gauss(0.5, 0.14) > 0.7:
+    if random.gauss(0.5, 0.14) > 0.6:
         s = random.sample(files, random.randint(2, 6))
         y = combine_speakers(s, len(s))[0]
     else:
@@ -165,7 +195,8 @@ def parallel(f):
 
     seed = random.randint(0, 100_000_000)
     x = calc(y, seed)
-    if random.gauss(0.5, 0.14) > 0.7:
+    if random.gauss(0.5, 0.14) > 0.6:
+        print('add small noise')
         n = combine_speakers(noises, random.randint(1, 20))[0]
         n = calc(n, seed, True)
         combined, noise = augmentation.add_noise(
