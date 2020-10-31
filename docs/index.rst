@@ -17,6 +17,7 @@ Contents:
    :caption: Getting Started
 
    load-cache
+   gpu-environment
    Api
    Contributing
 
