@@ -101,7 +101,7 @@ def print_cache(location = None):
 
     """
 
-    from malaya.function import DisplayablePath
+    from malaya_speech.utils import DisplayablePath
 
     path = os.path.join(home, location) if location else home
     paths = DisplayablePath.make_tree(Path(path))
@@ -122,13 +122,13 @@ def clear_all_cache():
         return True
     except:
         raise Exception(
-            f'failed to clear cached models. Please make sure {home} is able to overwrite from Malaya'
+            f'failed to clear cached models. Please make sure {home} is able to overwrite from Malaya-Speech'
         )
 
 
 def clear_cache(location):
     """
-    Remove selected cached data, please run malaya.print_cache() to get path.
+    Remove selected cached data, please run malaya_speech.print_cache() to get path.
 
     Parameters
     ----------
@@ -160,7 +160,7 @@ def clear_session(model):
 
     Parameters
     ----------
-    model : malaya object.
+    model : malaya-speech object.
 
     Returns
     -------

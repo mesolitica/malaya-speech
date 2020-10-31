@@ -11,3 +11,4 @@ herpetologist
 dataclasses
 python_speech_features
 soundfile
+tqdm

@@ -29,6 +29,7 @@ setuptools.setup(
         'herpetologist',
         'dataclasses',
         'python_speech_features',
+        'tqdm',
     ],
     license = 'MIT',
     classifiers = [
