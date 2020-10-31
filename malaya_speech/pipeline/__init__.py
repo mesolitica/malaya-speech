@@ -1,3 +1,39 @@
+"""
+Copyright (c) 2017, Continuum Analytics, Inc. and contributors
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+
+Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+
+Neither the name of Continuum Analytics nor the names of any contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
+
+https://github.com/python-streamz/streamz/blob/master/LICENSE.txt
+"""
+
+# this pipeline fundamentally follow streamz, but we added checkpoint as the fundamental
+# so we have to improve the baseline code
+
 import functools
 import logging
 from collections import deque
@@ -158,6 +194,17 @@ class Pipeline(object):
 
 @Pipeline.register_api()
 class map(Pipeline):
+    """ 
+    apply a function / method to the pipeline
+
+    Examples
+    --------
+    >>> source = Pipeline()
+    >>> source.map(lambda x: x + 1).map(print)
+    >>> source.emit(1)
+    2
+    """
+
     def __init__(self, upstream, func, *args, **kwargs):
         self.func = func
         name = kwargs.pop('name', None)
@@ -179,12 +226,13 @@ class map(Pipeline):
 
 @Pipeline.register_api()
 class batching(Pipeline):
-    """ Batching stream into tuples
+    """ 
+    Batching stream into tuples
 
     Examples
     --------
     >>> source = Pipeline()
-    >>> source.batching(2).sink(print)
+    >>> source.batching(2).map(print)
     >>> source.emit([1,2,3,4,5])
     ([1, 2], [3, 4], [5])
     """
@@ -207,12 +255,13 @@ class batching(Pipeline):
 
 @Pipeline.register_api()
 class partition(Pipeline):
-    """ Partition stream into tuples of equal size
+    """ 
+    Partition stream into tuples of equal size
 
     Examples
     --------
     >>> source = Pipeline()
-    >>> source.partition(3).sink(print)
+    >>> source.partition(3).map(print)
     >>> for i in range(10):
     ...     source.emit(i)
     (0, 1, 2)
@@ -253,7 +302,7 @@ class sliding_window(Pipeline):
     Examples
     --------
     >>> source = Pipeline()
-    >>> source.sliding_window(3, return_partial=False).sink(print)
+    >>> source.sliding_window(3, return_partial=False).map(print)
     >>> for i in range(8):
     ...     source.emit(i)
     (0, 1, 2)
@@ -308,7 +357,7 @@ class foreach_map(Pipeline):
     Examples
     --------
     >>> source = Pipeline()
-    >>> source.foreach_map(lambda x: 2*x).sink(print)
+    >>> source.foreach_map(lambda x: 2*x).map(print)
     >>> for i in range(3):
     ...     source.emit((i, i))
     (0, 0)
@@ -392,7 +441,8 @@ class foreach_map(Pipeline):
 
 @Pipeline.register_api()
 class flatten(Pipeline):
-    """ Flatten streams of lists or iterables into a stream of elements
+    """ 
+    Flatten streams of lists or iterables into a stream of elements
 
     Examples
     --------
@@ -401,9 +451,6 @@ class flatten(Pipeline):
     >>> source.emit([[1, 2, 3], [4, 5], [6, 7, 7]])
     [1, 2, 3, 4, 5, 6, 7, 7]
 
-    See Also
-    --------
-    partition
     """
 
     def __init__(self, upstream, *args, **kwargs):
@@ -426,6 +473,18 @@ class flatten(Pipeline):
 
 @Pipeline.register_api()
 class zip(Pipeline):
+    """
+    Combine 2 branches into 1 branch.
+
+    Examples
+    --------
+    >>> source = Pipeline()
+    >>> left = source.map(lambda x: x + 1, name = 'left')
+    >>> right = source.map(lambda x: x + 10, name = 'right')
+    >>> left.zip(right).map(sum).map(print)
+    >>> source.emit(2)
+    15
+    """
 
     _graphviz_orientation = 270
     _graphviz_shape = 'triangle'

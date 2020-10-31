@@ -87,6 +87,48 @@ malaya_speech.pipeline
 .. autoclass:: malaya_speech.pipeline.Pipeline()
     :members:
 
+malaya_speech.pipeline.map
+-----------------------------------
+
+.. autoclass:: malaya_speech.pipeline.map()
+    :members:
+
+malaya_speech.pipeline.batching
+-----------------------------------
+
+.. autoclass:: malaya_speech.pipeline.batching()
+    :members:
+
+malaya_speech.pipeline.partition
+-----------------------------------
+
+.. autoclass:: malaya_speech.pipeline.partition()
+    :members:
+
+malaya_speech.pipeline.sliding_window
+--------------------------------------
+
+.. autoclass:: malaya_speech.pipeline.sliding_window()
+    :members:
+
+malaya_speech.pipeline.foreach_map
+-----------------------------------
+
+.. autoclass:: malaya_speech.pipeline.foreach_map()
+    :members:
+
+malaya_speech.pipeline.flatten
+-----------------------------------
+
+.. autoclass:: malaya_speech.pipeline.flatten()
+    :members:
+
+malaya_speech.pipeline.zip
+-----------------------------------
+
+.. autoclass:: malaya_speech.pipeline.zip()
+    :members:
+
 malaya_speech.age_detection
 -----------------------------------
 
