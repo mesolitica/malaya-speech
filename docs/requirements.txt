@@ -8,3 +8,6 @@ ipython
 pygments==2.7.0
 soundfile
 herpetologist
+dataclasses
+python_speech_features
+soundfile
