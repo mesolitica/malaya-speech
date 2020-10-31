@@ -6,7 +6,7 @@ API
 malaya_speech
 --------------
 
-.. automodule:: malaya
+.. automodule:: malaya_speech
     :members:
 
 malaya_speech.utils.astype
