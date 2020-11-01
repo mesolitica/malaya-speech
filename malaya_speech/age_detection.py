@@ -59,7 +59,7 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
 
     Returns
     -------
-    result : malaya_speech.model.tf.CLASSIFICATION class
+    result : malaya_speech.supervised.classification.load function
     """
 
     model = model.lower()

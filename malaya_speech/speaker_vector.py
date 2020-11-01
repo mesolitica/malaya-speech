@@ -39,7 +39,7 @@ def deep_model(model: str = 'speakernet', **kwargs):
 
     Returns
     -------
-    result : malaya_speech.model.tf.SPEAKER2VEC class
+    result : malaya_speech.supervised.classification.load function
     """
 
     model = model.lower()

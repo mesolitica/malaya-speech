@@ -102,8 +102,9 @@ def random_amplitude(sample, low = 3, high = 5):
     return np.clip(y_aug, -1, 1)
 
 
-def random_amplitude_threshold(sample, low = 3, high = 5, threshold = 0.4):
+def random_amplitude_threshold(sample, low = 1, high = 2, threshold = 0.4):
     y_aug = sample.copy()
+    y_aug = y_aug / (np.max(np.abs(y_aug)) + 1e-9)
     dyn_change = np.random.uniform(low = low, high = high)
     y_aug[np.abs(y_aug) >= threshold] = (
         y_aug[np.abs(y_aug) >= threshold] * dyn_change
@@ -114,7 +115,7 @@ def random_amplitude_threshold(sample, low = 3, high = 5, threshold = 0.4):
 def calc(signal, seed, add_uniform = False):
     random.seed(seed)
 
-    choice = random.randint(0, 8)
+    choice = random.randint(0, 6)
     print('choice', choice)
     if choice == 0:
 
@@ -161,17 +162,14 @@ def calc(signal, seed, add_uniform = False):
             room_scale = random.randint(10, 90),
         )
     if choice == 5:
-        x = random_amplitude(signal)
-
-    if choice in [6, 7]:
         x = random_amplitude_threshold(
             signal, threshold = random.uniform(0.35, 0.8)
         )
 
-    if choice == 8:
+    if choice == 6:
         x = signal
 
-    if choice not in [6, 7] and random.gauss(0.5, 0.14) >= 0.6:
+    if choice not in [5] and random.gauss(0.5, 0.14) > 0.6:
         x = random_amplitude_threshold(
             x, low = 1.0, high = 2.0, threshold = random.uniform(0.6, 0.9)
         )
@@ -192,6 +190,8 @@ def parallel(f):
         y = random_sampling(
             read_wav(f)[0], length = random.randint(30000, 100_000)
         )
+
+    y = y / (np.max(np.abs(y)) + 1e-9)
 
     seed = random.randint(0, 100_000_000)
     x = calc(y, seed)
@@ -217,7 +217,7 @@ def loop(files):
     return results
 
 
-def generate(batch_size = 10, repeat = 15):
+def generate(batch_size = 10, repeat = 10):
     while True:
         fs = [next(file_cycle) for _ in range(batch_size)]
         results = multiprocessing(fs, loop, cores = len(fs))
@@ -273,7 +273,7 @@ class Model:
         self.cost = tf.reduce_sum(self.loss)
 
 
-init_lr = 1e-5
+init_lr = 1e-4
 epochs = 500_000
 init_checkpoint = 'noise-reduction-unet9/model.ckpt-500000'
 
@@ -302,7 +302,7 @@ def model_fn(features, labels, mode, params):
         learning_rate,
         global_step,
         epochs,
-        end_learning_rate = 1e-7,
+        end_learning_rate = 1e-6,
         power = 1.0,
         cycle = False,
     )

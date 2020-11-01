@@ -47,7 +47,7 @@ def deep_model(model: str = 'speakernet', quantized = False, **kwargs):
 
     Returns
     -------
-    result : malaya_speech.model.tf.CLASSIFICATION class
+    result : malaya_speech.supervised.classification.load function
     """
     model = model.lower()
     if model not in _availability:
