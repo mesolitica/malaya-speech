@@ -19,7 +19,6 @@ class SpeakerNetFeaturizer:
         preemphasis = 0.97,
         normalize_signal = True,
         normalize_feature = True,
-        normalize_per_feature = True,
         **kwargs,
     ):
         self.sample_rate = sample_rate
@@ -30,7 +29,6 @@ class SpeakerNetFeaturizer:
         self.preemphasis = preemphasis
         self.normalize_signal = normalize_signal
         self.normalize_feature = normalize_feature
-        self.normalize_per_feature = normalize_per_feature
 
         self.mel_basis = librosa.filters.mel(
             self.sample_rate,
@@ -41,6 +39,9 @@ class SpeakerNetFeaturizer:
         )
 
     def vectorize(self, signal):
+        if self.normalize_signal:
+            signal = normalize_signal(signal)
+
         signal = preemphasis(signal, self.preemphasis)
         spect = np.abs(
             librosa.stft(
@@ -62,6 +63,125 @@ class SpeakerNetFeaturizer:
         return self.vectorize(signal)
 
 
+class STTFeaturizer:
+    def __init__(
+        self,
+        sample_rate = 16000,
+        frame_ms = 25,
+        stride_ms = 10,
+        nfft = None,
+        num_feature_bins = 80,
+        feature_type = 'log_mel_spectrogram',
+        preemphasis = 0.97,
+        dither = 1e-5,
+        normalize_signal = True,
+        normalize_feature = True,
+        norm_per_feature = True,
+        **kwargs,
+    ):
+        self.sample_rate = sample_rate
+        self.frame_length = int(self.sample_rate * (frame_ms / 1000))
+        self.frame_step = int(self.sample_rate * (stride_ms / 1000))
+        self.num_feature_bins = num_feature_bins
+        self.feature_type = feature_type
+        self.preemphasis = preemphasis
+        self.dither = dither
+        self.normalize_signal = normalize_signal
+        self.normalize_feature = normalize_feature
+        self.norm_per_feature = norm_per_feature
+        self.nfft = nfft or 2 ** math.ceil(
+            math.log2((frame_ms / 1000) * self.sample_rate)
+        )
+        self.window_fn = np.hanning
+
+        self.mel_basis = librosa.filters.mel(
+            self.sample_rate,
+            self.nfft,
+            n_mels = self.num_feature_bins,
+            fmin = 0,
+            fmax = int(self.sample_rate / 2),
+        )
+
+    def __call__(self, signal):
+        return self.vectorize(signal)
+
+    def vectorize(self, signal):
+        if self.normalize_signal:
+            signal = normalize_signal(signal)
+
+        if self.dither > 0:
+            signal += self.dither * np.random.randn(*signal.shape)
+
+        signal = preemphasis(signal, coeff = self.preemphasis)
+
+        if self.feature_type == 'spectrogram':
+            powspec = np.square(
+                np.abs(
+                    librosa.core.stft(
+                        signal,
+                        n_fft = self.frame_length,
+                        hop_length = self.frame_step,
+                        win_length = self.frame_length,
+                        center = True,
+                        window = window_fn,
+                    )
+                )
+            )
+            powspec[powspec <= 1e-30] = 1e-30
+            features = 10 * np.log10(powspec.T)
+            features = features[:, :num_features]
+
+        elif self.feature_type == 'mfcc':
+            S = np.square(
+                np.abs(
+                    librosa.core.stft(
+                        signal,
+                        n_fft = self.nfft,
+                        hop_length = self.frame_step,
+                        win_length = self.frame_length,
+                        center = True,
+                        window = self.window_fn,
+                    )
+                )
+            )
+            features = librosa.feature.mfcc(
+                sr = self.sample_rate,
+                S = S,
+                n_mfcc = self.num_feature_bins,
+                n_mels = 2 * self.num_feature_bins,
+            ).T
+
+        elif self.feature_type == 'log_mel_spectrogram':
+            S = (
+                np.abs(
+                    librosa.core.stft(
+                        signal,
+                        n_fft = self.nfft,
+                        hop_length = self.frame_step,
+                        win_length = self.frame_length,
+                        center = True,
+                        window = self.window_fn,
+                    )
+                )
+                ** 2.0
+            )
+            features = np.log(np.dot(self.mel_basis, S) + 1e-20).T
+
+        else:
+            raise ValueError(
+                "feature_type must be either 'mfcc', "
+                "'log_mel_spectrogram', or 'spectrogram' "
+            )
+
+        if self.normalize_feature:
+            norm_axis = 0 if self.norm_per_feature else None
+            mean = np.mean(features, axis = norm_axis)
+            std_dev = np.std(features, axis = norm_axis)
+            features = (features - mean) / std_dev
+
+        return features
+
+
 def normalize_batch(x, CONSTANT = 1e-5):
     x_mean = np.zeros((1, x.shape[1]), dtype = x.dtype)
     x_std = np.zeros((1, x.shape[1]), dtype = x.dtype)
@@ -71,8 +191,17 @@ def normalize_batch(x, CONSTANT = 1e-5):
     return (x - np.expand_dims(x_mean, 2)) / np.expand_dims(x_std, 2)
 
 
-def normalize(values):
-    return (values - np.mean(values)) / np.std(values)
+def normalize(values, CONSTANT = 0):
+    return (values - np.mean(values)) / (np.std(values) + CONSTANT)
+
+
+def normalize_signal(signal, gain = None):
+    """
+  Normalize float32 signal to [-1, 1] range
+  """
+    if gain is None:
+        gain = 1.0 / (np.max(np.abs(signal)) + 1e-5)
+    return signal * gain
 
 
 def power_spectrogram(

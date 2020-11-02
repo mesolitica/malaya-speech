@@ -6,7 +6,6 @@ config = {
     'preemphasis': 0.97,
     'normalize_signal': True,
     'normalize_feature': True,
-    'normalize_per_feature': True,
     'n_fft': 512,
     'frame_splicing': 1,
     'dither': 1.0e-05,

@@ -71,6 +71,7 @@ class Conv1DTranspose(tf.keras.layers.Layer):
         return x[:, :, 0]
 
 
+# check Table 4, https://arxiv.org/pdf/1911.13254.pdf
 class ConvScaling(Initializer):
     def __init__(
         self, scale = 1.0, reference = 0.1, seed = None, dtype = tf.float32
