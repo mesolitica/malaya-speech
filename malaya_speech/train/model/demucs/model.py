@@ -1,6 +1,13 @@
 import tensorflow as tf
 import math
-from .layer import glu, BLSTM, downsample, center_trim, Conv1DTranspose
+from .layer import (
+    glu,
+    BLSTM,
+    downsample,
+    center_trim,
+    Conv1DTranspose,
+    ConvScaling,
+)
 from malaya_speech.utils.tf_featurization import pad_and_partition
 
 
@@ -21,6 +28,7 @@ class Model:
         lstm_layers = 2,
         context = 3,
         partition_length = 44100 * 2,
+        output_shape_same_as_input = False,
         logging = False,
     ):
         self.audio_channels = audio_channels
@@ -46,13 +54,20 @@ class Model:
             encoder = tf.keras.Sequential()
             encoder.add(
                 tf.keras.layers.Conv1D(
-                    channels, kernel_size, stride, activation = tf.nn.relu
+                    channels,
+                    kernel_size,
+                    stride,
+                    activation = tf.nn.relu,
+                    kernel_initializer = ConvScaling,
                 )
             )
             if rewrite:
                 encoder.add(
                     tf.keras.layers.Conv1D(
-                        ch_scale * channels, 1, activation = activation
+                        ch_scale * channels,
+                        1,
+                        activation = activation,
+                        kernel_initializer = ConvScaling,
                     )
                 )
             self.encoder.append(encoder)
@@ -66,7 +81,10 @@ class Model:
             if rewrite:
                 decoder.add(
                     tf.keras.layers.Conv1D(
-                        ch_scale * channels, context, activation = activation
+                        ch_scale * channels,
+                        context,
+                        activation = activation,
+                        kernel_initializer = ConvScaling,
                     )
                 )
 
@@ -124,7 +142,8 @@ class Model:
 
         self.logits = x
         self.logits = tf.reshape(self.logits, (-1, self.sources))
-        self.logits = self.logits[: tf.shape(inputs)[0]]
+        if output_shape_same_as_input:
+            self.logits = self.logits[: tf.shape(inputs)[0]]
 
     def valid_length(self, length):
         for _ in range(self.depth):

@@ -5,6 +5,9 @@ from herpetologist import check_type
 import librosa
 import numpy as np
 
+# https://github.com/sigsep/sigsep-mus-eval/blob/master/museval/__init__.py#L364
+# Only calculate SDR, ISR, SIR, SAR on voice sample
+
 _availability = {
     'unet': {
         'Size (MB)': 78.9,
@@ -12,6 +15,10 @@ _availability = {
         'SUM MAE': 0.860744,
         'MAE_SPEAKER': 0.56171,
         'MAE_NOISE': 0.299029,
+        'SDR': 0,
+        'ISR': 0,
+        'SIR': 0,
+        'SAR': 0,
     },
     'resnet-unet': {
         'Size (MB)': 96.4,
@@ -19,6 +26,10 @@ _availability = {
         'SUM MAE': 0.813386,
         'MAE_SPEAKER': 0.53433,
         'MAE_NOISE': 0.27905,
+        'SDR': 0,
+        'ISR': 0,
+        'SIR': 0,
+        'SAR': 0,
     },
 }
 

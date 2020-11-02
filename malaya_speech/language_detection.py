@@ -43,7 +43,6 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     model : str, optional (default='vggvox-v2')
         Model architecture supported. Allowed values:
 
-        * ``'vggvox-v1'`` - finetuned VGGVox V1.
         * ``'vggvox-v2'`` - finetuned VGGVox V2.
         * ``'deep-speaker'`` - finetuned Deep Speaker.
     quantized : bool, optional (default=False)

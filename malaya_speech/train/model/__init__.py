@@ -11,6 +11,7 @@ from . import pix2pix
 from . import quartznet
 from . import resnet_unet
 from . import speakernet
+from . import stft
 from . import transducer
 from . import unet
 from . import vggvox_v1

@@ -1,10 +1,17 @@
 import tensorflow as tf
+from tensorflow.python.ops.init_ops import Initializer
 from ..utils import shape_list
 
 
 def glu(x, dims = 2):
     def conv(x):
-        return tf.layers.conv1d(x, x.shape[-1], 1, padding = 'same')
+        return tf.layers.conv1d(
+            x,
+            x.shape[-1],
+            1,
+            padding = 'same',
+            kernel_initializer = ConvScaling,
+        )
 
     splitted = tf.split(x, 2, dims)
     return conv(splitted[0]) * tf.nn.sigmoid(conv(splitted[1]))
@@ -51,10 +58,45 @@ class Conv1DTranspose(tf.keras.layers.Layer):
             name = 'Conv1DTranspose', **kwargs
         )
         self.conv = tf.keras.layers.Conv2DTranspose(
-            filters, kernel_size, strides = strides, activation = activation
+            filters,
+            kernel_size,
+            strides = strides,
+            activation = activation,
+            kernel_initializer = ConvScaling,
         )
 
     def call(self, x):
         x = tf.expand_dims(x, 2)
         x = self.conv(x)
         return x[:, :, 0]
+
+
+class ConvScaling(Initializer):
+    def __init__(
+        self, scale = 1.0, reference = 0.1, seed = None, dtype = tf.float32
+    ):
+        self.scale = scale
+        self.reference = reference
+        self.seed = seed
+        self.dtype = dtype
+
+    def __call__(self, shape, dtype = None, partition_info = None):
+        stdv = 1.0 / (shape[0] * shape[1])
+        w = tf.random.uniform(
+            shape,
+            minval = -stdv,
+            maxval = stdv,
+            dtype = self.dtype,
+            seed = self.seed,
+        )
+        std = tf.math.reduce_std(w)
+        scale = (std / self.reference) ** 0.5
+        w = w / scale
+        return w
+
+    def get_config(self):
+        return {
+            'scale': self.scale,
+            'seed': self.seed,
+            'dtype': self.dtype.name,
+        }
