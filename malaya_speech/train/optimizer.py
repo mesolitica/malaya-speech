@@ -354,6 +354,14 @@ def _clip_gradients_by_norm(grads_and_vars, clip_gradients):
     return list(zip(clipped_gradients, variables))
 
 
+def _global_norm_with_cast(grads_and_vars):
+    return tf.global_norm(
+        list(
+            map(lambda x: tf.cast(x, tf.float32), list(zip(*grads_and_vars))[0])
+        )
+    )
+
+
 def _clip_by_global_norm(t_list, clip_norm, use_norm, name = None):
     """Clips values of multiple tensors by the ratio of the sum of their norms.
   Given a tuple or list of tensors `t_list`, and a clipping ratio `clip_norm`,

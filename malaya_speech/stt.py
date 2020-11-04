@@ -12,9 +12,5 @@ _ctc_availability = {
 }
 
 
-def deep_transducer():
-    pass
-
-
 def deep_ctc():
     pass
