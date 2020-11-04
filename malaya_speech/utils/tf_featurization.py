@@ -15,6 +15,7 @@ class STTFeaturizer:
         num_feature_bins = 80,
         feature_type = 'log_mel_spectrogram',
         preemphasis = 0.97,
+        dither = 1e-5,
         normalize_signal = True,
         normalize_feature = True,
         normalize_per_feature = False,
@@ -26,6 +27,7 @@ class STTFeaturizer:
         self.num_feature_bins = num_feature_bins
         self.feature_type = feature_type
         self.preemphasis = preemphasis
+        self.dither = dither
         self.normalize_signal = normalize_signal
         self.normalize_feature = normalize_feature
         self.normalize_per_feature = normalize_per_feature
@@ -40,6 +42,8 @@ class STTFeaturizer:
     def vectorize(self, signal):
         if self.normalize_signal:
             signal = normalize_signal(signal)
+        if self.dither > 0:
+            signal += self.dither * tf.random.normal(shape = tf.shape(signal))
         signal = preemphasis(signal, self.preemphasis)
         if self.feature_type == 'mfcc':
             features = self.compute_mfcc(signal)
@@ -47,16 +51,11 @@ class STTFeaturizer:
             features = self.compute_log_mel_spectrogram(signal)
         elif self.feature_type == 'spectrogram':
             features = self.compute_spectrogram(signal)
-        elif self.feature_type == 'log_gammatone_spectrogram':
-            features = self.compute_log_gammatone_spectrogram(signal)
         else:
             raise ValueError(
                 "feature_type must be either 'mfcc', "
-                "'log_mel_spectrogram', 'log_gammatone_spectrogram' "
-                "or 'spectrogram'"
+                "'log_mel_spectrogram', or 'spectrogram'"
             )
-
-        features = tf.expand_dims(features, axis = -1)
 
         if self.normalize_feature:
             features = normalize_audio_features(
@@ -101,8 +100,8 @@ class STTFeaturizer:
             lower_edge_hertz = 0.0,
             upper_edge_hertz = (self.sample_rate / 2),
         )
-        mel_spectrogram = tf.tensordot(spectrogram, linear_to_weight_matrix, 1)
-        return self.power_to_db(mel_spectrogram)
+        mel = tf.tensordot(spectrogram, linear_to_weight_matrix, 1)
+        return tf.math.log(mel + 1e-20)
 
     def compute_spectrogram(self, signal):
         S = self.stft(signal)
@@ -112,23 +111,6 @@ class STTFeaturizer:
     def compute_mfcc(self, signal):
         log_mel_spectrogram = self.compute_log_mel_spectrogram(signal)
         return tf.signal.mfccs_from_log_mel_spectrograms(log_mel_spectrogram)
-
-    def compute_log_gammatone_spectrogram(self, signal):
-        S = self.stft(signal)
-
-        gammatone = fft_weights(
-            self.nfft,
-            self.sample_rate,
-            self.num_feature_bins,
-            width = 1.0,
-            fmin = 0,
-            fmax = int(self.sample_rate / 2),
-            maxlen = (self.nfft / 2 + 1),
-        )
-
-        gammatone_spectrogram = tf.tensordot(S, gammatone, 1)
-
-        return self.power_to_db(gammatone_spectrogram)
 
 
 def log10(x):

@@ -13,6 +13,7 @@ from . import loss
 from . import optimizer
 from . import prepare_data
 from . import schedule
+from . import utils
 
 
 @check_type

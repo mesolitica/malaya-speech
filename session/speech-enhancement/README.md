@@ -1,6 +1,6 @@
 # Speech Enchancement
 
-Masked models and wavenet for Speech Enchancement.
+Finetuned Malaya-Speech UNET models to do Speech Enhancement.
 
 **This directory is very lack of comments, understand Tensorflow, Tensorflow estimator, Tensorflow Dataset really helpful**.
 
@@ -8,26 +8,26 @@ Masked models and wavenet for Speech Enchancement.
 
 1. Run any training scripts,
 
-**Resnet34-UNET**,
+**Resnet-UNET**,
 
 ```bash
-python3 resnet34-unet.py
+python3 resnet-unet.py
 ```
 
-**Inception-V3-UNET**,
+**UNET**,
 
 ```bash
-python3 inception-v3-unet.py
+python3 unet.py
 ```
 
-2. Export the model for production, example for vggvox-v2, [export-vggvox-v2.ipynb](export-vggvox-v2.ipynb)
+2. Export the model for production, example for UNET, [export/unet.ipynb](export/unet.ipynb)
 
 ## Download
 
-1. Resnet34-UNET, last update 7th October 2020, [resnet34-unet-100k.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/resnet34-unet-100k.tar.gz)
+1. UNET, last update 3rd November 2020, [speech-enhancement-unet-output-500k.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/speech-enhancement-unet-output-500k.tar.gz)
 
-Tensorboard, https://tensorboard.dev/experiment/OjXkwPdqReOB4zEpYRT3sQ/
+Tensorboard, https://tensorboard.dev/experiment/nq6XKjhxQfKDsKrpyys6iA/
 
-2. Inception V3 UNET, last update 11th October 2020, [inception-v3-unet.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/inception-v3-unet.tar.gz)
+2. RESNET-UNET, last update 4rd November 2020, [speech-enhancement-resnet-unet-output-500k.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/speech-enhancement-resnet-unet-output-500k.tar.gz)
 
-Tensorboard, https://tensorboard.dev/experiment/Cw8vnAM1Q5GTOZNwsNdmng/
+Tensorboard, https://tensorboard.dev/experiment/v446IlUvRMq1PhQ9JqfABg/

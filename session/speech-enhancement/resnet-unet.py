@@ -217,7 +217,7 @@ def loop(files):
     return results
 
 
-def generate(batch_size = 10, repeat = 10):
+def generate(batch_size = 10, repeat = 20):
     while True:
         fs = [next(file_cycle) for _ in range(batch_size)]
         results = multiprocessing(fs, loop, cores = len(fs))
@@ -273,7 +273,7 @@ class Model:
         self.cost = tf.reduce_sum(self.loss)
 
 
-init_lr = 1e-4
+init_lr = 1e-5
 epochs = 500_000
 init_checkpoint = 'noise-reduction-unet9/model.ckpt-500000'
 
@@ -302,7 +302,7 @@ def model_fn(features, labels, mode, params):
         learning_rate,
         global_step,
         epochs,
-        end_learning_rate = 1e-6,
+        end_learning_rate = 1e-7,
         power = 1.0,
         cycle = False,
     )

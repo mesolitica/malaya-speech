@@ -6,7 +6,7 @@ import librosa
 import numpy as np
 
 # https://github.com/sigsep/sigsep-mus-eval/blob/master/museval/__init__.py#L364
-# Only calculate SDR, ISR, SIR, SAR on voice sample
+# Only calculate SDR, ISR, SAR on voice sample
 
 _availability = {
     'unet': {
@@ -15,10 +15,9 @@ _availability = {
         'SUM MAE': 0.860744,
         'MAE_SPEAKER': 0.56171,
         'MAE_NOISE': 0.299029,
-        'SDR': 0,
-        'ISR': 0,
-        'SIR': 0,
-        'SAR': 0,
+        'SDR': 8.512531,
+        'ISR': 13.411639,
+        'SAR': 11.407554,
     },
     'resnet-unet': {
         'Size (MB)': 96.4,
@@ -26,10 +25,9 @@ _availability = {
         'SUM MAE': 0.813386,
         'MAE_SPEAKER': 0.53433,
         'MAE_NOISE': 0.27905,
-        'SDR': 0,
-        'ISR': 0,
-        'SIR': 0,
-        'SAR': 0,
+        'SDR': 8.806321,
+        'ISR': 13.51750,
+        'SAR': 11.75246,
     },
 }
 
@@ -40,7 +38,10 @@ def available_model():
     """
     from malaya_speech.utils import describe_availability
 
-    return describe_availability(_availability)
+    return describe_availability(
+        _availability,
+        text = 'Only calculate SDR, ISR, SAR on voice sample. Higher is better.',
+    )
 
 
 @check_type

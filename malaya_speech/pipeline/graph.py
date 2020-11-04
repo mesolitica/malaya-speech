@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 """
 Copyright (c) 2017, Continuum Analytics, Inc. and contributors
 All rights reserved.
@@ -32,7 +34,6 @@ https://github.com/python-streamz/streamz/blob/master/LICENSE.txt
 """
 
 """Graphing utilities for EventStreams"""
-from __future__ import absolute_import, division, print_function
 
 from functools import partial
 import os

@@ -192,6 +192,7 @@ from . import noise_reduction
 from . import speaker_change
 from . import speaker_overlap
 from . import speaker_vector
+from . import speech_enhancement
 from . import stack
 from . import vad
 

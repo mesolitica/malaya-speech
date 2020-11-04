@@ -258,6 +258,17 @@ class UNET_STFT:
         self.__name__ = name
 
     def predict(self, input):
+        """
+        Enhance inputs, will return waveform.
+
+        Parameters
+        ----------
+        inputs: np.array
+
+        Returns
+        -------
+        result: Dict
+        """
         if isinstance(input, FRAME):
             input = input.array
 

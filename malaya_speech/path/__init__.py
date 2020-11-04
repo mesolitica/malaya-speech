@@ -211,20 +211,26 @@ S3_PATH_SPEAKER_OVERLAP = {
 
 
 PATH_SPEECH_ENHANCEMENT = {
-    'resnet34-unet': {
-        'model': home + '/speech-enhancement/resnet34-unet.pb',
+    'unet': {
+        'model': home + '/speech-enhancement/unet.pb',
+        'quantized': home + '/speech-enhancement/quantized/unet.pb',
         'version': 'v1',
     },
-    'inception-v3-unet': {
-        'model': home + '/speech-enhancement/inception-v3-unet.pb',
+    'resnet-unet': {
+        'model': home + '/speech-enhancement/resnet-unet.pb',
+        'quantized': home + '/speech-enhancement/quantized/resnet-unet.pb',
         'version': 'v1',
     },
 }
 
 S3_PATH_SPEECH_ENHANCEMENT = {
-    'resnet34-unet': {'model': 'v1/speech-enhancement/resnet34-unet.pb'},
-    'inception-v3-unet': {
-        'model': 'v1/speech-enhancement/inception-v3-unet.pb'
+    'unet': {
+        'model': 'v1/speech-enhancement/unet.pb',
+        'quantized': 'v1/speech-enhancement/unet.pb.quantized',
+    },
+    'resnet-unet': {
+        'model': 'v1/speech-enhancement/resnet-unet.pb',
+        'quantized': 'v1/speech-enhancement/resnet-unet.pb.quantized',
     },
 }
 

@@ -5,21 +5,29 @@ from malaya_speech.path import (
 from malaya_speech.supervised import unet
 from herpetologist import check_type
 
+# https://github.com/sigsep/sigsep-mus-eval/blob/master/museval/__init__.py#L364
+# Only calculate SDR, ISR, SAR on voice sample
 
 _availability = {
     'unet': {
         'Size (MB)': 78.9,
         'Quantized Size (MB)': 20,
-        'SUM MAE': 0.860744,
-        'MAE_SPEAKER': 0.56171,
-        'MAE_NOISE': 0.299029,
+        'SUM MAE': 0.85896,
+        'MAE_SPEAKER': 0.46849,
+        'MAE_NOISE': 0.39046,
+        'SDR': 12.12805,
+        'ISR': 14.67067,
+        'SAR': 15.019682,
     },
     'resnet-unet': {
         'Size (MB)': 96.4,
         'Quantized Size (MB)': 24.6,
-        'SUM MAE': 0.813386,
-        'MAE_SPEAKER': 0.53433,
-        'MAE_NOISE': 0.27905,
+        'SUM MAE': 0.8153995,
+        'MAE_SPEAKER': 0.447958,
+        'MAE_NOISE': 0.367441,
+        'SDR': 12.349259,
+        'ISR': 14.85418,
+        'SAR': 15.21751,
     },
 }
 
@@ -30,7 +38,10 @@ def available_model():
     """
     from malaya_speech.utils import describe_availability
 
-    return describe_availability(_availability)
+    return describe_availability(
+        _availability,
+        text = 'Only calculate SDR, ISR, SAR on voice sample. Higher is better.',
+    )
 
 
 @check_type
