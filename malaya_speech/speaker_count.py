@@ -2,7 +2,7 @@ from herpetologist import check_type
 
 _availability = {
     'vggvox-v2': {'Size (MB)': 31.1, 'Accuracy': 0.99},
-    'deep-speaker': {'Size (MB)': 30.9, 'Accuracy': 0.99},
+    'speakernet': {'Size (MB)': 30.9, 'Accuracy': 0.99},
 }
 
 labels = [
@@ -19,10 +19,7 @@ labels = [
     '10 speakers',
     '11 speakers',
     '12 speakers',
-    '13 speakers',
-    '14 speakers',
-    '15 speakers',
-    'more than 15 speakers',
+    'more than 12 speakers',
 ]
 
 

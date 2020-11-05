@@ -3,8 +3,16 @@ from malaya_speech.supervised import classification
 from herpetologist import check_type
 
 _availability = {
-    'vggvox-v2': {'Size (MB)': 31.1, 'Accuracy': 0.9756},
-    'deep-speaker': {'Size (MB)': 96.9, 'Accuracy': 0.9455},
+    'vggvox-v2': {
+        'Size (MB)': 31.1,
+        'Quantized Size (MB)': 7.92,
+        'Accuracy': 0.9756,
+    },
+    'deep-speaker': {
+        'Size (MB)': 96.9,
+        'Quantized Size (MB)': 24.4,
+        'Accuracy': 0.9455,
+    },
 }
 
 labels = ['male', 'female', 'not a gender']

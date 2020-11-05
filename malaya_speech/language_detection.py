@@ -6,8 +6,16 @@ from malaya_speech.supervised import classification
 from herpetologist import check_type
 
 _availability = {
-    'vggvox-v2': {'Size (MB)': 30.9, 'Accuracy': 0.90204},
-    'deep-speaker': {'Size (MB)': 96.9, 'Accuracy': 0.8945},
+    'vggvox-v2': {
+        'Size (MB)': 30.9,
+        'Quantized Size (MB)': 7.92,
+        'Accuracy': 0.90204,
+    },
+    'deep-speaker': {
+        'Size (MB)': 96.9,
+        'Quantized Size (MB)': 24.4,
+        'Accuracy': 0.8945,
+    },
 }
 
 labels = [
