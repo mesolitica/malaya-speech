@@ -22,7 +22,7 @@ parameters = {
         'grad_averaging': False,
     },
     'lr_policy_params': {
-        'learning_rate': 0.01,
+        'learning_rate': 0.001,
         'min_lr': 0.0,
         'warmup_steps': 1000,
         'decay_steps': 100_000,

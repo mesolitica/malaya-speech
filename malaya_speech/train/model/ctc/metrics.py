@@ -71,6 +71,30 @@ def weights_nonzero(labels):
     return to_float(tf.not_equal(labels, 0))
 
 
+def from_tokens(raw, lookup):
+    gathered = tf.gather(lookup, tf.cast(raw, tf.int32))
+    joined = tf.regex_replace(
+        tf.reduce_join(gathered, axis = 1), b'<EOS>.*', b''
+    )
+    cleaned = tf.regex_replace(joined, b'_', b' ')
+    cleaned = tf.regex_replace(joined, b'<PAD>.*', b' ')
+    tokens = tf.string_split(cleaned, ' ')
+    return tokens
+
+
+def from_characters(raw, lookup):
+    """Convert ascii+2 encoded codes to string-tokens."""
+    corrected = tf.bitcast(
+        tf.clip_by_value(tf.subtract(raw, 2), 0, 255), tf.uint8
+    )
+
+    gathered = tf.gather(lookup, tf.cast(corrected, tf.int32))[:, :, 0]
+    joined = tf.reduce_join(gathered, axis = 1)
+    cleaned = tf.regex_replace(joined, b'\0', b'')
+    tokens = tf.string_split(cleaned, ' ')
+    return tokens
+
+
 # https://github.com/tensorflow/tensor2tensor/blob/master/tensor2tensor/utils/metrics.py#L808
 def word_error_rate(
     raw_predictions, labels, lookup = None, weights_fn = weights_nonzero
@@ -85,27 +109,6 @@ def word_error_rate(
     Returns:
         The word error rate.
     """
-
-    def from_tokens(raw, lookup_):
-        gathered = tf.gather(lookup_, tf.cast(raw, tf.int32))
-        joined = tf.regex_replace(
-            tf.reduce_join(gathered, axis = 1), b'<EOS>.*', b''
-        )
-        cleaned = tf.regex_replace(joined, b'_', b' ')
-        tokens = tf.string_split(cleaned, ' ')
-        return tokens
-
-    def from_characters(raw, lookup_):
-        """Convert ascii+2 encoded codes to string-tokens."""
-        corrected = tf.bitcast(
-            tf.clip_by_value(tf.subtract(raw, 2), 0, 255), tf.uint8
-        )
-
-        gathered = tf.gather(lookup_, tf.cast(corrected, tf.int32))[:, :, 0]
-        joined = tf.reduce_join(gathered, axis = 1)
-        cleaned = tf.regex_replace(joined, b'\0', b'')
-        tokens = tf.string_split(cleaned, ' ')
-        return tokens
 
     if lookup is None:
         lookup = tf.constant([chr(i) for i in range(256)])
@@ -139,11 +142,14 @@ def word_error_rate(
 def word_error_rate_estimator(
     raw_predictions,
     labels,
+    lookup = None,
     metrics_collections = None,
     updates_collections = None,
     name = None,
 ):
-    wer, reference_length = word_error_rate(raw_predictions, labels)
+    wer, reference_length = word_error_rate(
+        raw_predictions, labels, lookup = lookup
+    )
 
     wer, update_wer_op = tf.metrics.mean(wer)
 
