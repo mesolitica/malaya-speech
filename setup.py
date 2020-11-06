@@ -12,7 +12,7 @@ def readme():
 setuptools.setup(
     name = __packagename__,
     packages = setuptools.find_packages(),
-    version = '0.0.1',
+    version = '0.0.1.1',
     python_requires = '>=3.6.*',
     description = 'Speech-Toolkit for bahasa Malaysia, powered by Deep Learning Tensorflow.',
     long_description = readme(),
