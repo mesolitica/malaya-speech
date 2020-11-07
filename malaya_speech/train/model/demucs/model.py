@@ -28,6 +28,7 @@ class Model:
         lstm_layers = 2,
         context = 3,
         partition_length = 44100 * 2,
+        norm_after_partition = False,
         output_shape_same_as_input = False,
         logging = False,
     ):
@@ -104,6 +105,10 @@ class Model:
 
         channels = in_channels
         partitioned = pad_and_partition(inputs, self.partition_length)
+        if norm_after_partition:
+            mean = tf.reduce_mean(partitioned, axis = 0)
+            std = tf.math.reduce_std(partitioned, axis = 0)
+            partitioned = (partitioned - mean) / std
         valid_length = self.valid_length(self.partition_length)
         delta = valid_length - self.partition_length
         padded = tf.pad(
