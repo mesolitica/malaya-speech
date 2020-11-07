@@ -3,6 +3,7 @@ from . import ctc
 from . import deep_speaker
 from . import deepspeech2
 from . import demucs
+from . import denoiser
 from . import jasper
 from . import mb_melgan
 from . import melgan
