@@ -6,7 +6,7 @@ mkdir -p externals && cd externals
 
 if [ ! -d warp-transducer ]; then
     git clone https://github.com/usimarit/warp-transducer.git
-    
+fi
 cd ./warp-transducer
 mkdir -p build && cd build
 cmake \

@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '1,2,3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 
 import tensorflow as tf
 import malaya_speech
@@ -14,22 +14,16 @@ import random
 from glob import glob
 import json
 
-with open('malaya-speech-sst-vocab.json') as fopen:
+with open('librispeech-sst-vocab.json') as fopen:
     unique_vocab = json.load(fopen)
 
 parameters = {
-    'optimizer_params': {
-        'beta1': 0.95,
-        'beta2': 0.5,
-        'epsilon': 1e-08,
-        'weight_decay': 0.001,
-        'grad_averaging': False,
-    },
+    'optimizer_params': {},
     'lr_policy_params': {
-        'learning_rate': 0.001,
+        'learning_rate': 1e-3,
         'min_lr': 0.0,
         'warmup_steps': 1000,
-        'decay_steps': 20000,
+        'decay_steps': 5000,
     },
 }
 
@@ -157,17 +151,12 @@ def mel_augmentation(features):
 
 
 def preprocess_inputs(example):
-    w = tf.compat.v1.numpy_function(
-        signal_augmentation, [example['waveforms']], tf.float32
-    )
-    w = tf.reshape(w, (1, -1))
-    s = featurizer.vectorize(w[0])
+    s = featurizer.vectorize(example['waveforms'])
     s = tf.reshape(s, (-1, n_mels))
     s = tf.compat.v1.numpy_function(mel_augmentation, [s], tf.float32)
     mel_fbanks = tf.reshape(s, (-1, n_mels))
     length = tf.cast(tf.shape(mel_fbanks)[0], tf.int32)
     length = tf.expand_dims(length, 0)
-    example['waveforms'] = w[0]
     example['inputs'] = mel_fbanks
     example['inputs_length'] = length
 
@@ -190,7 +179,7 @@ def parse(serialized_example):
 
     keys = list(features.keys())
     for k in keys:
-        if k not in ['waveforms', 'inputs', 'inputs_length', 'targets']:
+        if k not in ['inputs', 'inputs_length', 'targets']:
             features.pop(k, None)
 
     return features
@@ -213,13 +202,11 @@ def get_dataset(
         dataset = dataset.padded_batch(
             batch_size,
             padded_shapes = {
-                'waveforms': tf.TensorShape([None]),
                 'inputs': tf.TensorShape([None, n_mels]),
                 'inputs_length': tf.TensorShape([None]),
                 'targets': tf.TensorShape([None]),
             },
             padding_values = {
-                'waveforms': tf.constant(0, dtype = tf.float32),
                 'inputs': tf.constant(0, dtype = tf.float32),
                 'inputs_length': tf.constant(0, dtype = tf.int32),
                 'targets': tf.constant(0, dtype = tf.int64),
@@ -256,7 +243,7 @@ def model_fn(features, labels, mode, params):
     if mode == tf.estimator.ModeKeys.TRAIN:
         train_op = train.optimizer.optimize_loss(
             loss,
-            train.optimizer.NovoGrad,
+            tf.train.AdamOptimizer,
             parameters['optimizer_params'],
             learning_rate_scheduler,
             summaries = parameters.get('summaries', None),
@@ -288,16 +275,14 @@ train_hooks = [
         ['train_accuracy', 'train_loss'], every_n_iter = 1
     )
 ]
-train_dataset = get_dataset(
-    '../speech-bahasa/bahasa-asr/data/bahasa-asr-train-*'
-)
-dev_dataset = get_dataset('../speech-bahasa/bahasa-asr/data/bahasa-asr-dev-*')
+train_dataset = get_dataset('training-librispeech/data/librispeech-train-*')
+dev_dataset = get_dataset('training-librispeech/data/librispeech-dev-*')
 
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'asr-quartznet',
-    num_gpus = 3,
+    model_dir = 'asr-quartznet-librispeech-adam',
+    num_gpus = 2,
     log_step = 1,
     save_checkpoint_step = parameters['lr_policy_params']['warmup_steps'],
     max_steps = parameters['lr_policy_params']['decay_steps'],

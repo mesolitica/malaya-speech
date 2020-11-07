@@ -1,1 +1,2 @@
-from .model import Model
+from . import loss
+from . import rnn

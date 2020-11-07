@@ -63,7 +63,7 @@ small_decoder_config = {
     'num_rnns': 1,
     'rnn_units': 320,
     'rnn_type': 'lstm',
-    'layer_norm': True,
+    'layer_norm': False,
     'joint_dim': 320,
 }
 
@@ -73,7 +73,7 @@ base_decoder_config = {
     'num_rnns': 1,
     'rnn_units': 640,
     'rnn_type': 'lstm',
-    'layer_norm': True,
+    'layer_norm': False,
     'joint_dim': 640,
 }
 
@@ -83,6 +83,6 @@ large_decoder_config = {
     'num_rnns': 1,
     'rnn_units': 640,
     'rnn_type': 'lstm',
-    'layer_norm': True,
+    'layer_norm': False,
     'joint_dim': 640,
 }

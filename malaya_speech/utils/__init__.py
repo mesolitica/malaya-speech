@@ -290,16 +290,16 @@ def describe_availability(dict, transpose = True, text = ''):
 
 
 from . import astype
-from . import bytepair
 from . import char
 from . import dist
 from . import featurization
 from . import generator
 from . import griffin_lim
 from . import group
+from . import padding
 from . import read
+from . import subword
 from . import tf_featurization
 from . import validator
-from . import padding
 
 from .read import load, resample

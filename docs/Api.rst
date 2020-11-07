@@ -117,12 +117,6 @@ malaya_speech.utils.astype
 .. automodule:: malaya_speech.utils.astype
     :members:
 
-malaya_speech.utils.bytepair
--------------------------------
-
-.. automodule:: malaya_speech.utils.bytepair
-    :members:
-
 malaya_speech.utils.char
 --------------------------
 
@@ -163,6 +157,12 @@ malaya_speech.utils.read
 ---------------------------
 
 .. automodule:: malaya_speech.utils.read
+    :members:
+
+malaya_speech.utils.subword
+----------------------------
+
+.. automodule:: malaya_speech.utils.subword
     :members:
 
 malaya_speech.utils.tf_featurization

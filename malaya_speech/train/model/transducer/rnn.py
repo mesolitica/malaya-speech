@@ -20,6 +20,7 @@ import collections
 Hypothesis = collections.namedtuple(
     'Hypothesis', ('index', 'prediction', 'states')
 )
+BLANK = 0
 
 
 class TransducerPrediction(tf.keras.Model):
@@ -85,7 +86,7 @@ class TransducerPrediction(tf.keras.Model):
             states.append(
                 tf.stack(
                     rnn['rnn'].get_initial_state(
-                        tf.zeros([1, 1, 1], dtype = tf.float32)
+                        tf.zeros([1], dtype = tf.float32)
                     ),
                     axis = 0,
                 )
@@ -93,12 +94,14 @@ class TransducerPrediction(tf.keras.Model):
         return tf.stack(states, axis = 0)
 
     def call(self, inputs, training = False):
-        # inputs has shape [B, U]
-        # use tf.gather_nd instead of tf.gather for tflite conversion
         outputs = self.embed(inputs, training = training)
         outputs = self.do(outputs, training = training)
+        states = None
         for rnn in self.rnns:
-            outputs = rnn['rnn'](outputs, training = training)
+            outputs = rnn['rnn'](
+                outputs, training = training, initial_state = states
+            )
+            states = outputs[1:]
             outputs = outputs[0]
             if rnn['ln'] is not None:
                 outputs = rnn['ln'](outputs, training = training)
@@ -207,7 +210,7 @@ class Model(tf.keras.Model):
         num_rnns: int = 1,
         rnn_units: int = 320,
         rnn_type: str = 'lstm',
-        layer_norm: bool = True,
+        layer_norm: bool = False,
         projection_units: int = 0,
         joint_dim: int = 1024,
         kernel_regularizer = None,
@@ -245,7 +248,6 @@ class Model(tf.keras.Model):
             features: audio features in shape [B, T, F, C]
             predicted: predicted sequence of character ids, in shape [B, U]
             training: python boolean
-            **kwargs: sth else
         Returns:
             `logits` with shape [B, T, U, vocab]
         """
@@ -256,16 +258,16 @@ class Model(tf.keras.Model):
         return outputs
 
     def encoder_inference(self, features):
-        """Infer function for encoder (or encoders)
-        Args:
-            features (tf.Tensor): features with shape [T, F, C]
-        Returns:
-            tf.Tensor: output of encoders with shape [T, E]
         """
-        with tf.name_scope(f'{self.name}_encoder'):
-            outputs = tf.expand_dims(features, axis = 0)
-            outputs = self.encoder(outputs, training = False)
-            return tf.squeeze(outputs, axis = 0)
+        Infer function for encoder (or encoders)
+        Args:
+            features (tf.Tensor): features with shape [B, T, F, C]
+        Returns:
+            tf.Tensor: output of encoders with shape [B, T, E]
+        """
+        outputs = tf.expand_dims(features, axis = 0)
+        outputs = self.encoder(outputs, training = False)
+        return tf.squeeze(outputs, axis = 0)
 
     def decoder_inference(self, encoded, predicted, states):
         """Infer function for decoder
@@ -276,17 +278,12 @@ class Model(tf.keras.Model):
         Returns:
             (ytu, new_states)
         """
-        with tf.name_scope(f'{self.name}_decoder'):
-            encoded = tf.reshape(encoded, [1, 1, -1])  # [E] => [1, 1, E]
-            predicted = tf.reshape(predicted, [1, 1])  # [] => [1, 1]
-            y, new_states = self.predict_net.recognize(
-                predicted, states
-            )  # [1, 1, P], states
-            ytu = tf.nn.log_softmax(
-                self.joint_net([encoded, y], training = False)
-            )  # [1, 1, V]
-            ytu = tf.squeeze(ytu, axis = None)  # [1, 1, V] => [V]
-            return ytu, new_states
+        encoded = tf.reshape(encoded, [1, 1, -1])
+        predicted = tf.reshape(predicted, [1, 1])
+        y, new_states = self.predict_net.recognize(predicted, states)
+        ytu = tf.nn.log_softmax(self.joint_net([encoded, y], training = False))
+        ytu = tf.squeeze(ytu, axis = None)
+        return ytu, new_states
 
     def get_config(self):
         conf = self.encoder.get_config()
@@ -294,11 +291,10 @@ class Model(tf.keras.Model):
         conf.update(self.joint_net.get_config())
         return conf
 
-    def recognize(self, features):
+    def greedy_decoder(self, features):
         total = tf.shape(features)[0]
         batch = tf.constant(0, dtype = tf.int32)
-
-        decoded = tf.constant([], dtype = tf.int32)
+        decoded = tf.zeros(shape = (1, tf.shape(features)[1]), dtype = tf.int32)
 
         def condition(batch, total, features, decoded):
             return tf.less(batch, total)
@@ -306,11 +302,13 @@ class Model(tf.keras.Model):
         def body(batch, total, features, decoded):
             yseq = self.perform_greedy(
                 features[batch],
-                predicted = tf.constant(0, dtype = tf.int32),
+                predicted = tf.constant(BLANK, dtype = tf.int32),
                 states = self.predict_net.get_initial_state(),
                 swap_memory = True,
             )
             yseq = tf.expand_dims(yseq.prediction, axis = 0)
+            padding = [[0, 0], [0, tf.shape(features)[1] - tf.shape(yseq)[1]]]
+            yseq = tf.pad(yseq, padding, 'CONSTANT')
             decoded = tf.concat([decoded, yseq], axis = 0)
             return batch + 1, total, features, decoded
 
@@ -323,82 +321,73 @@ class Model(tf.keras.Model):
                 batch.get_shape(),
                 total.get_shape(),
                 get_shape_invariants(features),
-                tf.TensorShape([None]),
+                tf.TensorShape([None, None]),
             ),
         )
 
         return decoded
 
     def perform_greedy(self, features, predicted, states, swap_memory = False):
-        with tf.name_scope(f'{self.name}_greedy'):
-            encoded = self.encoder_inference(features)
-            prediction = tf.TensorArray(
-                dtype = tf.int32,
-                size = (tf.shape(encoded)[0] + 1),
-                dynamic_size = False,
-                element_shape = tf.TensorShape([]),
-                clear_after_read = False,
-            )
-            time = tf.constant(0, dtype = tf.int32)
-            total = tf.shape(encoded)[0]
+        encoded = self.encoder_inference(features)
+        prediction = tf.TensorArray(
+            dtype = tf.int32,
+            size = (tf.shape(encoded)[0] + 1),
+            dynamic_size = False,
+            element_shape = tf.TensorShape([]),
+            clear_after_read = False,
+        )
+        time = tf.constant(0, dtype = tf.int32)
+        total = tf.shape(encoded)[0]
 
-            hypothesis = Hypothesis(
-                index = tf.constant(0, dtype = tf.int32),
-                prediction = prediction.write(0, predicted),
-                states = states,
-            )
+        hypothesis = Hypothesis(
+            index = tf.constant(0, dtype = tf.int32),
+            prediction = prediction.write(0, predicted),
+            states = states,
+        )
 
-            def condition(time, total, encoded, hypothesis):
-                return tf.less(time, total)
+        def condition(time, total, encoded, hypothesis):
+            return tf.less(time, total)
 
-            def body(time, total, encoded, hypothesis):
-                ytu, new_states = self.decoder_inference(
-                    # avoid using [index] in tflite
-                    encoded = tf.gather_nd(
-                        encoded, tf.expand_dims(time, axis = -1)
-                    ),
-                    predicted = hypothesis.prediction.read(hypothesis.index),
-                    states = hypothesis.states,
-                )
-                char = tf.argmax(
-                    ytu, axis = -1, output_type = tf.int32
-                )  # => argmax []
-
-                index, char, new_states = tf.cond(
-                    tf.equal(char, 0),
-                    true_fn = lambda: (
-                        hypothesis.index,
-                        hypothesis.prediction.read(hypothesis.index),
-                        hypothesis.states,
-                    ),
-                    false_fn = lambda: (hypothesis.index + 1, char, new_states),
-                )
-
-                hypothesis = Hypothesis(
-                    index = index,
-                    prediction = hypothesis.prediction.write(index, char),
-                    states = new_states,
-                )
-
-                return time + 1, total, encoded, hypothesis
-
-            time, total, encoded, hypothesis = tf.while_loop(
-                condition,
-                body,
-                loop_vars = (time, total, encoded, hypothesis),
-                swap_memory = swap_memory,
-            )
-
-            # Gather predicted sequence
-            hypothesis = Hypothesis(
-                index = hypothesis.index,
-                prediction = tf.gather_nd(
-                    params = hypothesis.prediction.stack(),
-                    indices = tf.expand_dims(
-                        tf.range(hypothesis.index + 1), axis = -1
-                    ),
+        def body(time, total, encoded, hypothesis):
+            ytu, new_states = self.decoder_inference(
+                encoded = tf.gather_nd(
+                    encoded, tf.expand_dims(time, axis = -1)
                 ),
+                predicted = hypothesis.prediction.read(hypothesis.index),
                 states = hypothesis.states,
             )
+            char = tf.argmax(ytu, axis = -1, output_type = tf.int32)
+            index, char, new_states = tf.cond(
+                tf.equal(char, BLANK),
+                true_fn = lambda: (
+                    hypothesis.index,
+                    hypothesis.prediction.read(hypothesis.index),
+                    hypothesis.states,
+                ),
+                false_fn = lambda: (hypothesis.index + 1, char, new_states),
+            )
+            hypothesis = Hypothesis(
+                index = index,
+                prediction = hypothesis.prediction.write(index, char),
+                states = new_states,
+            )
+            return time + 1, total, encoded, hypothesis
 
-            return hypothesis
+        time, total, encoded, hypothesis = tf.while_loop(
+            condition,
+            body,
+            loop_vars = (time, total, encoded, hypothesis),
+            swap_memory = swap_memory,
+        )
+        hypothesis = Hypothesis(
+            index = hypothesis.index,
+            prediction = tf.gather_nd(
+                params = hypothesis.prediction.stack(),
+                indices = tf.expand_dims(
+                    tf.range(hypothesis.index + 1), axis = -1
+                ),
+            ),
+            states = hypothesis.states,
+        )
+
+        return hypothesis

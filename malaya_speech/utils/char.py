@@ -8,6 +8,7 @@ NUM_RESERVED_TOKENS = len(RESERVED_TOKENS)
 PAD_ID = RESERVED_TOKENS.index(PAD)
 EOS_ID = RESERVED_TOKENS.index(EOS)
 VOCAB_SIZE = 256
+BLANK = 0
 
 
 def strip_ids(ids, ids_to_strip):
@@ -41,7 +42,12 @@ def generate_vocab(strings: List[str]):
     return RESERVED_TOKENS + unique_chars
 
 
-def encode(string, add_eos: bool = True, lookup: List[str] = None):
+def encode(
+    string: str,
+    add_eos: bool = True,
+    add_blank: bool = False,
+    lookup: List[str] = None,
+):
     """
     Encode string to integer representation based on ascii table or lookup variable.
 
@@ -50,6 +56,8 @@ def encode(string, add_eos: bool = True, lookup: List[str] = None):
     string: str
     add_eos: bool, optional (default=True)
         add EOS token at the end of encoded.
+    add_blank: bool, optional (default=False)
+        add BLANK token at the starting of encoded, this is for transducer / transformer based.
     lookup: List[str], optional (default=None)
         list of unique strings.
 
@@ -65,6 +73,8 @@ def encode(string, add_eos: bool = True, lookup: List[str] = None):
         r = [c + NUM_RESERVED_TOKENS for c in string.encode('utf-8')]
     if add_eos:
         r = r + [1]
+    if add_blank:
+        r = [BLANK] + r
     return r
 
 
