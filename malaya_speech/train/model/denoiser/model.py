@@ -107,13 +107,11 @@ class Model:
         self.lstm = BLSTM(chin, bi = not causal)
 
         if self.normalize:
-            mono = tf.reduce_mean(inputs, axis = -1, keepdims = True)
-            self.std = tf.math.reduce_std(inputs, axis = 1, keepdims = True)
+            mono = tf.reduce_mean(inputs, axis = 1, keepdims = True)
+            self.std = tf.math.reduce_std(mono, axis = 0, keepdims = True)
             inputs = inputs / (self.floor + self.std)
         else:
             self.std = 1.0
-
-        print(self.std)
 
         partitioned = pad_and_partition(inputs, self.partition_length)
         if norm_after_partition:
