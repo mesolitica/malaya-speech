@@ -34,6 +34,7 @@ class Model:
         norm_after_partition = False,
         output_shape_same_as_input = False,
         logging = False,
+        kernel_initializer = ConvScaling,
     ):
         self.depth = depth
         self.kernel_size = kernel_size
@@ -64,7 +65,7 @@ class Model:
                     kernel_size,
                     stride,
                     activation = tf.nn.relu,
-                    kernel_initializer = ConvScaling,
+                    kernel_initializer = kernel_initializer,
                 )
             )
             encoder.add(
@@ -72,7 +73,7 @@ class Model:
                     ch_scale * hidden,
                     1,
                     activation = activation,
-                    kernel_initializer = ConvScaling,
+                    kernel_initializer = kernel_initializer,
                 )
             )
             self.encoder.append(encoder)
@@ -83,7 +84,7 @@ class Model:
                     ch_scale * hidden,
                     1,
                     activation = activation,
-                    kernel_initializer = ConvScaling,
+                    kernel_initializer = kernel_initializer,
                 )
             )
             if index > 0:
@@ -91,7 +92,13 @@ class Model:
             else:
                 a = None
             decoder.add(
-                Conv1DTranspose(chout, kernel_size, stride, activation = a)
+                Conv1DTranspose(
+                    chout,
+                    kernel_size,
+                    stride,
+                    activation = a,
+                    kernel_initializer = kernel_initializer,
+                )
             )
             self.decoder.insert(0, decoder)
             chout = hidden

@@ -26,7 +26,7 @@ parameters = {
         'grad_averaging': False,
     },
     'lr_policy_params': {
-        'learning_rate': 0.001,
+        'learning_rate': 0.01,
         'min_lr': 0.0,
         'warmup_steps': 1000,
         'decay_steps': 20000,
@@ -76,7 +76,7 @@ def calc(signal, seed, add_uniform = False):
 
         x = augmentation.sox_augment_high(
             signal,
-            min_bass_gain = random.randint(25, 50),
+            min_bass_gain = random.randint(10, 30),
             reverberance = random.randint(0, 30),
             hf_damping = 10,
             room_scale = random.randint(0, 30),
@@ -85,7 +85,7 @@ def calc(signal, seed, add_uniform = False):
     if choice == 1:
         x = augmentation.sox_augment_high(
             signal,
-            min_bass_gain = random.randint(25, 70),
+            min_bass_gain = random.randint(10, 40),
             reverberance = random.randint(0, 30),
             hf_damping = 10,
             room_scale = random.randint(0, 30),
@@ -94,7 +94,7 @@ def calc(signal, seed, add_uniform = False):
     if choice == 2:
         x = augmentation.sox_augment_low(
             signal,
-            min_bass_gain = random.randint(5, 30),
+            min_bass_gain = random.randint(1, 20),
             reverberance = random.randint(0, 30),
             hf_damping = 10,
             room_scale = random.randint(0, 30),
@@ -103,8 +103,8 @@ def calc(signal, seed, add_uniform = False):
     if choice == 3:
         x = augmentation.sox_augment_combine(
             signal,
-            min_bass_gain_high = random.randint(25, 70),
-            min_bass_gain_low = random.randint(5, 30),
+            min_bass_gain_high = random.randint(10, 40),
+            min_bass_gain_low = random.randint(1, 20),
             reverberance = random.randint(0, 30),
             hf_damping = 10,
             room_scale = random.randint(0, 30),
@@ -112,7 +112,7 @@ def calc(signal, seed, add_uniform = False):
     if choice == 4:
         x = augmentation.sox_reverb(
             signal,
-            reverberance = random.randint(10, 30),
+            reverberance = random.randint(1, 20),
             hf_damping = 10,
             room_scale = random.randint(10, 30),
         )
@@ -144,7 +144,7 @@ def signal_augmentation(wav):
         n, _ = malaya_speech.load(random.choice(noises), sr = 16000)
         n = calc(n, seed, True)
         combined = augmentation.add_noise(
-            wav, n, factor = random.uniform(0.05, 0.3)
+            wav, n, factor = random.uniform(0.05, 0.2)
         )
     else:
         combined = wav
@@ -251,7 +251,6 @@ def model_fn(features, labels, mode, params):
 
     tf.identity(loss, 'train_loss')
     tf.identity(accuracy, name = 'train_accuracy')
-    tf.summary.scalar('train_accuracy', accuracy)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
         train_op = train.optimizer.optimize_loss(

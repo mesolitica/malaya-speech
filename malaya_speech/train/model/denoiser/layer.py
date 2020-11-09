@@ -68,6 +68,5 @@ def downsample2(x, zeros = 56):
     s = tf.reshape(xodd, (-1, tf.shape(xodd)[1], 1))
     s = tf.pad(s, [[0, 0], [zeros, zeros], [0, 0]])
     convd = tf.nn.conv1d(s, kernel, padding = 'VALID')
-    print(convd)
     convd = xeven + convd[:, :-1]
     return tf.multiply(convd, 0.5)

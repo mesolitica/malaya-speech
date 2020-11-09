@@ -31,6 +31,7 @@ class Model:
         norm_after_partition = False,
         output_shape_same_as_input = False,
         logging = False,
+        kernel_initializer = ConvScaling,
     ):
         self.audio_channels = audio_channels
         self.sources = sources
@@ -59,7 +60,7 @@ class Model:
                     kernel_size,
                     stride,
                     activation = tf.nn.relu,
-                    kernel_initializer = ConvScaling,
+                    kernel_initializer = kernel_initializer,
                 )
             )
             if rewrite:
@@ -68,7 +69,7 @@ class Model:
                         ch_scale * channels,
                         1,
                         activation = activation,
-                        kernel_initializer = ConvScaling,
+                        kernel_initializer = kernel_initializer,
                     )
                 )
             self.encoder.append(encoder)
@@ -85,7 +86,7 @@ class Model:
                         ch_scale * channels,
                         context,
                         activation = activation,
-                        kernel_initializer = ConvScaling,
+                        kernel_initializer = kernel_initializer,
                     )
                 )
 
@@ -96,7 +97,11 @@ class Model:
 
             decoder.add(
                 Conv1DTranspose(
-                    out_channels, kernel_size, stride, activation = a
+                    out_channels,
+                    kernel_size,
+                    stride,
+                    activation = a,
+                    kernel_initializer = kernel_initializer,
                 )
             )
             self.decoder.insert(0, decoder)
@@ -104,12 +109,14 @@ class Model:
             channels = int(growth * channels)
 
         channels = in_channels
-        partitioned = pad_and_partition(inputs, self.partition_length)
-        if norm_after_partition:
-            mean = tf.reduce_mean(partitioned, axis = 0)
-            std = tf.math.reduce_std(partitioned, axis = 0)
-            partitioned = (partitioned - mean) / std
-        valid_length = self.valid_length(self.partition_length)
+        if partition_length:
+            partitioned = pad_and_partition(inputs, self.partition_length)
+            if norm_after_partition:
+                mean = tf.reduce_mean(partitioned, axis = 0)
+                std = tf.math.reduce_std(partitioned, axis = 0)
+                partitioned = (partitioned - mean) / std
+
+        valid_length = self.valid_length(partitioned.shape.as_list()[1])
         delta = valid_length - self.partition_length
         padded = tf.pad(
             partitioned,
