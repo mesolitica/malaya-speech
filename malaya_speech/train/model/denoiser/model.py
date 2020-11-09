@@ -32,7 +32,6 @@ class Model:
         lstm_layers = 2,
         partition_length = 44100 * 2,
         norm_after_partition = False,
-        output_shape_same_as_input = False,
         logging = False,
         kernel_initializer = ConvScaling,
     ):
@@ -109,10 +108,12 @@ class Model:
 
         if self.normalize:
             mono = tf.reduce_mean(inputs, axis = -1, keepdims = True)
-            std = tf.math.reduce_std(inputs, axis = 1, keepdims = True)
-            inputs = inputs / (self.floor + std)
+            self.std = tf.math.reduce_std(inputs, axis = 1, keepdims = True)
+            inputs = inputs / (self.floor + self.std)
         else:
-            std = 1.0
+            self.std = 1.0
+
+        print(self.std)
 
         partitioned = pad_and_partition(inputs, self.partition_length)
         if norm_after_partition:
@@ -159,8 +160,8 @@ class Model:
 
         self.logits = x
         self.logits = tf.reshape(self.logits, (-1, self.chout))
-        if output_shape_same_as_input:
-            self.logits = self.logits[: tf.shape(inputs)[0]]
+        self.logits = self.logits[: tf.shape(inputs)[0]]
+        self.logits = self.std * self.logits
 
     def valid_length(self, length):
         length = math.ceil(length * self.resample)
