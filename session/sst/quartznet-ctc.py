@@ -29,7 +29,7 @@ parameters = {
         'learning_rate': 0.01,
         'min_lr': 0.0,
         'warmup_steps': 1000,
-        'decay_steps': 20000,
+        'decay_steps': 100_000,
     },
 }
 
@@ -156,14 +156,30 @@ def mel_augmentation(features):
     return mask_augmentation.mask_time(features)
 
 
+# def preprocess_inputs(example):
+#     w = tf.compat.v1.numpy_function(
+#         signal_augmentation, [example['waveforms']], tf.float32
+#     )
+#     w = tf.reshape(w, (1, -1))
+#     s = featurizer.vectorize(w[0])
+#     s = featurizer.vectorize(example['waveforms'])
+#     s = tf.reshape(s, (-1, n_mels))
+#     s = tf.compat.v1.numpy_function(mel_augmentation, [s], tf.float32)
+#     mel_fbanks = tf.reshape(s, (-1, n_mels))
+#     length = tf.cast(tf.shape(mel_fbanks)[0], tf.int32)
+#     length = tf.expand_dims(length, 0)
+#     example['waveforms'] = w[0]
+#     example['inputs'] = mel_fbanks
+#     example['inputs_length'] = length
+
+#     return example
+
+
 def preprocess_inputs(example):
-    w = tf.compat.v1.numpy_function(
-        signal_augmentation, [example['waveforms']], tf.float32
-    )
-    w = tf.reshape(w, (1, -1))
-    s = featurizer.vectorize(w[0])
+    s = featurizer.vectorize(example['waveforms'])
     s = tf.reshape(s, (-1, n_mels))
-    s = tf.compat.v1.numpy_function(mel_augmentation, [s], tf.float32)
+    s = malaya_speech.augmentation.spectrogram.tf_mask_frequency(s, F = 20)
+    s = malaya_speech.augmentation.spectrogram.tf_mask_time(s, T = 80)
     mel_fbanks = tf.reshape(s, (-1, n_mels))
     length = tf.cast(tf.shape(mel_fbanks)[0], tf.int32)
     length = tf.expand_dims(length, 0)
@@ -200,7 +216,7 @@ def get_dataset(
     path,
     batch_size = 32,
     shuffle_size = 32,
-    thread_count = 16,
+    thread_count = 24,
     maxlen_feature = 1800,
 ):
     def get():
@@ -298,7 +314,7 @@ train.run_training(
     model_dir = 'asr-quartznet',
     num_gpus = 3,
     log_step = 1,
-    save_checkpoint_step = parameters['lr_policy_params']['warmup_steps'],
+    save_checkpoint_step = 2000,
     max_steps = parameters['lr_policy_params']['decay_steps'],
     eval_fn = dev_dataset,
     train_hooks = train_hooks,
