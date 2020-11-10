@@ -4,6 +4,7 @@ from . import deep_speaker
 from . import deepspeech2
 from . import demucs
 from . import denoiser
+from . import fastspeech
 from . import jasper
 from . import mb_melgan
 from . import melgan

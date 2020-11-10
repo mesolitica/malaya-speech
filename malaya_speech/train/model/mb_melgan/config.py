@@ -14,13 +14,13 @@
 # limitations under the License.
 """Multi-band MelGAN Config object."""
 
-from malaya_speech.train.model.melgan.config import (
-    DiscriminatorConfig,
-    GeneratorConfig,
+from ..melgan.config import (
+    DiscriminatorConfig as discriminator_config,
+    GeneratorConfig as generator_config,
 )
 
 
-class MultiBandGeneratorConfig(GeneratorConfig):
+class GeneratorConfig(generator_config):
     """Initialize Multi-band MelGAN Generator Config."""
 
     def __init__(self, **kwargs):
@@ -31,7 +31,7 @@ class MultiBandGeneratorConfig(GeneratorConfig):
         self.beta = kwargs.pop('beta', 9.0)
 
 
-class MultiBandDiscriminatorConfig(DiscriminatorConfig):
+class DiscriminatorConfig(discriminator_config):
     """Initialize Multi-band MelGAN Discriminator Config."""
 
     def __init__(self, **kwargs):

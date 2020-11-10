@@ -1,8 +1,6 @@
 config = {
     'sampling_rate': 22050,
     'hop_size': 256,
-    'format': 'npy',
-    'model_type': 'melgan_generator',
     'melgan_generator_params': {
         'out_channels': 1,
         'kernel_size': 7,

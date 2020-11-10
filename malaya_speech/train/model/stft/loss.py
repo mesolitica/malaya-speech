@@ -104,7 +104,7 @@ class TFSTFT(tf.keras.layers.Layer):
         return sc_loss, mag_loss
 
 
-class TFMultiResolutionSTFT(tf.keras.layers.Layer):
+class MultiResolutionSTFT(tf.keras.layers.Layer):
     """Multi resolution STFT loss module."""
 
     def __init__(

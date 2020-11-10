@@ -7,6 +7,9 @@ from .conformer import (
     large_decoder_config as conformer_large_decoder_config,
 )
 from .ctc_featurizer import config as ctc_featurizer_config
+from .fastspeech import config as fastspeech_config
+from .mb_melgan import config as mb_melgan_config
 from .melgan import config as melgan_config
 from .speakernet_featurizer import config as speakernet_featurizer_config
+from .tacotron2 import config as tacotron2_config
 from .transducer_featurizer import config as transducer_featurizer_config
