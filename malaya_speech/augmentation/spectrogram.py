@@ -5,7 +5,9 @@ import tensorflow as tf
 # https://github.com/Kyubyong/specAugment/blob/master/USER_DIR/speech_recognition.py
 
 
-def mask_frequency(features, n_freq_mask: int = 2, width_freq_mask: int = 8):
+def mask_frequency(
+    features, n_freq_mask: int = 2, width_freq_mask: int = 8, random_band = True
+):
     """
     Mask frequency.
 
@@ -23,13 +25,18 @@ def mask_frequency(features, n_freq_mask: int = 2, width_freq_mask: int = 8):
     """
     features = features.copy()
     for idx in range(n_freq_mask):
-        freq_band = np.random.randint(width_freq_mask + 1)
+        if random_band:
+            freq_band = np.random.randint(width_freq_mask + 1)
+        else:
+            freq_band = width_freq_mask
         freq_base = np.random.randint(0, features.shape[1] - freq_band)
         features[:, freq_base : freq_base + freq_band] = 0
     return features
 
 
-def mask_time(features, n_time_mask = 2, width_time_mask = 8):
+def mask_time(
+    features, n_time_mask = 2, width_time_mask = 8, random_band = True
+):
     """
     Time frequency.
 
@@ -47,7 +54,10 @@ def mask_time(features, n_time_mask = 2, width_time_mask = 8):
     """
     features = features.copy()
     for idx in range(n_time_mask):
-        time_band = np.random.randint(width_time_mask + 1)
+        if random_band:
+            time_band = np.random.randint(width_time_mask + 1)
+        else:
+            time_band = width_time_mask
         if features.shape[0] - time_band > 0:
             time_base = np.random.randint(features.shape[0] - time_band)
             features[time_base : time_base + time_band, :] = 0
