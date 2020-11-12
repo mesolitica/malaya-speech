@@ -28,8 +28,8 @@ parameters = {
     'lr_policy_params': {
         'learning_rate': 0.01,
         'min_lr': 0.0,
-        'warmup_steps': 1000,
-        'decay_steps': 100_000,
+        'warmup_steps': 10000,
+        'decay_steps': 500_000,
     },
 }
 
@@ -313,10 +313,10 @@ dev_dataset = get_dataset('../speech-bahasa/bahasa-asr/data/bahasa-asr-dev-*')
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'asr-quartznet',
+    model_dir = 'asr-quartznet-ctc',
     num_gpus = 3,
     log_step = 1,
-    save_checkpoint_step = 2000,
+    save_checkpoint_step = 5000,
     max_steps = parameters['lr_policy_params']['decay_steps'],
     eval_fn = dev_dataset,
     train_hooks = train_hooks,

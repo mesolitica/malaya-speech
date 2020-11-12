@@ -158,32 +158,52 @@ S3_PATH_SPEAKER_CHANGE = {
 PATH_SPEAKER_VECTOR = {
     'vggvox-v1': {
         'model': home + '/speaker-vector/vggvox-v1/model.pb',
+        'quantized': home + '/speaker-vector/vggvox-v1/quantized/model.pb',
         'version': 'v1',
     },
     'vggvox-v2': {
         'model': home + '/speaker-vector/vggvox-v2/model.pb',
+        'quantized': home + '/speaker-vector/vggvox-v2/quantized/model.pb',
         'version': 'v1',
     },
     'inception-v4': {
         'model': home + '/speaker-vector/inception-v4/model.pb',
+        'quantized': home + '/speaker-vector/inception-v4/quantized/model.pb',
         'version': 'v1',
     },
     'deep-speaker': {
         'model': home + '/speaker-vector/deep-speaker/model.pb',
+        'quantized': home + '/speaker-vector/deep-speaker/quantized/model.pb',
         'version': 'v1',
     },
     'speakernet': {
         'model': home + '/speaker-vector/speakernet/model.pb',
+        'quantized': home + '/speaker-vector/speakernet/quantized/model.pb',
         'version': 'v1',
     },
 }
 
 S3_PATH_SPEAKER_VECTOR = {
-    'vggvox-v1': {'model': 'v1/speaker-vector/pretrained-vggvox-v1.pb'},
-    'vggvox-v2': {'model': 'v1/speaker-vector/pretrained-vggvox-v2.pb'},
-    'inception-v4': {'model': 'v1/speaker-vector/pretrained-inception-v4.pb'},
-    'deep-speaker': {'model': 'v1/speaker-vector/pretrained-deep-speaker.pb'},
-    'speakernet': {'model': 'v1/speaker-vector/pretrained-speakernet.pb'},
+    'vggvox-v1': {
+        'model': 'v1/speaker-vector/pretrained-vggvox-v1.pb',
+        'quantized': 'v1/speaker-vector/pretrained-vggvox-v1.pb.quantized',
+    },
+    'vggvox-v2': {
+        'model': 'v1/speaker-vector/pretrained-vggvox-v2.pb',
+        'model': 'v1/speaker-vector/pretrained-vggvox-v2.pb.quantized',
+    },
+    'inception-v4': {
+        'model': 'v1/speaker-vector/pretrained-inception-v4.pb',
+        'quantized': 'v1/speaker-vector/pretrained-inception-v4.pb.quantized',
+    },
+    'deep-speaker': {
+        'model': 'v1/speaker-vector/pretrained-deep-speaker.pb',
+        'quantized': 'v1/speaker-vector/pretrained-deep-speaker.pb.quantized',
+    },
+    'speakernet': {
+        'model': 'v1/speaker-vector/pretrained-speakernet.pb',
+        'quantized': 'v1/speaker-vector/pretrained-speakernet.pb.quantized',
+    },
 }
 
 PATH_SPEAKER_OVERLAP = {
@@ -231,6 +251,38 @@ S3_PATH_SPEECH_ENHANCEMENT = {
     'resnet-unet': {
         'model': 'v1/speech-enhancement/resnet-unet.pb',
         'quantized': 'v1/speech-enhancement/resnet-unet.pb.quantized',
+    },
+}
+
+PATH_STT_CTC = {
+    'quartznet': {
+        'model': home + '/stt/quartznet-ctc/model.pb',
+        'quantized': home + '/stt/quartznet-ctc/quantized/model.pb',
+        'version': 'v1',
+    },
+    'mini-jasper': {
+        'model': home + '/stt/mini-jasper-ctc/model.pb',
+        'quantized': home + '/stt/mini-jasper-ctc/quantized/model.pb',
+        'version': 'v1',
+    },
+    'jasper': {
+        'model': home + '/stt/jasper-ctc/model.pb',
+        'quantized': home + '/stt/jasper-ctc/quantized/model.pb',
+        'version': 'v1',
+    },
+}
+S3_PATH_STT_CTC = {
+    'quartznet': {
+        'model': 'v1/stt/quartznet-ctc.pb',
+        'quantized': 'v1/stt/quartznet-ctc.pb.quantized',
+    },
+    'mini-jasper': {
+        'model': 'v1/stt/mini-jasper-ctc.pb',
+        'quantized': 'v1/stt/mini-jasper.pb.quantized',
+    },
+    'jasper': {
+        'model': 'v1/stt/jasper-ctc.pb',
+        'quantized': 'v1/stt/jasper.pb.quantized',
     },
 }
 

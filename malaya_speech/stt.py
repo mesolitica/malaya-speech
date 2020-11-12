@@ -1,4 +1,7 @@
+from malaya_speech.path import PATH_STT_CTC, S3_PATH_STT_CTC
+from malaya_speech.supervised import stt
 from herpetologist import check_type
+
 
 _transducer_availability = {
     'small-conformer': {'Size (MB)': 97.8, 'WER': 0, 'CER': 0},
@@ -78,7 +81,7 @@ def deep_ctc(model: str = 'jasper', quantized: bool = False, **kwargs):
 
     Returns
     -------
-    result : malaya_speech.supervised.classification.load function
+    result : malaya_speech.supervised.stt.load function
     """
 
     model = model.lower()
@@ -86,3 +89,12 @@ def deep_ctc(model: str = 'jasper', quantized: bool = False, **kwargs):
         raise Exception(
             'model not supported, please check supported models from `malaya_speech.sst.available_ctc()`.'
         )
+
+    return stt.load(
+        path = PATH_STT_CTC,
+        s3_path = S3_PATH_STT_CTC,
+        model = model,
+        name = 'speech-to-text',
+        quantized = quantized,
+        **kwargs
+    )

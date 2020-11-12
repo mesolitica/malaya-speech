@@ -25,10 +25,12 @@ class SPEAKERNET:
         Parameters
         ----------
         inputs: List[np.array]
+            List[np.array] or List[malaya_speech.model.frame.FRAME].
 
         Returns
         -------
         result: np.array
+            returned [B, D].
         """
         inputs = [
             input.array if isinstance(input, FRAME) else input
@@ -65,10 +67,12 @@ class SPEAKER2VEC:
         Parameters
         ----------
         inputs: List[np.array]
+            List[np.array] or List[malaya_speech.model.frame.FRAME].
 
         Returns
         -------
         result: np.array
+            returned [B, D].
         """
         inputs = [
             input.array if isinstance(input, FRAME) else input
@@ -111,10 +115,12 @@ class SPEAKERNET_CLASSIFICATION:
         Parameters
         ----------
         inputs: List[np.array]
+            List[np.array] or List[malaya_speech.model.frame.FRAME].
 
         Returns
         -------
         result: np.array
+            returned [B, D].
         """
         inputs = [
             input.array if isinstance(input, FRAME) else input
@@ -137,14 +143,30 @@ class SPEAKERNET_CLASSIFICATION:
         Parameters
         ----------
         inputs: List[np.array]
+            List[np.array] or List[malaya_speech.model.frame.FRAME].
+
         Returns
         -------
         result: List[str]
+            returned [B].
         """
         probs = np.argmax(self.predict_proba(inputs), axis = 1)
         return [self.labels[p] for p in probs]
 
     def __call__(self, input):
+        """
+        Predict input, will return label.
+
+        Parameters
+        ----------
+        inputs: np.array
+            np.array or malaya_speech.model.frame.FRAME.
+
+        Returns
+        -------
+        result: str
+        """
+
         return self.predict([input])[0]
 
 
@@ -166,10 +188,12 @@ class CLASSIFICATION:
         Parameters
         ----------
         inputs: List[np.array]
+            List[np.array] or List[malaya_speech.model.frame.FRAME].
 
         Returns
         -------
         result: np.array
+            returned [B, D].
         """
         inputs = [
             input.array if isinstance(input, FRAME) else input
@@ -193,14 +217,29 @@ class CLASSIFICATION:
         Parameters
         ----------
         inputs: List[np.array]
+            List[np.array] or List[malaya_speech.model.frame.FRAME].
+
         Returns
         -------
         result: List[str]
+            returned [B].
         """
         probs = np.argmax(self.predict_proba(inputs), axis = 1)
         return [self.labels[p] for p in probs]
 
     def __call__(self, input):
+        """
+        Predict input, will return label.
+
+        Parameters
+        ----------
+        inputs: np.array
+            np.array or malaya_speech.model.frame.FRAME.
+
+        Returns
+        -------
+        result: str
+        """
         return self.predict([input])[0]
 
 
@@ -263,7 +302,8 @@ class UNET_STFT:
 
         Parameters
         ----------
-        inputs: np.array
+        input: np.array
+            np.array or malaya_speech.model.frame.FRAME.
 
         Returns
         -------
@@ -275,4 +315,109 @@ class UNET_STFT:
         return self._sess.run(self._logits, feed_dict = {self._X: input})
 
     def __call__(self, input):
+        """
+        Enhance inputs, will return waveform.
+
+        Parameters
+        ----------
+        input: np.array
+            np.array or malaya_speech.model.frame.FRAME.
+
+        Returns
+        -------
+        result: Dict
+        """
         return self.predict(input)
+
+
+class STT:
+    def __init__(self, X, logits, greedy, beam, sess, model, name):
+        self._X = X
+        self._logits = logits
+        self._greedy = greedy
+        self._beam = beam
+        self._sess = sess
+        self.__model__ = model
+        self.__name__ = name
+
+    def predict(self, inputs, decoder: str = 'beam'):
+        """
+        Transcribe inputs, will return list of strings.
+
+        Parameters
+        ----------
+        input: List[np.array]
+            List[np.array] or List[malaya_speech.model.frame.FRAME].
+        decoder: str, optional (default='beam')
+            decoder mode, allowed values:
+
+            * ``'greedy'`` - greedy decoder.
+            * ``'beam'`` - beam decoder with 100 beam width.
+
+        Returns
+        -------
+        result: List[str]
+        """
+
+    def predict_lm(
+        self,
+        inputs,
+        decoder: str = 'beam',
+        beam_size: int = 100,
+        vocabulary = None,
+    ):
+        """
+        Transcribe inputs using Beam Search + LM, will return list of strings.
+        This method will not able to utilise batch decoding, instead will do loop to decode for each elements.
+
+        Parameters
+        ----------
+        input: List[np.array]
+            List[np.array] or List[malaya_speech.model.frame.FRAME].
+        decoder: str, optional (default='beam')
+            decoder mode, allowed values:
+
+            * ``'greedy'`` - greedy decoder.
+            * ``'beam'`` - beam decoder.
+        beam_size: int, optional (default=100)
+            beam size for beam decoder.
+        
+
+        Returns
+        -------
+        result: List[str]
+        """
+        try:
+            from ctc_decoders import ctc_greedy_decoder, ctc_beam_search_decoder
+        except:
+            raise ModuleNotFoundError(
+                'ctc_decoders not installed. Please install it by compile from https://github.com/usimarit/ctc_decoders and try again.'
+            )
+
+    def __call__(
+        self, input, decoder: str = 'greedy', lm: bool = False, **kwargs
+    ):
+        """
+        Transcribe input, will return a string.
+
+        Parameters
+        ----------
+        input: np.array
+            np.array or malaya_speech.model.frame.FRAME.
+        decoder: str, optional (default='beam')
+            decoder mode, allowed values:
+
+            * ``'greedy'`` - greedy decoder.
+            * ``'beam'`` - beam decoder.
+        lm: bool, optional (default=False)
+        **kwargs: keyword arguments passed to `predict` or `predict_lm`.
+
+        Returns
+        -------
+        result: str
+        """
+        if lm:
+            method = self.predict_lm
+        else:
+            method = self.predict
+        return method([input], decoder = decoder, **kwargs)[0]

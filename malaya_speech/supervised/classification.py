@@ -6,13 +6,12 @@ from malaya_speech.model.tf import (
     CLASSIFICATION,
 )
 from malaya_speech.utils import featurization
+from malaya_speech.config import (
+    speakernet_featurizer_config as speakernet_config,
+)
 
 
 def load(path, s3_path, model, name, extra, label, quantized = False, **kwargs):
-
-    import malaya_speech.config
-
-    speakernet_config = malaya_speech.config.speakernet_featurizer_config
 
     check_file(path[model], s3_path[model], quantized = quantized, **kwargs)
 

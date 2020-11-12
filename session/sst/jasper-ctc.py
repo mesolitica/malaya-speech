@@ -6,12 +6,16 @@ import tensorflow as tf
 import malaya_speech
 import malaya_speech.augmentation.waveform as augmentation
 import malaya_speech.augmentation.spectrogram as mask_augmentation
-import malaya_speech.train.model.jasper as jasper
+import malaya_speech.train.model.quartznet as quartznet
 import malaya_speech.train.model.ctc as ctc
 import malaya_speech.train as train
 import numpy as np
 import random
 from glob import glob
+import json
+
+with open('malaya-speech-sst-vocab.json') as fopen:
+    unique_vocab = json.load(fopen)
 
 parameters = {
     'optimizer_params': {
@@ -21,13 +25,17 @@ parameters = {
         'weight_decay': 0.001,
         'grad_averaging': False,
     },
-    'lr_policy_params': {'learning_rate': 0.02, 'min_lr': 1e-5, 'power': 2.0},
-    'larc_params': {'larc_eta': 0.001},
+    'lr_policy_params': {
+        'learning_rate': 0.01,
+        'min_lr': 0.0,
+        'warmup_steps': 5000,
+        'decay_steps': 500_000,
+    },
 }
 
 
 def learning_rate_scheduler(global_step):
-    return train.schedule.poly_decay(
+    return train.schedule.cosine_decay(
         global_step, **parameters['lr_policy_params']
     )
 
@@ -68,7 +76,7 @@ def calc(signal, seed, add_uniform = False):
 
         x = augmentation.sox_augment_high(
             signal,
-            min_bass_gain = random.randint(25, 50),
+            min_bass_gain = random.randint(10, 30),
             reverberance = random.randint(0, 30),
             hf_damping = 10,
             room_scale = random.randint(0, 30),
@@ -77,7 +85,7 @@ def calc(signal, seed, add_uniform = False):
     if choice == 1:
         x = augmentation.sox_augment_high(
             signal,
-            min_bass_gain = random.randint(25, 70),
+            min_bass_gain = random.randint(10, 40),
             reverberance = random.randint(0, 30),
             hf_damping = 10,
             room_scale = random.randint(0, 30),
@@ -86,7 +94,7 @@ def calc(signal, seed, add_uniform = False):
     if choice == 2:
         x = augmentation.sox_augment_low(
             signal,
-            min_bass_gain = random.randint(5, 30),
+            min_bass_gain = random.randint(1, 20),
             reverberance = random.randint(0, 30),
             hf_damping = 10,
             room_scale = random.randint(0, 30),
@@ -95,8 +103,8 @@ def calc(signal, seed, add_uniform = False):
     if choice == 3:
         x = augmentation.sox_augment_combine(
             signal,
-            min_bass_gain_high = random.randint(25, 70),
-            min_bass_gain_low = random.randint(5, 30),
+            min_bass_gain_high = random.randint(10, 40),
+            min_bass_gain_low = random.randint(1, 20),
             reverberance = random.randint(0, 30),
             hf_damping = 10,
             room_scale = random.randint(0, 30),
@@ -104,7 +112,7 @@ def calc(signal, seed, add_uniform = False):
     if choice == 4:
         x = augmentation.sox_reverb(
             signal,
-            reverberance = random.randint(10, 30),
+            reverberance = random.randint(1, 20),
             hf_damping = 10,
             room_scale = random.randint(10, 30),
         )
@@ -136,7 +144,7 @@ def signal_augmentation(wav):
         n, _ = malaya_speech.load(random.choice(noises), sr = 16000)
         n = calc(n, seed, True)
         combined = augmentation.add_noise(
-            wav, n, factor = random.uniform(0.05, 0.3)
+            wav, n, factor = random.uniform(0.05, 0.2)
         )
     else:
         combined = wav
@@ -144,26 +152,44 @@ def signal_augmentation(wav):
 
 
 def mel_augmentation(features):
+
     features = mask_augmentation.mask_frequency(features)
-    return mask_augmentation.mask_time(features)
+    if features.shape[0] > 100:
+        features = mask_augmentation.mask_time(features)
+    return features
 
 
 def preprocess_inputs(example):
-    w = tf.compat.v1.numpy_function(
-        signal_augmentation, [example['waveforms']], tf.float32
-    )
-    w = tf.reshape(w, (1, -1))
-    s = featurizer.vectorize(w[0])
+    # w = tf.compat.v1.numpy_function(
+    #     signal_augmentation, [example['waveforms']], tf.float32
+    # )
+    # w = tf.reshape(w, (1, -1))
+    # s = featurizer.vectorize(w[0])
+    s = featurizer.vectorize(example['waveforms'])
     s = tf.reshape(s, (-1, n_mels))
     s = tf.compat.v1.numpy_function(mel_augmentation, [s], tf.float32)
     mel_fbanks = tf.reshape(s, (-1, n_mels))
     length = tf.cast(tf.shape(mel_fbanks)[0], tf.int32)
     length = tf.expand_dims(length, 0)
-    example['waveforms'] = w[0]
+    # example['waveforms'] = w[0]
     example['inputs'] = mel_fbanks
     example['inputs_length'] = length
 
     return example
+
+
+# def preprocess_inputs(example):
+#     s = featurizer.vectorize(example['waveforms'])
+#     s = tf.reshape(s, (-1, n_mels))
+#     s = malaya_speech.augmentation.spectrogram.tf_mask_frequency(s, F = 20)
+#     s = malaya_speech.augmentation.spectrogram.tf_mask_time(s, T = 80)
+#     mel_fbanks = tf.reshape(s, (-1, n_mels))
+#     length = tf.cast(tf.shape(mel_fbanks)[0], tf.int32)
+#     length = tf.expand_dims(length, 0)
+#     example['inputs'] = mel_fbanks
+#     example['inputs_length'] = length
+
+#     return example
 
 
 def parse(serialized_example):
@@ -192,7 +218,7 @@ def get_dataset(
     path,
     batch_size = 32,
     shuffle_size = 32,
-    thread_count = 16,
+    thread_count = 24,
     maxlen_feature = 1800,
 ):
     def get():
@@ -202,9 +228,6 @@ def get_dataset(
         dataset = dataset.repeat()
         dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
         dataset = dataset.map(parse, num_parallel_calls = thread_count)
-        dataset = dataset.filter(
-            lambda x: tf.less_equal(tf.shape(x['inputs'])[0], maxlen_feature)
-        )
         dataset = dataset.padded_batch(
             batch_size,
             padded_shapes = {
@@ -227,12 +250,10 @@ def get_dataset(
 
 def model_fn(features, labels, mode, params):
 
-    model = jasper.Model(
+    model = quartznet.Model(
         features['inputs'], features['inputs_length'][:, 0], mode = 'train'
     )
-    logits = tf.layers.dense(
-        model.logits['outputs'], malaya_speech.char.VOCAB_SIZE
-    )
+    logits = tf.layers.dense(model.logits['outputs'], len(unique_vocab) + 1)
     seq_lens = model.logits['src_length']
 
     targets_int32 = tf.cast(features['targets'], tf.int32)
@@ -272,10 +293,7 @@ def model_fn(features, labels, mode, params):
             eval_metric_ops = {
                 'accuracy': ctc.metrics.ctc_sequence_accuracy_estimator(
                     logits, targets_int32, seq_lens
-                ),
-                'WER': ctc.metrics.word_error_rate_estimator(
-                    logits, targets_int32
-                ),
+                )
             },
         )
 
@@ -298,7 +316,7 @@ train.run_training(
     model_dir = 'asr-quartznet',
     num_gpus = 3,
     log_step = 1,
-    save_checkpoint_step = parameters['lr_policy_params']['warmup_steps'],
+    save_checkpoint_step = 2000,
     max_steps = parameters['lr_policy_params']['decay_steps'],
     eval_fn = dev_dataset,
     train_hooks = train_hooks,

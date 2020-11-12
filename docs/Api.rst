@@ -63,6 +63,12 @@ malaya_speech.model.tf.UNET_STFT
 .. autoclass:: malaya_speech.model.tf.UNET_STFT()
     :members:
 
+malaya_speech.model.tf.STT
+----------------------------------
+
+.. autoclass:: malaya_speech.model.tf.STT()
+    :members:
+
 malaya_speech.pipeline
 -----------------------------------
 
@@ -229,6 +235,12 @@ malaya_speech.speech_enhancement
 -----------------------------------
 
 .. automodule:: malaya_speech.speech_enhancement
+    :members:
+
+malaya_speech.stt
+-----------------------------------
+
+.. automodule:: malaya_speech.stt
     :members:
 
 malaya_speech.vad
