@@ -247,34 +247,36 @@ def post_process_gradients(
         grads_and_vars = _clip_gradients_by_norm(grads_and_vars, clip_gradients)
 
     # Add histograms for variables, gradients and gradient norms.
-    for gradient, variable in grads_and_vars:
-        if isinstance(gradient, tf.IndexedSlices):
-            grad_values = gradient.values
-        else:
-            grad_values = gradient
 
-        if isinstance(variable, tf.IndexedSlices):
-            var_values = variable.values
-        else:
-            var_values = variable
+    if 'global_gradient_norm' in summaries:
+        for gradient, variable in grads_and_vars:
+            if isinstance(gradient, tf.IndexedSlices):
+                grad_values = gradient.values
+            else:
+                grad_values = gradient
 
-        if grad_values is not None:
-            var_name = variable.name.replace(':', '_')
-            if 'gradients' in summaries:
-                # need to mask nans for automatic loss scaling
-                tf.summary.histogram(
-                    'gradients/%s' % var_name, mask_nans(grad_values)
-                )
-            if 'gradient_norm' in summaries:
-                tf.summary.scalar(
-                    'gradient_norm/%s' % var_name, tf.norm(grad_values)
-                )
-            if 'variables' in summaries:
-                tf.summary.histogram('variables/%s' % var_name, var_values)
-            if 'variable_norm' in summaries:
-                tf.summary.scalar(
-                    'variable_norm/%s' % var_name, tf.norm(var_values)
-                )
+            if isinstance(variable, tf.IndexedSlices):
+                var_values = variable.values
+            else:
+                var_values = variable
+
+            if grad_values is not None:
+                var_name = variable.name.replace(':', '_')
+                if 'gradients' in summaries:
+                    # need to mask nans for automatic loss scaling
+                    tf.summary.histogram(
+                        'gradients/%s' % var_name, mask_nans(grad_values)
+                    )
+                if 'gradient_norm' in summaries:
+                    tf.summary.scalar(
+                        'gradient_norm/%s' % var_name, tf.norm(grad_values)
+                    )
+                if 'variables' in summaries:
+                    tf.summary.histogram('variables/%s' % var_name, var_values)
+                if 'variable_norm' in summaries:
+                    tf.summary.scalar(
+                        'variable_norm/%s' % var_name, tf.norm(var_values)
+                    )
 
     if clip_gradients is not None and 'global_gradient_norm' in summaries:
         tf.summary.scalar(

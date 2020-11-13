@@ -276,7 +276,7 @@ def model_fn(features, labels, mode, params):
             train.optimizer.NovoGrad,
             parameters['optimizer_params'],
             learning_rate_scheduler,
-            summaries = parameters.get('summaries', None),
+            summaries = ['learning_rate', 'loss_scale'],
             larc_params = parameters.get('larc_params', None),
             loss_scaling = parameters.get('loss_scaling', 1.0),
             loss_scaling_params = parameters.get('loss_scaling_params', None),
