@@ -30,6 +30,13 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+   :caption: ASR Module
+
+   ctc-language-model
+   convert-asr-to-tflite
+
+.. toctree::
+   :maxdepth: 2
    :caption: Classification Module
 
    load-age-detection

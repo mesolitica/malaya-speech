@@ -1,6 +1,12 @@
-from malaya_speech.path import PATH_STT_CTC, S3_PATH_STT_CTC
+from malaya_speech.path import (
+    PATH_STT_CTC,
+    S3_PATH_STT_CTC,
+    PATH_LM,
+    S3_PATH_LM,
+)
 from malaya_speech.supervised import stt
 from herpetologist import check_type
+import json
 
 
 _transducer_availability = {
@@ -9,9 +15,30 @@ _transducer_availability = {
 }
 
 _ctc_availability = {
-    'quartznet': {'Size (MB)': 97.8, 'WER': 0, 'CER': 0},
+    'quartznet': {'Size (MB)': 77.2, 'WER': 0, 'CER': 0},
     'mini-jasper': {'Size (MB)': 97.8, 'WER': 0, 'CER': 0},
     'jasper': {'Size (MB)': 97.8, 'WER': 0, 'CER': 0},
+}
+
+_language_model_availability = {
+    'malaya-speech': {
+        'Size (MB)': 2.6,
+        'Vocab Size': 138592,
+        'Description': 'Gathered from malaya-speech ASR transcript',
+        'Command': [
+            'lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
+            'build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
+        ],
+    },
+    'local': {
+        'Size (MB)': 22,
+        'Vocab Size': 169830,
+        'Description': 'Gathered from IIUM Confession',
+        'Command': [
+            'lmplz --text text.txt --arpa out.arpa -o 5 --prune 0 1 1 1 1',
+            'build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
+        ],
+    },
 }
 
 
@@ -31,6 +58,61 @@ def available_ctc():
     from malaya_speech.utils import describe_availability
 
     return describe_availability(_ctc_availability)
+
+
+def available_language_model():
+    """
+    List available Language Model for CTC.
+    """
+    from malaya_speech.utils import describe_availability
+
+    return describe_availability(_language_model_availability)
+
+
+def language_model(
+    model: str = 'malaya-speech',
+    alpha: float = 2.5,
+    beta: float = 0.3,
+    **kwargs
+):
+    """
+    Load KenLM language model.
+
+    Parameters
+    ----------
+    model : str, optional (default='malaya-speech')
+        Model architecture supported. Allowed values:
+
+        * ``'malaya-speech'`` - Gathered from malaya-speech ASR transcript.
+        * ``'local'`` - Gathered from IIUM Confession.
+        
+    alpha: float, optional (default=2.5)
+        score = alpha * np.log(lm) + beta * np.log(word_cnt), 
+        increase will put more bias on lm score computed by kenlm.
+    beta: float, optional (beta=0.3)
+        score = alpha * np.log(lm) + beta * np.log(word_cnt), 
+        increase will put more bias on word count.
+
+    Returns
+    -------
+    result : Tuple[ctc_decoders.Scorer, List[str]]
+        Tuple of ctc_decoders.Scorer and vocab.
+    """
+    try:
+        from ctc_decoders import Scorer
+    except:
+        raise ModuleNotFoundError(
+            'ctc_decoders not installed. Please install it by compile from https://github.com/usimarit/ctc_decoders and try again.'
+        )
+    from malaya_speech.utils import check_file
+
+    check_file(PATH_LM[model], S3_PATH_LM[model], **kwargs)
+
+    with open(PATH_LM[model]['vocab']) as fopen:
+        vocab_list = json.load(fopen)
+
+    scorer = Scorer(alpha, beta, PATH_LM[model]['model'], vocab_list)
+    return scorer, vocab_list
 
 
 def deep_transducer(

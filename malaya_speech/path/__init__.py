@@ -254,6 +254,31 @@ S3_PATH_SPEECH_ENHANCEMENT = {
     },
 }
 
+PATH_LM = {
+    'malaya-speech': {
+        'model': home + '/lm/malaya-speech/model.trie.klm',
+        'vocab': home + '/vocab/malaya-speech/vocab.json',
+        'version': 'v1',
+    },
+    'local': {
+        'model': home + '/lm/local/model.trie.klm',
+        'vocab': home + '/vocab/local/vocab.json',
+        'version': 'v1',
+    },
+}
+
+S3_PATH_LM = {
+    'malaya-speech': {
+        'model': 'v1/lm/malaya-speech.trie.klm',
+        'vocab': 'v1/vocab/malaya-speech.json',
+    },
+    'local': {
+        'model': 'v1/lm/local.trie.klm',
+        'vocab': 'v1/vocab/local.json',
+        'version': 'v1',
+    },
+}
+
 PATH_STT_CTC = {
     'quartznet': {
         'model': home + '/stt/quartznet-ctc/model.pb',

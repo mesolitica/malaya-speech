@@ -331,16 +331,24 @@ class UNET_STFT:
 
 
 class STT:
-    def __init__(self, X, logits, greedy, beam, sess, model, name):
+    def __init__(self, X, logits, sess, model, name):
         self._X = X
+        self._decoder = None
         self._logits = logits
-        self._greedy = greedy
-        self._beam = beam
+        self._softmax = tf.nn.softmax(logits)
         self._sess = sess
         self.__model__ = model
         self.__name__ = name
 
-    def predict(self, inputs, decoder: str = 'beam'):
+    def _check_decoder(self, decoder):
+        decoder = decoder.lower()
+        if decoder not in ['greedy', 'beam']:
+            raise ValueError('mode only supports [`greedy`, `beam`]')
+        return decoder
+
+    def predict(
+        self, inputs, decoder: str = 'beam', beam_size: int = 100, **kwargs
+    ):
         """
         Transcribe inputs, will return list of strings.
 
@@ -352,19 +360,20 @@ class STT:
             decoder mode, allowed values:
 
             * ``'greedy'`` - greedy decoder.
-            * ``'beam'`` - beam decoder with 100 beam width.
+            * ``'beam'`` - beam decoder.
+        beam_size: int, optional (default=100)
+            beam size for beam decoder.
 
         Returns
         -------
         result: List[str]
         """
+        decoder = self._check_decoder(decoder)
+        if decoder == 'greedy':
+            beam_size = 1
 
     def predict_lm(
-        self,
-        inputs,
-        decoder: str = 'beam',
-        beam_size: int = 100,
-        vocabulary = None,
+        self, inputs, lm, decoder: str = 'beam', beam_size: int = 100, **kwargs
     ):
         """
         Transcribe inputs using Beam Search + LM, will return list of strings.
@@ -374,6 +383,8 @@ class STT:
         ----------
         input: List[np.array]
             List[np.array] or List[malaya_speech.model.frame.FRAME].
+        lm: Tuple[ctc_decoders.Scorer, List[str]]
+            Returned from `malaya_speech.stt.language_model()`.
         decoder: str, optional (default='beam')
             decoder mode, allowed values:
 
@@ -387,12 +398,14 @@ class STT:
         -------
         result: List[str]
         """
+        decoder = self._check_decoder(decoder)
         try:
             from ctc_decoders import ctc_greedy_decoder, ctc_beam_search_decoder
         except:
             raise ModuleNotFoundError(
                 'ctc_decoders not installed. Please install it by compile from https://github.com/usimarit/ctc_decoders and try again.'
             )
+        scorer, vocab_list = lm
 
     def __call__(
         self, input, decoder: str = 'greedy', lm: bool = False, **kwargs

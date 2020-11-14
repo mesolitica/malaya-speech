@@ -18,17 +18,11 @@ with open('malaya-speech-sst-vocab.json') as fopen:
     unique_vocab = json.load(fopen)
 
 parameters = {
-    'optimizer_params': {
-        'beta1': 0.95,
-        'beta2': 0.5,
-        'epsilon': 1e-08,
-        'weight_decay': 0.001,
-        'grad_averaging': False,
-    },
+    'optimizer_params': {},
     'lr_policy_params': {
-        'learning_rate': 0.01,
-        'min_lr': 0.0,
-        'warmup_steps': 10000,
+        'learning_rate': 1e-4,
+        'min_lr': 1e-6,
+        'warmup_steps': 0,
         'decay_steps': 500_000,
     },
 }
@@ -273,7 +267,7 @@ def model_fn(features, labels, mode, params):
     if mode == tf.estimator.ModeKeys.TRAIN:
         train_op = train.optimizer.optimize_loss(
             loss,
-            train.optimizer.NovoGrad,
+            tf.train.AdamOptimizer,
             parameters['optimizer_params'],
             learning_rate_scheduler,
             summaries = ['learning_rate', 'loss_scale'],
@@ -313,7 +307,7 @@ dev_dataset = get_dataset('../speech-bahasa/bahasa-asr/data/bahasa-asr-dev-*')
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'asr-quartznet-ctc',
+    model_dir = 'asr-quartznet-ctc-adam',
     num_gpus = 3,
     log_step = 1,
     save_checkpoint_step = 5000,

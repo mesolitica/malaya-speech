@@ -15,8 +15,6 @@ def load(path, s3_path, model, name, quantized = False, **kwargs):
     return STT(
         X = g.get_tensor_by_name('import/Placeholder:0'),
         logits = g.get_tensor_by_name('import/logits:0'),
-        greedy = g.get_tensor_by_name('import/greedy:0'),
-        beam = g.get_tensor_by_name('import/beam:0'),
         sess = generate_session(graph = g, **kwargs),
         model = model,
         name = name,
