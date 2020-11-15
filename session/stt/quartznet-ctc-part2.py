@@ -13,6 +13,7 @@ import numpy as np
 import random
 from glob import glob
 import json
+import pickle
 
 with open('malaya-speech-sst-vocab.json') as fopen:
     unique_vocab = json.load(fopen)
@@ -40,16 +41,8 @@ featurizer = malaya_speech.tf_featurization.STTFeaturizer(
 n_mels = featurizer.num_feature_bins
 
 
-noises = glob('../noise-44k/noise/*.wav') + glob('../noise-44k/clean-wav/*.wav')
-basses = glob('HHDS/Sources/**/*bass.wav', recursive = True)
-drums = glob('HHDS/Sources/**/*drums.wav', recursive = True)
-others = glob('HHDS/Sources/**/*other.wav', recursive = True)
-noises = noises + basses + drums + others
-random.shuffle(noises)
-
-
-def read_wav(f):
-    return malaya_speech.load(f, sr = 16000)
+with open('noises.pkl', 'rb') as fopen:
+    noises = pickle.load(fopen)
 
 
 def random_amplitude_threshold(sample, low = 1, high = 2, threshold = 0.4):
@@ -65,7 +58,7 @@ def random_amplitude_threshold(sample, low = 1, high = 2, threshold = 0.4):
 def calc(signal, seed, add_uniform = False):
     random.seed(seed)
 
-    choice = random.randint(0, 9)
+    choice = random.randint(0, 11)
     if choice == 0:
 
         x = augmentation.sox_augment_high(
@@ -114,8 +107,12 @@ def calc(signal, seed, add_uniform = False):
         x = random_amplitude_threshold(
             signal, threshold = random.uniform(0.35, 0.8)
         )
+    if choice == 6:
+        x = augmentation.random_pitch(signal, low = 0.9, high = 1.1)
+    if choice == 7:
+        x = augmentatio.random_stretch(signal, low = 0.7, high = 1.1)
 
-    if choice > 5:
+    if choice > 7:
         x = signal
 
     if choice != 5 and random.gauss(0.5, 0.14) > 0.6:
@@ -135,7 +132,7 @@ def signal_augmentation(wav):
     seed = random.randint(0, 100_000_000)
     wav = calc(wav, seed)
     if random.gauss(0.5, 0.14) > 0.6:
-        n, _ = malaya_speech.load(random.choice(noises), sr = 16000)
+        n = random.choice(noises)
         n = calc(n, seed, True)
         combined = augmentation.add_noise(
             wav, n, factor = random.uniform(0.05, 0.2)
@@ -147,43 +144,29 @@ def signal_augmentation(wav):
 
 def mel_augmentation(features):
 
-    features = mask_augmentation.mask_frequency(features)
+    features = mask_augmentation.mask_frequency(features, width_freq_mask = 16)
     if features.shape[0] > 100:
-        features = mask_augmentation.mask_time(features)
+        features = mask_augmentation.mask_time(features, width_time_mask = 16)
     return features
 
 
 def preprocess_inputs(example):
-    # w = tf.compat.v1.numpy_function(
-    #     signal_augmentation, [example['waveforms']], tf.float32
-    # )
-    # w = tf.reshape(w, (1, -1))
-    # s = featurizer.vectorize(w[0])
+    w = tf.compat.v1.numpy_function(
+        signal_augmentation, [example['waveforms']], tf.float32
+    )
+    w = tf.reshape(w, (1, -1))
+    s = featurizer.vectorize(w[0])
     s = featurizer.vectorize(example['waveforms'])
     s = tf.reshape(s, (-1, n_mels))
     s = tf.compat.v1.numpy_function(mel_augmentation, [s], tf.float32)
     mel_fbanks = tf.reshape(s, (-1, n_mels))
     length = tf.cast(tf.shape(mel_fbanks)[0], tf.int32)
     length = tf.expand_dims(length, 0)
-    # example['waveforms'] = w[0]
+    example['waveforms'] = w[0]
     example['inputs'] = mel_fbanks
     example['inputs_length'] = length
 
     return example
-
-
-# def preprocess_inputs(example):
-#     s = featurizer.vectorize(example['waveforms'])
-#     s = tf.reshape(s, (-1, n_mels))
-#     s = malaya_speech.augmentation.spectrogram.tf_mask_frequency(s, F = 20)
-#     s = malaya_speech.augmentation.spectrogram.tf_mask_time(s, T = 80)
-#     mel_fbanks = tf.reshape(s, (-1, n_mels))
-#     length = tf.cast(tf.shape(mel_fbanks)[0], tf.int32)
-#     length = tf.expand_dims(length, 0)
-#     example['inputs'] = mel_fbanks
-#     example['inputs_length'] = length
-
-#     return example
 
 
 def parse(serialized_example):
@@ -307,7 +290,7 @@ dev_dataset = get_dataset('../speech-bahasa/bahasa-asr/data/bahasa-asr-dev-*')
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'asr-quartznet-ctc-adam',
+    model_dir = 'asr-quartznet-ctc-adam-part2',
     num_gpus = 3,
     log_step = 1,
     save_checkpoint_step = 5000,

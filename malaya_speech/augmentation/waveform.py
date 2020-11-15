@@ -122,7 +122,7 @@ def sox_augment_combine(
     return y_enhanced
 
 
-def random_pitch(sample, low = 0.5, high = 1.0):
+def random_pitch(sample, low = 0.9, high = 1.2):
     y_pitch_speed = sample.copy()
     length_change = np.random.uniform(low = low, high = high)
     speed_fac = 1.0 / length_change
@@ -131,10 +131,7 @@ def random_pitch(sample, low = 0.5, high = 1.0):
         np.arange(0, len(y_pitch_speed)),
         y_pitch_speed,
     )
-    minlen = min(y_pitch_speed.shape[0], tmp.shape[0])
-    y_pitch_speed *= 0
-    y_pitch_speed[:minlen] = tmp[:minlen]
-    return y_pitch_speed
+    return tmp
 
 
 def random_amplitude(sample, low = 3, high = 5):
@@ -153,7 +150,7 @@ def random_amplitude_threshold(sample, low = 3, high = 5, threshold = 0.4):
     return np.clip(y_aug, -1, 1)
 
 
-def random_stretch(sample, low = 0.5, high = 1.3):
+def random_stretch(sample, low = 0.6, high = 1.1):
     input_length = len(sample)
     stretching = sample.copy()
     random_stretch = np.random.uniform(low = low, high = high)
