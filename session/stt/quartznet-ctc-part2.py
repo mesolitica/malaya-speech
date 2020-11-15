@@ -58,64 +58,34 @@ def random_amplitude_threshold(sample, low = 1, high = 2, threshold = 0.4):
 def calc(signal, seed, add_uniform = False):
     random.seed(seed)
 
-    choice = random.randint(0, 11)
+    choice = random.randint(0, 9)
     if choice == 0:
-
-        x = augmentation.sox_augment_high(
-            signal,
-            min_bass_gain = random.randint(10, 30),
-            reverberance = random.randint(0, 30),
-            hf_damping = 10,
-            room_scale = random.randint(0, 30),
-            negate = 1,
+        x = augmentation.lowpass_filter(
+            signal, cutoff = random.randint(200, 600)
         )
     if choice == 1:
-        x = augmentation.sox_augment_high(
-            signal,
-            min_bass_gain = random.randint(10, 40),
-            reverberance = random.randint(0, 30),
-            hf_damping = 10,
-            room_scale = random.randint(0, 30),
-            negate = 0,
+        x = augmentation.highpass_filter(
+            signal, cutoff = random.randint(200, 600)
         )
     if choice == 2:
-        x = augmentation.sox_augment_low(
+        x = augmentation.bandpass_filter(
             signal,
-            min_bass_gain = random.randint(1, 20),
-            reverberance = random.randint(0, 30),
-            hf_damping = 10,
-            room_scale = random.randint(0, 30),
-            negate = random.randint(0, 1),
+            cutoff_low = random.randint(200, 600),
+            cutoff_high = random.randint(200, 600),
         )
     if choice == 3:
-        x = augmentation.sox_augment_combine(
-            signal,
-            min_bass_gain_high = random.randint(10, 40),
-            min_bass_gain_low = random.randint(1, 20),
-            reverberance = random.randint(0, 30),
-            hf_damping = 10,
-            room_scale = random.randint(0, 30),
-        )
-    if choice == 4:
-        x = augmentation.sox_reverb(
-            signal,
-            reverberance = random.randint(1, 20),
-            hf_damping = 10,
-            room_scale = random.randint(10, 30),
-        )
-    if choice == 5:
         x = random_amplitude_threshold(
             signal, threshold = random.uniform(0.35, 0.8)
         )
-    if choice == 6:
+    if choice == 4:
         x = augmentation.random_pitch(signal, low = 0.9, high = 1.1)
-    if choice == 7:
+    if choice == 5:
         x = augmentatio.random_stretch(signal, low = 0.7, high = 1.1)
 
-    if choice > 7:
+    if choice > 5:
         x = signal
 
-    if choice != 5 and random.gauss(0.5, 0.14) > 0.6:
+    if choice != 3 and random.gauss(0.5, 0.14) > 0.6:
         x = random_amplitude_threshold(
             x, low = 1.0, high = 2.0, threshold = random.uniform(0.7, 0.9)
         )

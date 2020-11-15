@@ -221,3 +221,35 @@ def add_band_limited_noise(
     idx = np.where(np.logical_and(freqs >= min_freq, freqs <= max_freq))[0]
     f[idx] = 1
     return sample + fftnoise(f)
+
+
+def running_mean(x, windowSize):
+    cumsum = np.cumsum(np.insert(x, 0, 0))
+    return (cumsum[windowSize:] - cumsum[:-windowSize]) / windowSize
+
+
+def dB_to_linear(x):
+    return np.exp((x) * 2.30258509299404568402 * 0.05)
+
+
+def linear_to_dB(x):
+    return np.log10(x) * 20
+
+
+# https://gist.github.com/piercus/b005ed5fbc70761bde96
+def lowpass_filter(y, sr = 16000, cutoff = 400):
+    freq = cutoff / sr
+    N = int(np.sqrt(0.196196 + freq ** 2) / freq)
+    low = running_mean(y, N)
+    low = np.pad(low, (0, len(y) - len(low)))
+    return low
+
+
+def highpass_filter(y, sr = 16000, cutoff = 400):
+    low = lowpass_filter(y, sr = sr, cutoff = cutoff)
+    return y - low
+
+
+def bandpass_filter(y, sr = 16000, cutoff_low = 400, cutoff_high = 400):
+    y = highpass_filter(y, sr = sr, cutoff = cutoff_high)
+    return lowpass_filter(y, sr = sr, cutoff = cutoff_low)
