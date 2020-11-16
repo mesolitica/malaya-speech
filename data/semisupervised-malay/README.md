@@ -16,4 +16,4 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
 
 3. Run [transcribe.ipynb](transcribe.ipynb) to correct output from googlespeech.
 
-Download [label-semisupervised-malay.tar.gz](label-semisupervised-malay.tar.gz) to get supervised transcripts, **300 / 57895 done**.
+Download [label-semisupervised-malay.tar.gz](label-semisupervised-malay.tar.gz) to get supervised transcripts, **400 / 57895 done**.
