@@ -1,35 +1,51 @@
+import json
+import curses, time
+
+
+def input_char(message):
+    try:
+        win = curses.initscr()
+        win.addstr(0, 0, message)
+        while True:
+            ch = win.getch()
+            if ch in range(32, 127):
+                break
+            time.sleep(0.05)
+    except:
+        raise
+    finally:
+        curses.endwin()
+    return chr(ch)
+
+
+with open('transcript-news.json') as fopen:
+    texts = json.load(fopen)
+
 import queue
 import sys
 import sounddevice as sd
 import soundfile as sf
-import numpy
 import os
-import tempfile
-import json
-
-with open('iium.json') as fopen:
-    texts = json.load(fopen)
-
-print(len(texts))
 
 device_info = sd.query_devices(None, 'input')
 device = None
-samplerate = int(device_info['default_samplerate'])
+samplerate = int(44100)
 channels = 1
-subtype = None
-
+subtype = 'PCM_24'
 
 for no, text in enumerate(texts):
     try:
-        filename = f'streaming/{no}.wav'
+        filename = f'audio/{no}.wav'
         if os.path.isfile(filename):
             continue
-        print(f'say: "{text}"')
-        print(
-            'if too hard, press s + enter to skip, else any button + enter to continue'
+
+        c = input_char(
+            f'say: {text} , press `c` to continue or press any key except `c` to skip.'
         )
-        skip = input().lower()
-        if skip == 's':
+        print(c)
+        if c.lower() == 'q':
+            break
+        if c.lower() != 'c':
             continue
 
         q = queue.Queue()
@@ -54,8 +70,10 @@ for no, text in enumerate(texts):
             ):
                 print('#' * 80)
                 print('press Ctrl+C to stop the recording')
+                time.sleep(0.1)
                 print('say: %s' % (text))
                 print('#' * 80, '\n')
+
                 while True:
                     file.write(q.get())
     except KeyboardInterrupt:
