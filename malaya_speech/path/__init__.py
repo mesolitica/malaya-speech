@@ -283,16 +283,19 @@ PATH_STT_CTC = {
     'quartznet': {
         'model': home + '/stt/quartznet-ctc/model.pb',
         'quantized': home + '/stt/quartznet-ctc/quantized/model.pb',
+        'vocab': '',
         'version': 'v1',
     },
     'mini-jasper': {
         'model': home + '/stt/mini-jasper-ctc/model.pb',
         'quantized': home + '/stt/mini-jasper-ctc/quantized/model.pb',
+        'vocab': '',
         'version': 'v1',
     },
     'jasper': {
         'model': home + '/stt/jasper-ctc/model.pb',
         'quantized': home + '/stt/jasper-ctc/quantized/model.pb',
+        'vocab': '',
         'version': 'v1',
     },
 }
@@ -300,14 +303,17 @@ S3_PATH_STT_CTC = {
     'quartznet': {
         'model': 'v1/stt/quartznet-ctc.pb',
         'quantized': 'v1/stt/quartznet-ctc.pb.quantized',
+        'vocab': '',
     },
     'mini-jasper': {
         'model': 'v1/stt/mini-jasper-ctc.pb',
         'quantized': 'v1/stt/mini-jasper.pb.quantized',
+        'vocab': '',
     },
     'jasper': {
         'model': 'v1/stt/jasper-ctc.pb',
         'quantized': 'v1/stt/jasper.pb.quantized',
+        'vocab': '',
     },
 }
 

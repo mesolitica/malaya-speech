@@ -140,7 +140,7 @@ def deep_transducer(
     model = model.lower()
     if model not in _transducer_availability:
         raise Exception(
-            'model not supported, please check supported models from `malaya_speech.sst.available_transducer()`.'
+            'model not supported, please check supported models from `malaya_speech.stt.available_transducer()`.'
         )
 
 
@@ -169,7 +169,7 @@ def deep_ctc(model: str = 'jasper', quantized: bool = False, **kwargs):
     model = model.lower()
     if model not in _ctc_availability:
         raise Exception(
-            'model not supported, please check supported models from `malaya_speech.sst.available_ctc()`.'
+            'model not supported, please check supported models from `malaya_speech.stt.available_ctc()`.'
         )
 
     return stt.load(

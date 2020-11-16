@@ -55,8 +55,16 @@ def random_amplitude_threshold(sample, low = 1, high = 2, threshold = 0.4):
     return np.clip(y_aug, -1, 1)
 
 
+def downsample(y, sr, down_sr):
+    y_ = malaya_speech.resample(y, sr, down_sr)
+    return malaya_speech.resample(y_, down_sr, sr)
+
+
 def calc(signal, seed, add_uniform = False):
     random.seed(seed)
+
+    if not add_uniform and random.gauss(0.5, 0.14) > 0.7:
+        signal = downsample(signal, 16000, random.randint(8000, 16000))
 
     choice = random.randint(0, 9)
     if choice == 0:
@@ -80,7 +88,7 @@ def calc(signal, seed, add_uniform = False):
     if choice == 4:
         x = augmentation.random_pitch(signal, low = 0.9, high = 1.1)
     if choice == 5:
-        x = augmentatio.random_stretch(signal, low = 0.7, high = 1.1)
+        x = augmentation.random_stretch(signal, low = 0.7, high = 1.1)
 
     if choice > 5:
         x = signal
@@ -116,7 +124,9 @@ def mel_augmentation(features):
 
     features = mask_augmentation.mask_frequency(features, width_freq_mask = 16)
     if features.shape[0] > 100:
-        features = mask_augmentation.mask_time(features, width_time_mask = 16)
+        features = mask_augmentation.mask_time(
+            features, width_time_mask = int(features.shape[0] * 0.05)
+        )
     return features
 
 

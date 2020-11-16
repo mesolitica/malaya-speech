@@ -2,7 +2,11 @@ import tensorflow as tf
 import numpy as np
 from malaya_speech.utils import featurization
 from malaya_speech.model.frame import FRAME
-from malaya_speech.utils.padding import sequence_nd as padding_sequence_nd
+from malaya_speech.utils.padding import (
+    sequence_nd as padding_sequence_nd,
+    sequence_1d,
+)
+from malaya_speech.utils.char import decode as char_decode
 
 
 class SPEAKERNET:
@@ -331,19 +335,28 @@ class UNET_STFT:
 
 
 class STT:
-    def __init__(self, X, logits, sess, model, name):
+    def __init__(
+        self, X, X_len, logits, seq_lens, featurizer, vocab, sess, model, name
+    ):
         self._X = X
-        self._decoder = None
+        self._X_len = X_len
         self._logits = logits
+        self._seq_lens = seq_lens
+        self._featurizer = featurizer
+        self._vocab = vocab
         self._softmax = tf.nn.softmax(logits)
         self._sess = sess
         self.__model__ = model
         self.__name__ = name
+        self._decoder = None
+        self._beam_size = 0
 
-    def _check_decoder(self, decoder):
+    def _check_decoder(self, decoder, beam_size):
         decoder = decoder.lower()
         if decoder not in ['greedy', 'beam']:
             raise ValueError('mode only supports [`greedy`, `beam`]')
+        if beam_size < 1:
+            raise ValueError('beam_size must bigger than 0')
         return decoder
 
     def predict(
@@ -368,9 +381,33 @@ class STT:
         -------
         result: List[str]
         """
-        decoder = self._check_decoder(decoder)
+        decoder = self._check_decoder(decoder, beam_size)
+        padded, lens = sequence_1d(inputs, return_len = True)
+
         if decoder == 'greedy':
             beam_size = 1
+        if beam_size != self._beam_size:
+            self._beam_size = beam_size
+            decoded = tf.nn.ctc_beam_search_decoder(
+                self._logits,
+                self._seq_lens,
+                beam_width = self._beam_size,
+                top_paths = 1,
+                merge_repeated = True,
+            )
+            self._decoder = tf.sparse.to_dense(tf.to_int32(decoded[0][0]))
+
+        decoded = self._sess.run(
+            self._decoder, feed_dict = {self._X: padded, self._X_len: lens}
+        )
+        results = []
+        for i in range(len(decoded)):
+            results.append(
+                char_decode(decoded[i], lookup = self._vocab).replace(
+                    '<PAD>', ''
+                )
+            )
+        return results
 
     def predict_lm(
         self, inputs, lm, decoder: str = 'beam', beam_size: int = 100, **kwargs
@@ -398,14 +435,20 @@ class STT:
         -------
         result: List[str]
         """
-        decoder = self._check_decoder(decoder)
         try:
             from ctc_decoders import ctc_greedy_decoder, ctc_beam_search_decoder
         except:
             raise ModuleNotFoundError(
                 'ctc_decoders not installed. Please install it by compile from https://github.com/usimarit/ctc_decoders and try again.'
             )
+        decoder = self._check_decoder(decoder, beam_size)
         scorer, vocab_list = lm
+        padded, lens = sequence_1d(inputs, return_len = True)
+        logits, seq_lens = self._sess.run(
+            [self._softmax, self._seq_lens],
+            feed_dict = {self._X: padded, self._X_len: lens},
+        )
+        logits = np.transpose(logits, axes = (1, 0, 2))
 
     def __call__(
         self, input, decoder: str = 'greedy', lm: bool = False, **kwargs
