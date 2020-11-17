@@ -143,9 +143,11 @@ def signal_augmentation(wav):
 
 def mel_augmentation(features):
 
-    features = mask_augmentation.mask_frequency(features)
+    features = mask_augmentation.mask_frequency(features, width_freq_mask = 10)
     if features.shape[0] > 100:
-        features = mask_augmentation.mask_time(features)
+        features = mask_augmentation.mask_time(
+            features, width_time_mask = int(features.shape[0] * 0.05)
+        )
     return features
 
 
@@ -166,20 +168,6 @@ def preprocess_inputs(example):
     example['inputs_length'] = length
 
     return example
-
-
-# def preprocess_inputs(example):
-#     s = featurizer.vectorize(example['waveforms'])
-#     s = tf.reshape(s, (-1, n_mels))
-#     s = malaya_speech.augmentation.spectrogram.tf_mask_frequency(s, F = 20)
-#     s = malaya_speech.augmentation.spectrogram.tf_mask_time(s, T = 80)
-#     mel_fbanks = tf.reshape(s, (-1, n_mels))
-#     length = tf.cast(tf.shape(mel_fbanks)[0], tf.int32)
-#     length = tf.expand_dims(length, 0)
-#     example['inputs'] = mel_fbanks
-#     example['inputs_length'] = length
-
-#     return example
 
 
 def parse(serialized_example):

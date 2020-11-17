@@ -41,8 +41,8 @@ featurizer = malaya_speech.tf_featurization.STTFeaturizer(
 n_mels = featurizer.num_feature_bins
 
 
-with open('noises.pkl', 'rb') as fopen:
-    noises = pickle.load(fopen)
+# with open('noises.pkl', 'rb') as fopen:
+#     noises = pickle.load(fopen)
 
 
 def random_amplitude_threshold(sample, low = 1, high = 2, threshold = 0.4):
@@ -60,16 +60,15 @@ def downsample(y, sr, down_sr):
     return malaya_speech.resample(y_, down_sr, sr)
 
 
-def calc(signal, seed, add_uniform = False):
-    random.seed(seed)
+def calc(signal, add_uniform = False):
 
     if not add_uniform and random.gauss(0.5, 0.14) > 0.7:
-        signal = downsample(signal, 16000, random.randint(8000, 16000))
+        signal = downsample(signal, 16000, random.randint(12000, 16000))
 
-    choice = random.randint(0, 9)
+    choice = random.randint(0, 10)
     if choice == 0:
         x = augmentation.lowpass_filter(
-            signal, cutoff = random.randint(200, 600)
+            signal, cutoff = random.randint(3000, 6000)
         )
     if choice == 1:
         x = augmentation.highpass_filter(
@@ -78,7 +77,7 @@ def calc(signal, seed, add_uniform = False):
     if choice == 2:
         x = augmentation.bandpass_filter(
             signal,
-            cutoff_low = random.randint(200, 600),
+            cutoff_low = random.randint(3000, 6000),
             cutoff_high = random.randint(200, 600),
         )
     if choice == 3:
@@ -87,10 +86,8 @@ def calc(signal, seed, add_uniform = False):
         )
     if choice == 4:
         x = augmentation.random_pitch(signal, low = 0.9, high = 1.1)
-    if choice == 5:
-        x = augmentation.random_stretch(signal, low = 0.7, high = 1.1)
 
-    if choice > 5:
+    if choice > 4:
         x = signal
 
     if choice != 3 and random.gauss(0.5, 0.14) > 0.6:
@@ -107,42 +104,32 @@ def calc(signal, seed, add_uniform = False):
 
 
 def signal_augmentation(wav):
-    seed = random.randint(0, 100_000_000)
-    wav = calc(wav, seed)
-    if random.gauss(0.5, 0.14) > 0.6:
-        n = random.choice(noises)
-        n = calc(n, seed, True)
-        combined = augmentation.add_noise(
-            wav, n, factor = random.uniform(0.05, 0.2)
-        )
-    else:
-        combined = wav
-    return combined.astype('float32')
+    return calc(wav).astype('float32')
 
 
 def mel_augmentation(features):
 
-    features = mask_augmentation.mask_frequency(features, width_freq_mask = 16)
+    features = mask_augmentation.mask_frequency(features, width_freq_mask = 10)
     if features.shape[0] > 100:
         features = mask_augmentation.mask_time(
-            features, width_time_mask = int(features.shape[0] * 0.05)
+            features, width_time_mask = int(features.shape[0] * 0.03)
         )
     return features
 
 
 def preprocess_inputs(example):
-    w = tf.compat.v1.numpy_function(
-        signal_augmentation, [example['waveforms']], tf.float32
-    )
-    w = tf.reshape(w, (1, -1))
-    s = featurizer.vectorize(w[0])
+    # w = tf.compat.v1.numpy_function(
+    #     signal_augmentation, [example['waveforms']], tf.float32
+    # )
+    # w = tf.reshape(w, (1, -1))
+    # s = featurizer.vectorize(w[0])
     s = featurizer.vectorize(example['waveforms'])
     s = tf.reshape(s, (-1, n_mels))
     s = tf.compat.v1.numpy_function(mel_augmentation, [s], tf.float32)
     mel_fbanks = tf.reshape(s, (-1, n_mels))
     length = tf.cast(tf.shape(mel_fbanks)[0], tf.int32)
     length = tf.expand_dims(length, 0)
-    example['waveforms'] = w[0]
+    # example['waveforms'] = w[0]
     example['inputs'] = mel_fbanks
     example['inputs_length'] = length
 
