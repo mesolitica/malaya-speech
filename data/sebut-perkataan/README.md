@@ -2,6 +2,8 @@
 
 1. You can download dataset from here, https://f000.backblazeb2.com/file/malay-dataset/speech-bahasa.zip
 
+**Recorded using low-end tech microphones**.
+
 ## Voices
 
 1. `sebut-perkataan-man` voice by [Husein Zolkepli](https://www.linkedin.com/in/husein-zolkepli/)

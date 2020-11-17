@@ -4,7 +4,7 @@
 
 2. Run [record.py](record.py) to record your voice, example output, `saya suka makan ayam.wav`.
 
-You can download dataset from here, https://f000.backblazeb2.com/file/malay-dataset/streaming.zip, approximate ~3.4 hours.
+You can download dataset from here, https://f000.backblazeb2.com/file/malay-dataset/streaming.zip, approximate ~3.4 hours. **Recorded using low-end tech microphones**.
 
 ## Voices
 
