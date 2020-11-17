@@ -1,0 +1,118 @@
+.. role:: raw-html-m2r(raw)
+   :format: html
+
+
+Speech Dataset
+==============
+
+How we gather dataset?
+----------------------
+
+
+#. For semisupervised transcript, we use Google Speech to Text, after verified / corrected by human.
+#. We recorded using our own microphones.
+
+License
+-------
+
+Malay-Speech dataset is available to download for research purposes under a Creative Commons Attribution 4.0 International License.
+
+:raw-html-m2r:`<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a>`\ :raw-html-m2r:`<br />`\ This work is licensed under a :raw-html-m2r:`<a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>`.
+
+Dataset
+-------
+
+`Ambient <https://github.com/huseinzol05/malaya-speech/tree/master/data/ambient>`_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Simple ambients gathered from Youtube.
+
+`Audiobook <https://github.com/huseinzol05/malaya-speech/tree/master/data/audiobook>`_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Gather Youtube urls for indonesian, english and low quality english audiobooks only.
+
+`language <https://github.com/huseinzol05/malaya-speech/tree/master/data/language>`_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Gather youtube urls for hyperlocal language detection from speech {malay, indonesian, manglish, english, mandarin}.
+
+Check hyperlocal language detection models at https://malaya-speech.readthedocs.io/en/latest/load-language-detection.html
+
+`news <https://github.com/huseinzol05/malaya-speech/tree/master/data/news>`_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Read random sentences from bahasa news.
+
+
+* voice by `Husein Zolkepli <https://www.linkedin.com/in/husein-zolkepli/>`_.
+* Heavily speak in Selangor slang.
+* Recorded using mid-end tech microphone, suitable for text to speech.
+* 44100 sample rate, random 7 - 11 words window.
+* Still on going recording.
+
+`noise <https://github.com/huseinzol05/malaya-speech/tree/master/data/noise>`_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Simple noises gathered from Youtube.
+
+`podcast <https://github.com/huseinzol05/malaya-speech/tree/master/data/podcast>`_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Gathered Jeorogan, malay, malaysian, the thirsty sisters, richroll podcasts.
+
+`Sebut perkataan <https://github.com/huseinzol05/malaya-speech/tree/master/data/sebut-perkataan>`_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Read random words from malay dictionary started with 'tolong sebut :raw-html-m2r:`<word>`\ '.
+
+
+* ``sebut-perkataan-man`` voice by `Husein Zolkepli <https://www.linkedin.com/in/husein-zolkepli/>`_
+* ``tolong-sebut`` voice by `Khalil Nooh <https://www.linkedin.com/in/khalilnooh/>`_
+* ``sebut-perkataan-woman`` voice by `Mas Aisyah Ahmad <https://www.linkedin.com/in/mas-aisyah-ahmad-b46508a9/>`_
+* Recorded using low-end tech microphones.
+
+`Semisupervised malay <https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-malay>`_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Semisupervised malay youtube videos using Google Speech to Text, after that corrected by human.
+
+
+* 16000 sample rate.
+* 600 over 57895 done.
+
+`Semisupervised manglish <https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-manglish>`_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Semisupervised manglish youtube videos using Google Speech to Text.
+
+`IIUM <https://github.com/huseinzol05/malaya-speech/tree/master/data/iium>`_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Read random sentences from IIUM Confession.
+
+
+* voice by `Husein Zolkepli <https://www.linkedin.com/in/husein-zolkepli/>`_ and `Shafiqah Idayu <https://www.facebook.com/shafiqah.ayu>`_.
+* Heavily speak in Selangor slang.
+* Recorded using low-end tech microphone.
+* 44100 sample rate, split by end of sentences.
+* approximate 2.4 hours.
+* Still on going recording.
+
+`Wikipedia <https://github.com/huseinzol05/malaya-speech/tree/master/data/wikipedia>`_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Read random sentences from Bahasa Wikipedia.
+
+
+* voice by `Husein Zolkepli <https://www.linkedin.com/in/husein-zolkepli/>`_.
+* Heavily speak in Selangor slang.
+* Recorded using low-end tech microphone.
+* 44100 sample rate, 4 words window.
+* approximate 3.4 hours.
+* Still on going recording.
+
+Contribution
+------------
+
+Contact us at husein.zol05@gmail.com or husein@mesolitica.com if want to contribute to speech bahasa dataset.

@@ -19,6 +19,7 @@ Contents:
    load-cache
    gpu-environment
    Api
+   Dataset
    Contributing
 
 .. toctree::

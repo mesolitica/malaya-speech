@@ -1,5 +1,7 @@
 #!/bin/bash
 
 cp ../README.rst .
+cp ../data/README.md Dataset.md
+m2r Dataset.md --overwrite
 rm -rf _build/html && make html
 find . -name "*Magic*"  -exec rm  -rf {} \;

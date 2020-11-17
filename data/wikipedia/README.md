@@ -4,8 +4,12 @@
 
 2. Run [record.py](record.py) to record your voice, example output, `saya suka makan ayam.wav`.
 
-You can download dataset from here, https://f000.backblazeb2.com/file/malay-dataset/streaming.zip, approximate ~3.4 hours. **Recorded using low-end tech microphones**.
+## Download
 
-## Voices
+1. https://f000.backblazeb2.com/file/malay-dataset/streaming.zip
 
-1. voice by [Husein Zolkepli](https://www.linkedin.com/in/husein-zolkepli/)
+  - voice by [Husein Zolkepli](https://www.linkedin.com/in/husein-zolkepli/).
+  - Heavily speak in Selangor slang.
+  - Recorded using low-end tech microphone.
+  - 44100 sample rate, 4 words window.
+  - approximate 3.4 hours.
