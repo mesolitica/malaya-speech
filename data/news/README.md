@@ -9,6 +9,6 @@
 1. https://f000.backblazeb2.com/file/malaya-speech-model/data/news-speech.zip
 
   - voice by [Husein Zolkepli](https://www.linkedin.com/in/husein-zolkepli/).
-  - Heavily speak in Selangor slang.
+  - Heavily speaking in Selangor dialect.
   - Recorded using mid-end tech microphone.
   - 44100 sample rate, random 7 - 11 words window.

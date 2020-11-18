@@ -9,7 +9,7 @@
 1. https://f000.backblazeb2.com/file/malay-dataset/streaming.zip
 
   - voice by [Husein Zolkepli](https://www.linkedin.com/in/husein-zolkepli/).
-  - Heavily speak in Selangor slang.
+  - Heavily speaking in Selangor dialect.
   - Recorded using low-end tech microphone.
   - 44100 sample rate, 4 words window.
   - approximate 3.4 hours.

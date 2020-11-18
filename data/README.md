@@ -2,7 +2,7 @@
 
 ## How we gather dataset?
 
-1. For semisupervised transcript, we use Google Speech to Text, after verified / corrected by human.
+1. For semisupervised transcript, we use Google Speech to Text, after that verified / corrected by human.
 2. We recorded using our own microphones.
 
 ## License
@@ -32,7 +32,7 @@ Check hyperlocal language detection models at https://malaya-speech.readthedocs.
 Read random sentences from bahasa news.
 
 - voice by [Husein Zolkepli](https://www.linkedin.com/in/husein-zolkepli/).
-- Heavily speak in Selangor slang.
+- Heavily speaking in Selangor dialect.
 - Recorded using mid-end tech microphone, suitable for text to speech.
 - 44100 sample rate, random 7 - 11 words window.
 - Still on going recording.
@@ -59,18 +59,22 @@ Read random words from malay dictionary started with 'tolong sebut <word>'.
 Semisupervised malay youtube videos using Google Speech to Text, after that corrected by human.
 
 - 16000 sample rate.
+- random length between 2 - 20 seconds, windowed using google VAD.
 - 600 over 57895 done.
 
 ### [Semisupervised manglish](https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-manglish)
 
 Semisupervised manglish youtube videos using Google Speech to Text.
 
+- 16000 sample rate.
+- random length between 2 - 20 seconds, windowed using google VAD.
+
 ### [IIUM](https://github.com/huseinzol05/malaya-speech/tree/master/data/iium)
 
 Read random sentences from IIUM Confession.
 
 - voice by [Husein Zolkepli](https://www.linkedin.com/in/husein-zolkepli/) and [Shafiqah Idayu](https://www.facebook.com/shafiqah.ayu).
-- Heavily speak in Selangor slang.
+- Heavily speaking in Selangor dialect.
 - Recorded using low-end tech microphone.
 - 44100 sample rate, split by end of sentences.
 - approximate 2.4 hours.
@@ -81,7 +85,7 @@ Read random sentences from IIUM Confession.
 Read random sentences from Bahasa Wikipedia.
 
 - voice by [Husein Zolkepli](https://www.linkedin.com/in/husein-zolkepli/).
-- Heavily speak in Selangor slang.
+- Heavily speaking in Selangor dialect.
 - Recorded using low-end tech microphone.
 - 44100 sample rate, 4 words window.
 - approximate 3.4 hours.

@@ -9,7 +9,7 @@ How we gather dataset?
 ----------------------
 
 
-#. For semisupervised transcript, we use Google Speech to Text, after verified / corrected by human.
+#. For semisupervised transcript, we use Google Speech to Text, after that verified / corrected by human.
 #. We recorded using our own microphones.
 
 License
@@ -46,7 +46,7 @@ Read random sentences from bahasa news.
 
 
 * voice by `Husein Zolkepli <https://www.linkedin.com/in/husein-zolkepli/>`_.
-* Heavily speak in Selangor slang.
+* Heavily speaking in Selangor dialect.
 * Recorded using mid-end tech microphone, suitable for text to speech.
 * 44100 sample rate, random 7 - 11 words window.
 * Still on going recording.
@@ -79,12 +79,17 @@ Semisupervised malay youtube videos using Google Speech to Text, after that corr
 
 
 * 16000 sample rate.
+* random length between 2 - 20 seconds, windowed using google VAD.
 * 600 over 57895 done.
 
 `Semisupervised manglish <https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-manglish>`_
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Semisupervised manglish youtube videos using Google Speech to Text.
+
+
+* 16000 sample rate.
+* random length between 2 - 20 seconds, windowed using google VAD.
 
 `IIUM <https://github.com/huseinzol05/malaya-speech/tree/master/data/iium>`_
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -93,7 +98,7 @@ Read random sentences from IIUM Confession.
 
 
 * voice by `Husein Zolkepli <https://www.linkedin.com/in/husein-zolkepli/>`_ and `Shafiqah Idayu <https://www.facebook.com/shafiqah.ayu>`_.
-* Heavily speak in Selangor slang.
+* Heavily speaking in Selangor dialect.
 * Recorded using low-end tech microphone.
 * 44100 sample rate, split by end of sentences.
 * approximate 2.4 hours.
@@ -106,7 +111,7 @@ Read random sentences from Bahasa Wikipedia.
 
 
 * voice by `Husein Zolkepli <https://www.linkedin.com/in/husein-zolkepli/>`_.
-* Heavily speak in Selangor slang.
+* Heavily speaking in Selangor dialect.
 * Recorded using low-end tech microphone.
 * 44100 sample rate, 4 words window.
 * approximate 3.4 hours.
