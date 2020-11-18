@@ -130,7 +130,7 @@ decoders_module = [
 ]
 
 setup(
-    name = 'ctc_decoders',
+    name = 'ctc-decoders',
     version = '1.0',
     description = """CTC decoders""",
     ext_modules = decoders_module,
