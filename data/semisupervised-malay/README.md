@@ -22,4 +22,4 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
 
   - 16000 sample rate
   - random length between 2 - 20 seconds, windowed using google VAD.
-  - 600 over 57895 done.
+  - 700 over 57895 done.

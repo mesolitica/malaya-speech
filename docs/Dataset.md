@@ -35,6 +35,7 @@ Read random sentences from bahasa news.
 - Heavily speaking in Selangor dialect.
 - Recorded using mid-end tech microphone, suitable for text to speech.
 - 44100 sample rate, random 7 - 11 words window.
+- approximate 1.4 hours.
 - Still on going recording.
 
 ### [noise](https://github.com/huseinzol05/malaya-speech/tree/master/data/noise)
@@ -60,7 +61,7 @@ Semisupervised malay youtube videos using Google Speech to Text, after that corr
 
 - 16000 sample rate.
 - random length between 2 - 20 seconds, windowed using google VAD.
-- 600 over 57895 done.
+- 700 over 57895 done.
 
 ### [Semisupervised manglish](https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-manglish)
 
