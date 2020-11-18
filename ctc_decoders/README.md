@@ -24,6 +24,8 @@ python3 setup.py install
 
 See [example/decode.py](example/decode.py) for usage.
 
+## License
+
 ```
 Copyright 2019 Baidu, Inc.
 Copyright 2019 NVIDIA Corporation
