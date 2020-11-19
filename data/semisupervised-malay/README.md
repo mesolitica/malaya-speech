@@ -20,6 +20,6 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
 
 1. [label-semisupervised-malay.tar.gz](label-semisupervised-malay.tar.gz)
 
-  - 16000 sample rate
+  - 16000 sample rate.
   - random length between 2 - 20 seconds, windowed using google VAD.
-  - 700 over 57895 done.
+  - 700 over 57895 done, approximate 1.14 hours.

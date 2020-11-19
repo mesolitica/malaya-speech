@@ -61,7 +61,7 @@ Semisupervised malay youtube videos using Google Speech to Text, after that corr
 
 - 16000 sample rate.
 - random length between 2 - 20 seconds, windowed using google VAD.
-- 700 over 57895 done.
+- 700 over 57895 done, approximate 1.14 hours.
 
 ### [Semisupervised manglish](https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-manglish)
 
