@@ -34,6 +34,7 @@ Contents:
    :caption: ASR Module
 
    ctc-language-model
+   load-stt-ctc-model
    convert-asr-to-tflite
 
 .. toctree::

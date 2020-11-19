@@ -1,7 +1,7 @@
 import os
 import warnings
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 warnings.filterwarnings('ignore')
 
 import tensorflow as tf
@@ -273,6 +273,7 @@ def model_fn(features, labels, mode, params):
     model = denoiser.Model(
         combined,
         y = y,
+        depth = 6,
         logging = True,
         normalize = True,
         stride = 4,
@@ -346,7 +347,7 @@ train_hooks = [
 ]
 train_dataset = get_dataset()
 
-save_directory = 'speech-enhancement-denoiser'
+save_directory = 'speech-enhancement-denoiser-6'
 
 train.run_training(
     train_fn = train_dataset,

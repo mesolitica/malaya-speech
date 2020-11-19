@@ -21,19 +21,28 @@ def input_char(message):
 with open('transcript-news.json') as fopen:
     texts = json.load(fopen)
 
+try:
+    with open('rejected.json') as fopen:
+        rejected = json.load(fopen)
+
+except:
+    rejected = {}
+
 import queue
 import sys
 import sounddevice as sd
 import soundfile as sf
 import os
 
-device_info = sd.query_devices(None, 'input')
+device_info = sd.query_devices('LCS USB Audio')
 device = None
 samplerate = int(44100)
 channels = 1
 subtype = 'PCM_24'
 
 for no, text in enumerate(texts):
+    if str(no) in rejected:
+        continue
     try:
         filename = f'audio/{no}.wav'
         if os.path.isfile(filename):
@@ -46,6 +55,7 @@ for no, text in enumerate(texts):
         if c.lower() == 'q':
             break
         if c.lower() != 'c':
+            rejected[str(no)] = True
             continue
 
         q = queue.Queue()
@@ -85,3 +95,7 @@ for no, text in enumerate(texts):
     except Exception as e:
         print(e)
         pass
+
+
+with open('rejected.json', 'w') as fopen:
+    json.dump(rejected, fopen)

@@ -35,7 +35,7 @@ Read random sentences from bahasa news.
 - Heavily speaking in Selangor dialect.
 - Recorded using mid-end tech microphone, suitable for text to speech.
 - 44100 sample rate, random 7 - 11 words window.
-- approximate 1.4 hours.
+- approximate 1.86 hours.
 - Still on going recording.
 
 ### [noise](https://github.com/huseinzol05/malaya-speech/tree/master/data/noise)

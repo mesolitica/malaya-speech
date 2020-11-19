@@ -12,4 +12,4 @@
   - Heavily speaking in Selangor dialect.
   - Recorded using mid-end tech microphone.
   - 44100 sample rate, random 7 - 11 words window.
-  - approximate 1.4 hours.
+  - approximate 1.86 hours.
