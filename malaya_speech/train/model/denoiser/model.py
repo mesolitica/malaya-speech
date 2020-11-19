@@ -159,7 +159,7 @@ class Model:
 
         self.logits = x
         self.logits = tf.reshape(self.logits, (-1, self.chout))
-        if y:
+        if y is not None:
             self.logits = self.logits[: tf.shape(y)[0]]
         else:
             self.logits = self.logits[: tf.shape(inputs)[0]]
