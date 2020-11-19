@@ -388,18 +388,22 @@ class STT:
             beam_size = 1
         if beam_size != self._beam_size:
             self._beam_size = beam_size
-            decoded = tf.nn.ctc_beam_search_decoder(
+            self._decoded = tf.nn.ctc_beam_search_decoder(
                 self._logits,
                 self._seq_lens,
                 beam_width = self._beam_size,
                 top_paths = 1,
                 merge_repeated = True,
-            )
-            self._decoder = tf.sparse.to_dense(tf.to_int32(decoded[0][0]))
+                **kwargs
+            )[0][0]
 
-        decoded = self._sess.run(
-            self._decoder, feed_dict = {self._X: padded, self._X_len: lens}
+        r = self._sess.run(
+            self._decoded, feed_dict = {self._X: padded, self._X_len: lens}
         )
+        decoded = np.zeros(r.dense_shape, dtype = np.int32)
+        for i in range(r.values.shape[0]):
+            decoded[r.indices[i][0], r.indices[i][1]] = r.values[i]
+
         results = []
         for i in range(len(decoded)):
             results.append(
@@ -409,9 +413,7 @@ class STT:
             )
         return results
 
-    def predict_lm(
-        self, inputs, lm, decoder: str = 'beam', beam_size: int = 100, **kwargs
-    ):
+    def predict_lm(self, inputs, lm, beam_size: int = 100, **kwargs):
         """
         Transcribe inputs using Beam Search + LM, will return list of strings.
         This method will not able to utilise batch decoding, instead will do loop to decode for each elements.
@@ -420,13 +422,8 @@ class STT:
         ----------
         input: List[np.array]
             List[np.array] or List[malaya_speech.model.frame.FRAME].
-        lm: Tuple[ctc_decoders.Scorer, List[str]]
+        lm: ctc_decoders.Scorer
             Returned from `malaya_speech.stt.language_model()`.
-        decoder: str, optional (default='beam')
-            decoder mode, allowed values:
-
-            * ``'greedy'`` - greedy decoder.
-            * ``'beam'`` - beam decoder.
         beam_size: int, optional (default=100)
             beam size for beam decoder.
         
@@ -436,19 +433,28 @@ class STT:
         result: List[str]
         """
         try:
-            from ctc_decoders import ctc_greedy_decoder, ctc_beam_search_decoder
+            from ctc_decoders import ctc_beam_search_decoder
         except:
             raise ModuleNotFoundError(
-                'ctc_decoders not installed. Please install it by compile from https://github.com/usimarit/ctc_decoders and try again.'
+                'ctc_decoders not installed. Please install it by `pip install ctc-decoders` and try again.'
             )
-        decoder = self._check_decoder(decoder, beam_size)
-        scorer, vocab_list = lm
         padded, lens = sequence_1d(inputs, return_len = True)
         logits, seq_lens = self._sess.run(
             [self._softmax, self._seq_lens],
             feed_dict = {self._X: padded, self._X_len: lens},
         )
         logits = np.transpose(logits, axes = (1, 0, 2))
+        results = []
+        for i in range(len(logits)):
+            d = ctc_beam_search_decoder(
+                logits[i][: seq_lens[i]],
+                self._vocab,
+                beam_size,
+                ext_scoring_func = lm,
+                **kwargs
+            )
+            results.append(d[0][1])
+        return results
 
     def __call__(
         self, input, decoder: str = 'greedy', lm: bool = False, **kwargs

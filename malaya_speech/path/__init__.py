@@ -257,12 +257,22 @@ S3_PATH_SPEECH_ENHANCEMENT = {
 PATH_LM = {
     'malaya-speech': {
         'model': home + '/lm/malaya-speech/model.trie.klm',
-        'vocab': home + '/vocab/malaya-speech/vocab.json',
+        'vocab': home + '/lm/vocab.json',
+        'version': 'v1',
+    },
+    'malaya-speech-wikipedia': {
+        'model': home + '/lm/malaya-speech-wikipedia/model.trie.klm',
+        'vocab': home + '/lm/vocab.json',
         'version': 'v1',
     },
     'local': {
         'model': home + '/lm/local/model.trie.klm',
-        'vocab': home + '/vocab/local/vocab.json',
+        'vocab': home + '/lm/vocab.json',
+        'version': 'v1',
+    },
+    'wikipedia': {
+        'model': home + '/lm/wikipedia/model.trie.klm',
+        'vocab': home + '/lm/vocab.json',
         'version': 'v1',
     },
 }
@@ -270,12 +280,20 @@ PATH_LM = {
 S3_PATH_LM = {
     'malaya-speech': {
         'model': 'v1/lm/malaya-speech.trie.klm',
-        'vocab': 'v1/vocab/malaya-speech.json',
+        'vocab': 'v1/vocab/malaya-speech-sst-vocab.json',
+    },
+    'malaya-speech-wikipedia': {
+        'model': 'v1/lm/malaya-speech-wiki.trie.klm',
+        'vocab': 'v1/vocab/malaya-speech-sst-vocab.json',
     },
     'local': {
         'model': 'v1/lm/local.trie.klm',
-        'vocab': 'v1/vocab/local.json',
+        'vocab': 'v1/vocab/malaya-speech-sst-vocab.json',
         'version': 'v1',
+    },
+    'wikipedia': {
+        'model': 'v1/lm/wikipedia.trie.klm',
+        'vocab': 'v1/vocab/malaya-speech-sst-vocab.json',
     },
 }
 
@@ -283,19 +301,19 @@ PATH_STT_CTC = {
     'quartznet': {
         'model': home + '/stt/quartznet-ctc/model.pb',
         'quantized': home + '/stt/quartznet-ctc/quantized/model.pb',
-        'vocab': '',
+        'vocab': home + '/stt/vocab/ctc/vocab.json',
         'version': 'v1',
     },
     'mini-jasper': {
         'model': home + '/stt/mini-jasper-ctc/model.pb',
         'quantized': home + '/stt/mini-jasper-ctc/quantized/model.pb',
-        'vocab': '',
+        'vocab': home + '/stt/vocab/ctc/vocab.json',
         'version': 'v1',
     },
     'jasper': {
         'model': home + '/stt/jasper-ctc/model.pb',
         'quantized': home + '/stt/jasper-ctc/quantized/model.pb',
-        'vocab': '',
+        'vocab': home + '/stt/vocab/ctc/vocab.json',
         'version': 'v1',
     },
 }
@@ -303,17 +321,17 @@ S3_PATH_STT_CTC = {
     'quartznet': {
         'model': 'v1/stt/quartznet-ctc.pb',
         'quantized': 'v1/stt/quartznet-ctc.pb.quantized',
-        'vocab': '',
+        'vocab': 'v1/vocab/malaya-speech-sst-vocab.json',
     },
     'mini-jasper': {
         'model': 'v1/stt/mini-jasper-ctc.pb',
         'quantized': 'v1/stt/mini-jasper.pb.quantized',
-        'vocab': '',
+        'vocab': 'v1/vocab/malaya-speech-sst-vocab.json',
     },
     'jasper': {
         'model': 'v1/stt/jasper-ctc.pb',
         'quantized': 'v1/stt/jasper.pb.quantized',
-        'vocab': '',
+        'vocab': 'v1/vocab/malaya-speech-sst-vocab.json',
     },
 }
 

@@ -24,12 +24,32 @@ kenlm/build/bin/lmplz --text malaya-speech-transcript.txt --arpa out.arpa -o 3 -
 kenlm/build/bin/build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm
 ```
 
-2. local language,
+2. Malaya-speech transcript + Random sample malay wikipedia,
+
+Download and prepare dataset, [prepare-wikipedia.ipynb](prepare-wikipedia.ipynb).
+
+```
+wget https://f000.backblazeb2.com/file/malaya-speech-model/v1/vocab/malaya-speech-wiki.txt
+kenlm/build/bin/lmplz --text malaya-speech-wiki.txt --arpa local.arpa -o 5 --prune 0 1 1 1 1
+kenlm/build/bin/build_binary -q 8 -b 7 -a 256 trie local.arpa local.trie.klm
+```
+
+3. local language,
 
 Download and prepare dataset, [prepare-local-lm.ipynb](prepare-local-lm.ipynb).
 
 ```bash
 wget https://f000.backblazeb2.com/file/malaya-speech-model/v1/vocab/cleaned-local.txt
 kenlm/build/bin/lmplz --text cleaned-local.txt --arpa local.arpa -o 5 --prune 0 1 1 1 1
+kenlm/build/bin/build_binary -q 8 -b 7 -a 256 trie local.arpa local.trie.klm
+```
+
+4. malay wikipedia,
+
+Download and prepare dataset, [prepare-wikipedia.ipynb](prepare-wikipedia.ipynb).
+
+```
+wget https://f000.backblazeb2.com/file/malaya-speech-model/v1/vocab/wiki.txt
+kenlm/build/bin/lmplz --text wiki.txt --arpa local.arpa -o 5 --prune 0 1 1 1 1
 kenlm/build/bin/build_binary -q 8 -b 7 -a 256 trie local.arpa local.trie.klm
 ```
