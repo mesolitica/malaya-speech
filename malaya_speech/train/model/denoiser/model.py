@@ -15,6 +15,7 @@ class Model:
     def __init__(
         self,
         inputs,
+        y = None,
         chin = 1,
         chout = 1,
         hidden = 48,
@@ -158,7 +159,10 @@ class Model:
 
         self.logits = x
         self.logits = tf.reshape(self.logits, (-1, self.chout))
-        self.logits = self.logits[: tf.shape(inputs)[0]]
+        if y:
+            self.logits = self.logits[: tf.shape(y)[0]]
+        else:
+            self.logits = self.logits[: tf.shape(inputs)[0]]
         self.logits = self.std * self.logits
 
     def valid_length(self, length):
