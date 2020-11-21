@@ -48,6 +48,8 @@ class Model:
         output_name = 'output',
         params = {},
         output_mask_logit = False,
+        dropout = 0.5,
+        training = True,
     ):
         conv_n_filters = params.get(
             'conv_n_filters', [66, 132, 264, 528, 1056, 2112]
@@ -90,21 +92,21 @@ class Model:
         )[:, :, 0]
         up1 = deconv_activation_layer(up1)
         batch7 = BatchNormalization(axis = -1)(up1)
-        drop1 = Dropout(0.5)(batch7)
+        drop1 = Dropout(dropout)(batch7, training = training)
         merge1 = Concatenate(axis = -1)([conv5, drop1])
         up2 = conv2d_transpose_factory(conv_n_filters[3], (5, 1))(
             (tf.expand_dims(merge1, axis = 2))
         )[:, :, 0]
         up2 = deconv_activation_layer(up2)
         batch8 = BatchNormalization(axis = -1)(up2)
-        drop2 = Dropout(0.5)(batch8)
+        drop2 = Dropout(dropout)(batch8, training = training)
         merge2 = Concatenate(axis = -1)([conv4, drop2])
         up3 = conv2d_transpose_factory(conv_n_filters[2], (5, 1))(
             (tf.expand_dims(merge2, axis = 2))
         )[:, :, 0]
         up3 = deconv_activation_layer(up3)
         batch9 = BatchNormalization(axis = -1)(up3)
-        drop3 = Dropout(0.5)(batch9)
+        drop3 = Dropout(dropout)(batch9, training = training)
         merge3 = Concatenate(axis = -1)([conv3, drop3])
         up4 = conv2d_transpose_factory(conv_n_filters[1], (5, 1))(
             (tf.expand_dims(merge3, axis = 2))

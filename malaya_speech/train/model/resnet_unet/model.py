@@ -52,6 +52,8 @@ class Model:
         num_initial_filters = 16,
         output_mask_logit = False,
         logging = False,
+        dropout = 0.5,
+        training = True,
     ):
         conv_activation_layer = _get_conv_activation_layer({})
         deconv_activation_layer = _get_deconv_activation_layer({})
@@ -112,7 +114,9 @@ class Model:
             current_layer = deconv_activation_layer(current_layer)
             current_layer = BatchNormalization(axis = -1)(current_layer)
             if i < 3:
-                current_layer = Dropout(0.5)(current_layer)
+                current_layer = Dropout(dropout)(
+                    current_layer, training = training
+                )
             current_layer = Concatenate(axis = -1)(
                 [enc_outputs[-i - 1], current_layer]
             )
