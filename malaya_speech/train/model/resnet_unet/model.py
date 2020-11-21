@@ -81,10 +81,10 @@ class Model:
             conv1 = conv2d_factory(filter_size, (5, 5), strides = (1, 1))(
                 input_tensor
             )
-            batch1 = BatchNormalization(axis = -1)(conv1)
+            batch1 = BatchNormalization(axis = -1)(conv1, training = training)
             rel1 = conv_activation_layer(batch1)
             conv2 = conv2d_factory(filter_size, (5, 5), strides = (1, 1))(rel1)
-            batch2 = BatchNormalization(axis = -1)(conv2)
+            batch2 = BatchNormalization(axis = -1)(conv2, training = training)
             resconnection = Add()([res, batch2])
             rel2 = conv_activation_layer(resconnection)
             return MaxPooling2D(padding = 'same')(rel2)
@@ -112,7 +112,9 @@ class Model:
                 num_initial_filters * (2 ** (num_layers - i - 2)), (5, 5)
             )((current_layer))
             current_layer = deconv_activation_layer(current_layer)
-            current_layer = BatchNormalization(axis = -1)(current_layer)
+            current_layer = BatchNormalization(axis = -1)(
+                current_layer, training = training
+            )
             if i < 3:
                 current_layer = Dropout(dropout)(
                     current_layer, training = training
@@ -127,7 +129,9 @@ class Model:
             (current_layer)
         )
         current_layer = deconv_activation_layer(current_layer)
-        current_layer = BatchNormalization(axis = -1)(current_layer)
+        current_layer = BatchNormalization(axis = -1)(
+            current_layer, training = training
+        )
 
         if not output_mask_logit:
             last = Conv2D(
