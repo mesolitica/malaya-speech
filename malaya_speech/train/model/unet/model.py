@@ -45,6 +45,7 @@ class Model:
     def __init__(
         self,
         input_tensor,
+        cout = 1,
         output_name = 'output',
         params = {},
         output_mask_logit = False,
@@ -113,7 +114,7 @@ class Model:
         batch12 = BatchNormalization(axis = -1)(up6)
         if not output_mask_logit:
             up7 = Conv2D(
-                1,
+                cout,
                 (4, 4),
                 dilation_rate = (2, 2),
                 activation = 'sigmoid',
@@ -124,7 +125,7 @@ class Model:
             self.logits = output
         else:
             self.logits = Conv2D(
-                1,
+                cout,
                 (4, 4),
                 dilation_rate = (2, 2),
                 padding = 'same',

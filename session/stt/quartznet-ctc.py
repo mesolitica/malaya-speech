@@ -143,10 +143,10 @@ def signal_augmentation(wav):
 
 def mel_augmentation(features):
 
-    features = mask_augmentation.mask_frequency(features, width_freq_mask = 10)
-    if features.shape[0] > 100:
+    features = mask_augmentation.mask_frequency(features, width_freq_mask = 14)
+    if features.shape[0] > 50:
         features = mask_augmentation.mask_time(
-            features, width_time_mask = int(features.shape[0] * 0.05)
+            features, width_time_mask = int(features.shape[0] * 0.1)
         )
     return features
 
@@ -247,6 +247,8 @@ def model_fn(features, labels, mode, params):
 
     tf.identity(loss, 'train_loss')
     tf.identity(accuracy, name = 'train_accuracy')
+
+    tf.summary.scalar('train_accuracy', accuracy)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
         train_op = train.optimizer.optimize_loss(
