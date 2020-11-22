@@ -47,6 +47,7 @@ class Model:
     def __init__(
         self,
         input_tensor,
+        cout = 1,
         num_layers = 6,
         num_initial_filters = 66,
         output_mask_logit = False,
@@ -134,7 +135,7 @@ class Model:
 
         if not output_mask_logit:
             last = Conv1D(
-                1,
+                cout,
                 (4),
                 dilation_rate = (2),
                 activation = None,
@@ -146,7 +147,7 @@ class Model:
         else:
 
             self.logits = Conv1D(
-                1,
+                cout,
                 (4),
                 dilation_rate = (2),
                 padding = 'same',

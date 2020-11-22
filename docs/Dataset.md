@@ -35,7 +35,7 @@ Read random sentences from bahasa news.
 - Heavily speaking in Selangor dialect.
 - Recorded using mid-end tech microphone, suitable for text to speech.
 - 44100 sample rate, random 7 - 11 words window.
-- approximate 1.86 hours.
+- approximate 2.35 hours.
 - Still on going recording.
 
 ### [noise](https://github.com/huseinzol05/malaya-speech/tree/master/data/noise)
@@ -79,6 +79,17 @@ Read random sentences from IIUM Confession.
 - Recorded using low-end tech microphone.
 - 44100 sample rate, split by end of sentences.
 - approximate 2.4 hours.
+- Still on going recording.
+
+### [wattpad](https://github.com/huseinzol05/malaya-speech/tree/master/data/wattpad)
+
+Read random sentences from bahasa wattpad.
+
+- voice by [Husein Zolkepli](https://www.linkedin.com/in/husein-zolkepli/).
+- Heavily speaking in Selangor dialect.
+- Recorded using mid-end tech microphone, suitable for text to speech.
+- 44100 sample rate, random 7 - 11 words window.
+- approximate 0.15 hours.
 - Still on going recording.
 
 ### [Wikipedia](https://github.com/huseinzol05/malaya-speech/tree/master/data/wikipedia)

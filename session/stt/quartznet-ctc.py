@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '1,2,3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
 
 import tensorflow as tf
 import malaya_speech
@@ -143,10 +143,10 @@ def signal_augmentation(wav):
 
 def mel_augmentation(features):
 
-    features = mask_augmentation.mask_frequency(features, width_freq_mask = 14)
+    features = mask_augmentation.mask_frequency(features, width_freq_mask = 10)
     if features.shape[0] > 50:
         features = mask_augmentation.mask_time(
-            features, width_time_mask = int(features.shape[0] * 0.1)
+            features, width_time_mask = int(features.shape[0] * 0.07)
         )
     return features
 
@@ -229,7 +229,7 @@ def get_dataset(
 def model_fn(features, labels, mode, params):
 
     model = quartznet.Model(
-        features['inputs'], features['inputs_length'][:, 0], mode = 'train'
+        features['inputs'], features['inputs_length'][:, 0], training = True
     )
     logits = tf.layers.dense(model.logits['outputs'], len(unique_vocab) + 1)
     seq_lens = model.logits['src_length']
@@ -294,7 +294,7 @@ train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
     model_dir = 'asr-quartznet-ctc-adam',
-    num_gpus = 3,
+    num_gpus = 2,
     log_step = 1,
     save_checkpoint_step = 5000,
     max_steps = parameters['lr_policy_params']['decay_steps'],
