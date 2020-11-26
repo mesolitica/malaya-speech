@@ -270,8 +270,10 @@ from . import featurization
 from . import generator
 from . import griffin_lim
 from . import group
+from . import metrics
 from . import padding
 from . import read
+from . import split
 from . import subword
 from . import tf_featurization
 from . import validator

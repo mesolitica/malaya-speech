@@ -1,12 +1,12 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '1,2,3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
 
 import tensorflow as tf
 import malaya_speech
 import malaya_speech.augmentation.waveform as augmentation
 import malaya_speech.augmentation.spectrogram as mask_augmentation
-import malaya_speech.train.model.quartznet as quartznet
+import malaya_speech.train.model.jasper as jasper
 import malaya_speech.train.model.ctc as ctc
 import malaya_speech.train as train
 import numpy as np
@@ -18,17 +18,11 @@ with open('malaya-speech-sst-vocab.json') as fopen:
     unique_vocab = json.load(fopen)
 
 parameters = {
-    'optimizer_params': {
-        'beta1': 0.95,
-        'beta2': 0.5,
-        'epsilon': 1e-08,
-        'weight_decay': 0.001,
-        'grad_averaging': False,
-    },
+    'optimizer_params': {},
     'lr_policy_params': {
-        'learning_rate': 0.01,
-        'min_lr': 0.0,
-        'warmup_steps': 5000,
+        'learning_rate': 1e-4,
+        'min_lr': 1e-6,
+        'warmup_steps': 0,
         'decay_steps': 500_000,
     },
 }
@@ -52,10 +46,6 @@ drums = glob('HHDS/Sources/**/*drums.wav', recursive = True)
 others = glob('HHDS/Sources/**/*other.wav', recursive = True)
 noises = noises + basses + drums + others
 random.shuffle(noises)
-
-
-def read_wav(f):
-    return malaya_speech.load(f, sr = 16000)
 
 
 def random_amplitude_threshold(sample, low = 1, high = 2, threshold = 0.4):
@@ -153,9 +143,11 @@ def signal_augmentation(wav):
 
 def mel_augmentation(features):
 
-    features = mask_augmentation.mask_frequency(features)
-    if features.shape[0] > 100:
-        features = mask_augmentation.mask_time(features)
+    features = mask_augmentation.mask_frequency(features, width_freq_mask = 10)
+    if features.shape[0] > 50:
+        features = mask_augmentation.mask_time(
+            features, width_time_mask = int(features.shape[0] * 0.05)
+        )
     return features
 
 
@@ -176,20 +168,6 @@ def preprocess_inputs(example):
     example['inputs_length'] = length
 
     return example
-
-
-# def preprocess_inputs(example):
-#     s = featurizer.vectorize(example['waveforms'])
-#     s = tf.reshape(s, (-1, n_mels))
-#     s = malaya_speech.augmentation.spectrogram.tf_mask_frequency(s, F = 20)
-#     s = malaya_speech.augmentation.spectrogram.tf_mask_time(s, T = 80)
-#     mel_fbanks = tf.reshape(s, (-1, n_mels))
-#     length = tf.cast(tf.shape(mel_fbanks)[0], tf.int32)
-#     length = tf.expand_dims(length, 0)
-#     example['inputs'] = mel_fbanks
-#     example['inputs_length'] = length
-
-#     return example
 
 
 def parse(serialized_example):
@@ -250,8 +228,8 @@ def get_dataset(
 
 def model_fn(features, labels, mode, params):
 
-    model = quartznet.Model(
-        features['inputs'], features['inputs_length'][:, 0], mode = 'train'
+    model = jasper.Model(
+        features['inputs'], features['inputs_length'][:, 0], training = True
     )
     logits = tf.layers.dense(model.logits['outputs'], len(unique_vocab) + 1)
     seq_lens = model.logits['src_length']
@@ -270,13 +248,15 @@ def model_fn(features, labels, mode, params):
     tf.identity(loss, 'train_loss')
     tf.identity(accuracy, name = 'train_accuracy')
 
+    tf.summary.scalar('train_accuracy', accuracy)
+
     if mode == tf.estimator.ModeKeys.TRAIN:
         train_op = train.optimizer.optimize_loss(
             loss,
-            train.optimizer.NovoGrad,
+            tf.train.AdamOptimizer,
             parameters['optimizer_params'],
             learning_rate_scheduler,
-            summaries = parameters.get('summaries', None),
+            summaries = ['learning_rate', 'loss_scale'],
             larc_params = parameters.get('larc_params', None),
             loss_scaling = parameters.get('loss_scaling', 1.0),
             loss_scaling_params = parameters.get('loss_scaling_params', None),
@@ -313,10 +293,10 @@ dev_dataset = get_dataset('../speech-bahasa/bahasa-asr/data/bahasa-asr-dev-*')
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'asr-quartznet',
-    num_gpus = 3,
+    model_dir = 'asr-jasper-ctc',
+    num_gpus = 2,
     log_step = 1,
-    save_checkpoint_step = 2000,
+    save_checkpoint_step = 5000,
     max_steps = parameters['lr_policy_params']['decay_steps'],
     eval_fn = dev_dataset,
     train_hooks = train_hooks,

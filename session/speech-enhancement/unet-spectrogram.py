@@ -1,7 +1,7 @@
 import os
 import warnings
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 warnings.filterwarnings('ignore')
 
 import tensorflow as tf
@@ -10,13 +10,15 @@ import numpy as np
 import IPython.display as ipd
 import matplotlib.pyplot as plt
 import malaya_speech.augmentation.waveform as augmentation
-from malaya_speech.train.model import denoiser, stft
+from malaya_speech.train.model import unet
 import malaya_speech.train as train
 import random
 from glob import glob
 from itertools import cycle
 from multiprocessing import Pool
 import itertools
+from malaya_speech.utils import tf_featurization
+from tensorflow.signal import stft, inverse_stft, hann_window
 
 
 def chunks(l, n):
@@ -129,10 +131,10 @@ def downsample(y, sr, down_sr):
 def calc(signal, seed, add_uniform = False):
     random.seed(seed)
 
-    if not add_uniform and random.gauss(0.5, 0.14) > 0.7:
-        signal = downsample(signal, sr, random.randint(8000, 16000))
+    if not add_uniform:
+        signal = downsample(signal, sr, random.randint(8000, 14000))
 
-    choice = random.randint(0, 6)
+    choice = random.randint(0, 10)
     print('choice', choice)
     if choice == 0:
 
@@ -183,7 +185,7 @@ def calc(signal, seed, add_uniform = False):
             signal, threshold = random.uniform(0.35, 0.8)
         )
 
-    if choice == 6:
+    if choice > 5:
         x = signal
 
     if choice not in [5] and random.gauss(0.5, 0.14) > 0.6:
@@ -204,16 +206,13 @@ def parallel(f):
         s = random.sample(files, random.randint(2, 6))
         y = combine_speakers(s, len(s))[0]
     else:
-        y = random_sampling(
-            read_wav(f)[0], length = random.randint(30000, 100_000)
-        )
+        y = read_wav(f)[0]
 
-    y = random_cut(y, sr * 20)
-
+    y = random_sampling(y, length = random.randint(2000, 300_000))
     y = y / (np.max(np.abs(y)) + 1e-9)
 
     seed = random.randint(0, 100_000_000)
-    x = calc(y, seed)
+    x = calc(y.copy(), seed)
     if random.gauss(0.5, 0.14) > 0.6:
         print('add small noise')
         n = combine_speakers(noises, random.randint(1, 20))[0]
@@ -236,7 +235,7 @@ def loop(files):
     return results
 
 
-def generate(batch_size = 10, repeat = 20):
+def generate(batch_size = 10, repeat = 30):
     while True:
         fs = [next(file_cycle) for _ in range(batch_size)]
         results = multiprocessing(fs, loop, cores = len(fs))
@@ -266,48 +265,114 @@ init_lr = 5e-4
 epochs = 500_000
 
 
+class Model:
+    def __init__(self, X, Y, frame_length = 4096, frame_step = 1024):
+        def get_stft(X):
+            return tf.signal.stft(
+                X,
+                frame_length,
+                frame_step,
+                window_fn = lambda frame_length, dtype: (
+                    hann_window(frame_length, periodic = True, dtype = dtype)
+                ),
+                pad_end = True,
+            )
+
+        stft_X = get_stft(X)
+        stft_Y = get_stft(Y)
+        mag_X = tf.abs(stft_X)
+        mag_Y = tf.abs(stft_Y)
+
+        angle_X = tf.math.imag(stft_X)
+        angle_Y = tf.math.imag(stft_Y)
+
+        partitioned_mag_X = tf_featurization.pad_and_partition(mag_X, 512)
+        partitioned_angle_X = tf_featurization.pad_and_partition(angle_X, 512)
+        params = {'conv_n_filters': [32 * (2 ** i) for i in range(6)]}
+
+        with tf.variable_scope('model_mag'):
+            mix_mag = tf.expand_dims(partitioned_mag_X, 3)[:, :, :-1, :]
+            mix_mag_logits = unet.Model(
+                mix_mag,
+                output_mask_logit = True,
+                dropout = 0.0,
+                training = True,
+                params = params,
+            ).logits
+            mix_mag_logits = tf.squeeze(mix_mag_logits, 3)
+            mix_mag_logits = tf.pad(
+                mix_mag_logits, [(0, 0), (0, 0), (0, 1)], mode = 'CONSTANT'
+            )
+            mix_mag_logits = tf.nn.relu(mix_mag_logits)
+
+        with tf.variable_scope('model_angle'):
+            mix_angle = tf.expand_dims(partitioned_angle_X, 3)[:, :, :-1, :]
+            mix_angle_logits = unet.Model(
+                mix_angle,
+                output_mask_logit = True,
+                dropout = 0.0,
+                training = True,
+                params = params,
+            ).logits
+            mix_angle_logits = tf.squeeze(mix_angle_logits, 3)
+            mix_angle_logits = tf.pad(
+                mix_angle_logits, [(0, 0), (0, 0), (0, 1)], mode = 'CONSTANT'
+            )
+
+        partitioned_mag_Y = tf_featurization.pad_and_partition(mag_Y, 512)
+        partitioned_angle_Y = tf_featurization.pad_and_partition(angle_Y, 512)
+
+        self.mag_l1 = tf.reduce_mean(tf.abs(partitioned_mag_Y - mix_mag_logits))
+        self.angle_l1 = tf.reduce_mean(
+            tf.abs(partitioned_angle_Y - mix_angle_logits)
+        )
+        self.cost = self.mag_l1 + self.angle_l1
+
+        def get_original_shape(D, stft):
+            instrument_mask = D
+
+            old_shape = tf.shape(instrument_mask)
+            new_shape = tf.concat(
+                [[old_shape[0] * old_shape[1]], old_shape[2:]], axis = 0
+            )
+            instrument_mask = tf.reshape(instrument_mask, new_shape)
+            instrument_mask = instrument_mask[: tf.shape(stft)[0]]
+            return instrument_mask
+
+        _mag = get_original_shape(tf.expand_dims(mix_mag_logits, -1), stft_X)
+        _angle = get_original_shape(
+            tf.expand_dims(mix_angle_logits, -1), stft_X
+        )
+
+        stft = tf.multiply(
+            tf.complex(_mag, 0.0), tf.exp(tf.complex(0.0, _angle))
+        )
+
+        inverse_stft_X = inverse_stft(
+            stft[:, :, 0],
+            frame_length,
+            frame_step,
+            window_fn = lambda frame_length, dtype: (
+                hann_window(frame_length, periodic = True, dtype = dtype)
+            ),
+        )
+
+
 def model_fn(features, labels, mode, params):
 
-    combined = tf.expand_dims(features['combined'], -1)
-    y = tf.expand_dims(features['y'], -1)
-    model = denoiser.Model(
-        combined,
-        y = y,
-        hidden = 54,
-        logging = True,
-        normalize = True,
-        stride = 4,
-        partition_length = sr,
-    )
-    logits = model.logits
-    print(combined, y, logits)
-    stft_loss = stft.loss.MultiResolutionSTFT(
-        factor_sc = 0.2,
-        factor_mag = 0.2,
-        fft_lengths = [1024, 2048, 512],
-        frame_lengths = [600, 1200, 240],
-        frame_steps = [50, 50, 50],
-    )
-    l1 = tf.reduce_mean(tf.abs(y - logits), axis = 0)
-    sc_loss, mag_loss = stft_loss(
-        tf.expand_dims(y[:, 0], 0), tf.expand_dims(logits[:, 0], 0)
-    )
-    loss = l1 + sc_loss + mag_loss
-    loss = tf.reduce_mean(loss)
+    model = Model(features['combined'], features['y'])
 
-    l1 = tf.reduce_mean(l1)
-    sc_loss = tf.reduce_mean(sc_loss)
-    mag_loss = tf.reduce_mean(mag_loss)
+    mag_l1 = model.mag_l1
+    angle_l1 = model.angle_l1
+    loss = model.cost
 
     tf.identity(loss, 'total_loss')
-    tf.identity(l1, 'l1_loss')
-    tf.identity(sc_loss, 'sc_loss')
-    tf.identity(mag_loss, 'mag_loss')
+    tf.identity(mag_l1, 'mag_l1')
+    tf.identity(angle_l1, 'angle_l1')
 
     tf.summary.scalar('total_loss', loss)
-    tf.summary.scalar('l1_loss', l1)
-    tf.summary.scalar('sc_loss', sc_loss)
-    tf.summary.scalar('mag_loss', mag_loss)
+    tf.summary.scalar('mag_l1', mag_l1)
+    tf.summary.scalar('angle_l1', angle_l1)
 
     global_step = tf.train.get_or_create_global_step()
 
@@ -316,7 +381,7 @@ def model_fn(features, labels, mode, params):
         learning_rate,
         global_step,
         epochs,
-        end_learning_rate = 1e-7,
+        end_learning_rate = 1e-6,
         power = 1.0,
         cycle = False,
     )
@@ -342,12 +407,12 @@ def model_fn(features, labels, mode, params):
 
 train_hooks = [
     tf.train.LoggingTensorHook(
-        ['total_loss', 'l1_loss', 'sc_loss', 'mag_loss'], every_n_iter = 1
+        ['total_loss', 'mag_l1', 'angle_l1'], every_n_iter = 1
     )
 ]
 train_dataset = get_dataset()
 
-save_directory = 'speech-enhancement-denoiser'
+save_directory = 'speech-enhancement-unet-spectrogram'
 
 train.run_training(
     train_fn = train_dataset,

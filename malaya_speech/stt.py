@@ -19,18 +19,24 @@ _ctc_availability = {
         'Quantized Size (MB)': 20.2,
         'WER': 0,
         'CER': 0,
+        'WER-LM': 0,
+        'CER-LM': 0,
     },
     'mini-jasper': {
         'Size (MB)': 97.8,
         'Quantized Size (MB)': 20.2,
         'WER': 0,
         'CER': 0,
+        'WER-LM': 0,
+        'CER-LM': 0,
     },
     'jasper': {
         'Size (MB)': 97.8,
         'Quantized Size (MB)': 20.2,
         'WER': 0,
         'CER': 0,
+        'WER-LM': 0,
+        'CER-LM': 0,
     },
 }
 

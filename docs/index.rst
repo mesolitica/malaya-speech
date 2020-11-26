@@ -59,6 +59,7 @@ Contents:
    :caption: Voice Activity Module
 
    load-vad
+   realtime-vad
 
 .. toctree::
    :maxdepth: 2

@@ -25,8 +25,6 @@ class Audio:
         blocks_per_second: int = BLOCKS_PER_SECOND,
     ):
 
-        check_pipeline(vad, 'vad')
-
         import pyaudio
 
         self.vad = vad
@@ -123,6 +121,8 @@ class Audio:
                 return
 
             is_speech = self.vad(frame)
+            if isinstance(is_speech, dict):
+                is_speech = is_speech['vad']
 
             if not triggered:
                 ring_buffer.append((frame, is_speech))
@@ -147,20 +147,52 @@ class Audio:
 
 def record(
     vad,
-    model = None,
+    asr_model = None,
     device = None,
     input_rate: int = 16000,
     sample_rate: int = 16000,
+    min_length: float = 0.1,
     filename: str = None,
-    min_length: float = 1.5,
     spinner: bool = True,
 ):
+    """
+    Record an audio using pyaudio library. This record interface required a VAD model.
+
+    Parameters
+    ----------
+    vad: object
+        vad model / pipeline.
+    asr_model: object
+        ASR model / pipeline, will transcribe each subsamples realtime.
+    device: None
+        `device` parameter for pyaudio.
+    input_rate: int, optional (default = 16000)
+        sample rate from input device, this will auto resampling.
+    sample_rate: int, optional (default = 16000)
+        output sample rate.
+    min_length: float, optional (default=0.1)
+        minimum length (s) to accept a subsample.
+    filename: str, optional (default=None)
+        if None, will auto generate name based on timestamp.
+    spinner: bool, optional (default=True)
+        if True, will use spinner object from halo library.
+
+
+    Returns
+    -------
+    result : [filename, samples]
+    """
+
     try:
         import pyaudio
     except:
-        raise ValueError(
+        raise ModuleNotFoundError(
             'pyaudio not installed. Please install it by `pip install pyaudio` and try again.'
         )
+
+    check_pipeline(vad, 'vad', 'vad')
+    if asr_model:
+        check_pipeline(asr_model, 'speech-to-text', 'asr_model')
 
     audio = Audio(
         vad,
@@ -172,18 +204,24 @@ def record(
     frames = audio.vad_collector()
 
     if spinner:
-        from halo import Halo
+        try:
+            from halo import Halo
+        except:
+            raise ModuleNotFoundError(
+                'halo not installed. Please install it by `pip install halo` and try again, or simply set `spinner=False`.'
+            )
 
         spinner = Halo(
-            text = 'Listening (ctrl-C to exit) ...', spinner = 'line'
+            text = 'Listening (ctrl-C to stop recording) ...', spinner = 'line'
         )
     else:
-        print('Listening (ctrl-C to exit) ... \n')
+        print('Listening (ctrl-C to stop recording) ... \n')
 
     results = []
     wav_data = bytearray()
 
     try:
+        count = 0
         for frame in frames:
             if frame is not None:
                 if spinner:
@@ -197,8 +235,15 @@ def record(
                 duration = buffered.shape[0] / audio.input_rate
 
                 if duration >= min_length:
+                    if asr_model:
+                        t = asr_model(wav_data)
+                        if isinstance(t, dict):
+                            t = t['speech-to-text']
+                        print(f'Sample {count}: {t}')
+                        wav_data = (wav_data, t)
                     results.append(wav_data)
                     wav_data = bytearray()
+                    count += 1
 
     except KeyboardInterrupt:
 
@@ -216,4 +261,4 @@ def record(
         spinner.stop()
 
     audio.destroy()
-    return filename_temp
+    return filename_temp, results

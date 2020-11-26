@@ -198,4 +198,5 @@ from . import stt
 from . import vad
 
 from .pipeline import Pipeline
+from .streaming import *
 from .utils import *

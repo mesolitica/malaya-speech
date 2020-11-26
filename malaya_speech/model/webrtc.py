@@ -7,6 +7,9 @@ class WEBRTC:
 
     __name__ = 'vad'
 
+    def __str__(self):
+        return f'<{self.__name__}>'
+
     def __init__(self, vad, sample_rate = 16000, minimum_amplitude: int = 100):
         self.vad = vad
         self.sample_rate = sample_rate

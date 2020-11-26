@@ -146,7 +146,7 @@ def mel_augmentation(features):
     features = mask_augmentation.mask_frequency(features, width_freq_mask = 10)
     if features.shape[0] > 50:
         features = mask_augmentation.mask_time(
-            features, width_time_mask = int(features.shape[0] * 0.07)
+            features, width_time_mask = int(features.shape[0] * 0.05)
         )
     return features
 
@@ -231,7 +231,7 @@ def model_fn(features, labels, mode, params):
     model = quartznet.Model(
         features['inputs'], features['inputs_length'][:, 0], training = True
     )
-    logits = tf.layers.dense(model.logits['outputs'], len(unique_vocab) + 1)
+    logits = tf.layers.dense(model.logits['outputs'], 50)
     seq_lens = model.logits['src_length']
 
     targets_int32 = tf.cast(features['targets'], tf.int32)

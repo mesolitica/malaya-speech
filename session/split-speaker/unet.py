@@ -98,12 +98,13 @@ def combine_speakers(files, n = 5, limit = 4):
     w_samples = [
         random_sampling(
             read_wav(f)[0],
-            length = min(random.randint(10000 // n, 120_000 // n), 50000),
+            length = min(random.randint(10000 // n, 100_000 // n), 12000),
         )
         for f in w_samples
     ]
     y = [w_samples[0]]
     left = w_samples[0].copy() * random.uniform(0.5, 1.0)
+    last_right = w_samples[0]
 
     combined = None
 
@@ -111,8 +112,8 @@ def combine_speakers(files, n = 5, limit = 4):
 
         right = w_samples[i].copy() * random.uniform(0.5, 1.0)
 
-        overlap = random.uniform(0.01, 1.25)
-        left_len = int(overlap * len(left))
+        overlap = random.uniform(0.1, 1.2)
+        left_len = int(overlap * len(last_right))
 
         padded_right = np.pad(right, (left_len, 0))
 
@@ -122,6 +123,8 @@ def combine_speakers(files, n = 5, limit = 4):
             )
         else:
             left = np.pad(left, (0, len(padded_right) - len(left)))
+
+        last_right = padded_right
 
         left = left + padded_right
 
@@ -217,24 +220,27 @@ class Model:
         for i in range(speakers):
             self.stft.append(tf_featurization.get_stft(self.Y[i], T = 512 * 3))
 
+        params = {'conv_n_filters': [22 * (2 ** i) for i in range(6)]}
+
         self.outputs = []
         for i in range(speakers):
             with tf.variable_scope(f'model_{i}'):
                 self.outputs.append(
                     unet.Model(
-                        D_X, dropout = dropout, training = training
+                        D_X,
+                        dropout = dropout,
+                        training = training,
+                        params = params,
                     ).logits
                 )
 
         self.loss = []
         for i in range(speakers):
             self.loss.append(
-                tf.reduce_mean(
-                    tf.abs(self.outputs[i] - self.stft[i][1]), axis = [1, 2, 3]
-                )
+                tf.reduce_mean(tf.abs(self.outputs[i] - self.stft[i][1]))
             )
-        self.cost = tf.reduce_sum(self.loss, axis = -1)
-        self.cost = tf.reduce_mean(self.cost)
+
+        self.cost = tf.reduce_sum(self.loss)
 
 
 init_lr = 1e-4

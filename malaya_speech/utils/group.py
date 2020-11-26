@@ -69,7 +69,8 @@ def group_frames_threshold(frames, threshold_to_stop: float = 0.3):
     Parameters
     ----------
     frames: List[Tuple[FRAME, label]]
-    threshold_to_stop: float, optional (default = 0.2)
+    threshold_to_stop: float, optional (default = 0.3)
+        If `threshold_to_stop` is 0.3, means that, length same label samples must at least 0.3 second.
 
     Returns
     -------

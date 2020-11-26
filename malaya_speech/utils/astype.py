@@ -20,7 +20,9 @@ def to_ndarray(array):
 
     if isinstance(array, list) or isinstance(array, tuple):
         array = np.array(array)
-    elif isinstance(array, bytes):
+    elif isinstance(array, bytes) or isinstance(array, bytearray):
+        if isinstance(array, bytearray):
+            array = bytes(array)
         array = np.frombuffer(array, np.int16)
     return array
 

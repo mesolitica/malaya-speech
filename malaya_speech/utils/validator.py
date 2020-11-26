@@ -1,8 +1,16 @@
-def check_pipeline(pipeline, expected):
-    if hasattr(pipeline, 'pipeline'):
-        p = pipeline.pipeline[-1]
-    else:
-        p = pipeline
+from malaya_speech.pipeline import Pipeline
 
-    if p.__name__ != expected:
-        raise ValueError(f'Expected output of pipeline / model is {expected}')
+
+def get_sinker(pipeline, p):
+    for p in pipeline.downstreams:
+        p = get_sinker(p, p)
+    return p
+
+
+def check_pipeline(object, expected, parameter):
+    if isinstance(object, Pipeline):
+        object = get_sinker(object, object)
+    if expected.lower() not in str(object):
+        raise ValueError(
+            f'`{parameter}` parameter expected a {expected} module or pipeline.'
+        )

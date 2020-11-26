@@ -9,7 +9,12 @@ from malaya_speech.utils.padding import (
 from malaya_speech.utils.char import decode as char_decode
 
 
-class SPEAKERNET:
+class ABSTRACT:
+    def __str__(self):
+        return f'<{self.__name__}: {self.__model__}>'
+
+
+class SPEAKERNET(ABSTRACT):
     def __init__(
         self, X, X_len, logits, vectorizer, sess, model, extra, label, name
     ):
@@ -54,7 +59,7 @@ class SPEAKERNET:
         return self.vectorize(inputs)
 
 
-class SPEAKER2VEC:
+class SPEAKER2VEC(ABSTRACT):
     def __init__(self, X, logits, vectorizer, sess, model, extra, label, name):
         self._X = X
         self._logits = logits
@@ -98,7 +103,7 @@ class SPEAKER2VEC:
         return self.vectorize(inputs)
 
 
-class SPEAKERNET_CLASSIFICATION:
+class SPEAKERNET_CLASSIFICATION(ABSTRACT):
     def __init__(
         self, X, X_len, logits, vectorizer, sess, model, extra, label, name
     ):
@@ -174,7 +179,7 @@ class SPEAKERNET_CLASSIFICATION:
         return self.predict([input])[0]
 
 
-class CLASSIFICATION:
+class CLASSIFICATION(ABSTRACT):
     def __init__(self, X, logits, vectorizer, sess, model, extra, label, name):
         self._X = X
         self._logits = tf.nn.softmax(logits)
@@ -247,7 +252,7 @@ class CLASSIFICATION:
         return self.predict([input])[0]
 
 
-class UNET:
+class UNET(ABSTRACT):
     def __init__(self, X, logits, sess, model, name):
         self._X = X
         self._logits = logits
@@ -289,7 +294,7 @@ class UNET:
         return self.predict(inputs)
 
 
-class UNET_STFT:
+class UNET_STFT(ABSTRACT):
     def __init__(self, X, logits, instruments, sess, model, name):
         self._X = X
         self._logits = {
@@ -334,7 +339,7 @@ class UNET_STFT:
         return self.predict(input)
 
 
-class STT:
+class STT(ABSTRACT):
     def __init__(
         self, X, X_len, logits, seq_lens, featurizer, vocab, sess, model, name
     ):
@@ -394,7 +399,7 @@ class STT:
                 beam_width = self._beam_size,
                 top_paths = 1,
                 merge_repeated = True,
-                **kwargs
+                **kwargs,
             )[0][0]
 
         r = self._sess.run(
@@ -451,7 +456,7 @@ class STT:
                 self._vocab,
                 beam_size,
                 ext_scoring_func = lm,
-                **kwargs
+                **kwargs,
             )
             results.append(d[0][1])
         return results
