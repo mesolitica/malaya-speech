@@ -35,6 +35,8 @@ Contents:
 
    ctc-language-model
    load-stt-ctc-model
+   transcribe-long-audio
+   realtime-asr
    convert-asr-to-tflite
 
 .. toctree::
@@ -60,6 +62,7 @@ Contents:
 
    load-vad
    realtime-vad
+   split-utterances
 
 .. toctree::
    :maxdepth: 2

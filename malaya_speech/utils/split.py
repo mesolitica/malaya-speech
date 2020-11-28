@@ -15,7 +15,7 @@ def split_vad(frames, n = 3, negative_threshold: float = 0.1):
 
     Returns
     -------
-    result : List[Tuple[FRAME, label]]
+    result : List[FRAME]
     """
     grouped = group_frames(frames)
     grouped = group_frames_threshold(

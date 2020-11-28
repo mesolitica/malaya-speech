@@ -386,7 +386,14 @@ class STT(ABSTRACT):
         -------
         result: List[str]
         """
+
         decoder = self._check_decoder(decoder, beam_size)
+
+        inputs = [
+            input.array if isinstance(input, FRAME) else input
+            for input in inputs
+        ]
+
         padded, lens = sequence_1d(inputs, return_len = True)
 
         if decoder == 'greedy':
@@ -443,6 +450,12 @@ class STT(ABSTRACT):
             raise ModuleNotFoundError(
                 'ctc_decoders not installed. Please install it by `pip install ctc-decoders` and try again.'
             )
+
+        inputs = [
+            input.array if isinstance(input, FRAME) else input
+            for input in inputs
+        ]
+
         padded, lens = sequence_1d(inputs, return_len = True)
         logits, seq_lens = self._sess.run(
             [self._softmax, self._seq_lens],

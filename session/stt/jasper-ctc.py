@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
 
 import tensorflow as tf
 import malaya_speech
@@ -22,7 +22,7 @@ parameters = {
     'lr_policy_params': {
         'learning_rate': 1e-4,
         'min_lr': 1e-6,
-        'warmup_steps': 0,
+        'warmup_steps': 20000,
         'decay_steps': 500_000,
     },
 }
@@ -231,7 +231,7 @@ def model_fn(features, labels, mode, params):
     model = jasper.Model(
         features['inputs'], features['inputs_length'][:, 0], training = True
     )
-    logits = tf.layers.dense(model.logits['outputs'], len(unique_vocab) + 1)
+    logits = tf.layers.dense(model.logits['outputs'], 50)
     seq_lens = model.logits['src_length']
 
     targets_int32 = tf.cast(features['targets'], tf.int32)

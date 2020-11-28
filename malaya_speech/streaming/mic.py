@@ -239,8 +239,10 @@ def record(
                         t = asr_model(wav_data)
                         if isinstance(t, dict):
                             t = t['speech-to-text']
-                        print(f'Sample {count}: {t}')
+                        print(f'Sample {count} {datetime.now()}: {t}')
                         wav_data = (wav_data, t)
+                    else:
+                        wav_data = (wav_data,)
                     results.append(wav_data)
                     wav_data = bytearray()
                     count += 1
@@ -255,7 +257,9 @@ def record(
             filename_temp = filename
 
         print(f'saved audio to {filename_temp}')
-        audio.write_wav(filename_temp, b''.join(results))
+
+        bytes_array = [r[0] for r in results]
+        audio.write_wav(filename_temp, b''.join(bytes_array))
 
     if spinner:
         spinner.stop()

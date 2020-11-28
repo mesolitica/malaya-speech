@@ -55,19 +55,28 @@ Read random words from malay dictionary started with 'tolong sebut <word>'.
 - `sebut-perkataan-woman` voice by [Mas Aisyah Ahmad](https://www.linkedin.com/in/mas-aisyah-ahmad-b46508a9/)
 - Recorded using low-end tech microphones.
 
+### [Semisupervised audiobook](https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-audiobook)
+
+Semisupervised malay audiobooks from Nusantara Audiobook using Google Speech to Text.
+
+- 44100 sample rate, super clean.
+- semisupervised approximate 45.29 hours.
+
 ### [Semisupervised malay](https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-malay)
 
 Semisupervised malay youtube videos using Google Speech to Text, after that corrected by human.
 
 - 16000 sample rate.
+- semisupervised approximate 222 hours.
 - random length between 2 - 20 seconds, windowed using google VAD.
-- 768 over 57895 done, approximate 1.3 hours.
+- supervised 768 samples, approximate 1.3 hours.
 
 ### [Semisupervised manglish](https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-manglish)
 
 Semisupervised manglish youtube videos using Google Speech to Text.
 
 - 16000 sample rate.
+- semisupervised approximate 107 hours.
 - random length between 2 - 20 seconds, windowed using google VAD.
 
 ### [IIUM](https://github.com/huseinzol05/malaya-speech/tree/master/data/iium)

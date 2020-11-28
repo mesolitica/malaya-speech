@@ -1,33 +1,35 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '1,2,3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 
 import tensorflow as tf
 import malaya_speech
 import malaya_speech.augmentation.waveform as augmentation
 import malaya_speech.augmentation.spectrogram as mask_augmentation
-import malaya_speech.train.model.mini_jasper as mini_jasper
+import malaya_speech.train.model.mini_jasper as jasper
 import malaya_speech.train.model.ctc as ctc
 import malaya_speech.train as train
 import numpy as np
 import random
 from glob import glob
+import json
+
+with open('malaya-speech-sst-vocab.json') as fopen:
+    unique_vocab = json.load(fopen)
 
 parameters = {
-    'optimizer_params': {
-        'beta1': 0.95,
-        'beta2': 0.5,
-        'epsilon': 1e-08,
-        'weight_decay': 0.001,
-        'grad_averaging': False,
+    'optimizer_params': {},
+    'lr_policy_params': {
+        'learning_rate': 1e-3,
+        'min_lr': 1e-6,
+        'warmup_steps': 10000,
+        'decay_steps': 500_000,
     },
-    'lr_policy_params': {'learning_rate': 0.02, 'min_lr': 1e-5, 'power': 2.0},
-    'larc_params': {'larc_eta': 0.001},
 }
 
 
 def learning_rate_scheduler(global_step):
-    return train.schedule.poly_decay(
+    return train.schedule.cosine_decay(
         global_step, **parameters['lr_policy_params']
     )
 
@@ -44,10 +46,6 @@ drums = glob('HHDS/Sources/**/*drums.wav', recursive = True)
 others = glob('HHDS/Sources/**/*other.wav', recursive = True)
 noises = noises + basses + drums + others
 random.shuffle(noises)
-
-
-def read_wav(f):
-    return malaya_speech.load(f, sr = 16000)
 
 
 def random_amplitude_threshold(sample, low = 1, high = 2, threshold = 0.4):
@@ -68,7 +66,7 @@ def calc(signal, seed, add_uniform = False):
 
         x = augmentation.sox_augment_high(
             signal,
-            min_bass_gain = random.randint(25, 50),
+            min_bass_gain = random.randint(10, 30),
             reverberance = random.randint(0, 30),
             hf_damping = 10,
             room_scale = random.randint(0, 30),
@@ -77,7 +75,7 @@ def calc(signal, seed, add_uniform = False):
     if choice == 1:
         x = augmentation.sox_augment_high(
             signal,
-            min_bass_gain = random.randint(25, 70),
+            min_bass_gain = random.randint(10, 40),
             reverberance = random.randint(0, 30),
             hf_damping = 10,
             room_scale = random.randint(0, 30),
@@ -86,7 +84,7 @@ def calc(signal, seed, add_uniform = False):
     if choice == 2:
         x = augmentation.sox_augment_low(
             signal,
-            min_bass_gain = random.randint(5, 30),
+            min_bass_gain = random.randint(1, 20),
             reverberance = random.randint(0, 30),
             hf_damping = 10,
             room_scale = random.randint(0, 30),
@@ -95,8 +93,8 @@ def calc(signal, seed, add_uniform = False):
     if choice == 3:
         x = augmentation.sox_augment_combine(
             signal,
-            min_bass_gain_high = random.randint(25, 70),
-            min_bass_gain_low = random.randint(5, 30),
+            min_bass_gain_high = random.randint(10, 40),
+            min_bass_gain_low = random.randint(1, 20),
             reverberance = random.randint(0, 30),
             hf_damping = 10,
             room_scale = random.randint(0, 30),
@@ -104,7 +102,7 @@ def calc(signal, seed, add_uniform = False):
     if choice == 4:
         x = augmentation.sox_reverb(
             signal,
-            reverberance = random.randint(10, 30),
+            reverberance = random.randint(1, 20),
             hf_damping = 10,
             room_scale = random.randint(10, 30),
         )
@@ -136,7 +134,7 @@ def signal_augmentation(wav):
         n, _ = malaya_speech.load(random.choice(noises), sr = 16000)
         n = calc(n, seed, True)
         combined = augmentation.add_noise(
-            wav, n, factor = random.uniform(0.05, 0.3)
+            wav, n, factor = random.uniform(0.05, 0.2)
         )
     else:
         combined = wav
@@ -144,22 +142,28 @@ def signal_augmentation(wav):
 
 
 def mel_augmentation(features):
-    features = mask_augmentation.mask_frequency(features)
-    return mask_augmentation.mask_time(features)
+
+    features = mask_augmentation.mask_frequency(features, width_freq_mask = 10)
+    if features.shape[0] > 50:
+        features = mask_augmentation.mask_time(
+            features, width_time_mask = int(features.shape[0] * 0.05)
+        )
+    return features
 
 
 def preprocess_inputs(example):
-    w = tf.compat.v1.numpy_function(
-        signal_augmentation, [example['waveforms']], tf.float32
-    )
-    w = tf.reshape(w, (1, -1))
-    s = featurizer.vectorize(w[0])
+    # w = tf.compat.v1.numpy_function(
+    #     signal_augmentation, [example['waveforms']], tf.float32
+    # )
+    # w = tf.reshape(w, (1, -1))
+    # s = featurizer.vectorize(w[0])
+    s = featurizer.vectorize(example['waveforms'])
     s = tf.reshape(s, (-1, n_mels))
     s = tf.compat.v1.numpy_function(mel_augmentation, [s], tf.float32)
     mel_fbanks = tf.reshape(s, (-1, n_mels))
     length = tf.cast(tf.shape(mel_fbanks)[0], tf.int32)
     length = tf.expand_dims(length, 0)
-    example['waveforms'] = w[0]
+    # example['waveforms'] = w[0]
     example['inputs'] = mel_fbanks
     example['inputs_length'] = length
 
@@ -192,7 +196,7 @@ def get_dataset(
     path,
     batch_size = 32,
     shuffle_size = 32,
-    thread_count = 16,
+    thread_count = 24,
     maxlen_feature = 1800,
 ):
     def get():
@@ -202,9 +206,6 @@ def get_dataset(
         dataset = dataset.repeat()
         dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
         dataset = dataset.map(parse, num_parallel_calls = thread_count)
-        dataset = dataset.filter(
-            lambda x: tf.less_equal(tf.shape(x['inputs'])[0], maxlen_feature)
-        )
         dataset = dataset.padded_batch(
             batch_size,
             padded_shapes = {
@@ -227,12 +228,10 @@ def get_dataset(
 
 def model_fn(features, labels, mode, params):
 
-    model = mini_jasper.Model(
-        features['inputs'], features['inputs_length'][:, 0], mode = 'train'
+    model = jasper.Model(
+        features['inputs'], features['inputs_length'][:, 0], training = True
     )
-    logits = tf.layers.dense(
-        model.logits['outputs'], malaya_speech.char.VOCAB_SIZE
-    )
+    logits = tf.layers.dense(model.logits['outputs'], 50)
     seq_lens = model.logits['src_length']
 
     targets_int32 = tf.cast(features['targets'], tf.int32)
@@ -249,13 +248,15 @@ def model_fn(features, labels, mode, params):
     tf.identity(loss, 'train_loss')
     tf.identity(accuracy, name = 'train_accuracy')
 
+    tf.summary.scalar('train_accuracy', accuracy)
+
     if mode == tf.estimator.ModeKeys.TRAIN:
         train_op = train.optimizer.optimize_loss(
             loss,
-            train.optimizer.NovoGrad,
+            tf.train.AdamOptimizer,
             parameters['optimizer_params'],
             learning_rate_scheduler,
-            summaries = parameters.get('summaries', None),
+            summaries = ['learning_rate', 'loss_scale'],
             larc_params = parameters.get('larc_params', None),
             loss_scaling = parameters.get('loss_scaling', 1.0),
             loss_scaling_params = parameters.get('loss_scaling_params', None),
@@ -272,10 +273,7 @@ def model_fn(features, labels, mode, params):
             eval_metric_ops = {
                 'accuracy': ctc.metrics.ctc_sequence_accuracy_estimator(
                     logits, targets_int32, seq_lens
-                ),
-                'WER': ctc.metrics.word_error_rate_estimator(
-                    logits, targets_int32
-                ),
+                )
             },
         )
 
@@ -295,10 +293,10 @@ dev_dataset = get_dataset('../speech-bahasa/bahasa-asr/data/bahasa-asr-dev-*')
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'asr-quartznet',
-    num_gpus = 3,
+    model_dir = 'asr-mini-jasper-ctc',
+    num_gpus = 2,
     log_step = 1,
-    save_checkpoint_step = parameters['lr_policy_params']['warmup_steps'],
+    save_checkpoint_step = 5000,
     max_steps = parameters['lr_policy_params']['decay_steps'],
     eval_fn = dev_dataset,
     train_hooks = train_hooks,
