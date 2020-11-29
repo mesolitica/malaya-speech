@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 
 import tensorflow as tf
 import malaya_speech
@@ -15,14 +15,14 @@ from glob import glob
 import json
 
 with open('malaya-speech-sst-vocab.json') as fopen:
-    unique_vocab = json.load(fopen)
+    unique_vocab = json.load(fopen) + ['{', '}', '[']
 
 parameters = {
     'optimizer_params': {},
     'lr_policy_params': {
         'learning_rate': 1e-4,
         'min_lr': 1e-6,
-        'warmup_steps': 20000,
+        'warmup_steps': 0,
         'decay_steps': 500_000,
     },
 }
@@ -40,107 +40,6 @@ featurizer = malaya_speech.tf_featurization.STTFeaturizer(
 n_mels = featurizer.num_feature_bins
 
 
-noises = glob('../noise-44k/noise/*.wav') + glob('../noise-44k/clean-wav/*.wav')
-basses = glob('HHDS/Sources/**/*bass.wav', recursive = True)
-drums = glob('HHDS/Sources/**/*drums.wav', recursive = True)
-others = glob('HHDS/Sources/**/*other.wav', recursive = True)
-noises = noises + basses + drums + others
-random.shuffle(noises)
-
-
-def random_amplitude_threshold(sample, low = 1, high = 2, threshold = 0.4):
-    y_aug = sample.copy()
-    y_aug = y_aug / (np.max(np.abs(y_aug)) + 1e-9)
-    dyn_change = np.random.uniform(low = low, high = high)
-    y_aug[np.abs(y_aug) >= threshold] = (
-        y_aug[np.abs(y_aug) >= threshold] * dyn_change
-    )
-    return np.clip(y_aug, -1, 1)
-
-
-def calc(signal, seed, add_uniform = False):
-    random.seed(seed)
-
-    choice = random.randint(0, 9)
-    if choice == 0:
-
-        x = augmentation.sox_augment_high(
-            signal,
-            min_bass_gain = random.randint(10, 30),
-            reverberance = random.randint(0, 30),
-            hf_damping = 10,
-            room_scale = random.randint(0, 30),
-            negate = 1,
-        )
-    if choice == 1:
-        x = augmentation.sox_augment_high(
-            signal,
-            min_bass_gain = random.randint(10, 40),
-            reverberance = random.randint(0, 30),
-            hf_damping = 10,
-            room_scale = random.randint(0, 30),
-            negate = 0,
-        )
-    if choice == 2:
-        x = augmentation.sox_augment_low(
-            signal,
-            min_bass_gain = random.randint(1, 20),
-            reverberance = random.randint(0, 30),
-            hf_damping = 10,
-            room_scale = random.randint(0, 30),
-            negate = random.randint(0, 1),
-        )
-    if choice == 3:
-        x = augmentation.sox_augment_combine(
-            signal,
-            min_bass_gain_high = random.randint(10, 40),
-            min_bass_gain_low = random.randint(1, 20),
-            reverberance = random.randint(0, 30),
-            hf_damping = 10,
-            room_scale = random.randint(0, 30),
-        )
-    if choice == 4:
-        x = augmentation.sox_reverb(
-            signal,
-            reverberance = random.randint(1, 20),
-            hf_damping = 10,
-            room_scale = random.randint(10, 30),
-        )
-    if choice == 5:
-        x = random_amplitude_threshold(
-            signal, threshold = random.uniform(0.35, 0.8)
-        )
-
-    if choice > 5:
-        x = signal
-
-    if choice != 5 and random.gauss(0.5, 0.14) > 0.6:
-        x = random_amplitude_threshold(
-            x, low = 1.0, high = 2.0, threshold = random.uniform(0.7, 0.9)
-        )
-
-    if random.gauss(0.5, 0.14) > 0.6 and add_uniform:
-        x = augmentation.add_uniform_noise(
-            x, power = random.uniform(0.005, 0.015)
-        )
-
-    return x
-
-
-def signal_augmentation(wav):
-    seed = random.randint(0, 100_000_000)
-    wav = calc(wav, seed)
-    if random.gauss(0.5, 0.14) > 0.6:
-        n, _ = malaya_speech.load(random.choice(noises), sr = 16000)
-        n = calc(n, seed, True)
-        combined = augmentation.add_noise(
-            wav, n, factor = random.uniform(0.05, 0.2)
-        )
-    else:
-        combined = wav
-    return combined.astype('float32')
-
-
 def mel_augmentation(features):
 
     features = mask_augmentation.mask_frequency(features, width_freq_mask = 10)
@@ -152,18 +51,12 @@ def mel_augmentation(features):
 
 
 def preprocess_inputs(example):
-    # w = tf.compat.v1.numpy_function(
-    #     signal_augmentation, [example['waveforms']], tf.float32
-    # )
-    # w = tf.reshape(w, (1, -1))
-    # s = featurizer.vectorize(w[0])
     s = featurizer.vectorize(example['waveforms'])
     s = tf.reshape(s, (-1, n_mels))
     s = tf.compat.v1.numpy_function(mel_augmentation, [s], tf.float32)
     mel_fbanks = tf.reshape(s, (-1, n_mels))
     length = tf.cast(tf.shape(mel_fbanks)[0], tf.int32)
     length = tf.expand_dims(length, 0)
-    # example['waveforms'] = w[0]
     example['inputs'] = mel_fbanks
     example['inputs_length'] = length
 
@@ -231,7 +124,7 @@ def model_fn(features, labels, mode, params):
     model = jasper.Model(
         features['inputs'], features['inputs_length'][:, 0], training = True
     )
-    logits = tf.layers.dense(model.logits['outputs'], 50)
+    logits = tf.layers.dense(model.logits['outputs'], len(unique_vocab) + 1)
     seq_lens = model.logits['src_length']
 
     targets_int32 = tf.cast(features['targets'], tf.int32)
@@ -288,12 +181,14 @@ train_hooks = [
 train_dataset = get_dataset(
     '../speech-bahasa/bahasa-asr/data/bahasa-asr-train-*'
 )
-dev_dataset = get_dataset('../speech-bahasa/bahasa-asr/data/bahasa-asr-dev-*')
+dev_dataset = get_dataset(
+    '../speech-bahasa/bahasa-asr-test/data/bahasa-asr-dev-*'
+)
 
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'asr-jasper-ctc',
+    model_dir = 'asr-mini-jasper-ctc',
     num_gpus = 2,
     log_step = 1,
     save_checkpoint_step = 5000,

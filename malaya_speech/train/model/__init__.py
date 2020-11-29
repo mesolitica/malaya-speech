@@ -7,6 +7,7 @@ from . import denoiser
 from . import fastspeech
 from . import jasper
 from . import mb_melgan
+from . import medium_jasper
 from . import melgan
 from . import mini_jasper
 from . import pix2pix

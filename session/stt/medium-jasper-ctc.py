@@ -1,12 +1,12 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
 
 import tensorflow as tf
 import malaya_speech
 import malaya_speech.augmentation.waveform as augmentation
 import malaya_speech.augmentation.spectrogram as mask_augmentation
-import malaya_speech.train.model.mini_jasper as jasper
+import malaya_speech.train.model.medium_jasper as jasper
 import malaya_speech.train.model.ctc as ctc
 import malaya_speech.train as train
 import numpy as np
@@ -188,7 +188,7 @@ dev_dataset = get_dataset(
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'asr-mini-jasper-ctc',
+    model_dir = 'asr-medium-jasper-ctc',
     num_gpus = 2,
     log_step = 1,
     save_checkpoint_step = 5000,

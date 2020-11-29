@@ -25,3 +25,9 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
   - narrator T Elida Bustaman.
   - approximate 24.66 hours.
   - WER 8%.
+
+3. Text only, https://f000.backblazeb2.com/file/malaya-speech-model/data/text-audiobook.tar.gz
+
+4. Test set, https://f000.backblazeb2.com/file/malaya-speech-model/data/testset-audiobook.tar.gz
+
+5. Train set with augmentation, https://f000.backblazeb2.com/file/malaya-speech-model/data/trainset-audiobook.tar.gz
