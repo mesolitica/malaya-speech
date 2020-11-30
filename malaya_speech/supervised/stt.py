@@ -15,7 +15,7 @@ def load(path, s3_path, model, name, quantized = False, **kwargs):
     g = load_graph(path[model][model_path], **kwargs)
 
     with open(path[model]['vocab']) as fopen:
-        vocab = json.load(fopen)
+        vocab = json.load(fopen) + ['{', '}', '[']
 
     featurizer = STTFeaturizer(normalize_per_feature = True)
 

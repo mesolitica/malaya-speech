@@ -81,6 +81,7 @@ Semisupervised malay audiobooks from Nusantara Audiobook using Google Speech to 
 
 * 44100 sample rate, super clean.
 * semisupervised approximate 45.29 hours.
+* windowed using Malaya-Speech VAD, each atleast 5 negative voice activities.
 
 `Semisupervised malay <https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-malay>`_
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

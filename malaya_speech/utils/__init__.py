@@ -271,10 +271,13 @@ from . import generator
 from . import griffin_lim
 from . import group
 from . import metrics
+from . import outlier
 from . import padding
 from . import read
 from . import split
+from . import text
 from . import subword
+from . import text
 from . import tf_featurization
 from . import validator
 

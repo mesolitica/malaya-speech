@@ -10,21 +10,21 @@ import json
 
 _transducer_availability = {
     'small-conformer': {'Size (MB)': 97.8, 'WER': 0, 'CER': 0},
-    'base-conformer': {'Size (MB)': 97.8, 'WER': 0, 'CER': 0},
+    'conformer': {'Size (MB)': 97.8, 'WER': 0, 'CER': 0},
 }
 
 _ctc_availability = {
-    'quartznet': {
-        'Size (MB)': 77.2,
-        'Quantized Size (MB)': 20.2,
+    'mini-jasper': {
+        'Size (MB)': 33.3,
+        'Quantized Size (MB)': 8.71,
         'WER': 0,
         'CER': 0,
         'WER-LM': 0,
         'CER-LM': 0,
     },
-    'mini-jasper': {
-        'Size (MB)': 32.9,
-        'Quantized Size (MB)': 8.6,
+    'medium-jasper': {
+        'Size (MB)': 336,
+        'Quantized Size (MB)': 88,
         'WER': 0,
         'CER': 0,
         'WER-LM': 0,
@@ -118,7 +118,9 @@ def language_model(
         Model architecture supported. Allowed values:
 
         * ``'malaya-speech'`` - Gathered from malaya-speech ASR transcript.
+        * ``'malaya-speech-wikipedia'`` - Gathered from malaya-speech ASR transcript + Wikipedia (Random sample 300k sentences).
         * ``'local'`` - Gathered from IIUM Confession.
+        * ``'wikipedia'`` - Gathered from malay Wikipedia.
         
     alpha: float, optional (default=2.5)
         score = alpha * np.log(lm) + beta * np.log(word_cnt), 
@@ -187,8 +189,8 @@ def deep_ctc(model: str = 'jasper', quantized: bool = False, **kwargs):
     model : str, optional (default='jasper')
         Model architecture supported. Allowed values:
 
-        * ``'quartznet'`` - NVIDIA QuartzNet, https://arxiv.org/abs/1910.10261
         * ``'mini-jasper'`` - Small-factor NVIDIA Jasper, https://arxiv.org/pdf/1904.03288.pdf
+        * ``'medium-jasper'`` - Medium-factor NVIDIA Jasper, https://arxiv.org/pdf/1904.03288.pdf
         * ``'jasper'`` - NVIDIA Jasper, https://arxiv.org/pdf/1904.03288.pdf
         
     quantized : bool, optional (default=False)

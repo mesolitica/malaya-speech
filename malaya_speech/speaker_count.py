@@ -19,7 +19,10 @@ labels = [
     '10 speakers',
     '11 speakers',
     '12 speakers',
-    'more than 12 speakers',
+    '13 speakers',
+    '14 speakers',
+    '15 speakers',
+    'more than 15 speakers',
 ]
 
 

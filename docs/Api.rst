@@ -117,6 +117,12 @@ malaya_speech.pipeline.zip
 .. autoclass:: malaya_speech.pipeline.zip()
     :members:
 
+malaya_speech.streaming
+-----------------------------------
+
+.. automodule:: malaya_speech.streaming
+    :members:
+
 malaya_speech.utils.astype
 --------------------------
 
@@ -163,6 +169,12 @@ malaya_speech.utils.read
 ---------------------------
 
 .. automodule:: malaya_speech.utils.read
+    :members:
+
+malaya_speech.utils.split
+---------------------------
+
+.. automodule:: malaya_speech.utils.split
     :members:
 
 malaya_speech.utils.subword

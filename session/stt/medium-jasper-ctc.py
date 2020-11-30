@@ -9,6 +9,7 @@ import malaya_speech.augmentation.spectrogram as mask_augmentation
 import malaya_speech.train.model.medium_jasper as jasper
 import malaya_speech.train.model.ctc as ctc
 import malaya_speech.train as train
+from malaya_speech.train.model.quartznet import layer, abstract
 import numpy as np
 import random
 from glob import glob
@@ -25,6 +26,122 @@ parameters = {
         'warmup_steps': 0,
         'decay_steps': 500_000,
     },
+}
+
+residual_dense = False
+
+config = {
+    'convnet_layers': [
+        {
+            'type': 'conv1d',
+            'repeat': 1,
+            'kernel_size': [11],
+            'stride': [2],
+            'num_channels': 256,
+            'padding': 'SAME',
+            'dilation': [1],
+            'dropout_keep_prob': 0.9,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 5,
+            'kernel_size': [11],
+            'stride': [1],
+            'num_channels': 256,
+            'padding': 'SAME',
+            'dilation': [1],
+            'residual': True,
+            'residual_dense': residual_dense,
+            'dropout_keep_prob': 0.9,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 5,
+            'kernel_size': [11],
+            'stride': [1],
+            'num_channels': 256,
+            'padding': 'SAME',
+            'dilation': [1],
+            'residual': True,
+            'residual_dense': residual_dense,
+            'dropout_keep_prob': 0.9,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 5,
+            'kernel_size': [13],
+            'stride': [1],
+            'num_channels': 384,
+            'padding': 'SAME',
+            'dilation': [1],
+            'residual': True,
+            'residual_dense': residual_dense,
+            'dropout_keep_prob': 0.9,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 5,
+            'kernel_size': [13],
+            'stride': [1],
+            'num_channels': 384,
+            'padding': 'SAME',
+            'dilation': [1],
+            'residual': True,
+            'residual_dense': residual_dense,
+            'dropout_keep_prob': 0.9,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 5,
+            'kernel_size': [17],
+            'stride': [1],
+            'num_channels': 512,
+            'padding': 'SAME',
+            'dilation': [1],
+            'residual': True,
+            'residual_dense': residual_dense,
+            'dropout_keep_prob': 0.9,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 5,
+            'kernel_size': [17],
+            'stride': [1],
+            'num_channels': 512,
+            'padding': 'SAME',
+            'dilation': [1],
+            'residual': True,
+            'residual_dense': residual_dense,
+            'dropout_keep_prob': 0.9,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 1,
+            'kernel_size': [29],
+            'stride': [1],
+            'num_channels': 896,
+            'padding': 'SAME',
+            'dilation': [2],
+            'dropout_keep_prob': 0.9,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 1,
+            'kernel_size': [1],
+            'stride': [1],
+            'num_channels': 1024,
+            'padding': 'SAME',
+            'dilation': [1],
+            'dropout_keep_prob': 0.9,
+        },
+    ],
+    'dropout_keep_prob': 0.9,
+    'initializer': tf.contrib.layers.xavier_initializer,
+    'initializer_params': {'uniform': False},
+    'normalization': 'batch_norm',
+    'activation_fn': tf.nn.relu,
+    'data_format': 'channels_last',
+    'use_conv_mask': True,
 }
 
 
@@ -119,9 +236,20 @@ def get_dataset(
     return get
 
 
+class Model:
+    def __init__(self, inputs, inputs_length, training = True):
+        if training:
+            mode = 'train'
+        else:
+            mode = 'eval'
+        self.model = abstract.TDNNEncoder(config, None, mode = mode)
+        input_dict = {'source_tensors': [inputs, inputs_length]}
+        self.logits = self.model.encode(input_dict)
+
+
 def model_fn(features, labels, mode, params):
 
-    model = jasper.Model(
+    model = Model(
         features['inputs'], features['inputs_length'][:, 0], training = True
     )
     logits = tf.layers.dense(model.logits['outputs'], len(unique_vocab) + 1)
