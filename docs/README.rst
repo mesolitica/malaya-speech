@@ -90,10 +90,10 @@ If you use our software for research, please cite:
 Acknowledgement
 ----------------
 
-Thanks to `Mesolitica <https://mesolitica.com/>`_ and `KeyReply <https://www.keyreply.com/>`_ for sponsoring GCP and private cloud to train Malaya models.
+Thanks to `KeyReply <https://www.keyreply.com/>`_ for sponsoring private cloud to train Malaya models, without it, this library will collapse entirely.  
 
 .. raw:: html
 
     <a href="#readme">
-        <img alt="logo" width="50%" src="https://malaya-dataset.s3-ap-southeast-1.amazonaws.com/mesolitica-keyreply.png">
+        <img alt="logo" width="20%" src="https://cdn.techinasia.com/data/images/16234a59ae3f218dc03815a08eaab483.png">
     </a>

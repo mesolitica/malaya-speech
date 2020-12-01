@@ -18,7 +18,15 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
   - approximate 19.63 hours.
   - WER 8%.
 
-2. https://f000.backblazeb2.com/file/malaya-speech-model/data/salina.gz
+2. https://f000.backblazeb2.com/file/malaya-speech-model/data/dari-pasentran-ke-istana.gz
+
+  - Originally from https://nusantaraudiobooks.com/books/dari-sultan-hingga-ataturk-turki
+  - 44100 sample rate, super clean.
+  - narrator Danny Abdullah.
+  - approximate 19.63 hours.
+  - WER 8%.
+
+3. https://f000.backblazeb2.com/file/malaya-speech-model/data/salina.gz
 
   - Originally from https://nusantaraudiobooks.com/books/salina
   - 44100 sample rate, super clean.
@@ -26,8 +34,8 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
   - approximate 24.66 hours.
   - WER 8%.
 
-3. Text only, https://f000.backblazeb2.com/file/malaya-speech-model/data/text-audiobook.tar.gz
+4. Text only, https://f000.backblazeb2.com/file/malaya-speech-model/data/text-audiobook.tar.gz
 
-4. Test set, https://f000.backblazeb2.com/file/malaya-speech-model/data/testset-audiobook.tar.gz
+5. Test set, https://f000.backblazeb2.com/file/malaya-speech-model/data/testset-audiobook.tar.gz
 
-5. Train set with augmentation, https://f000.backblazeb2.com/file/malaya-speech-model/data/trainset-audiobook.tar.gz
+6. Train set with augmentation, https://f000.backblazeb2.com/file/malaya-speech-model/data/trainset-audiobook.tar.gz
