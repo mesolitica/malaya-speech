@@ -72,8 +72,8 @@ def char_to_subwords(features):
     t = malaya_speech.char.decode(features, lookup = unique_vocab).replace(
         '<PAD>', ''
     )
-    t = malaya_speech.subword.encode(subwords, t, add_blank = True)
-    return np.array(t)
+    t = malaya_speech.subword.encode(subwords, t, add_blank = False)
+    return np.array(t) + 1
 
 
 def preprocess_inputs(example):
@@ -175,7 +175,7 @@ def model_fn(features, labels, mode, params):
     logits = transducer_model([v, c], training = True)
 
     cost = transducer.loss.rnnt_loss(
-        logits = tf.nn.log_softmax(logits),
+        logits = logits,
         labels = features['targets'],
         label_length = features['targets_length'][:, 0],
         logit_length = features['inputs_length'][:, 0]

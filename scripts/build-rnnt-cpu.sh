@@ -3,15 +3,11 @@
 mkdir -p externals && cd externals
 
 if [ ! -d warp-transducer ]; then
-    git clone https://github.com/usimarit/warp-transducer.git
+    git clone https://github.com/noahchalifour/warp-transducer.git
 fi
 cd ./warp-transducer
 mkdir -p build && cd build
-cmake \
--DUSE_NAIVE_KERNEL=on \
--DCMAKE_C_COMPILER_LAUNCHER="$(which gcc)" \
--DCMAKE_CXX_COMPILER_LAUNCHER="$(which g++)"  \
-..
+cmake ..
 
 make
 cd ../tensorflow_binding

@@ -347,8 +347,8 @@ class Model(Transducer):
             index, char, new_states = tf.cond(
                 tf.equal(char, BLANK),
                 true_fn = lambda: (
-                    hypothesis.index,
-                    hypothesis.prediction.read(hypothesis.index),
+                    hypothesis.index + 1,
+                    BLANK,
                     hypothesis.prediction_states,
                 ),
                 false_fn = lambda: (hypothesis.index + 1, char, new_states),
