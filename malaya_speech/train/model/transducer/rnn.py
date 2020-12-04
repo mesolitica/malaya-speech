@@ -86,7 +86,7 @@ class TransducerPrediction(tf.keras.Model):
             states.append(
                 tf.stack(
                     rnn['rnn'].get_initial_state(
-                        tf.zeros([1], dtype = tf.float32)
+                        tf.zeros([1, 1, 1], dtype = tf.float32)
                     ),
                     axis = 0,
                 )
@@ -96,12 +96,8 @@ class TransducerPrediction(tf.keras.Model):
     def call(self, inputs, training = False):
         outputs = self.embed(inputs, training = training)
         outputs = self.do(outputs, training = training)
-        states = None
         for rnn in self.rnns:
-            outputs = rnn['rnn'](
-                outputs, training = training, initial_state = states
-            )
-            states = outputs[1:]
+            outputs = rnn['rnn'](outputs, training = training)
             outputs = outputs[0]
             if rnn['ln'] is not None:
                 outputs = rnn['ln'](outputs, training = training)

@@ -23,10 +23,7 @@ config = malaya_speech.config.conformer_small_encoder_config
 
 parameters = {
     'optimizer_params': {'beta1': 0.9, 'beta2': 0.98, 'epsilon': 10e-9},
-    'lr_policy_params': {
-        'max_lr': 0.05 / np.sqrt(config['dmodel']),
-        'warmup_steps': 10000,
-    },
+    'lr_policy_params': {'warmup_steps': 40000},
 }
 
 
@@ -61,7 +58,7 @@ n_mels = featurizer.num_feature_bins
 
 def mel_augmentation(features):
 
-    features = mask_augmentation.mask_frequency(features, width_freq_mask = 15)
+    features = mask_augmentation.mask_frequency(features, width_freq_mask = 10)
     features = mask_augmentation.mask_time(
         features, width_time_mask = int(features.shape[0] * 0.05)
     )
@@ -163,7 +160,9 @@ def get_dataset(
 
 
 def model_fn(features, labels, mode, params):
-    conformer_model = conformer.Model(**config)
+    conformer_model = conformer.Model(
+        kernel_regularizer = None, bias_regularizer = None, **config
+    )
     decoder_config = malaya_speech.config.conformer_small_decoder_config
     transducer_model = transducer.rnn.Model(
         conformer_model, vocabulary_size = subwords.vocab_size, **decoder_config
