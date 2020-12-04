@@ -18,12 +18,12 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
   - approximate 19.63 hours.
   - WER 8%.
 
-2. https://f000.backblazeb2.com/file/malaya-speech-model/data/dari-pasentran-ke-istana.gz
+2. https://f000.backblazeb2.com/file/malaya-speech-model/data/turki.gz
 
   - Originally from https://nusantaraudiobooks.com/books/dari-sultan-hingga-ataturk-turki
   - 44100 sample rate, super clean.
   - narrator Danny Abdullah.
-  - approximate 19.63 hours.
+  - approximate 7.73 hours.
   - WER 8%.
 
 3. https://f000.backblazeb2.com/file/malaya-speech-model/data/salina.gz

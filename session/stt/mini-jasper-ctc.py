@@ -42,11 +42,10 @@ n_mels = featurizer.num_feature_bins
 
 def mel_augmentation(features):
 
-    features = mask_augmentation.mask_frequency(features, width_freq_mask = 10)
-    if features.shape[0] > 50:
-        features = mask_augmentation.mask_time(
-            features, width_time_mask = int(features.shape[0] * 0.05)
-        )
+    features = mask_augmentation.mask_frequency(features, width_freq_mask = 15)
+    features = mask_augmentation.mask_time(
+        features, width_time_mask = int(features.shape[0] * 0.05)
+    )
     return features
 
 

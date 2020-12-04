@@ -17,5 +17,6 @@ from . import speakernet
 from . import stft
 from . import transducer
 from . import unet
+from . import unet_enhancement
 from . import vggvox_v1
 from . import vggvox_v2

@@ -6,9 +6,10 @@ import tensorflow as tf
 import malaya_speech
 import malaya_speech.augmentation.waveform as augmentation
 import malaya_speech.augmentation.spectrogram as mask_augmentation
-import malaya_speech.train.model.jasper as jasper
+import malaya_speech.train.model.medium_jasper as jasper
 import malaya_speech.train.model.ctc as ctc
 import malaya_speech.train as train
+from malaya_speech.train.model.quartznet import layer, abstract
 import numpy as np
 import random
 from glob import glob
@@ -27,6 +28,170 @@ parameters = {
     },
 }
 
+residual_dense = False
+
+config = {
+    'convnet_layers': [
+        {
+            'type': 'conv1d',
+            'repeat': 1,
+            'kernel_size': [11],
+            'stride': [2],
+            'num_channels': 256,
+            'padding': 'SAME',
+            'dilation': [1],
+            'dropout_keep_prob': 0.9,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 5,
+            'kernel_size': [11],
+            'stride': [1],
+            'num_channels': 256,
+            'padding': 'SAME',
+            'dilation': [1],
+            'dropout_keep_prob': 0.9,
+            'residual': True,
+            'residual_dense': residual_dense,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 5,
+            'kernel_size': [11],
+            'stride': [1],
+            'num_channels': 256,
+            'padding': 'SAME',
+            'dilation': [1],
+            'dropout_keep_prob': 0.9,
+            'residual': True,
+            'residual_dense': residual_dense,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 5,
+            'kernel_size': [13],
+            'stride': [1],
+            'num_channels': 384,
+            'padding': 'SAME',
+            'dilation': [1],
+            'dropout_keep_prob': 0.9,
+            'residual': True,
+            'residual_dense': residual_dense,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 5,
+            'kernel_size': [13],
+            'stride': [1],
+            'num_channels': 384,
+            'padding': 'SAME',
+            'dilation': [1],
+            'dropout_keep_prob': 0.9,
+            'residual': True,
+            'residual_dense': residual_dense,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 5,
+            'kernel_size': [17],
+            'stride': [1],
+            'num_channels': 512,
+            'padding': 'SAME',
+            'dilation': [1],
+            'dropout_keep_prob': 0.9,
+            'residual': True,
+            'residual_dense': residual_dense,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 5,
+            'kernel_size': [17],
+            'stride': [1],
+            'num_channels': 512,
+            'padding': 'SAME',
+            'dilation': [1],
+            'dropout_keep_prob': 0.9,
+            'residual': True,
+            'residual_dense': residual_dense,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 5,
+            'kernel_size': [21],
+            'stride': [1],
+            'num_channels': 640,
+            'padding': 'SAME',
+            'dilation': [1],
+            'dropout_keep_prob': 0.9,
+            'residual': True,
+            'residual_dense': residual_dense,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 5,
+            'kernel_size': [21],
+            'stride': [1],
+            'num_channels': 640,
+            'padding': 'SAME',
+            'dilation': [1],
+            'dropout_keep_prob': 0.9,
+            'residual': True,
+            'residual_dense': residual_dense,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 5,
+            'kernel_size': [25],
+            'stride': [1],
+            'num_channels': 768,
+            'padding': 'SAME',
+            'dilation': [1],
+            'dropout_keep_prob': 0.9,
+            'residual': True,
+            'residual_dense': residual_dense,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 5,
+            'kernel_size': [25],
+            'stride': [1],
+            'num_channels': 768,
+            'padding': 'SAME',
+            'dilation': [1],
+            'dropout_keep_prob': 0.9,
+            'residual': True,
+            'residual_dense': residual_dense,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 1,
+            'kernel_size': [29],
+            'stride': [1],
+            'num_channels': 896,
+            'padding': 'SAME',
+            'dilation': [2],
+            'dropout_keep_prob': 0.9,
+        },
+        {
+            'type': 'conv1d',
+            'repeat': 1,
+            'kernel_size': [1],
+            'stride': [1],
+            'num_channels': 1024,
+            'padding': 'SAME',
+            'dilation': [1],
+            'dropout_keep_prob': 0.9,
+        },
+    ],
+    'dropout_keep_prob': 0.9,
+    'initializer': tf.contrib.layers.xavier_initializer,
+    'initializer_params': {'uniform': False},
+    'normalization': 'batch_norm',
+    'activation_fn': tf.nn.relu,
+    'data_format': 'channels_last',
+    'use_conv_mask': True,
+}
+
 
 def learning_rate_scheduler(global_step):
     return train.schedule.cosine_decay(
@@ -42,11 +207,10 @@ n_mels = featurizer.num_feature_bins
 
 def mel_augmentation(features):
 
-    features = mask_augmentation.mask_frequency(features, width_freq_mask = 10)
-    if features.shape[0] > 50:
-        features = mask_augmentation.mask_time(
-            features, width_time_mask = int(features.shape[0] * 0.05)
-        )
+    features = mask_augmentation.mask_frequency(features, width_freq_mask = 15)
+    features = mask_augmentation.mask_time(
+        features, width_time_mask = int(features.shape[0] * 0.05)
+    )
     return features
 
 
@@ -119,9 +283,20 @@ def get_dataset(
     return get
 
 
+class Model:
+    def __init__(self, inputs, inputs_length, training = True):
+        if training:
+            mode = 'train'
+        else:
+            mode = 'eval'
+        self.model = abstract.TDNNEncoder(config, None, mode = mode)
+        input_dict = {'source_tensors': [inputs, inputs_length]}
+        self.logits = self.model.encode(input_dict)
+
+
 def model_fn(features, labels, mode, params):
 
-    model = jasper.Model(
+    model = Model(
         features['inputs'], features['inputs_length'][:, 0], training = True
     )
     logits = tf.layers.dense(model.logits['outputs'], len(unique_vocab) + 1)
@@ -188,7 +363,7 @@ dev_dataset = get_dataset(
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'asr-mini-jasper-ctc',
+    model_dir = 'asr-jasper-ctc',
     num_gpus = 2,
     log_step = 1,
     save_checkpoint_step = 5000,

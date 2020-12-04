@@ -220,6 +220,7 @@ class Model(tf.keras.Model):
     ):
         super(Model, self).__init__(name = name, **kwargs)
         self.encoder = encoder
+        self.vocabulary_size = vocabulary_size
         self.predict_net = TransducerPrediction(
             vocabulary_size = vocabulary_size,
             embed_dim = embed_dim,
@@ -294,7 +295,7 @@ class Model(tf.keras.Model):
     def greedy_decoder(self, features):
         total = tf.shape(features)[0]
         batch = tf.constant(0, dtype = tf.int32)
-        decoded = tf.zeros(shape = (1, tf.shape(features)[1]), dtype = tf.int32)
+        decoded = tf.zeros(shape = (0, tf.shape(features)[1]), dtype = tf.int32)
 
         def condition(batch, total, features, decoded):
             return tf.less(batch, total)

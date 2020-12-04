@@ -9,40 +9,50 @@ from herpetologist import check_type
 import json
 
 _transducer_availability = {
-    'small-conformer': {'Size (MB)': 97.8, 'WER': 0, 'CER': 0},
-    'conformer': {'Size (MB)': 97.8, 'WER': 0, 'CER': 0},
+    'small-conformer': {
+        'Size (MB)': 41.33,
+        'Quantized Size (MB)': 8.71,
+        'WER': 0,
+        'CER': 0,
+    },
+    'conformer': {
+        'Size (MB)': 97.8,
+        'Quantized Size (MB)': 8.71,
+        'WER': 0,
+        'CER': 0,
+    },
+    'streaming': {
+        'Size (MB)': 97.8,
+        'Quantized Size (MB)': 8.71,
+        'WER': 0,
+        'CER': 0,
+    },
 }
 
 _ctc_availability = {
     'mini-jasper': {
         'Size (MB)': 33.3,
         'Quantized Size (MB)': 8.71,
-        'WER': 0,
-        'CER': 0,
-        'WER-LM': 0,
-        'CER-LM': 0,
+        'WER': 0.3353,
+        'CER': 0.0870,
     },
     'medium-jasper': {
         'Size (MB)': 336,
-        'Quantized Size (MB)': 88,
-        'WER': 0,
-        'CER': 0,
-        'WER-LM': 0,
-        'CER-LM': 0,
+        'Quantized Size (MB)': 84.9,
+        'WER': 0.3383,
+        'CER': 0.0922,
     },
     'jasper': {
         'Size (MB)': 1290,
         'Quantized Size (MB)': 339.5,
         'WER': 0,
         'CER': 0,
-        'WER-LM': 0,
-        'CER-LM': 0,
     },
 }
 
 _language_model_availability = {
     'malaya-speech': {
-        'Size (MB)': 2.8,
+        'Size (MB)': 4.5,
         'Description': 'Gathered from malaya-speech ASR transcript',
         'Command': [
             'lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
@@ -50,7 +60,7 @@ _language_model_availability = {
         ],
     },
     'malaya-speech-wikipedia': {
-        'Size (MB)': 23.3,
+        'Size (MB)': 27.5,
         'Description': 'Gathered from malaya-speech ASR transcript + Wikipedia (Random sample 300k sentences)',
         'Command': [
             'lmplz --text text.txt --arpa out.arpa -o 5 --prune 0 1 1 1 1',
@@ -145,7 +155,7 @@ def language_model(
     check_file(PATH_LM[model], S3_PATH_LM[model], **kwargs)
 
     with open(PATH_LM[model]['vocab']) as fopen:
-        vocab_list = json.load(fopen)
+        vocab_list = json.load(fopen) + ['{', '}', '[']
 
     scorer = Scorer(alpha, beta, PATH_LM[model]['model'], vocab_list)
     return scorer
