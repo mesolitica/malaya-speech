@@ -52,6 +52,9 @@ Features
 -  **Speech Enhancement**
 
    Enhance voice activities using Pretrained STFT UNET Malaya-Speech models.
+-  **Speech-to-Text**
+
+   End-to-End Speech to Text using Pretrained CTC and RNN Transducer Malaya-Speech models.
 -  **Voice Activity Detection**
 
    Detect voice activities using Finetuned Speaker Vector Malaya-Speech models.

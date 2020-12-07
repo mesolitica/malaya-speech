@@ -69,6 +69,12 @@ malaya_speech.model.tf.STT
 .. autoclass:: malaya_speech.model.tf.STT()
     :members:
 
+malaya_speech.model.tf.TRANSDUCER
+----------------------------------
+
+.. autoclass:: malaya_speech.model.tf.TRANSDUCER()
+    :members:
+
 malaya_speech.pipeline
 -----------------------------------
 
@@ -127,6 +133,12 @@ malaya_speech.utils.astype
 --------------------------
 
 .. automodule:: malaya_speech.utils.astype
+    :members:
+
+malaya_speech.utils.beam_search
+----------------------------------
+
+.. automodule:: malaya_speech.utils.beam_search
     :members:
 
 malaya_speech.utils.char

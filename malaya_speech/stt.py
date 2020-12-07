@@ -1,6 +1,8 @@
 from malaya_speech.path import (
     PATH_STT_CTC,
     S3_PATH_STT_CTC,
+    PATH_STT_TRANSDUCER,
+    S3_PATH_STT_TRANSDUCER,
     PATH_LM,
     S3_PATH_LM,
 )
@@ -10,14 +12,14 @@ import json
 
 _transducer_availability = {
     'small-conformer': {
-        'Size (MB)': 41.33,
-        'Quantized Size (MB)': 8.71,
-        'WER': 0,
-        'CER': 0,
+        'Size (MB)': 44.1,
+        'Quantized Size (MB)': 13.3,
+        'WER': 0.2692,
+        'CER': 0.1058,
     },
     'conformer': {
-        'Size (MB)': 97.8,
-        'Quantized Size (MB)': 8.71,
+        'Size (MB)': 116.8,
+        'Quantized Size (MB)': 30.7,
         'WER': 0,
         'CER': 0,
     },
@@ -44,9 +46,9 @@ _ctc_availability = {
     },
     'jasper': {
         'Size (MB)': 1290,
-        'Quantized Size (MB)': 339.5,
-        'WER': 0,
-        'CER': 0,
+        'Quantized Size (MB)': 323,
+        'WER': 0.3215,
+        'CER': 0.0882,
     },
 }
 
@@ -174,6 +176,7 @@ def deep_transducer(
 
         * ``'small-conformer'`` - SMALL size Google Conformer, https://arxiv.org/pdf/2005.08100.pdf
         * ``'base-conformer'`` - BASE size Google Conformer, https://arxiv.org/pdf/2005.08100.pdf
+        * ``'streaming'`` - half size Streaming Transducer, https://arxiv.org/pdf/1811.06621.pdf
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 
@@ -181,13 +184,22 @@ def deep_transducer(
 
     Returns
     -------
-    result : malaya_speech.supervised.classification.load function
+    result : malaya_speech.supervised.stt.transducer_load function
     """
     model = model.lower()
     if model not in _transducer_availability:
         raise Exception(
             'model not supported, please check supported models from `malaya_speech.stt.available_transducer()`.'
         )
+
+    return stt.transducer_load(
+        path = PATH_STT_TRANSDUCER,
+        s3_path = S3_PATH_STT_TRANSDUCER,
+        model = model,
+        name = 'speech-to-text',
+        quantized = quantized,
+        **kwargs
+    )
 
 
 def deep_ctc(model: str = 'jasper', quantized: bool = False, **kwargs):
@@ -209,7 +221,7 @@ def deep_ctc(model: str = 'jasper', quantized: bool = False, **kwargs):
 
     Returns
     -------
-    result : malaya_speech.supervised.stt.load function
+    result : malaya_speech.supervised.stt.ctc_load function
     """
 
     model = model.lower()
@@ -218,7 +230,7 @@ def deep_ctc(model: str = 'jasper', quantized: bool = False, **kwargs):
             'model not supported, please check supported models from `malaya_speech.stt.available_ctc()`.'
         )
 
-    return stt.load(
+    return stt.ctc_load(
         path = PATH_STT_CTC,
         s3_path = S3_PATH_STT_CTC,
         model = model,

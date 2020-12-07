@@ -207,7 +207,7 @@ class Model(Transducer):
         vocabulary_size: int,
         encoder_reductions: dict = {0: 3, 1: 2},
         encoder_dmodel: int = 640,
-        encoder_nlayers: int = 2,
+        encoder_nlayers: int = 3,
         encoder_rnn_type: str = 'lstm',
         encoder_rnn_units: int = 2048,
         encoder_layer_norm: bool = True,

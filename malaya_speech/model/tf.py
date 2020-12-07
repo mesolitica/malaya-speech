@@ -7,6 +7,8 @@ from malaya_speech.utils.padding import (
     sequence_1d,
 )
 from malaya_speech.utils.char import decode as char_decode
+from malaya_speech.utils.subword import decode as subword_decode
+from malaya_speech.utils.beam_search import transducer as transducer_beam
 
 
 class ABSTRACT:
@@ -501,3 +503,135 @@ class STT(ABSTRACT):
         else:
             method = self.predict
         return method([input], decoder = decoder, **kwargs)[0]
+
+
+class TRANSDUCER(ABSTRACT):
+    def __init__(
+        self,
+        X_placeholder,
+        X_len_placeholder,
+        encoded_placeholder,
+        predicted_placeholder,
+        states_placeholder,
+        padded_features,
+        padded_lens,
+        encoded,
+        ytu,
+        new_states,
+        initial_states,
+        featurizer,
+        vocab,
+        time_reduction_factor,
+        sess,
+        model,
+        name,
+    ):
+        self._X_placeholder = X_placeholder
+        self._X_len_placeholder = X_len_placeholder
+        self._encoded_placeholder = encoded_placeholder
+        self._predicted_placeholder = predicted_placeholder
+        self._states_placeholder = states_placeholder
+
+        self._padded_features = padded_features
+        self._padded_lens = padded_lens
+        self._encoded = encoded
+        self._ytu = ytu
+        self._new_states = new_states
+        self._initial_states = initial_states
+
+        self._featurizer = featurizer
+        self._vocab = vocab
+        self._time_reduction_factor = time_reduction_factor
+        self._sess = sess
+        self.__model__ = model
+        self.__name__ = name
+
+    def _check_decoder(self, decoder, beam_size):
+        decoder = decoder.lower()
+        if decoder not in ['greedy', 'beam']:
+            raise ValueError('mode only supports [`greedy`, `beam`]')
+        if beam_size < 1:
+            raise ValueError('beam_size must bigger than 0')
+        return decoder
+
+    def predict(
+        self, inputs, decoder: str = 'beam', beam_size: int = 5, **kwargs
+    ):
+        """
+        Transcribe inputs, will return list of strings.
+
+        Parameters
+        ----------
+        input: List[np.array]
+            List[np.array] or List[malaya_speech.model.frame.FRAME].
+        decoder: str, optional (default='beam')
+            decoder mode, allowed values:
+
+            * ``'greedy'`` - greedy decoder.
+            * ``'beam'`` - beam decoder.
+        beam_size: int, optional (default=5)
+            beam size for beam decoder.
+
+        Returns
+        -------
+        result: List[str]
+        """
+        decoder = self._check_decoder(decoder, beam_size)
+
+        inputs = [
+            input.array if isinstance(input, FRAME) else input
+            for input in inputs
+        ]
+
+        padded, lens = sequence_1d(inputs, return_len = True)
+
+        if decoder == 'greedy':
+            beam_size = 1
+
+        encoded_, padded_lens_ = self._sess.run(
+            [self._encoded, self._padded_lens],
+            feed_dict = {
+                self._X_placeholder: padded,
+                self._X_len_placeholder: lens,
+            },
+        )
+        padded_lens_ = padded_lens_ // self._time_reduction_factor
+        s = self._sess.run(self._initial_states)
+        results = []
+        for i in range(len(encoded_)):
+            r = transducer_beam(
+                enc = encoded_[i],
+                total = padded_lens_[i],
+                initial_states = s,
+                encoded_placeholder = self._encoded_placeholder,
+                predicted_placeholder = self._predicted_placeholder,
+                states_placeholder = self._states_placeholder,
+                ytu = self._ytu,
+                new_states = self._new_states,
+                sess = self._sess,
+                beam_width = beam_size,
+                **kwargs,
+            )
+            results.append(subword_decode(self._vocab, r))
+        return results
+
+    def __call__(self, input, decoder: str = 'greedy', **kwargs):
+        """
+        Transcribe input, will return a string.
+
+        Parameters
+        ----------
+        input: np.array
+            np.array or malaya_speech.model.frame.FRAME.
+        decoder: str, optional (default='beam')
+            decoder mode, allowed values:
+
+            * ``'greedy'`` - greedy decoder.
+            * ``'beam'`` - beam decoder.
+        **kwargs: keyword arguments passed to `predict`.
+
+        Returns
+        -------
+        result: str
+        """
+        return self.predict([input], decoder = decoder, **kwargs)[0]

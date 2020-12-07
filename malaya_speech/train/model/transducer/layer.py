@@ -34,14 +34,11 @@ class Embedding(tf.keras.layers.Layer):
         self.initializer = tf.keras.initializers.get(initializer)
 
     def build(self, input_shape):
-        self.embeddings = self.add_weight(
-            name = 'embeddings',
+        self.embeddings = tf.get_variable(
+            'transducer/transducer_prediction/transducer_prediction_embedding/embeddings',
+            [self.vocab_size, self.embed_dim],
             dtype = tf.float32,
-            shape = [self.vocab_size, self.embed_dim],
             initializer = self.initializer,
-            trainable = True,
-            regularizer = self.regularizer,
-            constraint = self.contraint,
         )
         self.built = True
 

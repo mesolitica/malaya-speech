@@ -335,6 +335,45 @@ S3_PATH_STT_CTC = {
     },
 }
 
+PATH_STT_TRANSDUCER = {
+    'small-conformer': {
+        'model': home + '/stt/small-conformer-transducer/model.pb',
+        'quantized': home
+        + '/stt/small-conformer-transducer/quantized/model.pb',
+        'vocab': home + '/stt/vocab/transducer/vocab.tokenizer.subwords',
+        'version': 'v1',
+    },
+    'conformer': {
+        'model': home + '/stt/conformer-transducer/model.pb',
+        'quantized': home + '/stt/conformer-transducer/quantized/model.pb',
+        'vocab': home + '/stt/vocab/transducer/vocab.tokenizer.subwords',
+        'version': 'v1',
+    },
+    'streaming': {
+        'model': home + '/stt/streaming-transducer/model.pb',
+        'quantized': home + '/stt/streaming-transducer/quantized/model.pb',
+        'vocab': home + '/stt/vocab/transducer/vocab.tokenizer.subwords',
+        'version': 'v1',
+    },
+}
+S3_PATH_STT_TRANSDUCER = {
+    'small-conformer': {
+        'model': 'v1/stt/small-conformer-transducer.pbb',
+        'quantized': 'v1/stt/small-conformer-transducer.pb.quantized',
+        'vocab': 'v1/vocab/malaya-speech.tokenizer.subwords',
+    },
+    'conformer': {
+        'model': 'v1/stt/conformer-transducer.pb',
+        'quantized': 'v1/stt/conformer-transducer.pb.quantized',
+        'vocab': 'v1/vocab/malaya-speech.tokenizer.subwords',
+    },
+    'streaming': {
+        'model': 'v1/stt/streaming-transducer.pb',
+        'quantized': 'v1/stt/streaming-transducer.pb.quantized',
+        'vocab': 'v1/vocab/malaya-speech.tokenizer.subwords',
+    },
+}
+
 PATH_VAD = {
     'vggvox-v1': {
         'model': home + '/vad/vggvox-v1/model.pb',

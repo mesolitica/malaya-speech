@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
 
 import tensorflow as tf
 import malaya_speech
@@ -19,7 +19,7 @@ subwords = malaya_speech.subword.load('malaya-speech.tokenizer')
 with open('malaya-speech-sst-vocab.json') as fopen:
     unique_vocab = json.load(fopen) + ['{', '}', '[']
 
-config = malaya_speech.config.conformer_small_encoder_config
+config = malaya_speech.config.conformer_base_encoder_config
 
 parameters = {
     'optimizer_params': {'beta1': 0.9, 'beta2': 0.98, 'epsilon': 10e-9},
@@ -163,7 +163,7 @@ def model_fn(features, labels, mode, params):
     conformer_model = conformer.Model(
         kernel_regularizer = None, bias_regularizer = None, **config
     )
-    decoder_config = malaya_speech.config.conformer_small_decoder_config
+    decoder_config = malaya_speech.config.conformer_base_decoder_config
     transducer_model = transducer.rnn.Model(
         conformer_model, vocabulary_size = subwords.vocab_size, **decoder_config
     )
@@ -221,7 +221,7 @@ dev_dataset = get_dataset(
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'asr-small-conformer-transducer',
+    model_dir = 'asr-base-conformer-transducer',
     num_gpus = 2,
     log_step = 1,
     save_checkpoint_step = 5000,

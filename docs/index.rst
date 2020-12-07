@@ -35,6 +35,7 @@ Contents:
 
    ctc-language-model
    load-stt-ctc-model
+   load-stt-transducer-model
    transcribe-long-audio
    realtime-asr
    convert-asr-to-tflite

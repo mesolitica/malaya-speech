@@ -71,7 +71,7 @@ def load_graph(frozen_graph_filename, **kwargs):
             path = frozen_graph_filename.split('Malaya-Speech/')[1]
             path = '/'.join(path.split('/')[:-1])
             raise Exception(
-                f"{e}, file corrupted due to some reasons, please run malaya_speech.clear_cache('{path}') and try again"
+                f"{e}, file corrupted due to some reasons, please run `malaya_speech.clear_cache('{path}')` and try again"
             )
 
     with tf.Graph().as_default() as graph:
@@ -264,6 +264,7 @@ def describe_availability(dict, transpose = True, text = ''):
 
 
 from . import astype
+from . import beam_search
 from . import char
 from . import dist
 from . import featurization

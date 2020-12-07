@@ -145,7 +145,7 @@ def prepare_dataset(
         prepare_data.shuffle_dataset(all_paths)
 
 
-def get_assignment_map_from_checkpoint(tvars, init_checkpoint):
+def get_assignment_map_from_checkpoint(tvars, init_checkpoint, logging = True):
     """Compute the union of the current variables and checkpoint variables."""
     assignment_map = {}
     initialized_variable_names = {}
@@ -171,14 +171,15 @@ def get_assignment_map_from_checkpoint(tvars, init_checkpoint):
         initialized_variable_names[name] = 1
         initialized_variable_names[name + ':0'] = 1
 
-    tf.logging.info('**** Trainable Variables ****')
-    for var in tvars:
-        init_string = ''
-        if var.name in initialized_variable_names:
-            init_string = ', *INIT_FROM_CKPT*'
-        tf.logging.info(
-            '  name = %s, shape = %s%s', var.name, var.shape, init_string
-        )
+    if logging:
+        tf.logging.info('**** Trainable Variables ****')
+        for var in tvars:
+            init_string = ''
+            if var.name in initialized_variable_names:
+                init_string = ', *INIT_FROM_CKPT*'
+            tf.logging.info(
+                '  name = %s, shape = %s%s', var.name, var.shape, init_string
+            )
 
     return (assignment_map, initialized_variable_names)
 
