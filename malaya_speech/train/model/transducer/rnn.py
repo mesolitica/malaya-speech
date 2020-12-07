@@ -105,7 +105,7 @@ class TransducerPrediction(tf.keras.Model):
                 outputs = rnn['projection'](outputs, training = training)
         return outputs
 
-    def recognize(self, inputs, states):
+    def recognize(self, inputs, states, training = False):
         """Recognize function for prediction network
         Args:
             inputs (tf.Tensor): shape [1, 1]
@@ -114,13 +114,13 @@ class TransducerPrediction(tf.keras.Model):
             tf.Tensor: outputs with shape [1, 1, P]
             tf.Tensor: new states with shape [num_lstms, 2, 1, P]
         """
-        outputs = self.embed(inputs, training = False)
-        outputs = self.do(outputs, training = False)
+        outputs = self.embed(inputs, training = training)
+        outputs = self.do(outputs, training = training)
         new_states = []
         for i, rnn in enumerate(self.rnns):
             outputs = rnn['rnn'](
                 outputs,
-                training = False,
+                training = training,
                 initial_state = tf.unstack(states[i], axis = 0),
             )
             new_states.append(tf.stack(outputs[1:]))
@@ -266,7 +266,7 @@ class Model(tf.keras.Model):
         outputs = self.encoder(outputs, training = False)
         return tf.squeeze(outputs, axis = 0)
 
-    def decoder_inference(self, encoded, predicted, states):
+    def decoder_inference(self, encoded, predicted, states, training = False):
         """Infer function for decoder
         Args:
             encoded (tf.Tensor): output of encoder at each time step => shape [E]
@@ -277,8 +277,12 @@ class Model(tf.keras.Model):
         """
         encoded = tf.reshape(encoded, [1, 1, -1])
         predicted = tf.reshape(predicted, [1, 1])
-        y, new_states = self.predict_net.recognize(predicted, states)
-        ytu = tf.nn.log_softmax(self.joint_net([encoded, y], training = False))
+        y, new_states = self.predict_net.recognize(
+            predicted, states, training = training
+        )
+        ytu = tf.nn.log_softmax(
+            self.joint_net([encoded, y], training = training)
+        )
         ytu = tf.squeeze(ytu, axis = None)
         return ytu, new_states
 

@@ -30,7 +30,7 @@ Tensorboard, https://tensorboard.dev/experiment/NxezN3K6RwykBKjX027PMA/
 
 Tensorboard, https://tensorboard.dev/experiment/QmxtkZwkSQOCwGqNzRw5Rw/
 
-4. Jasper, last update6th December 2020, [asr-jasper-ctc-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/asr-jasper-ctc-output.tar.gz).
+4. Jasper, last update 6th December 2020, [asr-jasper-ctc-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/asr-jasper-ctc-output.tar.gz).
 
 Tensorboard, https://tensorboard.dev/experiment/H9hecK9XQduv9OkAdjBeEA/
 
