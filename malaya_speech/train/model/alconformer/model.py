@@ -374,14 +374,16 @@ class Model(tf.keras.Model):
             name = f'{name}_block',
         )
 
-    def call(self, inputs, training = False, **kwargs):
+    def call(self, inputs, training = False, logging = False, **kwargs):
         # input with shape [B, T, V1, V2]
         outputs = self.conv_subsampling(inputs, training = training)
         outputs = self.linear(outputs, training = training)
         pe = self.pe(outputs)
         outputs = self.do(outputs, training = training)
         for i in range(self.num_blocks):
-            self.conformer_blocks([outputs, pe], training = training)
+            if logging:
+                print(i, outputs)
+            outputs = self.conformer_blocks([outputs, pe], training = training)
         return outputs
 
     def get_config(self):
