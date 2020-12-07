@@ -18,14 +18,14 @@ _transducer_availability = {
         'CER': 0.1058,
     },
     'conformer': {
-        'Size (MB)': 116.8,
-        'Quantized Size (MB)': 30.7,
-        'WER': 0,
-        'CER': 0,
+        'Size (MB)': 120,
+        'Quantized Size (MB)': 32.7,
+        'WER': 0.2442,
+        'CER': 0.0910,
     },
-    'streaming': {
-        'Size (MB)': 97.8,
-        'Quantized Size (MB)': 8.71,
+    'alconformer': {
+        'Size (MB)': 27,
+        'Quantized Size (MB)': 7,
         'WER': 0,
         'CER': 0,
     },
@@ -164,7 +164,7 @@ def language_model(
 
 
 def deep_transducer(
-    model: str = 'base-conformer', quantized: bool = False, **kwargs
+    model: str = 'conformer', quantized: bool = False, **kwargs
 ):
     """
     Load Encoder-Transducer ASR model.
@@ -175,8 +175,8 @@ def deep_transducer(
         Model architecture supported. Allowed values:
 
         * ``'small-conformer'`` - SMALL size Google Conformer, https://arxiv.org/pdf/2005.08100.pdf
-        * ``'base-conformer'`` - BASE size Google Conformer, https://arxiv.org/pdf/2005.08100.pdf
-        * ``'streaming'`` - half size Streaming Transducer, https://arxiv.org/pdf/1811.06621.pdf
+        * ``'conformer'`` - BASE size Google Conformer, https://arxiv.org/pdf/2005.08100.pdf
+        * ``'alconformer'`` - BASE size A-Lite Google Conformer, https://arxiv.org/pdf/1811.06621.pdf
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 
