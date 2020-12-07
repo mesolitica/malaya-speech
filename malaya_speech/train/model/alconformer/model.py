@@ -371,7 +371,7 @@ class Model(tf.keras.Model):
             depth_multiplier = depth_multiplier,
             kernel_regularizer = kernel_regularizer,
             bias_regularizer = bias_regularizer,
-            name = f'{name}_block',
+            name = f'{name}_block_0',
         )
 
     def call(self, inputs, training = False, logging = False, **kwargs):
