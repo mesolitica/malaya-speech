@@ -349,9 +349,9 @@ PATH_STT_TRANSDUCER = {
         'vocab': home + '/stt/vocab/transducer/vocab.tokenizer.subwords',
         'version': 'v1',
     },
-    'streaming': {
-        'model': home + '/stt/streaming-transducer/model.pb',
-        'quantized': home + '/stt/streaming-transducer/quantized/model.pb',
+    'alconformer': {
+        'model': home + '/stt/alconformer-transducer/model.pb',
+        'quantized': home + '/stt/alconformer-transducer/quantized/model.pb',
         'vocab': home + '/stt/vocab/transducer/vocab.tokenizer.subwords',
         'version': 'v1',
     },
@@ -367,9 +367,9 @@ S3_PATH_STT_TRANSDUCER = {
         'quantized': 'v1/stt/conformer-transducer.pb.quantized',
         'vocab': 'v1/vocab/malaya-speech.tokenizer.subwords',
     },
-    'streaming': {
-        'model': 'v1/stt/streaming-transducer.pb',
-        'quantized': 'v1/stt/streaming-transducer.pb.quantized',
+    'alconformer': {
+        'model': 'v1/stt/alconformer-transducer.pb',
+        'quantized': 'v1/stt/alconformer-transducer.pb.quantized',
         'vocab': 'v1/vocab/malaya-speech.tokenizer.subwords',
     },
 }
