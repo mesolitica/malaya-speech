@@ -95,11 +95,11 @@ class TFTacotronEmbeddings(tf.keras.layers.Layer):
     def build(self, input_shape):
         """Build shared character/phoneme embedding layers."""
         with tf.name_scope('character_embeddings'):
-            self.character_embeddings = self.add_weight(
+            self.character_embeddings = tf.get_variable(
                 'weight',
-                shape = [self.vocab_size, self.embedding_hidden_size],
-                initializer = get_initializer(self.initializer_range),
+                [self.vocab_size, self.embedding_hidden_size],
                 dtype = tf.float32,
+                initializer = get_initializer(self.initializer_range),
             )
         super().build(input_shape)
 
@@ -805,7 +805,7 @@ class Model(tf.keras.Model):
             final_decoder_state,
             _,
         ) = dynamic_decode(
-            self.decoder, maximum_iterations = maximum_iterations
+            self.decoder, maximum_iterations = tf.shape(mel_gts)[1]
         )
 
         decoder_outputs = tf.reshape(
