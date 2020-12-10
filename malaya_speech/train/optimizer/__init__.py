@@ -27,8 +27,9 @@ from tensorflow.python.training import training_ops
 from tensorflow.train import MomentumOptimizer
 import tensorflow as tf
 
-from .loss import AutomaticLossScaler
-from .utils import mask_nans, check_params
+from ..loss import AutomaticLossScaler
+from ..utils import mask_nans, check_params
+from . import adamw
 
 OPTIMIZER_CLS_NAMES = {
     'Adagrad': tf.train.AdagradOptimizer,

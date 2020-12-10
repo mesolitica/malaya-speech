@@ -173,6 +173,7 @@ for k, v in discriminator_losses.items():
 summaries = tf.summary.merge_all()
 
 t_vars = tf.trainable_variables()
+
 d_vars = [var for var in t_vars if var.name.startswith('melgan-discriminator')]
 g_vars = [var for var in t_vars if var.name.startswith('melgan-generator')]
 
@@ -196,8 +197,9 @@ writer = tf.summary.FileWriter(f'./{path}')
 ckpt_path = tf.train.latest_checkpoint(path)
 if ckpt_path:
     saver.restore(sess, ckpt_path)
+    print(f'restoring checkpoint from {ckpt_path}')
 
-for i in range(epoch):
+for i in range(295_001, epoch):
     g_loss, _ = sess.run([generator_loss, g_optimizer])
     d_loss, _ = sess.run([discriminator_loss, d_optimizer])
     s = sess.run(summaries)
@@ -207,3 +209,5 @@ for i in range(epoch):
         saver.save(sess, f'{path}/model.ckpt', global_step = i)
 
     print(i, g_loss, d_loss)
+
+saver.save(sess, f'{path}/model.ckpt', global_step = epoch)
