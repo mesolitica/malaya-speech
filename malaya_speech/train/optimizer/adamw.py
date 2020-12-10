@@ -29,7 +29,13 @@ from tensorflow.python.ops import resource_variable_ops
 
 
 def create_optimizer(
-    loss, init_lr, num_train_steps, num_warmup_steps, fp16 = False
+    loss,
+    init_lr,
+    num_train_steps,
+    num_warmup_steps,
+    end_learning_rate = 0.0,
+    weight_decay_rate = 0.1,
+    fp16 = False,
 ):
     """Creates an optimizer training op."""
     global_step = tf.train.get_or_create_global_step()
@@ -41,7 +47,7 @@ def create_optimizer(
         learning_rate,
         global_step,
         num_train_steps,
-        end_learning_rate = 0.0,
+        end_learning_rate = end_learning_rate,
         power = 1.0,
         cycle = False,
     )
@@ -68,7 +74,7 @@ def create_optimizer(
     # loaded from init_checkpoint.)
     optimizer = AdamWeightDecayOptimizer(
         learning_rate = learning_rate,
-        weight_decay_rate = 0.01,
+        weight_decay_rate = weight_decay_rate,
         beta_1 = 0.9,
         beta_2 = 0.999,
         epsilon = 1e-6,
