@@ -12,10 +12,7 @@ from tensorflow.python.keras.engine.input_spec import InputSpec
 from tensorflow.python.keras.layers import Conv1D, SeparableConv1D
 from tensorflow.python.keras.utils import conv_utils
 from tensorflow.python.ops import array_ops, nn, nn_ops
-from malaya_speech.train.model.melgan.layer import (
-    WeightNormalization,
-    GroupConv1D,
-)
+from .layer import WeightNormalization, GroupConv1D
 
 
 def get_initializer(initializer_seed = 42):

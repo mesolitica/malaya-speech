@@ -45,3 +45,7 @@ Tensorboard, https://tensorboard.dev/experiment/GzzDDqC7Qn2Zr5CotE89Cw/
 7. AL-Conformer, last update 8th December 2020, [asr-base-alconformer-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/asr-base-alconformer-output.tar.gz)
 
 Tensorboard, https://tensorboard.dev/experiment/qrr67AeIRymuQLIAnqi8lA/
+
+8. large Conformer, last update 10th December 2020, [asr-large-conformer-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/asr-large-conformer-output.tar.gz)
+
+Tensorboard, https://tensorboard.dev/experiment/1qBD7FGyS32Q8uQvhA1NnA/

@@ -3,6 +3,7 @@ from . import conformer
 from . import ctc
 from . import deep_speaker
 from . import deepspeech2
+from . import hifigan
 from . import demucs
 from . import denoiser
 from . import fastspeech
