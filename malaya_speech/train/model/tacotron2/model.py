@@ -21,11 +21,9 @@ from ..fastspeech.model import TFEmbedding
 from tensorflow.contrib.seq2seq.python.ops.attention_wrapper import (
     BahdanauAttentionV2 as BahdanauAttention,
 )
-from tensorflow.contrib.seq2seq.python.ops.decoder import (
-    Decoder,
-    dynamic_decode,
-)
+from tensorflow.contrib.seq2seq.python.ops.decoder import Decoder
 from tensorflow.contrib.seq2seq.python.ops.sampler import Sampler
+from .decoder import dynamic_decode
 
 
 class TFTacotronConvBatchNorm(tf.keras.layers.Layer):
