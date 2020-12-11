@@ -803,7 +803,7 @@ class Model(tf.keras.Model):
             final_decoder_state,
             _,
         ) = dynamic_decode(
-            self.decoder, maximum_iterations = tf.shape(mel_gts)[1]
+            self.decoder, maximum_iterations = maximum_iterations
         )
 
         decoder_outputs = tf.reshape(
