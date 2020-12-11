@@ -408,92 +408,46 @@ def deep_speaker(signal, sr = 16000, voice_only = True, **kwargs):
     return mfcc
 
 
-def scale_mel(
-    y,
-    sr = 16000,
-    n_fft = 2048,
-    hop_length = 100,
-    win_length = 1000,
-    n_mels = 256,
-    ref_db = 20,
-    max_db = 100,
-    factor = 15,
-    scale = True,
-):
-    mel = librosa.feature.melspectrogram(
-        y = y,
-        sr = sr,
-        S = None,
-        n_fft = n_fft,
-        hop_length = hop_length,
-        win_length = win_length,
-        window = 'hann',
-        center = True,
-        pad_mode = 'reflect',
-        power = 1.0,
-        n_mels = n_mels,
-    )
-    if scale:
-        mel = factor * np.log10(mel + 1e-8)
-        mel = np.clip((mel - ref_db + max_db) / max_db, 1e-11, 1)
-    return mel
-
-
-def unscale_mel(mel, ref_db = 20, max_db = 100, factor = 15):
-    inv_mel = ((mel * max_db) - max_db + ref_db) / factor
-    inv_mel = np.power(10, inv_mel) - 1e-8
-    inv_mel[inv_mel < 5e-6] = 0.0
-    return inv_mel
-
-
-def scale_mel_vocoder(
-    y,
-    sr = 22050,
-    n_fft = 1024,
-    hop_length = 256,
+def to_mel(
+    signal,
+    sampling_rate = 22050,
+    fft_size = 1024,
+    hop_size = 256,
     win_length = None,
-    n_mels = 256,
-    ref_db = 20,
-    max_db = 200,
-    factor = 13,
+    window = 'hann',
     fmin = 80,
     fmax = 7600,
-    scale = True,
+    trim_threshold_in_db = 60,
+    trim_frame_size = 2048,
+    trim_hop_size = 512,
+    trim_silence = True,
 ):
+    if trim_silence:
+        signal, _ = librosa.effects.trim(
+            signal,
+            top_db = trim_threshold_in_db,
+            frame_length = trim_frame_size,
+            hop_length = trim_hop_size,
+        )
     D = librosa.stft(
-        y,
-        n_fft = 1024,
-        hop_length = 256,
-        win_length = None,
-        window = 'hann',
+        signal,
+        n_fft = fft_size,
+        hop_length = hop_size,
+        win_length = win_length,
+        window = window,
         pad_mode = 'reflect',
     )
     S, _ = librosa.magphase(D)
+    fmin = 0 if fmin is None else fmin
+    fmax = sampling_rate // 2 if fmax is None else fmax
     mel_basis = librosa.filters.mel(
-        sr = sr, n_fft = n_fft, n_mels = n_mels, fmin = fmin, fmax = fmax
+        sr = sampling_rate,
+        n_fft = fft_size,
+        n_mels = num_mels,
+        fmin = fmin,
+        fmax = fmax,
     )
-    mel = np.log10(np.maximum(np.dot(mel_basis, S), 1e-10))
-    if scale:
-        mel = np.clip(((factor * mel) - ref_db + max_db) / max_db, 1e-11, 1)
-    return mel
-
-
-def unscale_mel_vocoder(mel, ref_db = 20, max_db = 200, factor = 13):
-    inv_mel = ((mel * max_db) - max_db + ref_db) / factor
-    return inv_mel
-
-
-def mu_law(x, mu = 255, int8 = False):
-    out = np.sign(x) * np.log(1 + mu * np.abs(x)) / np.log(1 + mu)
-    out = np.floor(out * 128)
-    if int8:
-        out = out.astype(np.int8)
-    return out
-
-
-def inverse_mu_law(x, mu = 255.0):
-    x = np.array(x).astype(np.float32)
-    out = (x + 0.5) * 2.0 / (mu + 1)
-    out = np.sign(out) / mu * ((1 + mu) ** np.abs(out) - 1)
-    out = np.where(np.equal(x, 0), x, out)
-    return out
+    mel = np.log10(np.maximum(np.dot(mel_basis, S), 1e-10)).T
+    signal = np.pad(signal, (0, fft_size), mode = 'edge')
+    signal = signal[: len(mel) * hop_size]
+    return signal

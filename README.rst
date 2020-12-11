@@ -70,6 +70,9 @@ Features
 -  **Speech-to-Text**
 
    End-to-End Speech to Text using Pretrained CTC and RNN Transducer Malaya-Speech models.
+-  **Vocoder**
+
+   Convert Mel to Waveform using Pretrained MelGAN and HifiGAN Vocoder Malaya-Speech models.
 -  **Voice Activity Detection**
 
    Detect voice activities using Finetuned Speaker Vector Malaya-Speech models.
