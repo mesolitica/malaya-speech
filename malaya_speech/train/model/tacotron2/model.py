@@ -754,6 +754,7 @@ class Model(tf.keras.Model):
         win_front = 2,
         win_back = 3,
         training = False,
+        swap_memory = True,
         **kwargs,
     ):
         """Call logic."""
@@ -797,6 +798,7 @@ class Model(tf.keras.Model):
             self.decoder,
             maximum_iterations = maximum_iterations,
             training = training,
+            swap_memory = swap_memory,
         )
 
         decoder_outputs = tf.reshape(
