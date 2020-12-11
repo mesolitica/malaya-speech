@@ -5,6 +5,9 @@ from tensorflow.contrib.seq2seq.python.ops.decoder import (
     BaseDecoder,
     _transpose_batch_time,
 )
+from tensorflow.python.framework import ops
+from tensorflow.python.eager import context
+from tensorflow.python.ops import variable_scope
 
 
 def _prepend_batch(batch_size, shape):
@@ -59,7 +62,17 @@ def dynamic_decode(
     Raises:
       ValueError: if `maximum_iterations` is provided but is not a scalar.
     """
-    with tf.name_scope(scope or 'decoder'):
+    with variable_scope.variable_scope(scope, 'decoder') as varscope:
+        ctxt = ops.get_default_graph()._get_control_flow_context()
+        is_xla = control_flow_util.GetContainingXLAContext(ctxt) is not None
+        in_while_loop = (
+            control_flow_util.GetContainingWhileContext(ctxt) is not None
+        )
+
+        if not context.executing_eagerly() and not in_while_loop:
+            if varscope.caching_device is None:
+                varscope.set_caching_device(lambda op: op.device)
+
         is_xla = not tf.executing_eagerly() and control_flow_util.GraphOrParentsInXlaContext(
             tf.compat.v1.get_default_graph()
         )
