@@ -18,11 +18,13 @@ import tensorflow as tf
 from ..fastspeech.layer import ACT2FN, get_initializer
 from ..fastspeech.model import TFEmbedding
 
-from tensorflow.contrib.seq2seq.python.ops.attention_wrapper import (
-    BahdanauAttentionV2 as BahdanauAttention,
-)
+# from tensorflow.contrib.seq2seq.python.ops.attention_wrapper import (
+#     BahdanauAttentionV2 as BahdanauAttention,
+# )
+
 from tensorflow.contrib.seq2seq.python.ops.decoder import Decoder
 from tensorflow.contrib.seq2seq.python.ops.sampler import Sampler
+from .attention_wrapper import BahdanauAttention
 from .decoder import dynamic_decode
 
 
@@ -780,7 +782,7 @@ class Model(tf.keras.Model):
         self.decoder.setup_decoder_init_state(
             self.decoder.cell.get_initial_state(batch_size)
         )
-        self.decoder.cell.attention_layer._setup_memory(
+        self.decoder.cell.attention_layer.setup_memory(
             memory = encoder_hidden_states,
             memory_sequence_length = input_lengths,  # use for mask attention.
         )
@@ -852,7 +854,7 @@ class Model(tf.keras.Model):
         self.decoder.setup_decoder_init_state(
             self.decoder.cell.get_initial_state(batch_size)
         )
-        self.decoder.cell.attention_layer._setup_memory(
+        self.decoder.cell.attention_layer.setup_memory(
             memory = encoder_hidden_states,
             memory_sequence_length = input_lengths,  # use for mask attention.
         )
