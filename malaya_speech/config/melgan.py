@@ -42,4 +42,14 @@ config = {
     'log_interval_steps': 1,
     'discriminator_train_start_steps': 0,
     'num_save_intermediate_results': 1,
+    'stft_loss_params': {
+        'fft_lengths': [1024, 2048, 512],
+        'frame_steps': [120, 240, 50],
+        'frame_lengths': [600, 1200, 240],
+    },
+    'subband_stft_loss_params': {
+        'fft_lengths': [384, 683, 171],
+        'frame_steps': [30, 60, 10],
+        'frame_lengths': [150, 300, 60],
+    },
 }

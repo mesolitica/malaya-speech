@@ -1,2 +1,2 @@
 from .config import GeneratorConfig, DiscriminatorConfig
-from .model import Generator
+from .model import Generator, PQMF

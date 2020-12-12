@@ -53,7 +53,7 @@ def design_prototype_filter(taps = 62, cutoff_ratio = 0.15, beta = 9.0):
     return h
 
 
-class TFPQMF(tf.keras.layers.Layer):
+class PQMF(tf.keras.layers.Layer):
     """PQMF module."""
 
     def __init__(self, config, **kwargs):
@@ -161,7 +161,7 @@ class Generator(generator):
 
     def __init__(self, config, **kwargs):
         super().__init__(config, **kwargs)
-        self.pqmf = TFPQMF(config = config, name = 'pqmf')
+        self.pqmf = PQMF(config = config, name = 'pqmf')
 
     def call(self, mels, **kwargs):
         """

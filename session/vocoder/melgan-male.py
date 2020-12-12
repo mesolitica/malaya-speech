@@ -66,6 +66,7 @@ import malaya_speech
 import malaya_speech.train
 from malaya_speech.train.model import melgan
 import malaya_speech.config
+from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 
 melgan_config = malaya_speech.config.melgan_config
 generator = melgan.Generator(
@@ -79,7 +80,6 @@ discriminator = melgan.MultiScaleDiscriminator(
 
 mels_loss = melgan.loss.TFMelSpectrogram()
 
-from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 
 mse_loss = tf.keras.losses.MeanSquaredError()
 mae_loss = tf.keras.losses.MeanAbsoluteError()
