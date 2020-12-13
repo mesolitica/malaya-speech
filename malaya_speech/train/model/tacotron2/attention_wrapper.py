@@ -516,7 +516,7 @@ class BahdanauAttention(AttentionMechanism):
     def build(self, input_shape):
         super().build(input_shape)
         if self.attention_v is None:
-            self.attention_v = self.add_weight(
+            self.attention_v = tf.get_variable(
                 'attention_v',
                 [self.units],
                 dtype = self.dtype,
@@ -527,14 +527,14 @@ class BahdanauAttention(AttentionMechanism):
             and self.attention_g is None
             and self.attention_b is None
         ):
-            self.attention_g = self.add_weight(
+            self.attention_g = tf.get_variable(
                 'attention_g',
                 initializer = tf.constant_initializer(
                     math.sqrt(1.0 / self.units)
                 ),
                 shape = (),
             )
-            self.attention_b = self.add_weight(
+            self.attention_b = tf.get_variable(
                 'attention_b',
                 shape = [self.units],
                 initializer = tf.zeros_initializer(),

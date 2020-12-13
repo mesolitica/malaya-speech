@@ -62,7 +62,7 @@ def parse(example):
     return example
 
 
-def get_dataset(files, batch_size = 8, shuffle_size = 8, thread_count = 24):
+def get_dataset(files, batch_size = 32, shuffle_size = 32, thread_count = 24):
     def get():
         dataset = tf.data.Dataset.from_generator(
             generate,
@@ -128,7 +128,7 @@ def model_fn(features, labels, mode, params):
     c = tacotron2.Config(
         vocab_size = len(MALAYA_SPEECH_SYMBOLS) + 1, **tacotron2_config
     )
-    model = tacotron2.Model(c, training = True)
+    model = tacotron2.Model(c)
     input_ids = features['text_ids']
     input_lengths = features['len_text_ids'][:, 0]
     speaker_ids = tf.constant([0], dtype = tf.int32)
