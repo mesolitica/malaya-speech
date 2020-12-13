@@ -35,6 +35,8 @@ def create_optimizer(
     num_warmup_steps,
     end_learning_rate = 0.0,
     weight_decay_rate = 0.1,
+    clip_norm = 0.5,
+    exclude_from_weight_decay = ['LayerNorm', 'layer_norm', 'bias'],
     fp16 = False,
 ):
     """Creates an optimizer training op."""
@@ -78,7 +80,7 @@ def create_optimizer(
         beta_1 = 0.9,
         beta_2 = 0.999,
         epsilon = 1e-6,
-        exclude_from_weight_decay = ['LayerNorm', 'layer_norm', 'bias'],
+        exclude_from_weight_decay = exclude_from_weight_decay,
     )
 
     # REF: https://github.com/tensorflow/tensorflow/issues/25080
@@ -104,7 +106,7 @@ def create_optimizer(
     # This is how the model was pre-trained.
     (grads, _) = tf.clip_by_global_norm(
         grads,
-        clip_norm = 1.0,
+        clip_norm = clip_norm,
         use_norm = tf.cond(
             all_finite, lambda: tf.global_norm(grads), lambda: tf.constant(1.0)
         ),

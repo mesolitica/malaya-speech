@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0,3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import tensorflow as tf
 import numpy as np
@@ -22,7 +22,7 @@ with open('mels-male.json') as fopen:
 import random
 
 reduction_factor = 3
-maxlen = 1000
+maxlen = 950
 
 
 def generate(files):
@@ -116,7 +116,7 @@ MALAYA_SPEECH_SYMBOLS = (
 )
 
 learning_rate = 0.001
-num_train_steps = 150000
+num_train_steps = 200000
 num_warmup_steps = 3000
 end_learning_rate = 0.00001
 weight_decay_rate = 0.01
@@ -126,7 +126,7 @@ def model_fn(features, labels, mode, params):
     tacotron2_config = malaya_speech.config.tacotron2_config
     tacotron2_config['reduction_factor'] = reduction_factor
     c = tacotron2.Config(
-        vocab_size = len(MALAYA_SPEECH_SYMBOLS), **tacotron2_config
+        vocab_size = len(MALAYA_SPEECH_SYMBOLS) + 1, **tacotron2_config
     )
     model = tacotron2.Model(c, training = True)
     input_ids = features['text_ids']
@@ -135,6 +135,7 @@ def model_fn(features, labels, mode, params):
     mel_outputs = features['mel']
     mel_lengths = features['len_mel'][:, 0]
     mel_actuals = features['mel']
+    guided = features['g']
     r = model(
         input_ids,
         input_lengths,
@@ -144,25 +145,8 @@ def model_fn(features, labels, mode, params):
         training = True,
     )
 
-    def mae(y, y_):
-        return tf.reduce_mean(tf.abs(y - y_))
-
-    def mse(y, y_):
-        return tf.reduce_mean(tf.square(y - y_))
-
-    def binary_crossentropy(target, output, from_logits = True):
-        if not from_logits:
-            # transform back to logits
-            epsilon_ = _to_tensor(epsilon(), output.dtype.base_dtype)
-            output = clip_ops.clip_by_value(output, epsilon_, 1 - epsilon_)
-            output = math_ops.log(output / (1 - output))
-        return tf.reduce_mean(
-            tf.nn.sigmoid_cross_entropy_with_logits(
-                labels = target, logits = output
-            )
-        )
-
-    guided = features['g']
+    binary_crossentropy = tf.keras.losses.BinaryCrossentropy(from_logits = True)
+    mae = tf.keras.losses.MeanAbsoluteError()
 
     decoder_output, post_mel_outputs, stop_token_predictions, alignment_histories = (
         r
@@ -247,7 +231,7 @@ train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
     model_dir = 'tacotron2-male',
-    num_gpus = 2,
+    num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 5000,
     max_steps = num_train_steps,

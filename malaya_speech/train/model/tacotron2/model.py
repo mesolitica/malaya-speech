@@ -15,8 +15,6 @@
 
 import collections
 import tensorflow as tf
-from ..fastspeech.layer import ACT2FN, get_initializer
-from ..fastspeech.model import TFEmbedding
 
 # from tensorflow.contrib.seq2seq.python.ops.attention_wrapper import (
 #     BahdanauAttentionV2 as BahdanauAttention,
@@ -26,6 +24,64 @@ from tensorflow.contrib.seq2seq.python.ops.decoder import Decoder
 from tensorflow.contrib.seq2seq.python.ops.sampler import Sampler
 from .attention_wrapper import BahdanauAttention
 from .decoder import dynamic_decode
+
+
+def get_initializer(initializer_range = 0.02):
+    """Creates a `tf.initializers.truncated_normal` with the given range.
+    Args:
+        initializer_range: float, initializer range for stddev.
+    Returns:
+        TruncatedNormal initializer with stddev = `initializer_range`.
+    """
+    return tf.keras.initializers.TruncatedNormal(
+        mean = 0, stddev = initializer_range
+    )
+
+
+def gelu(x):
+    """Gaussian Error Linear unit."""
+    cdf = 0.5 * (1.0 + tf.math.erf(x / tf.math.sqrt(2.0)))
+    return x * cdf
+
+
+def gelu_new(x):
+    """Smoother gaussian Error Linear Unit."""
+    cdf = 0.5 * (
+        1.0 + tf.tanh((np.sqrt(2 / np.pi) * (x + 0.044_715 * tf.pow(x, 3))))
+    )
+    return x * cdf
+
+
+def swish(x):
+    """Swish activation function."""
+    return tf.nn.swish(x)
+
+
+def mish(x):
+    return x * tf.math.tanh(tf.math.softplus(x))
+
+
+ACT2FN = {
+    'identity': tf.keras.layers.Activation('linear'),
+    'tanh': tf.keras.layers.Activation('tanh'),
+    'gelu': tf.keras.layers.Activation(gelu),
+    'relu': tf.keras.activations.relu,
+    'swish': tf.keras.layers.Activation(swish),
+    'gelu_new': tf.keras.layers.Activation(gelu_new),
+    'mish': tf.keras.layers.Activation(mish),
+}
+
+
+class TFEmbedding(tf.keras.layers.Embedding):
+    """Faster version of embedding."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def call(self, inputs):
+        inputs = tf.cast(tf.expand_dims(inputs, -1), tf.int32)
+        outputs = tf.gather_nd(self.embeddings, inputs)
+        return outputs
 
 
 class TFTacotronConvBatchNorm(tf.keras.layers.Layer):
@@ -95,10 +151,9 @@ class TFTacotronEmbeddings(tf.keras.layers.Layer):
     def build(self, input_shape):
         """Build shared character/phoneme embedding layers."""
         with tf.name_scope('character_embeddings'):
-            self.character_embeddings = tf.get_variable(
+            self.character_embeddings = self.add_weight(
                 'weight',
-                [self.vocab_size, self.embedding_hidden_size],
-                dtype = tf.float32,
+                shape = [self.vocab_size, self.embedding_hidden_size],
                 initializer = get_initializer(self.initializer_range),
             )
         super().build(input_shape)
@@ -326,7 +381,6 @@ class TFTacotronLocationSensitiveAttention(BahdanauAttention):
             memory = memory,
             memory_sequence_length = memory_length,
             probability_fn = 'softmax',
-            dtype = tf.float32,
             name = 'LocationSensitiveAttention',
         )
         self.location_convolution = tf.keras.layers.Conv1D(
@@ -497,9 +551,10 @@ TFDecoderOutput = collections.namedtuple(
 class TFTacotronDecoderCell(tf.keras.layers.AbstractRNNCell):
     """Tacotron-2 custom decoder cell."""
 
-    def __init__(self, config, **kwargs):
+    def __init__(self, config, enable_tflite_convertible = False, **kwargs):
         """Init variables."""
         super().__init__(**kwargs)
+        self.enable_tflite_convertible = enable_tflite_convertible
         self.prenet = TFTacotronPrenet(config, name = 'prenet')
 
         # define lstm cell on decoder.
@@ -580,9 +635,12 @@ class TFTacotronDecoderCell(tf.keras.layers.AbstractRNNCell):
         initial_state = self.attention_layer.get_initial_state(
             batch_size, size = self.alignment_size
         )
-        initial_alignment_history = tf.TensorArray(
-            dtype = tf.float32, size = 0, dynamic_size = True
-        )
+        if self.enable_tflite_convertible:
+            initial_alignment_history = ()
+        else:
+            initial_alignment_history = tf.TensorArray(
+                dtype = tf.float32, size = 0, dynamic_size = True
+            )
         return TFTacotronDecoderCellState(
             attention_lstm_state = initial_attention_lstm_cell_states,
             decoder_lstms_state = initial_decoder_lstms_cell_states,
@@ -613,7 +671,8 @@ class TFTacotronDecoderCell(tf.keras.layers.AbstractRNNCell):
 
         # 3. compute context, alignment and cumulative alignment.
         prev_state = states.state
-        prev_alignment_history = states.alignment_history
+        if not self.enable_tflite_convertible:
+            prev_alignment_history = states.alignment_history
         prev_max_alignments = states.max_alignments
         context, alignments, state = self.attention_layer(
             [attention_lstm_output, prev_state, prev_max_alignments],
@@ -639,9 +698,13 @@ class TFTacotronDecoderCell(tf.keras.layers.AbstractRNNCell):
         )
         stop_tokens = self.stop_projection(stop_inputs)
 
-        alignment_history = prev_alignment_history.write(
-            states.time, alignments
-        )
+        # 6. save alignment history to visualize.
+        if self.enable_tflite_convertible:
+            alignment_history = ()
+        else:
+            alignment_history = prev_alignment_history.write(
+                states.time, alignments
+            )
 
         # 7. return new states.
         new_states = TFTacotronDecoderCellState(
@@ -660,11 +723,18 @@ class TFTacotronDecoderCell(tf.keras.layers.AbstractRNNCell):
 class TFTacotronDecoder(Decoder):
     """Tacotron-2 Decoder."""
 
-    def __init__(self, decoder_cell, decoder_sampler, output_layer = None):
+    def __init__(
+        self,
+        decoder_cell,
+        decoder_sampler,
+        output_layer = None,
+        enable_tflite_convertible = False,
+    ):
         """Initial variables."""
         self.cell = decoder_cell
         self.sampler = decoder_sampler
         self.output_layer = output_layer
+        self.enable_tflite_convertible = enable_tflite_convertible
 
     def setup_decoder_init_state(self, decoder_init_state):
         self.initial_state = decoder_init_state
@@ -679,7 +749,9 @@ class TFTacotronDecoder(Decoder):
                 lambda shape: tf.TensorShape(shape), self.cell.output_size
             ),
             token_output = tf.TensorShape(self.sampler.reduction_factor),
-            sample_id = self.sampler.sample_ids_shape,
+            sample_id = tf.TensorShape([1])
+            if self.enable_tflite_convertible
+            else self.sampler.sample_ids_shape,  # tf.TensorShape([])
         )
 
     @property
@@ -719,11 +791,20 @@ class Model(tf.keras.Model):
 
     def __init__(self, config, **kwargs):
         """Initalize tacotron-2 layers."""
+        enable_tflite_convertible = kwargs.pop(
+            'enable_tflite_convertible', False
+        )
         super().__init__(self, **kwargs)
         self.encoder = TFTacotronEncoder(config, name = 'encoder')
-        self.decoder_cell = TFTacotronDecoderCell(config, name = 'decoder_cell')
+        self.decoder_cell = TFTacotronDecoderCell(
+            config,
+            name = 'decoder_cell',
+            enable_tflite_convertible = enable_tflite_convertible,
+        )
         self.decoder = TFTacotronDecoder(
-            self.decoder_cell, Tacotron2Sampler(config)
+            self.decoder_cell,
+            Tacotron2Sampler(config),
+            enable_tflite_convertible = enable_tflite_convertible,
         )
         self.postnet = TFTacotronPostnet(config, name = 'post_net')
         self.post_projection = tf.keras.layers.Dense(
@@ -733,6 +814,7 @@ class Model(tf.keras.Model):
         self.config = config
         self.use_window_mask = False
         self.maximum_iterations = 4000
+        self.enable_tflite_convertible = enable_tflite_convertible
 
     def setup_window(self, win_front, win_back):
         """Call only for inference."""
@@ -743,6 +825,22 @@ class Model(tf.keras.Model):
     def setup_maximum_iterations(self, maximum_iterations):
         """Call only for inference."""
         self.maximum_iterations = maximum_iterations
+
+    def _build(self):
+        input_ids = np.array([[1, 2, 3, 4, 5, 6, 7, 8, 9]])
+        input_lengths = np.array([9])
+        speaker_ids = np.array([0])
+        mel_outputs = np.random.normal(size = (1, 50, 80)).astype(np.float32)
+        mel_lengths = np.array([50])
+        self(
+            input_ids,
+            input_lengths,
+            speaker_ids,
+            mel_outputs,
+            mel_lengths,
+            10,
+            training = True,
+        )
 
     def call(
         self,
@@ -756,7 +854,6 @@ class Model(tf.keras.Model):
         win_front = 2,
         win_back = 3,
         training = False,
-        swap_memory = True,
         **kwargs,
     ):
         """Call logic."""
@@ -775,6 +872,11 @@ class Model(tf.keras.Model):
         batch_size = tf.shape(encoder_hidden_states)[0]
         alignment_size = tf.shape(encoder_hidden_states)[1]
 
+        # Setup some initial placeholders for decoder step. Include:
+        # 1. mel_gts, mel_lengths for teacher forcing mode.
+        # 2. alignment_size for attention size.
+        # 3. initial state for decoder cell.
+        # 4. memory (encoder hidden state) for attention mechanism.
         self.decoder.sampler.setup_target(
             targets = mel_gts, mel_lengths = mel_lengths
         )
@@ -799,8 +901,8 @@ class Model(tf.keras.Model):
         ) = dynamic_decode(
             self.decoder,
             maximum_iterations = maximum_iterations,
+            enable_tflite_convertible = self.enable_tflite_convertible,
             training = training,
-            swap_memory = swap_memory,
         )
 
         decoder_outputs = tf.reshape(
@@ -815,9 +917,25 @@ class Model(tf.keras.Model):
 
         mel_outputs = decoder_outputs + residual_projection
 
-        alignment_history = tf.transpose(
-            final_decoder_state.alignment_history.stack(), [1, 2, 0]
-        )
+        if self.enable_tflite_convertible:
+            mask = tf.math.not_equal(
+                tf.cast(
+                    tf.reduce_sum(tf.abs(decoder_outputs), axis = -1),
+                    dtype = tf.int32,
+                ),
+                0,
+            )
+            decoder_outputs = tf.expand_dims(
+                tf.boolean_mask(decoder_outputs, mask), axis = 0
+            )
+            mel_outputs = tf.expand_dims(
+                tf.boolean_mask(mel_outputs, mask), axis = 0
+            )
+            alignment_history = ()
+        else:
+            alignment_history = tf.transpose(
+                final_decoder_state.alignment_history.stack(), [1, 2, 0]
+            )
 
         return (
             decoder_outputs,

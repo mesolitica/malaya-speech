@@ -196,6 +196,7 @@ from . import speech_enhancement
 from . import stack
 from . import stt
 from . import vad
+from . import vocoder
 
 from .pipeline import Pipeline
 from .streaming import *

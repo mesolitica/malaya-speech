@@ -52,8 +52,6 @@ class STACK:
         result: np.array
         """
         aggregate = aggregate.lower()
-        if not isinstance(models, list):
-            raise ValueError('models must be a list')
 
         if aggregate not in dict_function:
             raise ValueError(

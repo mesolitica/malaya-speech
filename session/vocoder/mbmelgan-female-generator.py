@@ -7,7 +7,7 @@ import numpy as np
 from glob import glob
 from itertools import cycle
 
-mels = glob('../speech-bahasa/output-male/mels/*.npy')
+mels = glob('../speech-bahasa/output-female/mels/*.npy')
 file_cycle = cycle(mels)
 f = next(file_cycle)
 
@@ -112,7 +112,6 @@ generator_loss = 0.5 * (sub_sc_loss + sub_mag_loss) + 0.5 * (
     full_sc_loss + full_mag_loss
 )
 generator_loss = tf.reduce_mean(generator_loss)
-
 g_optimizer = tf.train.AdamOptimizer(0.0001, beta1 = 0.5, beta2 = 0.9).minimize(
     generator_loss
 )
@@ -123,7 +122,7 @@ saver = tf.train.Saver()
 
 checkpoint = 10000
 epoch = 200_000
-path = 'mbmelgan-male'
+path = 'mbmelgan-female'
 
 ckpt_path = tf.train.latest_checkpoint(path)
 if ckpt_path:
