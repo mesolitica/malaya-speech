@@ -110,7 +110,7 @@ class TFTacotronEmbeddings(tf.keras.layers.Layer):
                 'weight',
                 [self.vocab_size, self.embedding_hidden_size],
                 dtype = tf.float32,
-                initializer = self.initializer,
+                initializer = get_initializer(self.initializer_range),
             )
         super().build(input_shape)
 
