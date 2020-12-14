@@ -201,6 +201,9 @@ class Generator(tf.keras.Model):
         """
         return self.inference(mels)
 
+    def inference(self, mels):
+        return self.hifigan(mels)
+
     def _apply_weightnorm(self, list_layers):
         """Try apply weightnorm for all layer in list_layers."""
         for i in range(len(list_layers)):

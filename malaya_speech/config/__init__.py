@@ -8,6 +8,7 @@ from .conformer import (
 )
 from .ctc_featurizer import config as ctc_featurizer_config
 from .fastspeech import config as fastspeech_config
+from .hifigan import config as hifigan_config
 from .mb_melgan import config as mb_melgan_config
 from .melgan import config as melgan_config
 from .speakernet_featurizer import config as speakernet_featurizer_config
