@@ -1,13 +1,13 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 import tensorflow as tf
 import numpy as np
 from glob import glob
 from itertools import cycle
 
-mels = glob('../speech-bahasa/output-male/mels/*.npy')
+mels = glob('../speech-bahasa/output-male-v2/mels/*.npy')
 file_cycle = cycle(mels)
 f = next(file_cycle)
 
@@ -66,7 +66,6 @@ import malaya_speech
 import malaya_speech.train
 from malaya_speech.train.model import melgan
 import malaya_speech.config
-from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 
 melgan_config = malaya_speech.config.melgan_config
 generator = melgan.Generator(
@@ -80,6 +79,7 @@ discriminator = melgan.MultiScaleDiscriminator(
 
 mels_loss = melgan.loss.TFMelSpectrogram()
 
+from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 
 mse_loss = tf.keras.losses.MeanSquaredError()
 mae_loss = tf.keras.losses.MeanAbsoluteError()
@@ -173,7 +173,6 @@ for k, v in discriminator_losses.items():
 summaries = tf.summary.merge_all()
 
 t_vars = tf.trainable_variables()
-
 d_vars = [var for var in t_vars if var.name.startswith('melgan-discriminator')]
 g_vars = [var for var in t_vars if var.name.startswith('melgan-generator')]
 
@@ -189,7 +188,7 @@ sess.run(tf.global_variables_initializer())
 saver = tf.train.Saver()
 
 checkpoint = 5000
-epoch = 1_000_000
+epoch = 1_300_000
 path = 'melgan-male'
 
 writer = tf.summary.FileWriter(f'./{path}')
@@ -197,9 +196,8 @@ writer = tf.summary.FileWriter(f'./{path}')
 ckpt_path = tf.train.latest_checkpoint(path)
 if ckpt_path:
     saver.restore(sess, ckpt_path)
-    print(f'restoring checkpoint from {ckpt_path}')
 
-for i in range(295_001, epoch):
+for i in range(epoch):
     g_loss, _ = sess.run([generator_loss, g_optimizer])
     d_loss, _ = sess.run([discriminator_loss, d_optimizer])
     s = sess.run(summaries)
@@ -209,5 +207,3 @@ for i in range(295_001, epoch):
         saver.save(sess, f'{path}/model.ckpt', global_step = i)
 
     print(i, g_loss, d_loss)
-
-saver.save(sess, f'{path}/model.ckpt', global_step = epoch)

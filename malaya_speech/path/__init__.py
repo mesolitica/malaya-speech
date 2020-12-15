@@ -422,3 +422,10 @@ S3_PATH_VAD = {
         'quantized': 'v1/vad/finetuned-speakernet.pb.quantized',
     },
 }
+
+PATH_VOCODER = {
+    'melgan-male': {
+        'model': 'v1/vocoder/melgan-male.pb',
+        'quantized': 'v1/vocoder/melgan-male.pb.quantized',
+    }
+}

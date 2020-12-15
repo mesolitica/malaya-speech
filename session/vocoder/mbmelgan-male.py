@@ -7,7 +7,7 @@ import numpy as np
 from glob import glob
 from itertools import cycle
 
-mels = glob('../speech-bahasa/output-male/mels/*.npy')
+mels = glob('../speech-bahasa/output-male-v2/mels/*.npy')
 file_cycle = cycle(mels)
 f = next(file_cycle)
 
@@ -233,7 +233,7 @@ saver.restore(sess, tf.train.latest_checkpoint('mbmelgan-male'))
 saver = tf.train.Saver()
 
 checkpoint = 5000
-epoch = 1_000_000
+epoch = 1_100_000
 path = 'mbmelgan-male-combined'
 
 writer = tf.summary.FileWriter(f'./{path}')

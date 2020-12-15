@@ -7,7 +7,7 @@ import numpy as np
 from glob import glob
 from itertools import cycle
 
-mels = glob('../speech-bahasa/output-male/mels/*.npy')
+mels = glob('../speech-bahasa/output-male-v2/mels/*.npy')
 file_cycle = cycle(mels)
 f = next(file_cycle)
 
