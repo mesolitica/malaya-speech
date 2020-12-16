@@ -3,7 +3,6 @@ import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import tensorflow as tf
-import numpy as np
 from glob import glob
 from itertools import cycle
 import tensorflow as tf

@@ -74,7 +74,7 @@ class TacotronConvBatchNorm(tf.keras.layers.Layer):
         return outputs
 
 
-class TFTacotronEmbeddings(tf.keras.layers.Layer):
+class TacotronEmbeddings(tf.keras.layers.Layer):
     """Construct character/phoneme/positional/speaker embeddings."""
 
     def __init__(self, config, **kwargs):
@@ -180,7 +180,7 @@ class TacotronEncoder(tf.keras.layers.Layer):
     def __init__(self, config, **kwargs):
         """Init variables."""
         super().__init__(**kwargs)
-        self.embeddings = TFTacotronEmbeddings(config, name = 'embeddings')
+        self.embeddings = TacotronEmbeddings(config, name = 'embeddings')
         self.convbn = TacotronEncoderConvs(config, name = 'conv_batch_norm')
         self.bilstm = tf.keras.layers.Bidirectional(
             tf.keras.layers.LSTM(
@@ -314,7 +314,7 @@ class Tacotron2Sampler(Sampler):
             # )
 
             next_inputs = (
-                self._ratio * self.targets[:, time, :]
+                self._ratio * self.targets[:, time]
                 + (1.0 - self._ratio) * outputs[:, -self.config.n_mels :]
             )
 
@@ -332,7 +332,7 @@ class Tacotron2Sampler(Sampler):
         self._batch_size = batch_size
 
 
-class TFTacotronLocationSensitiveAttention(BahdanauAttention):
+class TacotronLocationSensitiveAttention(BahdanauAttention):
     """Tacotron-2 Location Sensitive Attention module."""
 
     def __init__(
@@ -546,7 +546,7 @@ class TacotronDecoderCell(tf.keras.layers.AbstractRNNCell):
         # define attention layer.
         if config.attention_type == 'lsa':
             # create location-sensitive attention.
-            self.attention_layer = TFTacotronLocationSensitiveAttention(
+            self.attention_layer = TacotronLocationSensitiveAttention(
                 config,
                 memory = None,
                 mask_encoder = True,
@@ -798,6 +798,7 @@ class Model(tf.keras.Model):
         win_front = 2,
         win_back = 3,
         training = False,
+        swap_memory = False,
         **kwargs,
     ):
         """Call logic."""
@@ -846,6 +847,7 @@ class Model(tf.keras.Model):
             self.decoder,
             maximum_iterations = maximum_iterations,
             training = training,
+            swap_memory = swap_memory,
         )
 
         decoder_outputs = tf.reshape(

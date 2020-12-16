@@ -2,7 +2,7 @@
 
 Inception V4 trained on Voxceleb.
 
-**This directory is very lack of comments, understand Tensorflow, Tensorflow estimator, Tensorflow Dataset really helpful**.
+**This directory is very lack of comments, able to understand Tensorflow, Tensorflow estimator, Tensorflow Dataset is really helpful**.
 
 ## How-to
 

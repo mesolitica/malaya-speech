@@ -3,7 +3,6 @@ import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import tensorflow as tf
-import numpy as np
 from glob import glob
 from itertools import cycle
 import tensorflow as tf
@@ -21,8 +20,8 @@ with open('mels-female.json') as fopen:
 
 import random
 
-reduction_factor = 3
-maxlen = 950
+reduction_factor = 2
+maxlen = 550
 
 
 def generate(files):

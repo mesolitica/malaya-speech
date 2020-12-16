@@ -82,10 +82,8 @@ audios = features['audio']
 
 sc_loss, mag_loss = calculate_2d_loss(audios, tf.squeeze(y_hat, -1), stft_loss)
 
-sc_loss = tf.where(sc_loss >= 15.0, tf.zeros(shape = sc_loss.shape), sc_loss)
-mag_loss = tf.where(
-    mag_loss >= 15.0, tf.zeros(shape = mag_loss.shape), mag_loss
-)
+sc_loss = tf.where(sc_loss >= 15.0, tf.zeros_like(sc_loss), sc_loss)
+mag_loss = tf.where(mag_loss >= 15.0, tf.zeros_like(mag_loss), mag_loss)
 
 generator_loss = 0.5 * (sc_loss + mag_loss)
 generator_loss = tf.reduce_mean(generator_loss)

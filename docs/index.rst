@@ -64,6 +64,7 @@ Contents:
    load-vad
    realtime-vad
    split-utterances
+   remove-silent-vad
 
 .. toctree::
    :maxdepth: 2

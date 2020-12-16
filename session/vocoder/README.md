@@ -4,20 +4,50 @@ Pretrained MelGAN, MBMelGAN and HifiGAN mel to wav.
 
 **This directory is very lack of comments, understand Tensorflow, Tensorflow estimator, Tensorflow Dataset really helpful**.
 
-## Download
+## how-to
 
-1. Male MelGAN, last update 14th December 2020, [melgan-male.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/melgan-male.tar.gz)
+1. Download and prepare Male dataset, [../prepare-tts/preprocess-male.ipynb](../prepare-tts/preprocess-male.ipynb).
 
-Tensorboard, https://tensorboard.dev/experiment/A1xrcRRZRfy4C1XgghZDFQ/
+2. Download and prepare Female dataset, [../prepare-tts/preprocess-female.ipynb](../prepare-tts/preprocess-female.ipynb).
 
-2. Female MelGAN, last update 14th December 2020, [melgan-female.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/melgan-male.tar.gz)
+### MelGAN
 
-Tensorboard, https://tensorboard.dev/experiment/A1xrcRRZRfy4C1XgghZDFQ/
+#### Male
 
-3. Male MBMelGAN, last update 14th December 2020, [mbmelgan-male.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/melgan-male.tar.gz)
+1. Run [melgan-male.py](melgan-male.py).
 
-Tensorboard, https://tensorboard.dev/experiment/A1xrcRRZRfy4C1XgghZDFQ/
+#### Female
 
-4. Female MBMelGAN, last update 14th December 2020, [mbmelgan-female.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/melgan-male.tar.gz)
+1. Run [melgan-female.py](melgan-female.py).
 
-Tensorboard, https://tensorboard.dev/experiment/A1xrcRRZRfy4C1XgghZDFQ/
+### MB-MelGAN
+
+#### Male
+
+1. Train generator first for 200k steps, [mbmelgan-male-generator.py](mbmelgan-male-generator.py).
+
+2. Train generator and discriminator, [mbmelgan-male.py](mbmelgan-male.py).
+
+#### Female
+
+1. Train generator first for 200k steps, [mbmelgan-female-generator.py](mbmelgan-female-generator.py).
+
+2. Train generator and discriminator, [mbmelgan-female.py](mbmelgan-female.py).
+
+### HifiGAN
+
+#### Male
+
+1. Train generator first for 100k steps, [hifigan-male-generator.py](hifigan-male-generator.py).
+
+2. Train generator and discriminator, [hifigan-male.py](hifigan-male.py).
+
+#### Female
+
+1. Train generator first for 100k steps, [hifigan-female-generator.py](hifigan-female-generator.py).
+
+2. Train generator and discriminator, [hifigan-female.py](hifigan-female.py).
+
+### Tips
+
+1. Make sure always step generator first, after that discriminator.

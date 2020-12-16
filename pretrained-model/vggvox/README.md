@@ -5,7 +5,7 @@ Trained on Voxceleb. Provided 2 versions,
 1. V1, https://github.com/linhdvu14/vggvox-speaker-identification
 2. V2, https://github.com/WeidiXie/VGG-Speaker-Recognition
 
-**This directory is very lack of comments, understand Tensorflow, Tensorflow estimator, Tensorflow Dataset really helpful**.
+**This directory is very lack of comments, able to understand Tensorflow, Tensorflow estimator, Tensorflow Dataset is really helpful**.
 
 ## How-to
 

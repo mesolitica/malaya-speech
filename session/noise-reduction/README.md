@@ -2,7 +2,7 @@
 
 Pretrained Malaya-Speech UNET models to do Noise Reduction.
 
-**This directory is very lack of comments, understand Tensorflow, Tensorflow estimator, Tensorflow Dataset really helpful**.
+**This directory is very lack of comments, able to understand Tensorflow, Tensorflow estimator, Tensorflow Dataset is really helpful**.
 
 ## how-to
 
