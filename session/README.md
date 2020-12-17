@@ -1,4 +1,4 @@
-# Pretrained Model
+# Finetuned Model
 
 This directory to finetune pretrained model on specific tasks.
 
