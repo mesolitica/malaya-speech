@@ -49,7 +49,7 @@ decoder_config = {
     'prenet_layers': 2,
     'prenet_units': 256,
     'enable_postnet': True,
-    'postnet_keep_dropout_prob': 0.5,
+    'postnet_keep_dropout_prob': 0.7,
     'postnet_data_format': 'channels_last',
     'postnet_conv_layers': [
         {
