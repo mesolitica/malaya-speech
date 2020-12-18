@@ -15,13 +15,13 @@ import json
 from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 import malaya_speech.train as train
 
-with open('mels-male.json') as fopen:
+with open('mels-female.json') as fopen:
     files = json.load(fopen)
 
 import random
 
-reduction_factor = 2
-maxlen = 550
+reduction_factor = 3
+maxlen = 950
 
 
 def generate(files):
@@ -229,7 +229,7 @@ dev_dataset = get_dataset(files['test'])
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'tacotron2-male',
+    model_dir = 'tacotron2-female-3',
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 5000,

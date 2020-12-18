@@ -47,6 +47,9 @@ class Config(object):
         postnet_conv_filters = 512,
         postnet_conv_kernel_sizes = 5,
         postnet_dropout_rate = 0.1,
+        teacher_mode = 'mul',
+        sampler_ratio = 1.0,
+        evaluate = False,
     ):
         """Init parameters for Tacotron-2 model."""
         self.vocab_size = vocab_size
@@ -81,3 +84,7 @@ class Config(object):
         self.postnet_conv_filters = postnet_conv_filters
         self.postnet_conv_kernel_sizes = postnet_conv_kernel_sizes
         self.postnet_dropout_rate = postnet_dropout_rate
+
+        self.teacher_mode = teacher_mode
+        self.sampler_ratio = sampler_ratio
+        self.evaluate = evaluate

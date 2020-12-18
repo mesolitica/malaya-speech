@@ -24,6 +24,7 @@ from ..fastspeech.layer import ACT2FN, get_initializer
 from tensorflow.contrib.seq2seq.python.ops.decoder import Decoder
 from tensorflow.contrib.seq2seq.python.ops.sampler import Sampler
 from .attention_wrapper import BahdanauAttention
+from tensorflow.python.framework import ops
 from .decoder import dynamic_decode
 
 
@@ -244,10 +245,10 @@ class Tacotron2Sampler(Sampler):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        # create schedule factor.
-        # the input of a next decoder cell is calculated by formular:
-        # next_inputs = ratio * prev_groundtruth_outputs + (1.0 - ratio) * prev_predicted_outputs.
-        self._ratio = tf.constant(1.0, dtype = tf.float32)
+
+        self.mode = config.teacher_mode
+        self._ratio = tf.constant(config.sampler_ratio, dtype = tf.float32)
+        self.evaluate = config.evaluate
         self._reduction_factor = self.config.reduction_factor
 
     def setup_target(self, targets, mel_lengths):
@@ -297,26 +298,27 @@ class Tacotron2Sampler(Sampler):
         training = False,
         **kwargs,
     ):
-        if training:
+        if training and not self.evaluate:
             finished = time + 1 >= self.max_lengths
 
-            # next_inputs = tf.cond(
-            #     tf.less(
-            #         tf.random_uniform(
-            #             [], minval = 0, maxval = 1, dtype = tf.float32
-            #         ),
-            #         self._ratio,
-            #     ),
-            #     lambda: self._targets[
-            #         :, time, :
-            #     ],  # Teacher-forcing: return true frame
-            #     lambda: outputs[:, -self._output_dim :],
-            # )
+            if self.mode == 'cond':
 
-            next_inputs = (
-                self._ratio * self.targets[:, time]
-                + (1.0 - self._ratio) * outputs[:, -self.config.n_mels :]
-            )
+                next_inputs = tf.cond(
+                    tf.less(
+                        tf.random_uniform(
+                            [], minval = 0, maxval = 1, dtype = tf.float32
+                        ),
+                        self._ratio,
+                    ),
+                    lambda: self.targets[:, time],
+                    lambda: outputs[:, -self.config.n_mels :],
+                )
+            else:
+
+                next_inputs = (
+                    self._ratio * self.targets[:, time]
+                    + (1.0 - self._ratio) * outputs[:, -self.config.n_mels :]
+                )
 
             next_state = state
             return (finished, next_inputs, next_state)
@@ -527,8 +529,6 @@ class TacotronDecoderCell(tf.keras.layers.AbstractRNNCell):
         super().__init__(**kwargs)
         self.prenet = TacotronPrenet(config, name = 'prenet')
 
-        # define lstm cell on decoder.
-        # TODO(@dathudeptrai) switch to zone-out lstm.
         self.attention_lstm = tf.keras.layers.LSTMCell(
             units = config.decoder_lstm_units, name = 'attention_lstm_cell'
         )
@@ -705,7 +705,7 @@ class TacotronDecoder(Decoder):
                 lambda shape: tf.TensorShape(shape), self.cell.output_size
             ),
             token_output = tf.TensorShape(self.sampler.reduction_factor),
-            sample_id = self.sampler.sample_ids_shape,  # tf.TensorShape([])
+            sample_id = self.sampler.sample_ids_shape,
         )
 
     @property
@@ -718,23 +718,24 @@ class TacotronDecoder(Decoder):
     def batch_size(self):
         return self.sampler._batch_size
 
-    def step(self, time, inputs, state, training = False):
-        (mel_outputs, stop_tokens), cell_state = self.cell(
-            inputs, state, training = training
-        )
-        if self.output_layer is not None:
-            mel_outputs = self.output_layer(mel_outputs)
-        sample_ids = self.sampler.sample(
-            time = time, outputs = mel_outputs, state = cell_state
-        )
-        (finished, next_inputs, next_state) = self.sampler.next_inputs(
-            time = time,
-            outputs = mel_outputs,
-            state = cell_state,
-            sample_ids = sample_ids,
-            stop_token_prediction = stop_tokens,
-            training = training,
-        )
+    def step(self, time, inputs, state, training = False, name = None):
+        with ops.name_scope(name, 'CustomDecoderStep', (time, inputs, state)):
+            (mel_outputs, stop_tokens), cell_state = self.cell(
+                inputs, state, training = training
+            )
+            if self.output_layer is not None:
+                mel_outputs = self.output_layer(mel_outputs)
+            sample_ids = self.sampler.sample(
+                time = time, outputs = mel_outputs, state = cell_state
+            )
+            (finished, next_inputs, next_state) = self.sampler.next_inputs(
+                time = time,
+                outputs = mel_outputs,
+                state = cell_state,
+                sample_ids = sample_ids,
+                stop_token_prediction = stop_tokens,
+                training = training,
+            )
 
         outputs = TFDecoderOutput(mel_outputs, stop_tokens, sample_ids)
         return (outputs, next_state, next_inputs, finished)
