@@ -458,6 +458,7 @@ class Tacotron2Decoder(Decoder):
                 if 'target_tensors' in input_dict
                 else None
             )
+
         _batch_size = tf.shape(encoder_outputs)[0]
 
         training = self._mode == 'train'

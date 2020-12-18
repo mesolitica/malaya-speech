@@ -165,7 +165,7 @@ class TacotronHelper(Helper):
             sample_ids_shape or []
         )
         self._sample_ids_dtype = sample_ids_dtype or dtypes.int32
-        self._batch_size = inputs.get_shape()[0]
+        self._batch_size = tf.shape(inputs)[0]
         self._mask_decoder_sequence = mask_decoder_sequence
 
         if not time_major:
