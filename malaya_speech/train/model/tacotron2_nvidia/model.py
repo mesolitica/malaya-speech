@@ -34,6 +34,10 @@ encoder_config = {
     'rnn_type': tf.nn.rnn_cell.LSTMCell,
     'zoneout_prob': 0.0,
     'data_format': 'channels_last',
+    'dtype': tf.float32,
+    'regularizer': tf.contrib.layers.l2_regularizer,
+    'regularizer_params': {'scale': 1e-6},
+    'initializer': tf.contrib.layers.xavier_initializer,
 }
 
 decoder_config = {
@@ -90,6 +94,10 @@ decoder_config = {
     ],
     'mask_decoder_sequence': True,
     'parallel_iterations': 32,
+    'dtype': tf.float32,
+    'regularizer': tf.contrib.layers.l2_regularizer,
+    'regularizer_params': {'scale': 1e-6},
+    'initializer': tf.contrib.layers.xavier_initializer,
 }
 
 
