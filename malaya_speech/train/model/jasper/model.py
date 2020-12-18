@@ -1,5 +1,5 @@
 import tensorflow as tf
-from ..quartznet import layer, abstract
+from ..openseq2seq.model import TDNNEncoder
 
 residual_dense = False
 
@@ -172,6 +172,6 @@ class Model:
             mode = 'train'
         else:
             mode = 'eval'
-        self.model = abstract.TDNNEncoder(config, None, mode = mode)
+        self.model = TDNNEncoder(config, None, mode = mode)
         input_dict = {'source_tensors': [inputs, inputs_length]}
         self.logits = self.model.encode(input_dict)

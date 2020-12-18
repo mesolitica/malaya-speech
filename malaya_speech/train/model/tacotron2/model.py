@@ -24,7 +24,6 @@ from ..fastspeech.layer import ACT2FN, get_initializer
 from tensorflow.contrib.seq2seq.python.ops.decoder import Decoder
 from tensorflow.contrib.seq2seq.python.ops.sampler import Sampler
 from .attention_wrapper import BahdanauAttention
-from tensorflow.python.framework import ops
 from .decoder import dynamic_decode
 
 
@@ -705,7 +704,7 @@ class TacotronDecoder(Decoder):
                 lambda shape: tf.TensorShape(shape), self.cell.output_size
             ),
             token_output = tf.TensorShape(self.sampler.reduction_factor),
-            sample_id = self.sampler.sample_ids_shape,
+            sample_id = self.sampler.sample_ids_shape,  # tf.TensorShape([])
         )
 
     @property
@@ -718,24 +717,23 @@ class TacotronDecoder(Decoder):
     def batch_size(self):
         return self.sampler._batch_size
 
-    def step(self, time, inputs, state, training = False, name = None):
-        with ops.name_scope(name, 'CustomDecoderStep', (time, inputs, state)):
-            (mel_outputs, stop_tokens), cell_state = self.cell(
-                inputs, state, training = training
-            )
-            if self.output_layer is not None:
-                mel_outputs = self.output_layer(mel_outputs)
-            sample_ids = self.sampler.sample(
-                time = time, outputs = mel_outputs, state = cell_state
-            )
-            (finished, next_inputs, next_state) = self.sampler.next_inputs(
-                time = time,
-                outputs = mel_outputs,
-                state = cell_state,
-                sample_ids = sample_ids,
-                stop_token_prediction = stop_tokens,
-                training = training,
-            )
+    def step(self, time, inputs, state, training = False):
+        (mel_outputs, stop_tokens), cell_state = self.cell(
+            inputs, state, training = training
+        )
+        if self.output_layer is not None:
+            mel_outputs = self.output_layer(mel_outputs)
+        sample_ids = self.sampler.sample(
+            time = time, outputs = mel_outputs, state = cell_state
+        )
+        (finished, next_inputs, next_state) = self.sampler.next_inputs(
+            time = time,
+            outputs = mel_outputs,
+            state = cell_state,
+            sample_ids = sample_ids,
+            stop_token_prediction = stop_tokens,
+            training = training,
+        )
 
         outputs = TFDecoderOutput(mel_outputs, stop_tokens, sample_ids)
         return (outputs, next_state, next_inputs, finished)

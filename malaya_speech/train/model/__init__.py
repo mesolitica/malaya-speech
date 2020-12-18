@@ -17,6 +17,8 @@ from . import quartznet
 from . import resnet_unet
 from . import speakernet
 from . import stft
+from . import tacotron2
+from . import tacotron2_nvidia
 from . import transducer
 from . import unet
 from . import unet_enhancement
