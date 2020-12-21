@@ -65,11 +65,11 @@ class TFFastSpeechEmbeddings(tf.keras.layers.Layer):
     def build(self, input_shape):
         """Build shared charactor/phoneme embedding layers."""
         with tf.name_scope('charactor_embeddings'):
-            self.charactor_embeddings = self.add_weight(
+            self.character_embeddings = tf.get_variable(
                 'weight',
                 shape = [self.vocab_size, self.hidden_size],
-                initializer = get_initializer(self.initializer_range),
                 dtype = tf.float32,
+                initializer = get_initializer(self.initializer_range),
             )
         super().build(input_shape)
 
@@ -81,7 +81,6 @@ class TFFastSpeechEmbeddings(tf.keras.layers.Layer):
         Returns:
             Tensor (float32) shape [batch_size, length, embedding_size].
         """
-        print(inputs)
         return self._embedding(inputs, training = training)
 
     def _embedding(self, inputs, training = False):
@@ -96,7 +95,7 @@ class TFFastSpeechEmbeddings(tf.keras.layers.Layer):
         ]
 
         # create embeddings
-        inputs_embeds = tf.gather(self.charactor_embeddings, input_ids)
+        inputs_embeds = tf.gather(self.character_embeddings, input_ids)
         position_embeddings = self.position_embeddings(position_ids)
 
         # sum embedding
@@ -619,7 +618,11 @@ class TFFastSpeechLengthRegulator(tf.keras.layers.Layer):
         hidden_size = input_shape[-1]
 
         outputs = tf.zeros(
-            shape = [0, max_durations, hidden_size],
+            shape = [
+                0,
+                max_durations,
+                self.config.encoder_self_attention_params.hidden_size,
+            ],
             dtype = encoder_hidden_states.dtype,
         )
         encoder_masks = tf.zeros(shape = [0, max_durations], dtype = tf.int32)
@@ -670,36 +673,36 @@ class TFFastSpeechLengthRegulator(tf.keras.layers.Layer):
                 max_durations,
             ]
 
-            # initialize iteration i.
-            i = tf.constant(0, dtype = tf.int32)
-            _, _, outputs, encoder_masks, _, _, _, = tf.while_loop(
-                condition,
-                body,
-                [
-                    i,
-                    batch_size,
-                    outputs,
-                    encoder_masks,
-                    encoder_hidden_states,
-                    durations_gt,
-                    max_durations,
-                ],
-                shape_invariants = [
-                    i.get_shape(),
-                    batch_size.get_shape(),
-                    tf.TensorShape(
-                        [
-                            None,
-                            None,
-                            self.config.encoder_self_attention_params.hidden_size,
-                        ]
-                    ),
-                    tf.TensorShape([None, None]),
-                    encoder_hidden_states.get_shape(),
-                    durations_gt.get_shape(),
-                    max_durations.get_shape(),
-                ],
-            )
+        # initialize iteration i.
+        i = tf.constant(0, dtype = tf.int32)
+        _, _, outputs, encoder_masks, _, _, _, = tf.while_loop(
+            condition,
+            body,
+            [
+                i,
+                batch_size,
+                outputs,
+                encoder_masks,
+                encoder_hidden_states,
+                durations_gt,
+                max_durations,
+            ],
+            shape_invariants = [
+                i.get_shape(),
+                batch_size.get_shape(),
+                tf.TensorShape(
+                    [
+                        None,
+                        None,
+                        self.config.encoder_self_attention_params.hidden_size,
+                    ]
+                ),
+                tf.TensorShape([None, None]),
+                encoder_hidden_states.get_shape(),
+                durations_gt.get_shape(),
+                max_durations.get_shape(),
+            ],
+        )
 
         return outputs, encoder_masks
 
@@ -733,12 +736,9 @@ class Model(tf.keras.Model):
             config = config, dtype = tf.float32, name = 'postnet'
         )
 
-    def call(
-        self, input_ids, speaker_ids, duration_gts, training = False, **kwargs
-    ):
-        """Call logic."""
+    def call(self, input_ids, duration_gts, training = True, **kwargs):
+        speaker_ids = tf.convert_to_tensor([0], tf.int32)
         attention_mask = tf.math.not_equal(input_ids, 0)
-        print([input_ids, speaker_ids])
         embedding_output = self.embeddings(
             [input_ids, speaker_ids], training = training
         )
@@ -780,10 +780,16 @@ class Model(tf.keras.Model):
             + mel_before
         )
 
-        outputs = (mel_before, mel_after, duration_outputs)
+        outputs = (
+            mel_before,
+            mel_after,
+            duration_outputs,
+            last_decoder_hidden_states,
+        )
         return outputs
 
-    def inference(self, input_ids, speaker_ids, speed_ratios, **kwargs):
+    def inference(self, input_ids, speed_ratios, **kwargs):
+        speaker_ids = tf.convert_to_tensor([0], tf.int32)
         attention_mask = tf.math.not_equal(input_ids, 0)
         embedding_output = self.embeddings(
             [input_ids, speaker_ids], training = False

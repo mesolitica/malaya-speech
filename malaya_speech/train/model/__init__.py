@@ -7,6 +7,7 @@ from . import hifigan
 from . import demucs
 from . import denoiser
 from . import fastspeech
+from . import fastspeech2
 from . import jasper
 from . import mb_melgan
 from . import medium_jasper

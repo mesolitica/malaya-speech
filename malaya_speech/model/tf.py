@@ -635,3 +635,36 @@ class TRANSDUCER(ABSTRACT):
         result: str
         """
         return self.predict([input], decoder = decoder, **kwargs)[0]
+
+
+class VOCODER:
+    def __init__(self, X, logits, sess, model, name):
+        self._X = X
+        self._logits = logits
+        self._sess = sess
+        self.__model__ = model
+        self.__name__ = name
+
+    def predict(self, inputs):
+        """
+        Change Mel to Waveform.
+
+        Parameters
+        ----------
+        inputs: List[np.array]
+
+        Returns
+        -------
+        result: List
+        """
+        inputs = [
+            input.array if isinstance(input, FRAME) else input
+            for input in inputs
+        ]
+        padded, lens = sequence_1d(inputs, return_len = True)
+        return self._sess.run(self._logits, feed_dict = {self._X: padded})[
+            :, :, 0
+        ]
+
+    def __call__(self, input):
+        return self.predict([input])[0]

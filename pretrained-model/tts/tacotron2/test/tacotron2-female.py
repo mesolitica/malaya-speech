@@ -3,83 +3,25 @@ import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import tensorflow as tf
-import numpy as np
 from glob import glob
 from itertools import cycle
 import tensorflow as tf
 import malaya_speech
 import malaya_speech.train
-from malaya_speech.train.model import tacotron2_nvidia as tacotron2
+from malaya_speech.train.model import tacotron2
 import malaya_speech.config
 import numpy as np
 import json
 from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 import malaya_speech.train as train
-import re
 
 with open('mels-female.json') as fopen:
     files = json.load(fopen)
 
 import random
 
-reduction_factor = 1
-maxlen = 904
-minlen = 32
-pad_to = 8
-data_min = 1e-2
-
-_pad = 'pad'
-_start = 'start'
-_eos = 'eos'
-_punctuation = "!'(),.:;? "
-_special = '-'
-_letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-
-MALAYA_SPEECH_SYMBOLS = (
-    [_pad, _start, _eos] + list(_special) + list(_punctuation) + list(_letters)
-)
-
-parameters = {
-    'optimizer_params': {},
-    'lr_policy_params': {
-        'learning_rate': 1e-3,
-        'decay_steps': 20000,
-        'decay_rate': 0.1,
-        'use_staircase_decay': False,
-        'begin_decay_at': 45000,
-        'min_lr': 1e-5,
-    },
-    'max_grad_norm': 1.0,
-}
-
-
-def exp_decay(
-    global_step,
-    learning_rate,
-    decay_steps,
-    decay_rate,
-    use_staircase_decay,
-    begin_decay_at = 0,
-    min_lr = 0.0,
-):
-    new_lr = tf.cond(
-        global_step < begin_decay_at,
-        lambda: learning_rate,
-        lambda: tf.train.exponential_decay(
-            learning_rate = learning_rate,
-            global_step = global_step - begin_decay_at,
-            decay_steps = decay_steps,
-            decay_rate = decay_rate,
-            staircase = use_staircase_decay,
-        ),
-        name = 'learning_rate',
-    )
-    final_lr = tf.maximum(min_lr, new_lr)
-    return final_lr
-
-
-def learning_rate_scheduler(global_step):
-    return exp_decay(global_step, **parameters['lr_policy_params'])
+reduction_factor = 2
+maxlen = 550
 
 
 def generate(files):
@@ -88,46 +30,24 @@ def generate(files):
         f = next(file_cycle).decode()
         mel = np.load(f)
         mel_length = len(mel)
-        if mel_length > maxlen or mel_length < minlen:
+        if mel_length > maxlen:
             continue
-
-        stop_token_target = np.zeros([len(mel)], dtype = np.float32)
-
+        remainder = mel_length % reduction_factor
+        if remainder != 0:
+            new_mel_length = mel_length + reduction_factor - remainder
+            mel = np.pad(mel, [[0, new_mel_length - mel_length], [0, 0]])
+            mel_length = new_mel_length
         text_ids = np.load(f.replace('mels', 'text_ids'), allow_pickle = True)[
-            0
+            1
         ]
-        text_ids = ''.join([c for c in text_ids if c in MALAYA_SPEECH_SYMBOLS])
-        text_ids = re.sub(r'[ ]+', ' ', text_ids).strip()
-        text_input = np.array(
-            [MALAYA_SPEECH_SYMBOLS.index(c) for c in text_ids]
-        )
-        num_pad = pad_to - ((len(text_input) + 2) % pad_to)
-        text_input = np.pad(
-            text_input, ((1, 1)), 'constant', constant_values = ((1, 2))
-        )
-        text_input = np.pad(
-            text_input, ((0, num_pad)), 'constant', constant_values = 0
-        )
-        num_pad = pad_to - ((len(mel) + 1) % pad_to) + 1
-        pad_value_mel = np.log(data_min)
-        mel = np.pad(
-            mel,
-            ((0, num_pad), (0, 0)),
-            'constant',
-            constant_values = pad_value_mel,
-        )
-        stop_token_target = np.pad(
-            stop_token_target, ((0, num_pad)), 'constant', constant_values = 1
-        )
         len_mel = [len(mel)]
-        len_text_ids = [len(text_input)]
+        len_text_ids = [len(text_ids)]
 
         yield {
             'mel': mel,
-            'text_ids': text_input,
+            'text_ids': text_ids,
             'len_mel': len_mel,
             'len_text_ids': len_text_ids,
-            'stop_token_target': stop_token_target,
         }
 
 
@@ -150,14 +70,12 @@ def get_dataset(files, batch_size = 32, shuffle_size = 32, thread_count = 24):
                 'text_ids': tf.int32,
                 'len_mel': tf.int32,
                 'len_text_ids': tf.int32,
-                'stop_token_target': tf.float32,
             },
             output_shapes = {
                 'mel': tf.TensorShape([None, 80]),
                 'text_ids': tf.TensorShape([None]),
                 'len_mel': tf.TensorShape([1]),
                 'len_text_ids': tf.TensorShape([1]),
-                'stop_token_target': tf.TensorShape([None]),
             },
             args = (files,),
         )
@@ -171,7 +89,6 @@ def get_dataset(files, batch_size = 32, shuffle_size = 32, thread_count = 24):
                 'len_mel': tf.TensorShape([1]),
                 'len_text_ids': tf.TensorShape([1]),
                 'g': tf.TensorShape([None, None]),
-                'stop_token_target': tf.TensorShape([None]),
             },
             padding_values = {
                 'mel': tf.constant(0, dtype = tf.float32),
@@ -179,7 +96,6 @@ def get_dataset(files, batch_size = 32, shuffle_size = 32, thread_count = 24):
                 'len_mel': tf.constant(0, dtype = tf.int32),
                 'len_text_ids': tf.constant(0, dtype = tf.int32),
                 'g': tf.constant(-1.0, dtype = tf.float32),
-                'stop_token_target': tf.constant(0, dtype = tf.float32),
             },
         )
         return dataset
@@ -187,46 +103,71 @@ def get_dataset(files, batch_size = 32, shuffle_size = 32, thread_count = 24):
     return get
 
 
+_pad = 'pad'
+_eos = 'eos'
+_punctuation = "!'(),.:;? "
+_special = '-'
+_letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+
+# Export all symbols:
+MALAYA_SPEECH_SYMBOLS = (
+    [_pad] + list(_special) + list(_punctuation) + list(_letters) + [_eos]
+)
+
+learning_rate = 0.001
+num_train_steps = 200000
+num_warmup_steps = 3000
+end_learning_rate = 0.00001
+weight_decay_rate = 0.01
+
+
 def model_fn(features, labels, mode, params):
+    tacotron2_config = malaya_speech.config.tacotron2_config
+    tacotron2_config['reduction_factor'] = reduction_factor
+    c = tacotron2.Config(
+        vocab_size = len(MALAYA_SPEECH_SYMBOLS) + 1, **tacotron2_config
+    )
+    model = tacotron2.Model(c)
     input_ids = features['text_ids']
     input_lengths = features['len_text_ids'][:, 0]
     speaker_ids = tf.constant([0], dtype = tf.int32)
     mel_outputs = features['mel']
     mel_lengths = features['len_mel'][:, 0]
+    mel_actuals = features['mel']
     guided = features['g']
-    stop_token_target = features['stop_token_target']
-    batch_size = tf.shape(guided)[0]
-
-    model = tacotron2.Model(
-        [input_ids, input_lengths],
-        [mel_outputs, mel_lengths],
-        len(MALAYA_SPEECH_SYMBOLS),
+    r = model(
+        input_ids,
+        input_lengths,
+        speaker_ids,
+        mel_outputs,
+        mel_lengths,
+        training = True,
     )
-    r = model.decoder_logits['outputs']
-    decoder_output, post_mel_outputs, alignment_histories, _, _, _ = r
-    stop_token_predictions = model.decoder_logits['stop_token_prediction']
 
-    stop_token = tf.expand_dims(stop_token_target, -1)
-    max_length = tf.cast(tf.shape(decoder_output)[1], tf.int32)
+    binary_crossentropy = tf.keras.losses.BinaryCrossentropy(from_logits = True)
+    mae = tf.keras.losses.MeanAbsoluteError()
 
-    loss_f = tf.losses.mean_squared_error
-    mask = tf.sequence_mask(
-        lengths = mel_lengths, maxlen = max_length, dtype = tf.float32
+    decoder_output, post_mel_outputs, stop_token_predictions, alignment_histories = (
+        r
     )
-    mask = tf.expand_dims(mask, axis = -1)
-
-    mel_loss_before = loss_f(
-        labels = mel_outputs, predictions = decoder_output, weights = mask
+    mel_loss_before = calculate_3d_loss(
+        mel_actuals, decoder_output, loss_fn = mae
     )
-    mel_loss_after = loss_f(
-        labels = mel_outputs, predictions = post_mel_outputs, weights = mask
+    mel_loss_after = calculate_3d_loss(
+        mel_actuals, post_mel_outputs, loss_fn = mae
     )
-    stop_token_loss = tf.nn.sigmoid_cross_entropy_with_logits(
-        labels = stop_token, logits = stop_token_predictions
+    max_mel_length = tf.reduce_max(mel_lengths)
+    stop_gts = tf.expand_dims(
+        tf.range(tf.reduce_max(max_mel_length), dtype = tf.int32), 0
     )
-    stop_token_loss = stop_token_loss * mask
-    stop_token_loss = tf.reduce_sum(stop_token_loss) / tf.reduce_sum(mask)
-
+    stop_gts = tf.tile(stop_gts, [tf.shape(mel_lengths)[0], 1])
+    stop_gts = tf.cast(
+        tf.math.greater_equal(stop_gts, tf.expand_dims(mel_lengths, 1)),
+        tf.float32,
+    )
+    stop_token_loss = calculate_2d_loss(
+        stop_gts, stop_token_predictions, loss_fn = binary_crossentropy
+    )
     attention_masks = tf.cast(tf.math.not_equal(guided, -1.0), tf.float32)
     loss_att = tf.reduce_sum(
         tf.abs(alignment_histories * guided) * attention_masks, axis = [1, 2]
@@ -248,16 +189,13 @@ def model_fn(features, labels, mode, params):
     tf.summary.scalar('loss_att', loss_att)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
-        train_op = train.optimizer.optimize_loss(
-            loss,
-            tf.train.AdamOptimizer,
-            parameters['optimizer_params'],
-            learning_rate_scheduler,
-            summaries = ['learning_rate'],
-            larc_params = parameters.get('larc_params', None),
-            loss_scaling = parameters.get('loss_scaling', 1.0),
-            loss_scaling_params = parameters.get('loss_scaling_params', None),
-            clip_gradients = parameters.get('max_grad_norm', None),
+        train_op = train.optimizer.adamw.create_optimizer(
+            loss = loss,
+            init_lr = learning_rate,
+            num_train_steps = num_train_steps,
+            num_warmup_steps = num_warmup_steps,
+            end_learning_rate = end_learning_rate,
+            weight_decay_rate = weight_decay_rate,
         )
         estimator_spec = tf.estimator.EstimatorSpec(
             mode = mode, loss = loss, train_op = train_op
@@ -291,11 +229,11 @@ dev_dataset = get_dataset(files['test'])
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'tacotron2-nvidia-female2',
+    model_dir = 'tacotron2-female',
     num_gpus = 1,
     log_step = 1,
-    save_checkpoint_step = 2000,
-    max_steps = 100000,
+    save_checkpoint_step = 5000,
+    max_steps = num_train_steps,
     eval_fn = dev_dataset,
     train_hooks = train_hooks,
 )

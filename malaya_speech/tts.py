@@ -3,19 +3,21 @@ from malaya.utils.text import (
     collapse_whitespace,
     put_spacing_num,
 )
+import numpy as np
+import re
 
-_tacotron2_availability = {'male': {}, 'female': {}}
-_fastspeech2_availability = {'male': {}, 'female': {}}
+_tacotron2_availability = {'male': {}, 'female': {}, 'husein': {}}
+_fastspeech2_availability = {'male': {}, 'female': {}, 'husein': {}}
 
 _pad = 'pad'
 _eos = 'eos'
 _punctuation = "!'(),.:;? "
 _special = '-'
 _letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-
+_rejected = "!'(),.:;?"
 
 MALAYA_SPEECH_SYMBOLS = (
-    [_pad] + list(_special) + list(_punctuation) + list(_letters) + [_eos]
+    [_pad, _start, _eos] + list(_special) + list(_punctuation) + list(_letters)
 )
 
 
@@ -26,13 +28,12 @@ def tts_encode(string: str, add_eos: bool = True):
     return r
 
 
-class NORMALIZER:
-    def __init__(self, normalizer):
+class TEXT_IDS:
+    def __init__(self, normalizer, pad_to):
         self.normalizer = normalizer
+        self.pad_to = pad_to
 
-    def normalize(
-        self, string, normalize = True, lowercase = True, add_eos = True
-    ):
+    def normalize(self, string, normalize = True, lowercase = True):
         string = convert_to_ascii(string)
         string = string.replace('&', ' dan ')
         string = put_spacing_num(string)
@@ -50,10 +51,22 @@ class NORMALIZER:
             string = string
         if lowercase:
             string = string.lower()
-        return string, tts_encode(string, add_eos = add_eos)
+        string = ''.join([c for c in string if c not in _rejected])
+        string = re.sub(r'[ ]+', ' ', string).strip()
+        ids = tts_encode(string, add_eos = False)
+        text_input = np.array(ids)
+        num_pad = pad_to - ((len(text_input) + 2) % self.pad_to)
+        text_input = np.pad(
+            text_input, ((1, 1)), 'constant', constant_values = ((1, 2))
+        )
+        text_input = np.pad(
+            text_input, ((0, num_pad)), 'constant', constant_values = 0
+        )
+
+        return string, text_input
 
 
-def load_normalizer():
+def load_text_ids(pad_to: int = 8):
     try:
         import malaya
     except:
@@ -62,7 +75,7 @@ def load_normalizer():
         )
 
     normalizer = malaya.normalize.normalizer(date = False, time = False)
-    return NORMALIZER(normalizer)
+    return TEXT_IDS(normalizer = normalizer, pad_to = pad_to)
 
 
 def available_tacotron2():
@@ -83,7 +96,32 @@ def available_fastspeech2():
     return describe_availability(_fastspeech2_availability)
 
 
-def tacotron2(model: str = 'male', quantized: bool = False, **kwargs):
+def tacotron2(
+    model: str = 'female', quantized: bool = False, pad_to: int = 8, **kwargs
+):
+    """
+    Load Tacotron2 TTS model.
+
+    Parameters
+    ----------
+    model : str, optional (default='jasper')
+        Model architecture supported. Allowed values:
+
+        * ``'female'`` - Tacotron2 trained on female voice.
+        * ``'male'`` - Tacotron2 trained on male voice.
+        * ``'husein'`` - Tacotron2 trained on Husein voice.
+        
+    quantized : bool, optional (default=False)
+        if True, will load 8-bit quantized model. 
+        Quantized model not necessary faster, totally depends on the machine.
+
+    pad_to : int, optional (default=8)
+        size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
+
+    Returns
+    -------
+    result : malaya_speech.supervised.tts.load function
+    """
     model = model.lower()
 
     if model not in _tacotron2_availability:
@@ -91,10 +129,36 @@ def tacotron2(model: str = 'male', quantized: bool = False, **kwargs):
             'model not supported, please check supported models from `malaya_speech.tts.available_tacotron2()`.'
         )
 
-    normalizer = load_normalizer()
+    text_ids = load_text_ids(pad_to = pad_to)
 
 
-def fastspeech2(model: str = 'male', quantized: bool = False, **kwargs):
+def fastspeech2(
+    model: str = 'female', quantized: bool = False, pad_to: int = 8, **kwargs
+):
+    """
+    Load Fastspeech2 TTS model.
+
+    Parameters
+    ----------
+    model : str, optional (default='jasper')
+        Model architecture supported. Allowed values:
+
+        * ``'female'`` - Fastspeech2 trained on female voice.
+        * ``'male'`` - Fastspeech2 trained on male voice.
+        * ``'husein'`` - Fastspeech2 trained on Husein voice.
+        
+    quantized : bool, optional (default=False)
+        if True, will load 8-bit quantized model. 
+        Quantized model not necessary faster, totally depends on the machine.
+
+    pad_to : int, optional (default=8)
+        size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
+
+    Returns
+    -------
+    result : malaya_speech.supervised.tts.load function
+    """
+
     model = model.lower()
 
     if model not in _fastspeech2_availability:
@@ -102,4 +166,4 @@ def fastspeech2(model: str = 'male', quantized: bool = False, **kwargs):
             'model not supported, please check supported models from `malaya_speech.tts.available_fastspeech2()`.'
         )
 
-    normalizer = load_normalizer()
+    text_ids = load_text_ids(pad_to = pad_to)
