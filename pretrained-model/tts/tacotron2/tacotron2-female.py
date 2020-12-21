@@ -9,18 +9,15 @@ from itertools import cycle
 import tensorflow as tf
 import malaya_speech
 import malaya_speech.train
-from malaya_speech.train.model import tacotron2_nvidia as tacotron2
 import malaya_speech.config
-import numpy as np
-import json
-from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 import malaya_speech.train as train
+from malaya_speech.train.model import tacotron2_nvidia as tacotron2
+from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
+import json
 import re
 
 with open('mels-female.json') as fopen:
     files = json.load(fopen)
-
-import random
 
 reduction_factor = 1
 maxlen = 904

@@ -6,12 +6,16 @@ import tensorflow as tf
 import numpy as np
 from glob import glob
 from itertools import cycle
+import malaya_speech
+import malaya_speech.train
+from malaya_speech.train.model import melgan
+import malaya_speech.config
+from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
+import random
 
 mels = glob('../speech-bahasa/output-male-v2/mels/*.npy')
 file_cycle = cycle(mels)
 f = next(file_cycle)
-
-import random
 
 
 def generate(batch_max_steps = 8192, hop_size = 256):
@@ -60,12 +64,6 @@ dataset = dataset.padded_batch(
 )
 
 features = dataset.make_one_shot_iterator().get_next()
-features
-
-import malaya_speech
-import malaya_speech.train
-from malaya_speech.train.model import melgan
-import malaya_speech.config
 
 melgan_config = malaya_speech.config.melgan_config
 generator = melgan.Generator(
@@ -78,9 +76,6 @@ discriminator = melgan.MultiScaleDiscriminator(
 )
 
 mels_loss = melgan.loss.TFMelSpectrogram()
-
-from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
-
 mse_loss = tf.keras.losses.MeanSquaredError()
 mae_loss = tf.keras.losses.MeanAbsoluteError()
 
