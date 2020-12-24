@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 import tensorflow as tf
 import numpy as np
@@ -198,6 +198,7 @@ def model_fn(features, labels, mode, params):
         [input_ids, input_lengths],
         [mel_outputs, mel_lengths],
         len(MALAYA_SPEECH_SYMBOLS),
+        prenet_dropout = 0.2
     )
     r = model.decoder_logits['outputs']
     decoder_output, post_mel_outputs, alignment_histories, _, _, _ = r
@@ -288,7 +289,7 @@ dev_dataset = get_dataset(files['test'])
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'tacotron2-nvidia-female2',
+    model_dir = 'tacotron2-female',
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 2000,

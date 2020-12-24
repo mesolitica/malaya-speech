@@ -103,7 +103,12 @@ decoder_config = {
 
 class Model:
     def __init__(
-        self, encoder_inputs, decoder_inputs, vocab_size, training = True
+        self,
+        encoder_inputs,
+        decoder_inputs,
+        vocab_size,
+        prenet_dropout = 0.5,
+        training = True,
     ):
         if training:
             mode = 'train'
@@ -112,6 +117,7 @@ class Model:
 
         encoder_config['src_vocab_size'] = vocab_size
         decoder_config['num_audio_features'] = int(decoder_inputs[0].shape[-1])
+        decoder_config['prenet_dropout'] = prenet_dropout
 
         self.encoder = Tacotron2Encoder(encoder_config, None, mode = mode)
         input_dict = {'source_tensors': encoder_inputs}

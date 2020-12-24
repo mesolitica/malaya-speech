@@ -34,7 +34,7 @@ class Prenet:
   """
 
     def __init__(
-        self, num_units, num_layers, activation_fn = None, dtype = None
+        self, num_units, num_layers, dropout, activation_fn = None, dtype = None
     ):
         """Prenet initializer
     Args:
@@ -48,6 +48,7 @@ class Prenet:
         ), 'If the prenet is enabled, there must be at least 1 layer'
         self.prenet_layers = []
         self._output_size = num_units
+        self._dropout = dropout
 
         for idx in range(num_layers):
             self.prenet_layers.append(
@@ -66,7 +67,7 @@ class Prenet:
     """
         for layer in self.prenet_layers:
             inputs = tf.layers.dropout(
-                layer(inputs), rate = 0.5, training = True
+                layer(inputs), rate = self._dropout, training = True
             )
         return inputs
 
@@ -258,6 +259,7 @@ class Tacotron2Decoder(Decoder):
                 'decoder_cell_type': None,
                 'decoder_layers': int,
                 'num_audio_features': int,
+                'prenet_dropout': float,
             }
         )
 
@@ -485,6 +487,7 @@ class Tacotron2Decoder(Decoder):
             prenet = Prenet(
                 self.params.get('prenet_units', 256),
                 self.params.get('prenet_layers', 2),
+                self.params.get('prenet_dropout', 0.5),
                 self.params.get('prenet_activation', tf.nn.relu),
                 self.params['dtype'],
             )
