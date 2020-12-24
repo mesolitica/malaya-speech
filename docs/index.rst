@@ -42,6 +42,13 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+   :caption: TTS Module
+
+   load-vocoder
+   tts-tacotron2-model
+
+.. toctree::
+   :maxdepth: 2
    :caption: Classification Module
 
    load-age-detection

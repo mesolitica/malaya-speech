@@ -386,6 +386,39 @@ S3_PATH_STT_TRANSDUCER = {
     },
 }
 
+PATH_TTS_TACOTRON2 = {
+    'female': {
+        'model': home + '/tts/tacotron2-female/model.pb',
+        'quantized': home + '/tts/tacotron2-female/quantized/model.pb',
+        'version': 'v1',
+    },
+    'male': {
+        'model': home + '/tts/tacotron2-male/model.pb',
+        'quantized': home + '/tts/tacotron2-male/quantized/model.pb',
+        'version': 'v1',
+    },
+    'husein': {
+        'model': home + '/tts/tacotron2-husein/model.pb',
+        'quantized': home + '/tts/tacotron2-husein/quantized/model.pb',
+        'version': 'v1',
+    },
+}
+
+S3_PATH_TTS_TACOTRON2 = {
+    'female': {
+        'model': 'v1/tts/tacotron2-female.pb',
+        'quantized': 'v1/tts/tacotron2-female.pb.quantized',
+    },
+    'male': {
+        'model': 'v1/tts/tacotron2-male.pb',
+        'quantized': 'v1/tts/tacotron2-male.pb.quantized',
+    },
+    'husein': {
+        'model': 'v1/tts/tacotron2-husein.pb',
+        'quantized': 'v1/tts/tacotron2-husein.pb.quantized',
+    },
+}
+
 PATH_VAD = {
     'vggvox-v1': {
         'model': home + '/vad/vggvox-v1/model.pb',
@@ -423,9 +456,69 @@ S3_PATH_VAD = {
     },
 }
 
-PATH_VOCODER = {
-    'melgan-male': {
+PATH_VOCODER_MELGAN = {
+    'male': {
+        'model': home + '/vocoder/melgan-male/model.pb',
+        'quantized': home + '/vocoder/melgan-male/quantized/model.pb',
+        'version': 'v1',
+    },
+    'female': {
+        'model': home + '/vocoder/melgan-female/model.pb',
+        'quantized': home + '/vocoder/melgan-female/quantized/model.pb',
+        'version': 'v1',
+    },
+    'husein': {
+        'model': home + '/vocoder/melgan-husein/model.pb',
+        'quantized': home + '/vocoder/melgan-husein/quantized/model.pb',
+        'version': 'v1',
+    },
+}
+
+PATH_VOCODER_MBMELGAN = {
+    'male': {
+        'model': home + '/vocoder/mbmelgan-male/model.pb',
+        'quantized': home + '/vocoder/mbmelgan-male/quantized/model.pb',
+        'version': 'v1',
+    },
+    'female': {
+        'model': home + '/vocoder/mbmelgan-female/model.pb',
+        'quantized': home + '/vocoder/mbmelgan-female/quantized/model.pb',
+        'version': 'v1',
+    },
+    'husein': {
+        'model': home + '/vocoder/mbmelgan-husein/model.pb',
+        'quantized': home + '/vocoder/mbmelgan-husein/quantized/model.pb',
+        'version': 'v1',
+    },
+}
+
+
+S3_PATH_VOCODER_MELGAN = {
+    'male': {
         'model': 'v1/vocoder/melgan-male.pb',
         'quantized': 'v1/vocoder/melgan-male.pb.quantized',
-    }
+    },
+    'female': {
+        'model': 'v1/vocoder/melgan-female.pb',
+        'quantized': 'v1/vocoder/melgan-female.pb.quantized',
+    },
+    'husein': {
+        'model': 'v1/vocoder/melgan-husein.pb',
+        'quantized': 'v1/vocoder/melgan-husein.pb.quantized',
+    },
+}
+
+S3_PATH_VOCODER_MBMELGAN = {
+    'male': {
+        'model': 'v1/vocoder/mbmelgan-male.pb',
+        'quantized': 'v1/vocoder/mbmelgan-male.pb.quantized',
+    },
+    'female': {
+        'model': 'v1/vocoder/mbmelgan-female.pb',
+        'quantized': 'v1/vocoder/mbmelgan-female.pb.quantized',
+    },
+    'husein': {
+        'model': 'v1/vocoder/mbmelgan-husein.pb',
+        'quantized': 'v1/vocoder/mbmelgan-husein.pb.quantized',
+    },
 }

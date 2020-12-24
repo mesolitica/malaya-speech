@@ -17,7 +17,8 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
   - narrator Danny Abdullah.
   - approximate 19.63 hours.
   - WER 8%.
-  - Shorter VAD, https://f000.backblazeb2.com/file/malaya-speech-model/data/dari-pasentran-ke-istana-short.gz
+  - VAD = 2, https://f000.backblazeb2.com/file/malaya-speech-model/data/dari-pasentran-ke-istana-short.gz
+  - VAD = 3, 
 
 2. https://f000.backblazeb2.com/file/malaya-speech-model/data/turki.gz
 
@@ -26,7 +27,8 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
   - narrator Danny Abdullah.
   - approximate 7.73 hours.
   - WER 8%.
-  - Shorter VAD, https://f000.backblazeb2.com/file/malaya-speech-model/data/turki-short.gz
+  - VAD = 2, https://f000.backblazeb2.com/file/malaya-speech-model/data/turki-short.gz
+  - VAD = 3, https://f000.backblazeb2.com/file/malaya-speech-model/data/turki-vad-3.gz
 
 3. https://f000.backblazeb2.com/file/malaya-speech-model/data/salina.gz
 

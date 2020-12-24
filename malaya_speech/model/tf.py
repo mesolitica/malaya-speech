@@ -652,7 +652,7 @@ class VOCODER:
         Parameters
         ----------
         inputs: List[np.array]
-
+            List[np.array] or List[malaya_speech.model.frame.FRAME].
         Returns
         -------
         result: List
@@ -668,3 +668,42 @@ class VOCODER:
 
     def __call__(self, input):
         return self.predict([input])[0]
+
+
+class TACOTRON:
+    def __init__(self, X, X_len, logits, normalizer, sess, model, name):
+        self._X = X
+        self._X_len = X_len
+        self._logits = logits
+        self._normalizer = normalizer
+        self._sess = sess
+        self.__model__ = model
+        self.__name__ = name
+
+    def predict(self, string):
+        """
+        Change string to Mel.
+
+        Parameters
+        ----------
+        string: str
+
+        Returns
+        -------
+        result: Dict[string, decoder-output, postnet-output, alignment]
+        """
+
+        t, ids = self._normalizer.normalize(string)
+        r = self._sess.run(
+            self._logits, feed_dict = {self._X: [ids], self._X_len: [len(ids)]}
+        )
+        return {
+            'string': t,
+            'ids': ids,
+            'decoder-output': r['decoder_output'][0],
+            'postnet-output': r['post_mel_outputs'][0],
+            'alignment': r['alignment_histories'][0],
+        }
+
+    def __call__(self, input):
+        return self.predict(input)

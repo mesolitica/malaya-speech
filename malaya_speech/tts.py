@@ -1,20 +1,40 @@
-from malaya.utils.text import (
+from malaya_speech.path import PATH_TTS_TACOTRON2, S3_PATH_TTS_TACOTRON2
+from malaya_speech.utils.text import (
     convert_to_ascii,
     collapse_whitespace,
     put_spacing_num,
 )
+from malaya_speech.supervised import tts
 import numpy as np
 import re
 
-_tacotron2_availability = {'male': {}, 'female': {}, 'husein': {}}
+_tacotron2_availability = {
+    'male': {
+        'Size (MB)': 104,
+        'Quantized Size (MB)': 26.3,
+        'Combined loss': 0.1733,
+    },
+    'female': {
+        'Size (MB)': 104,
+        'Quantized Size (MB)': 26.3,
+        'Combined loss': 0.1733,
+    },
+    'husein': {
+        'Size (MB)': 104,
+        'Quantized Size (MB)': 26.3,
+        'Combined loss': 0.1733,
+    },
+}
 _fastspeech2_availability = {'male': {}, 'female': {}, 'husein': {}}
 
 _pad = 'pad'
+_start = 'start'
 _eos = 'eos'
 _punctuation = "!'(),.:;? "
 _special = '-'
 _letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 _rejected = "!'(),.:;?"
+
 
 MALAYA_SPEECH_SYMBOLS = (
     [_pad, _start, _eos] + list(_special) + list(_punctuation) + list(_letters)
@@ -38,7 +58,7 @@ class TEXT_IDS:
         string = string.replace('&', ' dan ')
         string = put_spacing_num(string)
         if normalize:
-            string = normalizer.normalize(
+            string = self.normalizer.normalize(
                 string,
                 check_english = False,
                 normalize_entity = False,
@@ -55,7 +75,7 @@ class TEXT_IDS:
         string = re.sub(r'[ ]+', ' ', string).strip()
         ids = tts_encode(string, add_eos = False)
         text_input = np.array(ids)
-        num_pad = pad_to - ((len(text_input) + 2) % self.pad_to)
+        num_pad = self.pad_to - ((len(text_input) + 2) % self.pad_to)
         text_input = np.pad(
             text_input, ((1, 1)), 'constant', constant_values = ((1, 2))
         )
@@ -120,7 +140,7 @@ def tacotron2(
 
     Returns
     -------
-    result : malaya_speech.supervised.tts.load function
+    result : malaya_speech.supervised.tts.tacotron_load function
     """
     model = model.lower()
 
@@ -130,6 +150,16 @@ def tacotron2(
         )
 
     text_ids = load_text_ids(pad_to = pad_to)
+
+    return tts.tacotron_load(
+        path = PATH_TTS_TACOTRON2,
+        s3_path = S3_PATH_TTS_TACOTRON2,
+        model = model,
+        name = 'text-to-speech',
+        normalizer = text_ids,
+        quantized = quantized,
+        **kwargs
+    )
 
 
 def fastspeech2(
@@ -156,7 +186,7 @@ def fastspeech2(
 
     Returns
     -------
-    result : malaya_speech.supervised.tts.load function
+    result : malaya_speech.supervised.tts.fastspeech_load function
     """
 
     model = model.lower()

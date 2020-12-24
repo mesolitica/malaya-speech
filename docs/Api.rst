@@ -75,6 +75,18 @@ malaya_speech.model.tf.TRANSDUCER
 .. autoclass:: malaya_speech.model.tf.TRANSDUCER()
     :members:
 
+malaya_speech.model.tf.VOCODER
+----------------------------------
+
+.. autoclass:: malaya_speech.model.tf.VOCODER()
+    :members:
+
+malaya_speech.model.tf.TACOTRON
+----------------------------------
+
+.. autoclass:: malaya_speech.model.tf.TACOTRON()
+    :members:
+
 malaya_speech.pipeline
 -----------------------------------
 
@@ -267,8 +279,20 @@ malaya_speech.stt
 .. automodule:: malaya_speech.stt
     :members:
 
+malaya_speech.tts
+-----------------------------------
+
+.. automodule:: malaya_speech.tts
+    :members:
+
 malaya_speech.vad
 -----------------------------------
 
 .. automodule:: malaya_speech.vad
+    :members:
+
+malaya_speech.vocoder
+-----------------------------------
+
+.. automodule:: malaya_speech.vocoder
     :members:
