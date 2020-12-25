@@ -83,6 +83,7 @@ class Prenet:
                 inputs = tf.layers.batch_normalization(
                     f, momentum = 0.1, epsilon = 1e-5
                 )
+            inputs = self._activation_fn(inputs)
         return inputs
 
     @property
