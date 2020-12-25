@@ -34,7 +34,13 @@ class Prenet:
   """
 
     def __init__(
-        self, num_units, num_layers, dropout, activation_fn = None, dtype = None
+        self,
+        num_units,
+        num_layers,
+        dropout,
+        enable_dropout,
+        activation_fn = None,
+        dtype = None,
     ):
         """Prenet initializer
     Args:
@@ -49,13 +55,15 @@ class Prenet:
         self.prenet_layers = []
         self._output_size = num_units
         self._dropout = dropout
+        self._enable_dropout = enable_dropout
+        self._activation_fn = activation_fn
 
         for idx in range(num_layers):
             self.prenet_layers.append(
                 tf.layers.Dense(
                     name = 'prenet_{}'.format(idx + 1),
                     units = num_units,
-                    activation = activation_fn,
+                    activation = None,
                     use_bias = True,
                     dtype = dtype,
                 )
@@ -66,9 +74,15 @@ class Prenet:
     Applies the prenet to the inputs
     """
         for layer in self.prenet_layers:
-            inputs = tf.layers.dropout(
-                layer(inputs), rate = self._dropout, training = True
-            )
+            f = layer(inputs)
+            if self._enable_dropout:
+                inputs = tf.layers.dropout(
+                    f, rate = self._dropout, training = True
+                )
+            else:
+                inputs = tf.layers.batch_normalization(
+                    f, momentum = 0.1, epsilon = 1e-5
+                )
         return inputs
 
     @property
@@ -259,7 +273,6 @@ class Tacotron2Decoder(Decoder):
                 'decoder_cell_type': None,
                 'decoder_layers': int,
                 'num_audio_features': int,
-                'prenet_dropout': float,
             }
         )
 
@@ -286,6 +299,8 @@ class Tacotron2Decoder(Decoder):
                 'zoneout_prob': float,
                 'dropout_prob': float,
                 'parallel_iterations': int,
+                'prenet_dropout': float,
+                'prenet_enable_dropout': bool,
             }
         )
 
@@ -488,6 +503,7 @@ class Tacotron2Decoder(Decoder):
                 self.params.get('prenet_units', 256),
                 self.params.get('prenet_layers', 2),
                 self.params.get('prenet_dropout', 0.5),
+                self.params.get('prenet_enable_dropout', True),
                 self.params.get('prenet_activation', tf.nn.relu),
                 self.params['dtype'],
             )

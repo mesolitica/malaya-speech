@@ -107,24 +107,26 @@ class Model:
         encoder_inputs,
         decoder_inputs,
         vocab_size,
-        prenet_dropout = 0.5,
         training = True,
+        **kwargs
     ):
         if training:
             mode = 'train'
         else:
             mode = 'eval'
 
-        encoder_config['src_vocab_size'] = vocab_size
-        decoder_config['num_audio_features'] = int(decoder_inputs[0].shape[-1])
-        decoder_config['prenet_dropout'] = prenet_dropout
+        e_config = {**encoder_config, **kwargs}
+        d_config = {**decoder_config, **kwargs}
 
-        self.encoder = Tacotron2Encoder(encoder_config, None, mode = mode)
+        e_config['src_vocab_size'] = vocab_size
+        d_config['num_audio_features'] = int(decoder_inputs[0].shape[-1])
+
+        self.encoder = Tacotron2Encoder(e_config, None, mode = mode)
         input_dict = {'source_tensors': encoder_inputs}
         self.encoder_logits = self.encoder.encode(input_dict)
 
         input_dict['encoder_output'] = self.encoder_logits
         input_dict['target_tensors'] = decoder_inputs
 
-        self.decoder = Tacotron2Decoder(decoder_config, None, mode = mode)
+        self.decoder = Tacotron2Decoder(d_config, None, mode = mode)
         self.decoder_logits = self.decoder.decode(input_dict)

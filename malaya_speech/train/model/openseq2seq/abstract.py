@@ -49,10 +49,6 @@ def check_params(config, required_dict, optional_dict):
             ):
                 raise ValueError('{} has to be of type {}'.format(pm, vals))
 
-    for pm in config:
-        if pm not in required_dict and pm not in optional_dict:
-            raise ValueError('Unknown parameter: {}'.format(pm))
-
 
 def cast_types(input_dict, dtype):
     cast_input_dict = {}

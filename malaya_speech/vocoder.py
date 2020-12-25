@@ -7,8 +7,16 @@ from malaya_speech.path import (
 from malaya_speech.supervised import vocoder
 
 _melgan_availability = {
-    'male': {'Size (MB)': 17.3, 'Quantized Size (MB)': 4.53, 'Mel loss': 0},
-    'female': {'Size (MB)': 17.3, 'Quantized Size (MB)': 4.53, 'Mel loss': 0},
+    'male': {
+        'Size (MB)': 17.3,
+        'Quantized Size (MB)': 4.53,
+        'Mel loss': 0.4443,
+    },
+    'female': {
+        'Size (MB)': 17.3,
+        'Quantized Size (MB)': 4.53,
+        'Mel loss': 0.4434,
+    },
     'husein': {'Size (MB)': 17.3, 'Quantized Size (MB)': 4.53, 'Mel loss': 0},
 }
 _mbmelgan_availability = {
