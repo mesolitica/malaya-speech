@@ -38,6 +38,9 @@ def create_optimizer(
     clip_norm = 0.5,
     exclude_from_weight_decay = ['LayerNorm', 'layer_norm', 'bias'],
     fp16 = False,
+    beta_1 = 0.9,
+    beta_2 = 0.999,
+    epsilon = 1e-6,
 ):
     """Creates an optimizer training op."""
     global_step = tf.train.get_or_create_global_step()
@@ -77,9 +80,9 @@ def create_optimizer(
     optimizer = AdamWeightDecayOptimizer(
         learning_rate = learning_rate,
         weight_decay_rate = weight_decay_rate,
-        beta_1 = 0.9,
-        beta_2 = 0.999,
-        epsilon = 1e-6,
+        beta_1 = beta_1,
+        beta_2 = beta_2,
+        epsilon = epsilon,
         exclude_from_weight_decay = exclude_from_weight_decay,
     )
 

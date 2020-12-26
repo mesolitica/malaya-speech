@@ -56,7 +56,6 @@ class TEXT_IDS:
     def normalize(self, string, normalize = True, lowercase = True):
         string = convert_to_ascii(string)
         string = string.replace('&', ' dan ')
-        string = put_spacing_num(string)
         if normalize:
             string = self.normalizer.normalize(
                 string,
@@ -71,6 +70,7 @@ class TEXT_IDS:
             string = string
         if lowercase:
             string = string.lower()
+        string = put_spacing_num(string)
         string = ''.join([c for c in string if c not in _rejected])
         string = re.sub(r'[ ]+', ' ', string).strip()
         ids = tts_encode(string, add_eos = False)
