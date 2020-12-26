@@ -21,7 +21,7 @@ with open('mels-female.json') as fopen:
 
 reduction_factor = 1
 maxlen = 904
-minlen = 32
+minlen = 128
 pad_to = 8
 data_min = 1e-2
 
@@ -198,7 +198,6 @@ def model_fn(features, labels, mode, params):
         [input_ids, input_lengths],
         [mel_outputs, mel_lengths],
         len(MALAYA_SPEECH_SYMBOLS),
-        prenet_dropout = 0.2
     )
     r = model.decoder_logits['outputs']
     decoder_output, post_mel_outputs, alignment_histories, _, _, _ = r

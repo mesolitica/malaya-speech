@@ -28,7 +28,7 @@ _mbmelgan_availability = {
     'male': {
         'Size (MB)': 10.4,
         'Quantized Size (MB)': 2.82,
-        'Mel loss': 0.4356,
+        'Mel loss': 0.3735,
     },
     'husein': {
         'Size (MB)': 10.4,

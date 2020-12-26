@@ -22,7 +22,7 @@ _tacotron2_availability = {
     'husein': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
-        'Combined loss': 0.1733,
+        'Combined loss': 0.1165,
     },
 }
 _fastspeech2_availability = {'male': {}, 'female': {}, 'husein': {}}
@@ -104,7 +104,10 @@ def available_tacotron2():
     """
     from malaya_speech.utils import describe_availability
 
-    return describe_availability(_tacotron2_availability)
+    return describe_availability(
+        _tacotron2_availability,
+        text = '`husein` combined loss from training set.',
+    )
 
 
 def available_fastspeech2():
@@ -113,7 +116,10 @@ def available_fastspeech2():
     """
     from malaya_speech.utils import describe_availability
 
-    return describe_availability(_fastspeech2_availability)
+    return describe_availability(
+        _fastspeech2_availability,
+        text = '`husein` combined loss from training set',
+    )
 
 
 def tacotron2(
