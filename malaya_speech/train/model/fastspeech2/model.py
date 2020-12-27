@@ -236,13 +236,7 @@ class Model(FastSpeech):
         return outputs
 
     def inference(
-        self,
-        input_ids,
-        speaker_ids,
-        speed_ratios,
-        f0_ratios,
-        energy_ratios,
-        **kwargs,
+        self, input_ids, speed_ratios, f0_ratios, energy_ratios, **kwargs
     ):
         speaker_ids = tf.convert_to_tensor([0], tf.int32)
         attention_mask = tf.math.not_equal(input_ids, 0)
