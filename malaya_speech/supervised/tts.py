@@ -26,7 +26,9 @@ def tacotron_load(
     )
 
 
-def fastspeech_load(path, s3_path, model, name, quantized = False, **kwargs):
+def fastspeech_load(
+    path, s3_path, model, name, normalizer, quantized = False, **kwargs
+):
     check_file(path[model], s3_path[model], quantized = quantized, **kwargs)
     if quantized:
         model_path = 'quantized'

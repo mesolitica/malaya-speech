@@ -435,6 +435,21 @@ PATH_TTS_FASTSPEECH2 = {
         'quantized': home + '/tts/fastspeech2-husein/quantized/model.pb',
         'version': 'v1',
     },
+    'female-v2': {
+        'model': home + '/tts/fastspeech2-female-v2/model.pb',
+        'quantized': home + '/tts/fastspeech2-female-v2/quantized/model.pb',
+        'version': 'v1',
+    },
+    'male-v2': {
+        'model': home + '/tts/fastspeech2-male-v2/model.pb',
+        'quantized': home + '/tts/fastspeech2-male-v2/quantized/model.pb',
+        'version': 'v1',
+    },
+    'husein-v2': {
+        'model': home + '/tts/fastspeech2-husein-v2/model.pb',
+        'quantized': home + '/tts/fastspeech2-husein-v2/quantized/model.pb',
+        'version': 'v1',
+    },
 }
 
 S3_PATH_TTS_FASTSPEECH2 = {
@@ -449,6 +464,18 @@ S3_PATH_TTS_FASTSPEECH2 = {
     'husein': {
         'model': 'v1/tts/fastspeech2-husein.pb',
         'quantized': 'v1/tts/fastspeech2-husein.pb.quantized',
+    },
+    'female-v2': {
+        'model': 'v1/tts/fastspeech2-female-v2.pb',
+        'quantized': 'v1/tts/fastspeech2-female-v2.pb.quantized',
+    },
+    'male-v2': {
+        'model': 'v1/tts/fastspeech2-male-v2.pb',
+        'quantized': 'v1/tts/fastspeech2-male-v2.pb.quantized',
+    },
+    'husein-v2': {
+        'model': 'v1/tts/fastspeech2-husein-v2.pb',
+        'quantized': 'v1/tts/fastspeech2-husein-v2.pb.quantized',
     },
 }
 

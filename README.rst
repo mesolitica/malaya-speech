@@ -72,7 +72,7 @@ Features
    End-to-End Speech to Text using Pretrained CTC and RNN Transducer Malaya-Speech models.
 -  **Text-to-Speech**
 
-   End-to-End Text to Speech using Pretrained Tacotron2 and FastSpeech2 Malaya-Speech models.
+   Text to Speech using Pretrained Tacotron2 and FastSpeech2 Malaya-Speech models.
 -  **Vocoder**
 
    Convert Mel to Waveform using Pretrained MelGAN and Multiband MelGAN Vocoder Malaya-Speech models.

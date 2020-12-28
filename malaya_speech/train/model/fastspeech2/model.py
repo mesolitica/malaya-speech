@@ -310,7 +310,7 @@ class Model(FastSpeech):
         # here u can use sum or concat more than 1 hidden states layers from decoder.
         mel_before = self.mel_dense(last_decoder_hidden_states)
         mel_after = (
-            self.postnet([mel_before, encoder_masks], training = False)
+            self.postnet([mel_before, encoder_masks], training = True)
             + mel_before
         )
 

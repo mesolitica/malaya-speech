@@ -1,0 +1,44 @@
+# Fastspeech2
+
+**This directory is very lack of comments, able to understand Tensorflow, Tensorflow estimator, Tensorflow Dataset is really helpful**.
+
+**Fastspeech2 required alignment from Tacotron2**.
+
+## how-to
+
+1. Generate speech alignment from Tacotron2, 
+
+Male speaker, [calculate-alignment-tacotron2-male-train.ipynb](calculate-alignment-tacotron2-male-train.ipynb) and [calculate-alignment-tacotron2-male-test.ipynb](calculate-alignment-tacotron2-male-test.ipynb]).
+
+Female speaker, [calculate-alignment-tacotron2-female-train.ipynb](calculate-alignment-tacotron2-female-train.ipynb) and [calculate-alignment-tacotron2-female-test.ipynb](calculate-alignment-tacotron2-female-test.ipynb]).
+
+Husein speaker, [calculate-alignment-tacotron2-husein.ipynb](calculate-alignment-tacotron2-husein.ipynb).
+
+1. Run training script,
+
+Female speaker,
+
+```bash
+python3 fastspeech2-female.py
+python3 fastspeech2-female-v2.py
+```
+
+Male speaker,
+
+```bash
+python3 fastspeech2-male.py
+python3 fastspeech2-male-v2.py
+```
+
+Husein speaker,
+
+```bash
+python3 fastspeech2-husein.py
+python3 fastspeech2-husein-v2.py
+```
+
+## download
+
+1. Male speaker, last update 28th December 2020, [fastspeech2-male-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeech2-male-output.tar.gz)
+
+Tensorboard, https://tensorboard.dev/experiment/ZOY3C4u0SmOPI4ImPSWpCw/

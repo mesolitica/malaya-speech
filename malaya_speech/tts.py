@@ -30,7 +30,38 @@ _tacotron2_availability = {
         'Combined loss': 0.1165,
     },
 }
-_fastspeech2_availability = {'male': {}, 'female': {}, 'husein': {}}
+_fastspeech2_availability = {
+    'male': {
+        'Size (MB)': 125,
+        'Quantized Size (MB)': 31.7,
+        'Combined loss': 1.846,
+    },
+    'male-v2': {
+        'Size (MB)': 65,
+        'Quantized Size (MB)': 17.1,
+        'Combined loss': 0,
+    },
+    'female': {
+        'Size (MB)': 125,
+        'Quantized Size (MB)': 31.7,
+        'Combined loss': 1.89,
+    },
+    'female-v2': {
+        'Size (MB)': 65,
+        'Quantized Size (MB)': 17.1,
+        'Combined loss': 0,
+    },
+    'husein': {
+        'Size (MB)': 125,
+        'Quantized Size (MB)': 31.7,
+        'Combined loss': 1.89,
+    },
+    'husein-v2': {
+        'Size (MB)': 65,
+        'Quantized Size (MB)': 17.1,
+        'Combined loss': 0,
+    },
+}
 
 _pad = 'pad'
 _start = 'start'
@@ -38,7 +69,7 @@ _eos = 'eos'
 _punctuation = "!'(),.:;? "
 _special = '-'
 _letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-_rejected = "!'(),.:;?"
+_rejected = '!\'(),.:;?"'
 
 
 MALAYA_SPEECH_SYMBOLS = (
@@ -128,7 +159,7 @@ def available_fastspeech2():
 
 
 def tacotron2(
-    model: str = 'female', quantized: bool = False, pad_to: int = 8, **kwargs
+    model: str = 'male', quantized: bool = False, pad_to: int = 8, **kwargs
 ):
     """
     Load Tacotron2 TTS model.
@@ -174,7 +205,7 @@ def tacotron2(
 
 
 def fastspeech2(
-    model: str = 'female', quantized: bool = False, pad_to: int = 8, **kwargs
+    model: str = 'male', quantized: bool = False, pad_to: int = 8, **kwargs
 ):
     """
     Load Fastspeech2 TTS model.

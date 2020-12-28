@@ -46,6 +46,8 @@ Contents:
 
    load-vocoder
    tts-tacotron2-model
+   tts-fastspeech2-model
+   tts-long-text
 
 .. toctree::
    :maxdepth: 2

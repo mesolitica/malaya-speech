@@ -745,6 +745,12 @@ class FASTSPEECH:
         Parameters
         ----------
         string: str
+        speed_ratio: float, optional (default=1.0)
+            Increase this variable will increase time voice generated.
+        f0_ratio: float, optional (default=1.0)
+            Increase this variable will increase frequency, low frequency will generate more deeper voice.
+        energy_ratio: float, optional (default=1.0)
+            Increase this variable will increase loudness.
 
         Returns
         -------
