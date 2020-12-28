@@ -419,6 +419,39 @@ S3_PATH_TTS_TACOTRON2 = {
     },
 }
 
+PATH_TTS_FASTSPEECH2 = {
+    'female': {
+        'model': home + '/tts/fastspeech2-female/model.pb',
+        'quantized': home + '/tts/fastspeech2-female/quantized/model.pb',
+        'version': 'v1',
+    },
+    'male': {
+        'model': home + '/tts/fastspeech2-male/model.pb',
+        'quantized': home + '/tts/fastspeech2-male/quantized/model.pb',
+        'version': 'v1',
+    },
+    'husein': {
+        'model': home + '/tts/fastspeech2-husein/model.pb',
+        'quantized': home + '/tts/fastspeech2-husein/quantized/model.pb',
+        'version': 'v1',
+    },
+}
+
+S3_PATH_TTS_FASTSPEECH2 = {
+    'female': {
+        'model': 'v1/tts/fastspeech2-female.pb',
+        'quantized': 'v1/tts/fastspeech2-female.pb.quantized',
+    },
+    'male': {
+        'model': 'v1/tts/fastspeech2-male.pb',
+        'quantized': 'v1/tts/fastspeech2-male.pb.quantized',
+    },
+    'husein': {
+        'model': 'v1/tts/fastspeech2-husein.pb',
+        'quantized': 'v1/tts/fastspeech2-husein.pb.quantized',
+    },
+}
+
 PATH_VAD = {
     'vggvox-v1': {
         'model': home + '/vad/vggvox-v1/model.pb',

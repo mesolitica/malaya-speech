@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 import tensorflow as tf
 import numpy as np
@@ -68,50 +68,47 @@ MALAYA_SPEECH_SYMBOLS = (
     [_pad, _start, _eos] + list(_special) + list(_punctuation) + list(_letters)
 )
 
-total_steps = 300_000
 parameters = {
     'optimizer_params': {},
     'lr_policy_params': {
         'learning_rate': 1e-3,
-        'decay_steps': total_steps,
-        'num_warmup_steps': int(0.02 * total_steps),
+        'decay_steps': 20000,
+        'decay_rate': 0.1,
+        'use_staircase_decay': False,
+        'begin_decay_at': 45000,
         'min_lr': 1e-5,
     },
     'max_grad_norm': 1.0,
 }
 
 
-def polynomial_decay(
-    global_step, learning_rate, decay_steps, num_warmup_steps, min_lr = 0.0
+def exp_decay(
+    global_step,
+    learning_rate,
+    decay_steps,
+    decay_rate,
+    use_staircase_decay,
+    begin_decay_at = 0,
+    min_lr = 0.0,
 ):
-    new_lr = tf.train.polynomial_decay(
-        learning_rate,
-        global_step,
-        decay_steps,
-        end_learning_rate = min_lr,
-        power = 1.0,
-        cycle = False,
+    new_lr = tf.cond(
+        global_step < begin_decay_at,
+        lambda: learning_rate,
+        lambda: tf.train.exponential_decay(
+            learning_rate = learning_rate,
+            global_step = global_step - begin_decay_at,
+            decay_steps = decay_steps,
+            decay_rate = decay_rate,
+            staircase = use_staircase_decay,
+        ),
+        name = 'learning_rate',
     )
-    if num_warmup_steps:
-        global_steps_int = tf.cast(global_step, tf.int32)
-        warmup_steps_int = tf.constant(num_warmup_steps, dtype = tf.int32)
-
-        global_steps_float = tf.cast(global_steps_int, tf.float32)
-        warmup_steps_float = tf.cast(warmup_steps_int, tf.float32)
-
-        warmup_percent_done = global_steps_float / warmup_steps_float
-        warmup_learning_rate = learning_rate * warmup_percent_done
-
-        is_warmup = tf.cast(global_steps_int < warmup_steps_int, tf.float32)
-        new_lr = (
-            1.0 - is_warmup
-        ) * learning_rate + is_warmup * warmup_learning_rate
     final_lr = tf.maximum(min_lr, new_lr)
     return final_lr
 
 
 def learning_rate_scheduler(global_step):
-    return polynomial_decay(global_step, **parameters['lr_policy_params'])
+    return exp_decay(global_step, **parameters['lr_policy_params'])
 
 
 def generate(files):
@@ -263,7 +260,7 @@ def model_fn(features, labels, mode, params):
     batch_size = tf.shape(f0s)[0]
     alignment = features['alignment']
 
-    config = malaya_speech.config.fastspeech2_config
+    config = malaya_speech.config.fastspeech2_config_v2
     config = fastspeech2.Config(
         vocab_size = len(MALAYA_SPEECH_SYMBOLS), **config
     )
@@ -272,38 +269,31 @@ def model_fn(features, labels, mode, params):
     mel_before, mel_after, duration_outputs, f0_outputs, energy_outputs = model(
         input_ids, alignment, f0s, energies, training = True
     )
-    mse = tf.losses.mean_squared_error
-    mae = tf.losses.absolute_difference
-
+    loss_f = tf.losses.mean_squared_error
     log_duration = tf.math.log(tf.cast(tf.math.add(alignment, 1), tf.float32))
-    duration_loss = mse(log_duration, duration_outputs)
+    duration_loss = loss_f(log_duration, duration_outputs)
     max_length = tf.cast(tf.reduce_max(mel_lengths), tf.int32)
-
     mask = tf.sequence_mask(
         lengths = mel_lengths, maxlen = max_length, dtype = tf.float32
     )
     mask = tf.expand_dims(mask, axis = -1)
-    mel_loss_before = mae(
-        labels = mel_outputs, predictions = mel_before, weights = mask
-    )
-    mel_loss_after = mae(
-        labels = mel_outputs, predictions = mel_after, weights = mask
-    )
+
+    mse_mel = partial(loss_f, weights = mask)
+    mel_loss_before = calculate_3d_loss(mel_outputs, mel_before, mse_mel)
+    mel_loss_after = calculate_3d_loss(mel_outputs, mel_after, mse_mel)
 
     max_length = tf.cast(tf.reduce_max(energies_lengths), tf.int32)
     mask = tf.sequence_mask(
         lengths = energies_lengths, maxlen = max_length, dtype = tf.float32
     )
-    energies_loss = mse(
-        labels = energies, predictions = energy_outputs, weights = mask
-    )
-
+    mse_energies = partial(loss_f, weights = mask)
+    energies_loss = calculate_2d_loss(energies, energy_outputs, mse_energies)
     max_length = tf.cast(tf.reduce_max(f0s_lengths), tf.int32)
     mask = tf.sequence_mask(
         lengths = f0s_lengths, maxlen = max_length, dtype = tf.float32
     )
-    f0s_loss = mse(labels = f0s, predictions = f0_outputs, weights = mask)
-
+    mse_f0s = partial(loss_f, weights = mask)
+    f0s_loss = calculate_2d_loss(f0s, f0_outputs, mse_f0s)
     loss = (
         duration_loss
         + mel_loss_before
@@ -326,29 +316,17 @@ def model_fn(features, labels, mode, params):
     tf.summary.scalar('f0s_loss', f0s_loss)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
-        train_op = train.optimizer.adamw.create_optimizer(
+        train_op = train.optimizer.optimize_loss(
             loss,
-            init_lr = 0.001,
-            num_train_steps = total_steps,
-            num_warmup_steps = int(0.02 * total_steps),
-            end_learning_rate = 0.00005,
-            weight_decay_rate = 0.001,
-            beta_1 = 0.9,
-            beta_2 = 0.98,
-            epsilon = 1e-6,
-            clip_norm = 1.0,
+            tf.train.AdamOptimizer,
+            parameters['optimizer_params'],
+            learning_rate_scheduler,
+            summaries = ['learning_rate'],
+            larc_params = parameters.get('larc_params', None),
+            loss_scaling = parameters.get('loss_scaling', 1.0),
+            loss_scaling_params = parameters.get('loss_scaling_params', None),
+            clip_gradients = parameters.get('max_grad_norm', None),
         )
-        #         train_op = train.optimizer.optimize_loss(
-        #             loss,
-        #             tf.train.AdamOptimizer,
-        #             parameters['optimizer_params'],
-        #             learning_rate_scheduler,
-        #             summaries = ['learning_rate'],
-        #             larc_params = parameters.get('larc_params', None),
-        #             loss_scaling = parameters.get('loss_scaling', 1.0),
-        #             loss_scaling_params = parameters.get('loss_scaling_params', None),
-        #             clip_gradients = parameters.get('max_grad_norm', None),
-        #         )
         estimator_spec = tf.estimator.EstimatorSpec(
             mode = mode, loss = loss, train_op = train_op
         )
@@ -386,7 +364,7 @@ train.run_training(
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 2000,
-    max_steps = total_steps,
+    max_steps = 100_000,
     eval_fn = dev_dataset,
     train_hooks = train_hooks,
 )

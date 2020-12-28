@@ -1,4 +1,9 @@
-from malaya_speech.path import PATH_TTS_TACOTRON2, S3_PATH_TTS_TACOTRON2
+from malaya_speech.path import (
+    PATH_TTS_TACOTRON2,
+    S3_PATH_TTS_TACOTRON2,
+    PATH_TTS_FASTSPEECH2,
+    S3_PATH_TTS_FASTSPEECH2,
+)
 from malaya_speech.utils.text import (
     convert_to_ascii,
     collapse_whitespace,
@@ -203,3 +208,12 @@ def fastspeech2(
         )
 
     text_ids = load_text_ids(pad_to = pad_to)
+    return tts.fastspeech_load(
+        path = PATH_TTS_FASTSPEECH2,
+        s3_path = S3_PATH_TTS_FASTSPEECH2,
+        model = model,
+        name = 'text-to-speech',
+        normalizer = text_ids,
+        quantized = quantized,
+        **kwargs
+    )

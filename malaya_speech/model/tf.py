@@ -707,3 +707,65 @@ class TACOTRON:
 
     def __call__(self, input):
         return self.predict(input)
+
+
+class FASTSPEECH:
+    def __init__(
+        self,
+        X,
+        speed_ratios,
+        f0_ratios,
+        energy_ratios,
+        logits,
+        normalizer,
+        sess,
+        model,
+        name,
+    ):
+        self._X = X
+        self._speed_ratios = speed_ratios
+        self._f0_ratios = f0_ratios
+        self._energy_ratios = energy_ratios
+        self._logits = logits
+        self._normalizer = normalizer
+        self._sess = sess
+        self.__model__ = model
+        self.__name__ = name
+
+    def predict(
+        self,
+        string,
+        speed_ratio: float = 1.0,
+        f0_ratio: float = 1.0,
+        energy_ratio: float = 1.0,
+    ):
+        """
+        Change string to Mel.
+
+        Parameters
+        ----------
+        string: str
+
+        Returns
+        -------
+        result: Dict[string, decoder-output, postnet-output]
+        """
+        t, ids = self._normalizer.normalize(string)
+        r = self._sess.run(
+            self._logits,
+            feed_dict = {
+                self._X: [ids],
+                self._speed_ratios: [speed_ratio],
+                self._f0_ratios: [f0_ratio],
+                self._energy_ratios: [energy_ratio],
+            },
+        )
+        return {
+            'string': t,
+            'ids': ids,
+            'decoder-output': r['decoder_output'][0],
+            'postnet-output': r['post_mel_outputs'][0],
+        }
+
+    def __call__(self, input, **kwargs):
+        return self.predict(input, **kwargs)
