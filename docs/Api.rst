@@ -87,6 +87,12 @@ malaya_speech.model.tf.TACOTRON
 .. autoclass:: malaya_speech.model.tf.TACOTRON()
     :members:
 
+malaya_speech.model.tf.FASTSPEECH
+----------------------------------
+
+.. autoclass:: malaya_speech.model.tf.FASTSPEECH()
+    :members:
+
 malaya_speech.pipeline
 -----------------------------------
 

@@ -47,6 +47,7 @@ Contents:
    load-vocoder
    tts-tacotron2-model
    tts-fastspeech2-model
+   more-tts-fastspeech2
    tts-long-text
 
 .. toctree::

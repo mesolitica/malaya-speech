@@ -42,3 +42,7 @@ python3 fastspeech2-husein-v2.py
 1. Male speaker, last update 28th December 2020, [fastspeech2-male-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeech2-male-output.tar.gz)
 
 Tensorboard, https://tensorboard.dev/experiment/ZOY3C4u0SmOPI4ImPSWpCw/
+
+2. Husein speaker, last update 29th December 2020, [fastspeech2-husein-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeech2-husein-output.tar.gz)
+
+Tensorboard, https://tensorboard.dev/experiment/kvajI3r4TQeOFovUXqg8Fg/

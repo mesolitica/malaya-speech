@@ -54,7 +54,7 @@ _fastspeech2_availability = {
     'husein': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
-        'Combined loss': 1.89,
+        'Combined loss': 0.6411,
     },
     'husein-v2': {
         'Size (MB)': 65,
@@ -166,7 +166,7 @@ def tacotron2(
 
     Parameters
     ----------
-    model : str, optional (default='jasper')
+    model : str, optional (default='male')
         Model architecture supported. Allowed values:
 
         * ``'female'`` - Tacotron2 trained on female voice.
@@ -212,7 +212,7 @@ def fastspeech2(
 
     Parameters
     ----------
-    model : str, optional (default='jasper')
+    model : str, optional (default='male')
         Model architecture supported. Allowed values:
 
         * ``'female'`` - Fastspeech2 trained on female voice.
