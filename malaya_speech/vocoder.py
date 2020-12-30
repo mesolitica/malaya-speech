@@ -17,7 +17,11 @@ _melgan_availability = {
         'Quantized Size (MB)': 4.53,
         'Mel loss': 0.4434,
     },
-    'husein': {'Size (MB)': 17.3, 'Quantized Size (MB)': 4.53, 'Mel loss': 0},
+    'husein': {
+        'Size (MB)': 17.3,
+        'Quantized Size (MB)': 4.53,
+        'Mel loss': 0.4442,
+    },
 }
 _mbmelgan_availability = {
     'female': {

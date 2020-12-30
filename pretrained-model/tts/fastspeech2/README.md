@@ -43,6 +43,22 @@ python3 fastspeech2-husein-v2.py
 
 Tensorboard, https://tensorboard.dev/experiment/ZOY3C4u0SmOPI4ImPSWpCw/
 
-2. Husein speaker, last update 29th December 2020, [fastspeech2-husein-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeech2-husein-output.tar.gz)
+2. Male speaker V2, last update 30th December 2020, [fastspeech2-male-v2-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeech2-male-output.tar.gz)
+
+Tensorboard, https://tensorboard.dev/experiment/6qZzTKNQT6OdCKKJ3V4SdA/
+
+3. Husein speaker, last update 29th December 2020, [fastspeech2-husein-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeech2-husein-output.tar.gz)
 
 Tensorboard, https://tensorboard.dev/experiment/kvajI3r4TQeOFovUXqg8Fg/
+
+4. Husein speaker V2, last update 29th December 2020, [fastspeech2-husein-v2-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeech2-husein-v2-output.tar.gz)
+
+Tensorboard, https://tensorboard.dev/experiment/foxnL7YHQrSL5oQZteO4Yw/
+
+5. Female speaker, last update 29th December 2020, [fastspeech2-female-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeech2-female-output.tar.gz)
+
+Tensorboard, https://tensorboard.dev/experiment/nvVkoiamRhasVU4xvOh2Ag/
+
+6. Female speaker V2, last update 29th December 2020, [fastspeech2-female-v2-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeech2-female-v2-output.tar.gz)
+
+Tensorboard, https://tensorboard.dev/experiment/58O7cjX6QdWM9qGooXMmjQ/

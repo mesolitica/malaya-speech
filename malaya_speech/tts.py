@@ -37,19 +37,19 @@ _fastspeech2_availability = {
         'Combined loss': 1.846,
     },
     'male-v2': {
-        'Size (MB)': 65,
-        'Quantized Size (MB)': 17.1,
-        'Combined loss': 0,
+        'Size (MB)': 65.5,
+        'Quantized Size (MB)': 16.7,
+        'Combined loss': 1.886,
     },
     'female': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
-        'Combined loss': 1.89,
+        'Combined loss': 1.744,
     },
     'female-v2': {
-        'Size (MB)': 65,
-        'Quantized Size (MB)': 17.1,
-        'Combined loss': 0,
+        'Size (MB)': 65.5,
+        'Quantized Size (MB)': 16.7,
+        'Combined loss': 1.804,
     },
     'husein': {
         'Size (MB)': 125,
@@ -57,9 +57,9 @@ _fastspeech2_availability = {
         'Combined loss': 0.6411,
     },
     'husein-v2': {
-        'Size (MB)': 65,
-        'Quantized Size (MB)': 17.1,
-        'Combined loss': 0,
+        'Size (MB)': 65.5,
+        'Quantized Size (MB)': 16.7,
+        'Combined loss': 0.7712,
     },
 }
 

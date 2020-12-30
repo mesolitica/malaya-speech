@@ -18,7 +18,6 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
   - approximate 19.63 hours.
   - WER 8%.
   - VAD = 2, https://f000.backblazeb2.com/file/malaya-speech-model/data/dari-pasentran-ke-istana-short.gz
-  - VAD = 3, 
 
 2. https://f000.backblazeb2.com/file/malaya-speech-model/data/turki.gz
 
