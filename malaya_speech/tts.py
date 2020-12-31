@@ -91,8 +91,16 @@ class TEXT_IDS:
         self.sentence_tokenizer = sentence_tokenizer
         self.true_case = true_case
 
-    def normalize(self, string, normalize = True, lowercase = False):
+    def normalize(
+        self,
+        string,
+        normalize = True,
+        lowercase = False,
+        assume_newline_fullstop = True,
+    ):
         string = convert_to_ascii(string)
+        if assume_newline_fullstop:
+            string = string.replace('\n', '. ')
 
         if self.true_case:
             string = self.true_case.predict([string], beam_search = False)[0]
