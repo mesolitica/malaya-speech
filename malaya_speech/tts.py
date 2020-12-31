@@ -85,12 +85,23 @@ def tts_encode(string: str, add_eos: bool = True):
 
 
 class TEXT_IDS:
-    def __init__(self, normalizer, pad_to):
+    def __init__(self, normalizer, pad_to, sentence_tokenizer, true_case):
         self.normalizer = normalizer
         self.pad_to = pad_to
+        self.sentence_tokenizer = sentence_tokenizer
+        self.true_case = true_case
 
-    def normalize(self, string, normalize = True, lowercase = True):
+    def normalize(self, string, normalize = True, lowercase = False):
         string = convert_to_ascii(string)
+
+        if self.true_case:
+            string = self.true_case.predict([string], beam_search = False)[0]
+        else:
+            string = re.sub(r'[ ]+', ' ', string).strip()
+            if string[-1] != '.':
+                string = string + '.'
+            string = string[0].upper() + string[1:]
+
         string = string.replace('&', ' dan ')
         if normalize:
             string = self.normalizer.normalize(
@@ -107,7 +118,7 @@ class TEXT_IDS:
         if lowercase:
             string = string.lower()
         string = put_spacing_num(string)
-        string = ''.join([c for c in string if c not in _rejected])
+        string = ''.join([c for c in string if c in MALAYA_SPEECH_SYMBOLS])
         string = re.sub(r'[ ]+', ' ', string).strip()
         ids = tts_encode(string, add_eos = False)
         text_input = np.array(ids)
@@ -122,7 +133,7 @@ class TEXT_IDS:
         return string, text_input
 
 
-def load_text_ids(pad_to: int = 8):
+def load_text_ids(pad_to: int = 8, true_case = None, quantized = False):
     try:
         import malaya
     except:
@@ -131,7 +142,18 @@ def load_text_ids(pad_to: int = 8):
         )
 
     normalizer = malaya.normalize.normalizer(date = False, time = False)
-    return TEXT_IDS(normalizer = normalizer, pad_to = pad_to)
+    sentence_tokenizer = malaya.text.function.split_into_sentences
+    if true_case_model:
+        true_case = model = malaya.true_case.transformer(
+            model = true_case, quantized = quantized
+        )
+
+    return TEXT_IDS(
+        normalizer = normalizer,
+        pad_to = pad_to,
+        sentence_tokenizer = sentence_tokenizer,
+        true_case = true_case,
+    )
 
 
 def available_tacotron2():
@@ -159,7 +181,11 @@ def available_fastspeech2():
 
 
 def tacotron2(
-    model: str = 'male', quantized: bool = False, pad_to: int = 8, **kwargs
+    model: str = 'male',
+    quantized: bool = False,
+    pad_to: int = 8,
+    true_case: str = None,
+    **kwargs
 ):
     """
     Load Tacotron2 TTS model.
@@ -180,6 +206,13 @@ def tacotron2(
     pad_to : int, optional (default=8)
         size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
 
+    true_case: str, optional (default=None)
+        Load True Case model from https://malaya.readthedocs.io/en/latest/load-true-case.html,
+        to fix case sensitive and punctuation errors. Allowed values:
+
+        * ``'small'`` - Small size True Case model.
+        * ``'base'`` - Base size True Case model.
+
     Returns
     -------
     result : malaya_speech.supervised.tts.tacotron_load function
@@ -191,7 +224,9 @@ def tacotron2(
             'model not supported, please check supported models from `malaya_speech.tts.available_tacotron2()`.'
         )
 
-    text_ids = load_text_ids(pad_to = pad_to)
+    text_ids = load_text_ids(
+        pad_to = pad_to, true_case = true_case, quantized = quantized
+    )
 
     return tts.tacotron_load(
         path = PATH_TTS_TACOTRON2,
