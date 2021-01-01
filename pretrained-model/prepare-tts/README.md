@@ -6,7 +6,13 @@ Prepare TTS dataset for TTS models.
 
 ## how-to
 
-1. Download and preprocess dataset, 
+1. True case texts for Male and Female speakers,
+
+Female speaker, [true-case-female.ipynb](true-case-female.ipynb).
+
+Male speaker, [true-case-male.ipynb](true-case-male.ipynb).
+
+2. Download and preprocess dataset, 
 
 Female speaker, [preprocess-female.ipynb](preprocess-female.ipynb).
 
@@ -14,7 +20,9 @@ Male speaker, [preprocess-female.ipynb](preprocess-male.ipynb).
 
 Husein speaker, [preprocess-female.ipynb](preprocess-husein.ipynb).
 
-2. Split dataset to train and test set, 
+Haqkiem speaker, [preprocess-haqkiem.ipynb](preprocess-haqkiem.ipynb).
+
+3. Split dataset to train and test set, 
 
 Female speaker, [train-test-tts-female.ipynb](train-test-tts-female.ipynb).
 

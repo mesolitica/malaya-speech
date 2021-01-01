@@ -29,6 +29,11 @@ _tacotron2_availability = {
         'Quantized Size (MB)': 26.3,
         'Combined loss': 0.1165,
     },
+    'haqkiem': {
+        'Size (MB)': 104,
+        'Quantized Size (MB)': 26.3,
+        'Combined loss': 0.1165,
+    },
 }
 _fastspeech2_availability = {
     'male': {
@@ -61,6 +66,11 @@ _fastspeech2_availability = {
         'Quantized Size (MB)': 16.7,
         'Combined loss': 0.7712,
     },
+    'haqkiem': {
+        'Size (MB)': 125,
+        'Quantized Size (MB)': 31.7,
+        'Combined loss': 0.6411,
+    },
 }
 
 _pad = 'pad'
@@ -69,7 +79,7 @@ _eos = 'eos'
 _punctuation = "!'(),.:;? "
 _special = '-'
 _letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-_rejected = '!\'(),.:;?"'
+_rejected = '\'():;"'
 
 
 MALAYA_SPEECH_SYMBOLS = (
@@ -92,11 +102,7 @@ class TEXT_IDS:
         self.true_case = true_case
 
     def normalize(
-        self,
-        string,
-        normalize = True,
-        lowercase = False,
-        assume_newline_fullstop = True,
+        self, string, normalize = True, assume_newline_fullstop = True
     ):
         string = convert_to_ascii(string)
         if assume_newline_fullstop:
@@ -104,13 +110,15 @@ class TEXT_IDS:
 
         if self.true_case:
             string = self.true_case.predict([string], beam_search = False)[0]
-        else:
-            string = re.sub(r'[ ]+', ' ', string).strip()
-            if string[-1] != '.':
-                string = string + '.'
-            string = string[0].upper() + string[1:]
+
+        string = re.sub(r'[ ]+', ' ', string).strip()
+        if string[-1] in ['-', ',']:
+            string = string[:-1]
+        if string[-1] != '.':
+            string = string + '.'
 
         string = string.replace('&', ' dan ')
+        string = string.replace(':', ',').replace(';', ',')
         if normalize:
             string = self.normalizer.normalize(
                 string,
@@ -119,15 +127,21 @@ class TEXT_IDS:
                 normalize_text = False,
                 normalize_url = True,
                 normalize_email = True,
+                normalize_telephone = True,
             )
             string = string['normalize']
         else:
             string = string
-        if lowercase:
-            string = string.lower()
         string = put_spacing_num(string)
-        string = ''.join([c for c in string if c in MALAYA_SPEECH_SYMBOLS])
+        string = ''.join(
+            [
+                c
+                for c in string
+                if c in MALAYA_SPEECH_SYMBOLS and c not in _rejected
+            ]
+        )
         string = re.sub(r'[ ]+', ' ', string).strip()
+        string = string.lower()
         ids = tts_encode(string, add_eos = False)
         text_input = np.array(ids)
         num_pad = self.pad_to - ((len(text_input) + 2) % self.pad_to)
@@ -141,7 +155,9 @@ class TEXT_IDS:
         return string, text_input
 
 
-def load_text_ids(pad_to: int = 8, true_case = None, quantized = False):
+def load_text_ids(
+    pad_to: int = 8, true_case = None, quantized = False, **kwargs
+):
     try:
         import malaya
     except:
@@ -151,9 +167,9 @@ def load_text_ids(pad_to: int = 8, true_case = None, quantized = False):
 
     normalizer = malaya.normalize.normalizer(date = False, time = False)
     sentence_tokenizer = malaya.text.function.split_into_sentences
-    if true_case_model:
-        true_case = model = malaya.true_case.transformer(
-            model = true_case, quantized = quantized
+    if true_case:
+        true_case = malaya.true_case.transformer(
+            model = true_case, quantized = quantized, **kwargs
         )
 
     return TEXT_IDS(
@@ -172,7 +188,7 @@ def available_tacotron2():
 
     return describe_availability(
         _tacotron2_availability,
-        text = '`husein` combined loss from training set.',
+        text = '`husein` and `haqkiem` combined loss from training set.',
     )
 
 
@@ -184,7 +200,7 @@ def available_fastspeech2():
 
     return describe_availability(
         _fastspeech2_availability,
-        text = '`husein` combined loss from training set',
+        text = '`husein` and `haqkiem` combined loss from training set',
     )
 
 
@@ -206,6 +222,7 @@ def tacotron2(
         * ``'female'`` - Tacotron2 trained on female voice.
         * ``'male'`` - Tacotron2 trained on male voice.
         * ``'husein'`` - Tacotron2 trained on Husein voice.
+        * ``'haqkiem'`` - Tacotron2 trained on Haqkiem voice.
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 
@@ -220,6 +237,7 @@ def tacotron2(
 
         * ``'small'`` - Small size True Case model.
         * ``'base'`` - Base size True Case model.
+        * ``None`` - no True Case model.
 
     Returns
     -------
@@ -233,7 +251,7 @@ def tacotron2(
         )
 
     text_ids = load_text_ids(
-        pad_to = pad_to, true_case = true_case, quantized = quantized
+        pad_to = pad_to, true_case = true_case, quantized = quantized, **kwargs
     )
 
     return tts.tacotron_load(
@@ -248,7 +266,11 @@ def tacotron2(
 
 
 def fastspeech2(
-    model: str = 'male', quantized: bool = False, pad_to: int = 8, **kwargs
+    model: str = 'male',
+    quantized: bool = False,
+    pad_to: int = 8,
+    true_case: str = None,
+    **kwargs
 ):
     """
     Load Fastspeech2 TTS model.
@@ -261,6 +283,7 @@ def fastspeech2(
         * ``'female'`` - Fastspeech2 trained on female voice.
         * ``'male'`` - Fastspeech2 trained on male voice.
         * ``'husein'`` - Fastspeech2 trained on Husein voice.
+        * ``'haqkiem'`` - Fastspeech2 trained on Haqkiem voice.
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 
@@ -268,6 +291,14 @@ def fastspeech2(
 
     pad_to : int, optional (default=8)
         size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
+
+    true_case: str, optional (default=None)
+        Load True Case model from https://malaya.readthedocs.io/en/latest/load-true-case.html,
+        to fix case sensitive and punctuation errors. Allowed values:
+
+        * ``'small'`` - Small size True Case model.
+        * ``'base'`` - Base size True Case model.
+        * ``None`` - no True Case model.
 
     Returns
     -------
@@ -281,7 +312,9 @@ def fastspeech2(
             'model not supported, please check supported models from `malaya_speech.tts.available_fastspeech2()`.'
         )
 
-    text_ids = load_text_ids(pad_to = pad_to)
+    text_ids = load_text_ids(
+        pad_to = pad_to, true_case = true_case, quantized = quantized, **kwargs
+    )
     return tts.fastspeech_load(
         path = PATH_TTS_FASTSPEECH2,
         s3_path = S3_PATH_TTS_FASTSPEECH2,
