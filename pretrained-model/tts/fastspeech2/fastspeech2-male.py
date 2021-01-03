@@ -48,8 +48,8 @@ def get_alignment(f):
         return None
 
 
-f0_stat = np.load('../speech-bahasa/male-stats/stats_f0.npy')
-energy_stat = np.load('../speech-bahasa/male-stats/stats_energy.npy')
+f0_stat = np.load('../speech-bahasa/male-stats-v2/stats_f0.npy')
+energy_stat = np.load('../speech-bahasa/male-stats-v2/stats_energy.npy')
 
 reduction_factor = 1
 maxlen = 904
@@ -63,6 +63,7 @@ _eos = 'eos'
 _punctuation = "!'(),.:;? "
 _special = '-'
 _letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+_rejected = '\'():;"'
 
 MALAYA_SPEECH_SYMBOLS = (
     [_pad, _start, _eos] + list(_special) + list(_punctuation) + list(_letters)
@@ -89,12 +90,16 @@ def generate(files):
         text_ids = np.load(f.replace('mels', 'text_ids'), allow_pickle = True)[
             0
         ]
-        text_input = np.array(
+        text_ids = ''.join(
             [
-                MALAYA_SPEECH_SYMBOLS.index(c)
+                c
                 for c in text_ids
-                if c in MALAYA_SPEECH_SYMBOLS
+                if c in MALAYA_SPEECH_SYMBOLS and c not in _rejected
             ]
+        )
+        text_ids = re.sub(r'[ ]+', ' ', text_ids).strip()
+        text_input = np.array(
+            [MALAYA_SPEECH_SYMBOLS.index(c) for c in text_ids]
         )
         num_pad = pad_to - ((len(text_input) + 2) % pad_to)
         text_input = np.pad(

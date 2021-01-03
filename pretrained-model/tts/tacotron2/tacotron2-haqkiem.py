@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import tensorflow as tf
 import numpy as np
@@ -30,6 +30,7 @@ _eos = 'eos'
 _punctuation = "!'(),.:;? "
 _special = '-'
 _letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+_rejected = '\'():;"'
 
 MALAYA_SPEECH_SYMBOLS = (
     [_pad, _start, _eos] + list(_special) + list(_punctuation) + list(_letters)
@@ -92,7 +93,13 @@ def generate(files):
         text_ids = np.load(f.replace('mels', 'text_ids'), allow_pickle = True)[
             0
         ]
-        text_ids = ''.join([c for c in text_ids if c in MALAYA_SPEECH_SYMBOLS])
+        text_ids = ''.join(
+            [
+                c
+                for c in text_ids
+                if c in MALAYA_SPEECH_SYMBOLS and c not in _rejected
+            ]
+        )
         text_ids = re.sub(r'[ ]+', ' ', text_ids).strip()
         text_input = np.array(
             [MALAYA_SPEECH_SYMBOLS.index(c) for c in text_ids]
@@ -281,8 +288,7 @@ train_hooks = [
     )
 ]
 
-train_dataset = get_dataset(files['train'])
-dev_dataset = get_dataset(files['test'])
+train_dataset = get_dataset(files)
 
 train.run_training(
     train_fn = train_dataset,
@@ -292,6 +298,6 @@ train.run_training(
     log_step = 1,
     save_checkpoint_step = 2000,
     max_steps = 100000,
-    eval_fn = dev_dataset,
+    eval_fn = None,
     train_hooks = train_hooks,
 )
