@@ -115,6 +115,8 @@ class Model:
             if logging:
                 print(o)
 
+        if logging:
+            print(o, inputs)
         o = tf.concat([o, inputs], axis = 2)
         o = self.out(o, training = training)
         self.logits = o
