@@ -22,6 +22,11 @@ _melgan_availability = {
         'Quantized Size (MB)': 4.53,
         'Mel loss': 0.4442,
     },
+    'haqkiem': {
+        'Size (MB)': 17.3,
+        'Quantized Size (MB)': 4.53,
+        'Mel loss': 0.4442,
+    },
 }
 _mbmelgan_availability = {
     'female': {
@@ -35,6 +40,11 @@ _mbmelgan_availability = {
         'Mel loss': 0.3735,
     },
     'husein': {
+        'Size (MB)': 10.4,
+        'Quantized Size (MB)': 2.82,
+        'Mel loss': 0.4356,
+    },
+    'haqkiem': {
         'Size (MB)': 10.4,
         'Quantized Size (MB)': 2.82,
         'Mel loss': 0.4356,
@@ -72,6 +82,7 @@ def melgan(model: str = 'female', quantized = False, **kwargs):
         * ``'female'`` - MelGAN trained on female voice.
         * ``'male'`` - MelGAN trained on male voice.
         * ``'husein'`` - MelGAN trained on Husein voice.
+        * ``'haqkiem'`` - MelGAN trained on Haqkiem voice.
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 
@@ -109,6 +120,7 @@ def mbmelgan(model: str = 'female', quantized = False, **kwargs):
         * ``'female'`` - MelGAN trained on female voice.
         * ``'male'`` - MelGAN trained on male voice.
         * ``'husein'`` - MelGAN trained on Husein voice.
+        * ``'haqkiem'`` - MelGAN trained on Haqkiem voice.
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 

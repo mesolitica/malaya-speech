@@ -102,11 +102,13 @@ class TEXT_IDS:
         self.true_case = true_case
 
     def normalize(
-        self, string, normalize = True, assume_newline_fullstop = True
+        self, string, normalize = True, assume_newline_fullstop = False
     ):
         string = convert_to_ascii(string)
         if assume_newline_fullstop:
             string = string.replace('\n', '. ')
+            string = self.sentence_tokenizer(string, minimum_length = 0)
+            string = '. '.join(string)
 
         if self.true_case:
             string = self.true_case.predict([string], beam_search = False)[0]

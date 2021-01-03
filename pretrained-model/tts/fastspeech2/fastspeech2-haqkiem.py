@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import tensorflow as tf
 import numpy as np
@@ -17,8 +17,7 @@ from functools import partial
 import json
 import re
 
-with open('mels-male.json') as fopen:
-    files = json.load(fopen)
+files = glob('../speech-bahasa/output-haqkiem/mels/*.npy')
 
 
 def norm_mean_std(x, mean, std):
@@ -41,15 +40,15 @@ def average_by_duration(x, durs):
 
 
 def get_alignment(f):
-    f = f"tacotron2-male-alignment/{f.split('/')[-1]}"
+    f = f"tacotron2-husein-alignment/{f.split('/')[-1]}"
     if os.path.exists(f):
         return np.load(f)
     else:
         return None
 
 
-f0_stat = np.load('../speech-bahasa/male-stats/stats_f0.npy')
-energy_stat = np.load('../speech-bahasa/male-stats/stats_energy.npy')
+f0_stat = np.load('../speech-bahasa/husein-stats/stats_f0.npy')
+energy_stat = np.load('../speech-bahasa/husein-stats/stats_energy.npy')
 
 reduction_factor = 1
 maxlen = 904
@@ -68,7 +67,7 @@ MALAYA_SPEECH_SYMBOLS = (
     [_pad, _start, _eos] + list(_special) + list(_punctuation) + list(_letters)
 )
 
-total_steps = 300_000
+total_steps = 200_000
 
 
 def generate(files):
@@ -220,7 +219,7 @@ def model_fn(features, labels, mode, params):
     batch_size = tf.shape(f0s)[0]
     alignment = features['alignment']
 
-    config = malaya_speech.config.fastspeech2_config_v2
+    config = malaya_speech.config.fastspeech2_config
     config = fastspeech2.Config(
         vocab_size = len(MALAYA_SPEECH_SYMBOLS), **config
     )
@@ -322,17 +321,16 @@ train_hooks = [
     )
 ]
 
-train_dataset = get_dataset(files['train'])
-dev_dataset = get_dataset(files['test'])
+train_dataset = get_dataset(files)
 
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'fastspeech2-male-v2',
+    model_dir = 'fastspeech2-haqkiem',
     num_gpus = 1,
     log_step = 1,
-    save_checkpoint_step = 5000,
+    save_checkpoint_step = 2000,
     max_steps = total_steps,
-    eval_fn = dev_dataset,
+    eval_fn = None,
     train_hooks = train_hooks,
 )
