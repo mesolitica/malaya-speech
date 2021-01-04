@@ -45,7 +45,7 @@ def available_model():
 
 
 @check_type
-def deep_model(model: str = 'resnet-unet', quantized = False, **kwargs):
+def deep_model(model: str = 'resnet-unet', quantized: bool = False, **kwargs):
     """
     Load Speech Enhancement deep learning model.
 

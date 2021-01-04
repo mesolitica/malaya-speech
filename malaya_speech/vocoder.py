@@ -5,6 +5,7 @@ from malaya_speech.path import (
     S3_PATH_VOCODER_MBMELGAN,
 )
 from malaya_speech.supervised import vocoder
+from herpetologist import check_type
 
 _melgan_availability = {
     'male': {
@@ -60,7 +61,8 @@ def available_mbmelgan():
     return describe_availability(_mbmelgan_availability)
 
 
-def melgan(model: str = 'female', quantized = False, **kwargs):
+@check_type
+def melgan(model: str = 'female', quantized: bool = False, **kwargs):
     """
     Load MelGAN Vocoder model.
 
@@ -97,7 +99,8 @@ def melgan(model: str = 'female', quantized = False, **kwargs):
     )
 
 
-def mbmelgan(model: str = 'female', quantized = False, **kwargs):
+@check_type
+def mbmelgan(model: str = 'female', quantized: bool = False, **kwargs):
     """
     Load Multiband MelGAN Vocoder model.
 

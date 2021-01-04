@@ -26,7 +26,7 @@ def available_model():
 
 
 @check_type
-def deep_model(model: str = 'vggvox-v2', quantized = False, **kwargs):
+def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     """
     Load speaker overlap deep model.
 

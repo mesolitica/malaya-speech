@@ -121,6 +121,7 @@ def available_language_model():
     return describe_availability(_language_model_availability)
 
 
+@check_type
 def language_model(
     model: str = 'malaya-speech',
     alpha: float = 2.5,
@@ -169,6 +170,7 @@ def language_model(
     return scorer
 
 
+@check_type
 def deep_transducer(
     model: str = 'conformer', quantized: bool = False, **kwargs
 ):
@@ -208,6 +210,7 @@ def deep_transducer(
     )
 
 
+@check_type
 def deep_ctc(model: str = 'jasper', quantized: bool = False, **kwargs):
     """
     Load Encoder-CTC ASR model.

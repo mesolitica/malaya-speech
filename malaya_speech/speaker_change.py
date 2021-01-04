@@ -30,7 +30,7 @@ def available_model():
 
 
 @check_type
-def deep_model(model: str = 'speakernet', quantized = False, **kwargs):
+def deep_model(model: str = 'speakernet', quantized: bool = False, **kwargs):
     """
     Load speaker change deep model.
 

@@ -38,7 +38,7 @@ def available_model():
 
 
 @check_type
-def deep_model(model: str = 'vggvox-v2', **kwargs):
+def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     """
     Load speaker count deep model.
 
@@ -49,6 +49,9 @@ def deep_model(model: str = 'vggvox-v2', **kwargs):
 
         * ``'vggvox-v2'`` - finetuned VGGVox V2.
         * ``'deep-speaker'`` - finetuned Deep Speaker.
+    quantized : bool, optional (default=False)
+        if True, will load 8-bit quantized model. 
+        Quantized model not necessary faster, totally depends on the machine.
 
     Returns
     -------
