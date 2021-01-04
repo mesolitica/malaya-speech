@@ -22,6 +22,7 @@ def run_training(
     model_fn,
     model_dir: str,
     num_gpus: int = 1,
+    gpu_mem_fraction: float = 0.95,
     log_step: int = 100,
     summary_step: int = 100,
     save_checkpoint_step: int = 1000,
@@ -68,7 +69,12 @@ def run_training(
             ),
         )
     else:
-
+        gpu_options = tf.GPUOptions(
+            per_process_gpu_memory_fraction = gpu_mem_fraction
+        )
+        config = tf.ConfigProto(
+            allow_soft_placement = True, gpu_options = gpu_options
+        )
         run_config = RunConfig(
             train_distribute = dist_strategy,
             eval_distribute = dist_strategy,
@@ -76,6 +82,7 @@ def run_training(
             model_dir = model_dir,
             save_checkpoints_steps = save_checkpoint_step,
             save_summary_steps = summary_step,
+            session_config = config,
         )
 
     if use_tpu:
