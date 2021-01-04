@@ -223,8 +223,8 @@ def tacotron2(
 
         * ``'female'`` - Tacotron2 trained on female voice.
         * ``'male'`` - Tacotron2 trained on male voice.
-        * ``'husein'`` - Tacotron2 trained on Husein voice.
-        * ``'haqkiem'`` - Tacotron2 trained on Haqkiem voice.
+        * ``'husein'`` - Tacotron2 trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
+        * ``'haqkiem'`` - Tacotron2 trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 
@@ -284,8 +284,8 @@ def fastspeech2(
 
         * ``'female'`` - Fastspeech2 trained on female voice.
         * ``'male'`` - Fastspeech2 trained on male voice.
-        * ``'husein'`` - Fastspeech2 trained on Husein voice.
-        * ``'haqkiem'`` - Fastspeech2 trained on Haqkiem voice.
+        * ``'husein'`` - Fastspeech2 trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
+        * ``'haqkiem'`` - Fastspeech2 trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 

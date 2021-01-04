@@ -81,8 +81,8 @@ def melgan(model: str = 'female', quantized = False, **kwargs):
 
         * ``'female'`` - MelGAN trained on female voice.
         * ``'male'`` - MelGAN trained on male voice.
-        * ``'husein'`` - MelGAN trained on Husein voice.
-        * ``'haqkiem'`` - MelGAN trained on Haqkiem voice.
+        * ``'husein'`` - MelGAN trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
+        * ``'haqkiem'`` - MelGAN trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 
@@ -119,8 +119,8 @@ def mbmelgan(model: str = 'female', quantized = False, **kwargs):
 
         * ``'female'`` - MelGAN trained on female voice.
         * ``'male'`` - MelGAN trained on male voice.
-        * ``'husein'`` - MelGAN trained on Husein voice.
-        * ``'haqkiem'`` - MelGAN trained on Haqkiem voice.
+        * ``'husein'`` - MelGAN trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
+        * ``'haqkiem'`` - MelGAN trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 

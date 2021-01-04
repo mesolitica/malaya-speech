@@ -20,7 +20,7 @@ with open('mels-female.json') as fopen:
     files = json.load(fopen)
 
 reduction_factor = 1
-maxlen = 904
+maxlen = 1008
 minlen = 32
 pad_to = 8
 data_min = 1e-2

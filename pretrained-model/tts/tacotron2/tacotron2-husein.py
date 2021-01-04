@@ -19,7 +19,7 @@ import re
 files = glob('../speech-bahasa/output-husein/mels/*.npy')
 
 reduction_factor = 1
-maxlen = 904
+maxlen = 1008
 minlen = 32
 pad_to = 8
 data_min = 1e-2

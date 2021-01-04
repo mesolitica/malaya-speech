@@ -51,7 +51,7 @@ f0_stat = np.load('../speech-bahasa/husein-stats/stats_f0.npy')
 energy_stat = np.load('../speech-bahasa/husein-stats/stats_energy.npy')
 
 reduction_factor = 1
-maxlen = 904
+maxlen = 1008
 minlen = 32
 pad_to = 8
 data_min = 1e-2
