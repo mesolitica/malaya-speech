@@ -1,4 +1,5 @@
 from . import alconformer
+from . import autovc
 from . import conformer
 from . import ctc
 from . import deep_speaker
