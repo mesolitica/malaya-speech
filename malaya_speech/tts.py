@@ -114,9 +114,9 @@ class TEXT_IDS:
             string = self.true_case.predict([string], beam_search = False)[0]
 
         string = re.sub(r'[ ]+', ' ', string).strip()
-        if string[-1] in ['-', ',']:
+        if string[-1] in '-,':
             string = string[:-1]
-        if string[-1] != '.':
+        if string[-1] not in '.,?!':
             string = string + '.'
 
         string = string.replace('&', ' dan ')
