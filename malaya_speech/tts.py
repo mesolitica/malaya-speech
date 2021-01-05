@@ -8,6 +8,7 @@ from malaya_speech.utils.text import (
     convert_to_ascii,
     collapse_whitespace,
     put_spacing_num,
+    tts_encode,
 )
 from malaya_speech.supervised import tts
 import numpy as np
@@ -87,13 +88,6 @@ MALAYA_SPEECH_SYMBOLS = (
 )
 
 
-def tts_encode(string: str, add_eos: bool = True):
-    r = [MALAYA_SPEECH_SYMBOLS.index(c) for c in string]
-    if add_eos:
-        r = r + [MALAYA_SPEECH_SYMBOLS.index('eos')]
-    return r
-
-
 class TEXT_IDS:
     def __init__(self, normalizer, pad_to, sentence_tokenizer, true_case):
         self.normalizer = normalizer
@@ -102,7 +96,11 @@ class TEXT_IDS:
         self.true_case = true_case
 
     def normalize(
-        self, string, normalize = True, assume_newline_fullstop = False
+        self,
+        string,
+        normalize = True,
+        assume_newline_fullstop = False,
+        **kwargs
     ):
         string = convert_to_ascii(string)
         if assume_newline_fullstop:
@@ -122,6 +120,11 @@ class TEXT_IDS:
         string = string.replace('&', ' dan ')
         string = string.replace(':', ',').replace(';', ',')
         if normalize:
+            t = self.normalizer._tokenizer(string)
+            for i in range(len(t)):
+                if t[i] == '-':
+                    t[i] = ','
+            string = ' '.join(t)
             string = self.normalizer.normalize(
                 string,
                 check_english = False,
@@ -144,7 +147,7 @@ class TEXT_IDS:
         )
         string = re.sub(r'[ ]+', ' ', string).strip()
         string = string.lower()
-        ids = tts_encode(string, add_eos = False)
+        ids = tts_encode(string, MALAYA_SPEECH_SYMBOLS, add_eos = False)
         text_input = np.array(ids)
         num_pad = self.pad_to - ((len(text_input) + 2) % self.pad_to)
         text_input = np.pad(

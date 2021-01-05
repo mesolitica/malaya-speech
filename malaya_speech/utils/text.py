@@ -33,3 +33,10 @@ def filter_splitted(s, t, threshold = 0.001):
     ]
     r = [t[no] for no, s in enumerate(score) if s >= threshold]
     return ' '.join(r)
+
+
+def tts_encode(string: str, vocab, add_eos: bool = True):
+    r = [vocab.index(c) for c in string]
+    if add_eos:
+        r = r + [vocab.index('eos')]
+    return r
