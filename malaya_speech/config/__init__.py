@@ -13,6 +13,7 @@ from .fastspeech2 import config_v2 as fastspeech2_config_v2
 from .hifigan import config as hifigan_config
 from .mb_melgan import config as mb_melgan_config
 from .melgan import config as melgan_config
+from .universal_melgan import config as universal_melgan_config
 from .speakernet_featurizer import config as speakernet_featurizer_config
 from .tacotron2 import config as tacotron2_config
 from .transducer_featurizer import config as transducer_featurizer_config

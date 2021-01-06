@@ -24,5 +24,6 @@ from . import tacotron2_nvidia
 from . import transducer
 from . import unet
 from . import unet_enhancement
+from . import universal_melgan
 from . import vggvox_v1
 from . import vggvox_v2
