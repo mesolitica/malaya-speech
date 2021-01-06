@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.spatial.distance
 import scipy.cluster.hierarchy
+from scipy.spatial.distance import squareform
 
 
 def l2_normalize(X):
@@ -109,3 +110,9 @@ def cdist(fX_trn, fX_tst, metric = 'euclidean', **kwargs):
         return scipy.spatial.distance.cdist(
             fX_trn, fX_tst, metric = metric, **kwargs
         )
+
+
+def compute_log_dist_matrix(X, metric = 'angular'):
+    dist = pdist(X, metric = metric)
+    dist_matrix = squareform((dist)) * (-1.0)
+    return dist_matrix
