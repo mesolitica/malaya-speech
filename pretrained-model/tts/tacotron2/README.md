@@ -45,3 +45,8 @@ python3 tacotron2-husein.py
 
   - Tensorboard, https://tensorboard.dev/experiment/4PSz9TrzTQ2A6jVQEAeN6A/
   - Lower case, ignore punctuations.
+
+5. Haqkiem speaker, last update 6th January 2021, [tacotron2-haqkiem-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/tacotron2-haqkiem-output.tar.gz)
+
+  - Tensorboard, https://tensorboard.dev/experiment/umm5Fd4kRmCzy0Nd84n2rQ/
+  - Lower case, understand `.,?!` punctuations.
