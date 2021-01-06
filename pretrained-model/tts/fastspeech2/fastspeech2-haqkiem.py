@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import tensorflow as tf
 import numpy as np
@@ -40,15 +40,15 @@ def average_by_duration(x, durs):
 
 
 def get_alignment(f):
-    f = f"tacotron2-husein-alignment/{f.split('/')[-1]}"
+    f = f"tacotron2-haqkiem-alignment/{f.split('/')[-1]}"
     if os.path.exists(f):
         return np.load(f)
     else:
         return None
 
 
-f0_stat = np.load('../speech-bahasa/husein-stats/stats_f0.npy')
-energy_stat = np.load('../speech-bahasa/husein-stats/stats_energy.npy')
+f0_stat = np.load('../speech-bahasa/haqkiem-stats/stats_f0.npy')
+energy_stat = np.load('../speech-bahasa/haqkiem-stats/stats_energy.npy')
 
 reduction_factor = 1
 maxlen = 1008
