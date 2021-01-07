@@ -68,3 +68,8 @@ python3 fastspeech2-husein-v2.py
 
   - Tensorboard, https://tensorboard.dev/experiment/58O7cjX6QdWM9qGooXMmjQ/
   - Lower case, ignore punctuations.
+
+7. Haqkiem speaker, last update 7th January 2021, [fastspeech2-haqkiem-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeech2-haqkiem-output.tar.gz)
+
+  - Tensorboard, https://tensorboard.dev/experiment/skMZrZnLQpyOiG35bO0Mmw/
+  - Lower case, understand `.,?!` punctuations.

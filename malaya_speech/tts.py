@@ -33,7 +33,7 @@ _tacotron2_availability = {
     'haqkiem': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
-        'Combined loss': 0.1165,
+        'Combined loss': 0.1375,
     },
 }
 _fastspeech2_availability = {
@@ -70,7 +70,7 @@ _fastspeech2_availability = {
     'haqkiem': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
-        'Combined loss': 0.6411,
+        'Combined loss': 0.5663,
     },
 }
 
