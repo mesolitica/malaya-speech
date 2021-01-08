@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import tensorflow as tf
 import numpy as np
@@ -11,12 +11,44 @@ import malaya_speech
 import malaya_speech.train
 import malaya_speech.config
 import malaya_speech.train as train
-from malaya_speech.train.model import tacotron2_nvidia as tacotron2
+from malaya_speech.train.model import fastspeech2
 from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
+from functools import partial
 import json
 import re
 
-files = glob('../speech-bahasa/output-husein/mels/*.npy')
+files = glob('../speech-bahasa/output-haqkiem/mels/*.npy')
+
+
+def norm_mean_std(x, mean, std):
+    zero_idxs = np.where(x == 0.0)[0]
+    x = (x - mean) / std
+    x[zero_idxs] = 0.0
+    return x
+
+
+def average_by_duration(x, durs):
+    mel_len = durs.sum()
+    durs_cum = np.cumsum(np.pad(durs, (1, 0)))
+
+    x_char = np.zeros((durs.shape[0],), dtype = np.float32)
+    for idx, start, end in zip(range(mel_len), durs_cum[:-1], durs_cum[1:]):
+        values = x[start:end][np.where(x[start:end] != 0.0)[0]]
+        x_char[idx] = np.mean(values) if len(values) > 0 else 0.0
+
+    return x_char.astype(np.float32)
+
+
+def get_alignment(f):
+    f = f"tacotron2-haqkiem-alignment/{f.split('/')[-1]}"
+    if os.path.exists(f):
+        return np.load(f)
+    else:
+        return None
+
+
+f0_stat = np.load('../speech-bahasa/haqkiem-stats/stats_f0.npy')
+energy_stat = np.load('../speech-bahasa/haqkiem-stats/stats_energy.npy')
 
 reduction_factor = 1
 maxlen = 1008
@@ -36,47 +68,7 @@ MALAYA_SPEECH_SYMBOLS = (
     [_pad, _start, _eos] + list(_special) + list(_punctuation) + list(_letters)
 )
 
-parameters = {
-    'optimizer_params': {},
-    'lr_policy_params': {
-        'learning_rate': 1e-3,
-        'decay_steps': 20000,
-        'decay_rate': 0.1,
-        'use_staircase_decay': False,
-        'begin_decay_at': 45000,
-        'min_lr': 1e-5,
-    },
-    'max_grad_norm': 1.0,
-}
-
-
-def exp_decay(
-    global_step,
-    learning_rate,
-    decay_steps,
-    decay_rate,
-    use_staircase_decay,
-    begin_decay_at = 0,
-    min_lr = 0.0,
-):
-    new_lr = tf.cond(
-        global_step < begin_decay_at,
-        lambda: learning_rate,
-        lambda: tf.train.exponential_decay(
-            learning_rate = learning_rate,
-            global_step = global_step - begin_decay_at,
-            decay_steps = decay_steps,
-            decay_rate = decay_rate,
-            staircase = use_staircase_decay,
-        ),
-        name = 'learning_rate',
-    )
-    final_lr = tf.maximum(min_lr, new_lr)
-    return final_lr
-
-
-def learning_rate_scheduler(global_step):
-    return exp_decay(global_step, **parameters['lr_policy_params'])
+total_steps = 200_000
 
 
 def generate(files):
@@ -86,6 +78,10 @@ def generate(files):
         mel = np.load(f)
         mel_length = len(mel)
         if mel_length > maxlen or mel_length < minlen:
+            continue
+
+        alignment = get_alignment(f)
+        if alignment is None:
             continue
 
         stop_token_target = np.zeros([len(mel)], dtype = np.float32)
@@ -125,23 +121,29 @@ def generate(files):
         len_mel = [len(mel)]
         len_text_ids = [len(text_input)]
 
+        f0 = np.load(f.replace('mels', 'f0s'))
+        f0 = norm_mean_std(f0, f0_stat[0], f0_stat[1])
+        f0 = average_by_duration(f0, alignment)
+        len_f0 = [len(f0)]
+
+        energy = np.load(f.replace('mels', 'energies'))
+        energy = norm_mean_std(energy, energy_stat[0], energy_stat[1])
+        energy = average_by_duration(energy, alignment)
+        len_energy = [len(energy)]
+
         yield {
             'mel': mel,
             'text_ids': text_input,
             'len_mel': len_mel,
             'len_text_ids': len_text_ids,
             'stop_token_target': stop_token_target,
+            'f0': f0,
+            'len_f0': len_f0,
+            'energy': energy,
+            'len_energy': len_energy,
+            'f': [f],
+            'alignment': alignment,
         }
-
-
-def parse(example):
-    mel_len = example['len_mel'][0]
-    input_len = example['len_text_ids'][0]
-    g = tacotron2.generate_guided_attention(
-        mel_len, input_len, reduction_factor = reduction_factor
-    )
-    example['g'] = g
-    return example
 
 
 def get_dataset(files, batch_size = 32, shuffle_size = 32, thread_count = 24):
@@ -154,6 +156,12 @@ def get_dataset(files, batch_size = 32, shuffle_size = 32, thread_count = 24):
                 'len_mel': tf.int32,
                 'len_text_ids': tf.int32,
                 'stop_token_target': tf.float32,
+                'f0': tf.float32,
+                'len_f0': tf.int32,
+                'energy': tf.float32,
+                'len_energy': tf.int32,
+                'f': tf.string,
+                'alignment': tf.int32,
             },
             output_shapes = {
                 'mel': tf.TensorShape([None, 80]),
@@ -161,11 +169,15 @@ def get_dataset(files, batch_size = 32, shuffle_size = 32, thread_count = 24):
                 'len_mel': tf.TensorShape([1]),
                 'len_text_ids': tf.TensorShape([1]),
                 'stop_token_target': tf.TensorShape([None]),
+                'f0': tf.TensorShape([None]),
+                'len_f0': tf.TensorShape([1]),
+                'energy': tf.TensorShape([None]),
+                'len_energy': tf.TensorShape([1]),
+                'f': tf.TensorShape([1]),
+                'alignment': tf.TensorShape([None]),
             },
             args = (files,),
         )
-        dataset = dataset.map(parse, num_parallel_calls = thread_count)
-        dataset = dataset.shuffle(batch_size)
         dataset = dataset.padded_batch(
             shuffle_size,
             padded_shapes = {
@@ -173,16 +185,26 @@ def get_dataset(files, batch_size = 32, shuffle_size = 32, thread_count = 24):
                 'text_ids': tf.TensorShape([None]),
                 'len_mel': tf.TensorShape([1]),
                 'len_text_ids': tf.TensorShape([1]),
-                'g': tf.TensorShape([None, None]),
                 'stop_token_target': tf.TensorShape([None]),
+                'f0': tf.TensorShape([None]),
+                'len_f0': tf.TensorShape([1]),
+                'energy': tf.TensorShape([None]),
+                'len_energy': tf.TensorShape([1]),
+                'f': tf.TensorShape([1]),
+                'alignment': tf.TensorShape([None]),
             },
             padding_values = {
                 'mel': tf.constant(0, dtype = tf.float32),
                 'text_ids': tf.constant(0, dtype = tf.int32),
                 'len_mel': tf.constant(0, dtype = tf.int32),
                 'len_text_ids': tf.constant(0, dtype = tf.int32),
-                'g': tf.constant(-1.0, dtype = tf.float32),
                 'stop_token_target': tf.constant(0, dtype = tf.float32),
+                'f0': tf.constant(0, dtype = tf.float32),
+                'len_f0': tf.constant(0, dtype = tf.int32),
+                'energy': tf.constant(0, dtype = tf.float32),
+                'len_energy': tf.constant(0, dtype = tf.int32),
+                'f': tf.constant('', dtype = tf.string),
+                'alignment': tf.constant(0, dtype = tf.int32),
             },
         )
         return dataset
@@ -193,74 +215,89 @@ def get_dataset(files, batch_size = 32, shuffle_size = 32, thread_count = 24):
 def model_fn(features, labels, mode, params):
     input_ids = features['text_ids']
     input_lengths = features['len_text_ids'][:, 0]
-    speaker_ids = tf.constant([0], dtype = tf.int32)
     mel_outputs = features['mel']
     mel_lengths = features['len_mel'][:, 0]
-    guided = features['g']
-    stop_token_target = features['stop_token_target']
-    batch_size = tf.shape(guided)[0]
+    energies = features['energy']
+    energies_lengths = features['len_energy'][:, 0]
+    f0s = features['f0']
+    f0s_lengths = features['len_f0'][:, 0]
+    batch_size = tf.shape(f0s)[0]
+    alignment = features['alignment']
 
-    model = tacotron2.Model(
-        [input_ids, input_lengths],
-        [mel_outputs, mel_lengths],
-        len(MALAYA_SPEECH_SYMBOLS),
+    config = malaya_speech.config.fastspeech2_config
+    config = fastspeech2.Config(
+        vocab_size = len(MALAYA_SPEECH_SYMBOLS), **config
     )
-    r = model.decoder_logits['outputs']
-    decoder_output, post_mel_outputs, alignment_histories, _, _, _ = r
-    stop_token_predictions = model.decoder_logits['stop_token_prediction']
+    model = fastspeech2.Model(config)
 
-    stop_token = tf.expand_dims(stop_token_target, -1)
-    max_length = tf.cast(tf.shape(decoder_output)[1], tf.int32)
+    mel_before, mel_after, duration_outputs, f0_outputs, energy_outputs = model(
+        input_ids, alignment, f0s, energies, training = True
+    )
+    mse = tf.losses.mean_squared_error
+    mae = tf.losses.absolute_difference
 
-    loss_f = tf.losses.mean_squared_error
+    log_duration = tf.math.log(tf.cast(tf.math.add(alignment, 1), tf.float32))
+    duration_loss = mse(log_duration, duration_outputs)
+    max_length = tf.cast(tf.reduce_max(mel_lengths), tf.int32)
+
     mask = tf.sequence_mask(
         lengths = mel_lengths, maxlen = max_length, dtype = tf.float32
     )
     mask = tf.expand_dims(mask, axis = -1)
+    mel_loss_before = mae(
+        labels = mel_outputs, predictions = mel_before, weights = mask
+    )
+    mel_loss_after = mae(
+        labels = mel_outputs, predictions = mel_after, weights = mask
+    )
 
-    mel_loss_before = loss_f(
-        labels = mel_outputs, predictions = decoder_output, weights = mask
+    max_length = tf.cast(tf.reduce_max(energies_lengths), tf.int32)
+    mask = tf.sequence_mask(
+        lengths = energies_lengths, maxlen = max_length, dtype = tf.float32
     )
-    mel_loss_after = loss_f(
-        labels = mel_outputs, predictions = post_mel_outputs, weights = mask
+    energies_loss = mse(
+        labels = energies, predictions = energy_outputs, weights = mask
     )
-    stop_token_loss = tf.nn.sigmoid_cross_entropy_with_logits(
-        labels = stop_token, logits = stop_token_predictions
-    )
-    stop_token_loss = stop_token_loss * mask
-    stop_token_loss = tf.reduce_sum(stop_token_loss) / tf.reduce_sum(mask)
 
-    attention_masks = tf.cast(tf.math.not_equal(guided, -1.0), tf.float32)
-    loss_att = tf.reduce_sum(
-        tf.abs(alignment_histories * guided) * attention_masks, axis = [1, 2]
+    max_length = tf.cast(tf.reduce_max(f0s_lengths), tf.int32)
+    mask = tf.sequence_mask(
+        lengths = f0s_lengths, maxlen = max_length, dtype = tf.float32
     )
-    loss_att /= tf.reduce_sum(attention_masks, axis = [1, 2])
-    loss_att = tf.reduce_mean(loss_att)
+    f0s_loss = mse(labels = f0s, predictions = f0_outputs, weights = mask)
 
-    loss = stop_token_loss + mel_loss_before + mel_loss_after + loss_att
+    loss = (
+        duration_loss
+        + mel_loss_before
+        + mel_loss_after
+        + energies_loss
+        + f0s_loss
+    )
 
     tf.identity(loss, 'loss')
-    tf.identity(stop_token_loss, name = 'stop_token_loss')
+    tf.identity(duration_loss, name = 'duration_loss')
     tf.identity(mel_loss_before, name = 'mel_loss_before')
     tf.identity(mel_loss_after, name = 'mel_loss_after')
-    tf.identity(loss_att, name = 'loss_att')
+    tf.identity(energies_loss, name = 'energies_loss')
+    tf.identity(f0s_loss, name = 'f0s_loss')
 
-    tf.summary.scalar('stop_token_loss', stop_token_loss)
+    tf.summary.scalar('duration_loss', duration_loss)
     tf.summary.scalar('mel_loss_before', mel_loss_before)
     tf.summary.scalar('mel_loss_after', mel_loss_after)
-    tf.summary.scalar('loss_att', loss_att)
+    tf.summary.scalar('energies_loss', energies_loss)
+    tf.summary.scalar('f0s_loss', f0s_loss)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
-        train_op = train.optimizer.optimize_loss(
+        train_op = train.optimizer.adamw.create_optimizer(
             loss,
-            tf.train.AdamOptimizer,
-            parameters['optimizer_params'],
-            learning_rate_scheduler,
-            summaries = ['learning_rate'],
-            larc_params = parameters.get('larc_params', None),
-            loss_scaling = parameters.get('loss_scaling', 1.0),
-            loss_scaling_params = parameters.get('loss_scaling_params', None),
-            clip_gradients = parameters.get('max_grad_norm', None),
+            init_lr = 0.001,
+            num_train_steps = total_steps,
+            num_warmup_steps = int(0.02 * total_steps),
+            end_learning_rate = 0.00005,
+            weight_decay_rate = 0.001,
+            beta_1 = 0.9,
+            beta_2 = 0.98,
+            epsilon = 1e-6,
+            clip_norm = 1.0,
         )
         estimator_spec = tf.estimator.EstimatorSpec(
             mode = mode, loss = loss, train_op = train_op
@@ -279,10 +316,11 @@ train_hooks = [
     tf.train.LoggingTensorHook(
         [
             'loss',
-            'stop_token_loss',
+            'duration_loss',
             'mel_loss_before',
             'mel_loss_after',
-            'loss_att',
+            'energies_loss',
+            'f0s_loss',
         ],
         every_n_iter = 1,
     )
@@ -293,11 +331,11 @@ train_dataset = get_dataset(files)
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'tacotron2-case-husein',
+    model_dir = 'fastspeech2-haqkiem',
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 2000,
-    max_steps = 100000,
+    max_steps = total_steps,
     eval_fn = None,
     train_hooks = train_hooks,
 )

@@ -402,6 +402,11 @@ PATH_TTS_TACOTRON2 = {
         'quantized': home + '/tts/tacotron2-husein/quantized/model.pb',
         'version': 'v1',
     },
+    'haqkiem': {
+        'model': home + '/tts/tacotron2-haqkiem/model.pb',
+        'quantized': home + '/tts/tacotron2-haqkiem/quantized/model.pb',
+        'version': 'v2',
+    },
 }
 
 S3_PATH_TTS_TACOTRON2 = {
@@ -416,6 +421,10 @@ S3_PATH_TTS_TACOTRON2 = {
     'husein': {
         'model': 'v1/tts/tacotron2-husein.pb',
         'quantized': 'v1/tts/tacotron2-husein.pb.quantized',
+    },
+    'haqkiem': {
+        'model': 'v2/tts/tacotron2-haqkiem.pb',
+        'quantized': 'v2/tts/tacotron2-haqkiem.pb.quantized',
     },
 }
 
@@ -434,6 +443,11 @@ PATH_TTS_FASTSPEECH2 = {
         'model': home + '/tts/fastspeech2-husein/model.pb',
         'quantized': home + '/tts/fastspeech2-husein/quantized/model.pb',
         'version': 'v1',
+    },
+    'haqkiem': {
+        'model': home + '/tts/fastspeech2-haqkiem/model.pb',
+        'quantized': home + '/tts/fastspeech2-haqkiem/quantized/model.pb',
+        'version': 'v2',
     },
     'female-v2': {
         'model': home + '/tts/fastspeech2-female-v2/model.pb',
@@ -464,6 +478,10 @@ S3_PATH_TTS_FASTSPEECH2 = {
     'husein': {
         'model': 'v1/tts/fastspeech2-husein.pb',
         'quantized': 'v1/tts/fastspeech2-husein.pb.quantized',
+    },
+    'haqkiem': {
+        'model': 'v2/tts/fastspeech2-haqkiem.pb',
+        'quantized': 'v2/tts/fastspeech2-haqkiem.pb.quantized',
     },
     'female-v2': {
         'model': 'v1/tts/fastspeech2-female-v2.pb',
@@ -532,6 +550,11 @@ PATH_VOCODER_MELGAN = {
         'quantized': home + '/vocoder/melgan-husein/quantized/model.pb',
         'version': 'v1',
     },
+    'haqkiem': {
+        'model': home + '/vocoder/melgan-haqkiem/model.pb',
+        'quantized': home + '/vocoder/melgan-haqkiem/quantized/model.pb',
+        'version': 'v2',
+    },
 }
 
 PATH_VOCODER_MBMELGAN = {
@@ -550,6 +573,11 @@ PATH_VOCODER_MBMELGAN = {
         'quantized': home + '/vocoder/mbmelgan-husein/quantized/model.pb',
         'version': 'v1',
     },
+    'haqkiem': {
+        'model': home + '/vocoder/mbmelgan-haqkiem/model.pb',
+        'quantized': home + '/vocoder/mbmelgan-haqkiem/quantized/model.pb',
+        'version': 'v1',
+    },
 }
 
 
@@ -566,6 +594,10 @@ S3_PATH_VOCODER_MELGAN = {
         'model': 'v1/vocoder/melgan-husein.pb',
         'quantized': 'v1/vocoder/melgan-husein.pb.quantized',
     },
+    'haqkiem': {
+        'model': 'v2/vocoder/melgan-haqkiem.pb',
+        'quantized': 'v2/vocoder/melgan-haqkiem.pb.quantized',
+    },
 }
 
 S3_PATH_VOCODER_MBMELGAN = {
@@ -580,5 +612,9 @@ S3_PATH_VOCODER_MBMELGAN = {
     'husein': {
         'model': 'v1/vocoder/mbmelgan-husein.pb',
         'quantized': 'v1/vocoder/mbmelgan-husein.pb.quantized',
+    },
+    'haqkiem': {
+        'model': 'v2/vocoder/mbmelgan-haqkiem.pb',
+        'quantized': 'v2/vocoder/mbmelgan-haqkiem.pb.quantized',
     },
 }

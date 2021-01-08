@@ -680,7 +680,7 @@ class TACOTRON:
         self.__model__ = model
         self.__name__ = name
 
-    def predict(self, string):
+    def predict(self, string, **kwargs):
         """
         Change string to Mel.
 
@@ -693,7 +693,7 @@ class TACOTRON:
         result: Dict[string, decoder-output, postnet-output, alignment]
         """
 
-        t, ids = self._normalizer.normalize(string)
+        t, ids = self._normalizer.normalize(string, **kwargs)
         r = self._sess.run(
             self._logits, feed_dict = {self._X: [ids], self._X_len: [len(ids)]}
         )
@@ -738,6 +738,7 @@ class FASTSPEECH:
         speed_ratio: float = 1.0,
         f0_ratio: float = 1.0,
         energy_ratio: float = 1.0,
+        **kwargs,
     ):
         """
         Change string to Mel.
@@ -756,7 +757,7 @@ class FASTSPEECH:
         -------
         result: Dict[string, decoder-output, postnet-output]
         """
-        t, ids = self._normalizer.normalize(string)
+        t, ids = self._normalizer.normalize(string, **kwargs)
         r = self._sess.run(
             self._logits,
             feed_dict = {

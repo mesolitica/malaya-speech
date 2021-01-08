@@ -52,7 +52,7 @@ f0_stat = np.load('../speech-bahasa/female-stats/stats_f0.npy')
 energy_stat = np.load('../speech-bahasa/female-stats/stats_energy.npy')
 
 reduction_factor = 1
-maxlen = 904
+maxlen = 1008
 minlen = 32
 pad_to = 8
 data_min = 1e-2
@@ -69,49 +69,6 @@ MALAYA_SPEECH_SYMBOLS = (
 )
 
 total_steps = 300_000
-parameters = {
-    'optimizer_params': {},
-    'lr_policy_params': {
-        'learning_rate': 1e-3,
-        'decay_steps': total_steps,
-        'num_warmup_steps': int(0.02 * total_steps),
-        'min_lr': 1e-5,
-    },
-    'max_grad_norm': 1.0,
-}
-
-
-def polynomial_decay(
-    global_step, learning_rate, decay_steps, num_warmup_steps, min_lr = 0.0
-):
-    new_lr = tf.train.polynomial_decay(
-        learning_rate,
-        global_step,
-        decay_steps,
-        end_learning_rate = min_lr,
-        power = 1.0,
-        cycle = False,
-    )
-    if num_warmup_steps:
-        global_steps_int = tf.cast(global_step, tf.int32)
-        warmup_steps_int = tf.constant(num_warmup_steps, dtype = tf.int32)
-
-        global_steps_float = tf.cast(global_steps_int, tf.float32)
-        warmup_steps_float = tf.cast(warmup_steps_int, tf.float32)
-
-        warmup_percent_done = global_steps_float / warmup_steps_float
-        warmup_learning_rate = learning_rate * warmup_percent_done
-
-        is_warmup = tf.cast(global_steps_int < warmup_steps_int, tf.float32)
-        new_lr = (
-            1.0 - is_warmup
-        ) * learning_rate + is_warmup * warmup_learning_rate
-    final_lr = tf.maximum(min_lr, new_lr)
-    return final_lr
-
-
-def learning_rate_scheduler(global_step):
-    return polynomial_decay(global_step, **parameters['lr_policy_params'])
 
 
 def generate(files):
@@ -338,17 +295,6 @@ def model_fn(features, labels, mode, params):
             epsilon = 1e-6,
             clip_norm = 1.0,
         )
-        #         train_op = train.optimizer.optimize_loss(
-        #             loss,
-        #             tf.train.AdamOptimizer,
-        #             parameters['optimizer_params'],
-        #             learning_rate_scheduler,
-        #             summaries = ['learning_rate'],
-        #             larc_params = parameters.get('larc_params', None),
-        #             loss_scaling = parameters.get('loss_scaling', 1.0),
-        #             loss_scaling_params = parameters.get('loss_scaling_params', None),
-        #             clip_gradients = parameters.get('max_grad_norm', None),
-        #         )
         estimator_spec = tf.estimator.EstimatorSpec(
             mode = mode, loss = loss, train_op = train_op
         )

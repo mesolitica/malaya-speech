@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import tensorflow as tf
 import numpy as np
@@ -16,11 +16,10 @@ from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 import json
 import re
 
-with open('mels-female.json') as fopen:
-    files = json.load(fopen)
+files = glob('../speech-bahasa/output-haqkiem/mels/*.npy')
 
 reduction_factor = 1
-maxlen = 904
+maxlen = 1008
 minlen = 32
 pad_to = 8
 data_min = 1e-2
@@ -42,7 +41,7 @@ parameters = {
     'lr_policy_params': {
         'learning_rate': 1e-3,
         'decay_steps': 20000,
-        'decay_rate': 0.4,
+        'decay_rate': 0.1,
         'use_staircase_decay': False,
         'begin_decay_at': 45000,
         'min_lr': 1e-5,
@@ -289,17 +288,16 @@ train_hooks = [
     )
 ]
 
-train_dataset = get_dataset(files['train'])
-dev_dataset = get_dataset(files['test'])
+train_dataset = get_dataset(files)
 
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'tacotron2-case-female',
+    model_dir = 'tacotron2-case-haqkiem',
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 2000,
     max_steps = 100000,
-    eval_fn = dev_dataset,
+    eval_fn = None,
     train_hooks = train_hooks,
 )
