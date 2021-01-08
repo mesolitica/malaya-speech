@@ -19,21 +19,25 @@ _tacotron2_availability = {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
         'Combined loss': 0.1733,
+        'understand punctuations': False,
     },
     'female': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
         'Combined loss': 0.1733,
+        'understand punctuations': False,
     },
     'husein': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
         'Combined loss': 0.1165,
+        'understand punctuations': False,
     },
     'haqkiem': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
         'Combined loss': 0.1375,
+        'understand punctuations': True,
     },
 }
 _fastspeech2_availability = {
@@ -41,36 +45,43 @@ _fastspeech2_availability = {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
         'Combined loss': 1.846,
+        'understand punctuations': False,
     },
     'male-v2': {
         'Size (MB)': 65.5,
         'Quantized Size (MB)': 16.7,
         'Combined loss': 1.886,
+        'understand punctuations': False,
     },
     'female': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
         'Combined loss': 1.744,
+        'understand punctuations': False,
     },
     'female-v2': {
         'Size (MB)': 65.5,
         'Quantized Size (MB)': 16.7,
         'Combined loss': 1.804,
+        'understand punctuations': False,
     },
     'husein': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
         'Combined loss': 0.6411,
+        'understand punctuations': False,
     },
     'husein-v2': {
         'Size (MB)': 65.5,
         'Quantized Size (MB)': 16.7,
         'Combined loss': 0.7712,
+        'understand punctuations': False,
     },
     'haqkiem': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
         'Combined loss': 0.5663,
+        'understand punctuations': True,
     },
 }
 
@@ -81,6 +92,7 @@ _punctuation = "!'(),.:;? "
 _special = '-'
 _letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 _rejected = '\'():;"'
+_punct = ':;,.'
 
 
 MALAYA_SPEECH_SYMBOLS = (
@@ -89,11 +101,19 @@ MALAYA_SPEECH_SYMBOLS = (
 
 
 class TEXT_IDS:
-    def __init__(self, normalizer, pad_to, sentence_tokenizer, true_case):
+    def __init__(
+        self,
+        normalizer,
+        pad_to,
+        sentence_tokenizer,
+        true_case,
+        understand_punct = False,
+    ):
         self.normalizer = normalizer
         self.pad_to = pad_to
         self.sentence_tokenizer = sentence_tokenizer
         self.true_case = true_case
+        self.understand_punct = understand_punct
 
     def normalize(
         self,
@@ -145,6 +165,8 @@ class TEXT_IDS:
                 if c in MALAYA_SPEECH_SYMBOLS and c not in _rejected
             ]
         )
+        if not self.understand_punct:
+            string = ''.join([c for c in string if c not in _punct])
         string = re.sub(r'[ ]+', ' ', string).strip()
         string = string.lower()
         ids = tts_encode(string, MALAYA_SPEECH_SYMBOLS, add_eos = False)
@@ -161,7 +183,11 @@ class TEXT_IDS:
 
 
 def load_text_ids(
-    pad_to: int = 8, true_case = None, quantized = False, **kwargs
+    pad_to: int = 8,
+    understand_punct = False,
+    true_case = None,
+    quantized = False,
+    **kwargs
 ):
     try:
         import malaya
@@ -182,6 +208,7 @@ def load_text_ids(
         pad_to = pad_to,
         sentence_tokenizer = sentence_tokenizer,
         true_case = true_case,
+        understand_punct = understand_punct,
     )
 
 
@@ -256,7 +283,13 @@ def tacotron2(
         )
 
     text_ids = load_text_ids(
-        pad_to = pad_to, true_case = true_case, quantized = quantized, **kwargs
+        pad_to = pad_to,
+        understand_punct = _tacotron2_availability[model][
+            'understand punctuations'
+        ],
+        true_case = true_case,
+        quantized = quantized,
+        **kwargs
     )
 
     return tts.tacotron_load(
@@ -318,7 +351,13 @@ def fastspeech2(
         )
 
     text_ids = load_text_ids(
-        pad_to = pad_to, true_case = true_case, quantized = quantized, **kwargs
+        pad_to = pad_to,
+        understand_punct = _fastspeech2_availability[model][
+            'understand punctuations'
+        ],
+        true_case = true_case,
+        quantized = quantized,
+        **kwargs
     )
     return tts.fastspeech_load(
         path = PATH_TTS_FASTSPEECH2,
