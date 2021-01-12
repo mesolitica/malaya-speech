@@ -2,13 +2,12 @@ import tensorflow as tf
 
 
 def snr(y_, y):
-    sqrt_l2_loss = tf.sqrt(tf.reduce_mean((y_ - y) ** 2 + 1e-6))
-    sqrn_l2_norm = tf.sqrt(tf.reduce_mean(y ** 2))
-    return (
-        20.0
-        * tf.math.log(sqrn_l2_norm / sqrt_l2_loss + 1e-8)
-        / tf.math.log(10.0)
-    )
+    sqrt_l2_loss = tf.sqrt(tf.reduce_mean((y_ - y) ** 2 + 1e-6, axis = [1, 2]))
+    sqrn_l2_norm = tf.sqrt(tf.reduce_mean(y ** 2, axis = [1, 2]))
+    snr = 20 * tf.log(sqrn_l2_norm / sqrt_l2_loss + 1e-8) / tf.log(10.0)
+    avg_sqrt_l2_loss = tf.reduce_mean(sqrt_l2_loss, axis = 0)
+    avg_snr = tf.reduce_mean(snr, axis = 0)
+    return avg_sqrt_l2_loss, avg_snr
 
 
 def sdr(pred, true, eps = 1e-8):
