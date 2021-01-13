@@ -18,6 +18,7 @@ from . import pix2pix
 from . import quartznet
 from . import resnet_unet
 from . import speakernet
+from . import srgan
 from . import stft
 from . import tacotron2
 from . import tacotron2_nvidia

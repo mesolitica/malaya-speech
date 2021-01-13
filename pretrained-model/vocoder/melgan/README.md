@@ -37,3 +37,7 @@ Tensorboard, https://tensorboard.dev/experiment/9HLyNplyT1avkpatdV3hog/
 3. Husein speaker, last update 23th December 2020, [melgan-husein-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/melgan-husein-output.tar.gz)
 
 Tensorboard, https://tensorboard.dev/experiment/pngbnpN5QMSoiRnYZJ5qlQ/
+
+4. Haqkim speaker, last update 13th January 2021, [melgan-haqkiem-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/melgan-haqkiem-output.tar.gz)
+
+Tensorboard, https://tensorboard.dev/experiment/IY8aWnsbSKOFPlUoUKLVMw/
