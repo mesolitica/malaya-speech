@@ -9,7 +9,7 @@ from tensorflow.python.keras.layers import (
     PReLU,
     Lambda,
 )
-from tensorflow.python.keras.models import Model
+from tensorflow.python.keras.models import Model as KerasModel
 from .layer import pixel_shuffle
 import tensorflow as tf
 
@@ -71,9 +71,10 @@ def discriminator_block(
 
 
 class Discriminator:
-    def __init__(self, inputs, num_filters = 64, training = True):
+    def __init__(self, partition_size, num_filters = 256, training = True):
+        x_in = Input(shape = (partition_size, 1))
         x = discriminator_block(
-            inputs, num_filters, batchnorm = False, training = training
+            x_in, num_filters, batchnorm = False, training = training
         )
         x = discriminator_block(
             x, num_filters, strides = 2, training = training
@@ -95,8 +96,8 @@ class Discriminator:
         )
 
         x = Flatten()(x)
-        print(x)
 
         x = Dense(1024)(x)
         x = LeakyReLU(alpha = 0.2)(x)
-        self.logits = Dense(1, activation = 'sigmoid')(x)
+        x = Dense(1, activation = 'sigmoid')(x)
+        self.model = KerasModel(x_in, x)

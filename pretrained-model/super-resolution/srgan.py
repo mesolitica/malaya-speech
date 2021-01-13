@@ -8,10 +8,12 @@ import malaya_speech
 import malaya_speech.config
 from malaya_speech.train.model import srgan
 import numpy as np
-
+from glob import glob
+import random
 from multiprocessing import Pool
 from itertools import cycle
 import itertools
+import tensorflow as tf
 
 np.seterr(all = 'raise')
 
@@ -37,6 +39,7 @@ def multiprocessing(strings, function, cores = 6, returned = True):
 
 files = glob('../youtube/clean-wav/*.wav')
 random.shuffle(files)
+file_cycle = cycle(files)
 
 sr = 44100
 partition_size = 8192
@@ -103,20 +106,24 @@ partitioned_y = malaya_speech.tf_featurization.pad_and_partition(
 )
 
 with tf.variable_scope('generator') as gen:
-    generator = srgan.Model(partitioned_x)
-    sr = generator.logits
-    sr.set_shape((None, partition_size, 1))
+    generator = srgan.Model(partitioned_x, training = True)
+    gen_out = generator.logits
+    gen_out.set_shape((None, partition_size, 1))
 
 with tf.variable_scope('discriminator') as dis:
-    hr_output = srgan.Discriminator(partitioned_y)
+    hr_output = srgan.Discriminator(
+        partitioned_y, num_filters = 256, training = True
+    ).logits
 
 with tf.variable_scope('discriminator', reuse = True) as dis:
-    sr_output = srgan.Discriminator(sr)
+    sr_output = srgan.Discriminator(
+        gen_out, num_filters = 128, training = True
+    ).logits
 
 mse_loss = tf.keras.losses.MeanSquaredError()
 binary_cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits = False)
 
-con_loss = mse_loss(partitioned_y, sr)
+con_loss = mse_loss(partitioned_y, gen_out)
 gen_loss = binary_cross_entropy(tf.ones_like(sr_output), sr_output)
 perc_loss = con_loss + 0.001 * gen_loss
 
@@ -124,7 +131,6 @@ hr_loss = binary_cross_entropy(tf.ones_like(hr_output), hr_output)
 sr_loss = binary_cross_entropy(tf.zeros_like(sr_output), sr_output)
 discriminator_loss = hr_loss + sr_loss
 
-tf.summary.scalar('mse_loss', mse_loss)
 tf.summary.scalar('gen_loss', gen_loss)
 tf.summary.scalar('hr_loss', hr_loss)
 tf.summary.scalar('sr_loss', sr_loss)
@@ -134,6 +140,7 @@ tf.summary.scalar('discriminator_loss', discriminator_loss)
 summaries = tf.summary.merge_all()
 
 t_vars = tf.trainable_variables()
+print(t_vars)
 d_vars = [var for var in t_vars if var.name.startswith('discriminator')]
 g_vars = [var for var in t_vars if var.name.startswith('generator')]
 
@@ -160,7 +167,7 @@ if ckpt_path:
     saver.restore(sess, ckpt_path)
 
 for i in range(epoch):
-    g_loss, _ = sess.run([generator_loss, g_optimizer])
+    g_loss, _ = sess.run([perc_loss, g_optimizer])
     d_loss, _ = sess.run([discriminator_loss, d_optimizer])
     s = sess.run(summaries)
 
