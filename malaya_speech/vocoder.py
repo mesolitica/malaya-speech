@@ -26,7 +26,7 @@ _melgan_availability = {
     'haqkiem': {
         'Size (MB)': 17.3,
         'Quantized Size (MB)': 4.53,
-        'Mel loss': 0.4442,
+        'Mel loss': 0.4819,
     },
 }
 _mbmelgan_availability = {
@@ -48,7 +48,7 @@ _mbmelgan_availability = {
     'haqkiem': {
         'Size (MB)': 10.4,
         'Quantized Size (MB)': 2.82,
-        'Mel loss': 0.4356,
+        'Mel loss': 0.4192,
     },
 }
 

@@ -115,7 +115,7 @@ def random_amplitude_threshold(sample, low = 1, high = 2, threshold = 0.4):
 def calc(signal, seed, add_uniform = False):
     random.seed(seed)
 
-    choice = random.randint(0, 6)
+    choice = random.randint(0, 9)
     print('choice', choice)
     if choice == 0:
 
@@ -165,8 +165,22 @@ def calc(signal, seed, add_uniform = False):
         x = random_amplitude_threshold(
             signal, threshold = random.uniform(0.35, 0.8)
         )
-
     if choice == 6:
+        x = augmentation.lowpass_filter(
+            signal, sr = 44100, cutoff = random.randint(400, 1102)
+        )
+    if choice == 7:
+        x = augmentation.highpass_filter(
+            signal, sr = 44100, cutoff = random.randint(1102, 3306)
+        )
+    if choice == 8:
+        x = augmentation.bandpass_filter(
+            signal,
+            sr = 44100,
+            cutoff_low = random.randint(400, 1102),
+            cutoff_high = random.randint(1102, 3306),
+        )
+    if choice == 9:
         x = signal
 
     if choice not in [5] and random.gauss(0.5, 0.14) > 0.6:
@@ -262,7 +276,9 @@ class Model:
         self.outputs = []
         for i in range(len(self.Y)):
             with tf.variable_scope(f'model_{i}'):
-                self.outputs.append(unet.Model(D_X).logits)
+                self.outputs.append(
+                    unet.Model(D_X, dropout = 0.0, training = True).logits
+                )
 
         self.loss = []
         for i in range(len(self.Y)):
@@ -275,7 +291,7 @@ class Model:
 
 init_lr = 1e-5
 epochs = 500_000
-init_checkpoint = 'noise-reduction-unet/model.ckpt-500000'
+init_checkpoint = 'noise-reduction-unet-output/model.ckpt'
 
 
 def model_fn(features, labels, mode, params):

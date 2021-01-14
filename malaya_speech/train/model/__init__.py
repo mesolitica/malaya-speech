@@ -7,6 +7,7 @@ from . import deepspeech2
 from . import hifigan
 from . import demucs
 from . import denoiser
+from . import edsr
 from . import fastspeech
 from . import fastspeech2
 from . import jasper

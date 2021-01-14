@@ -6,6 +6,7 @@ warnings.filterwarnings('ignore')
 
 import malaya_speech
 import malaya_speech.config
+import malaya_speech.augmentation.waveform as augmentation
 from malaya_speech.train.model import srgan
 import numpy as np
 from glob import glob
@@ -42,7 +43,7 @@ random.shuffle(files)
 file_cycle = cycle(files)
 
 sr = 44100
-partition_size = 8192
+partition_size = 2048
 reduction_factor = 4
 
 
@@ -61,9 +62,8 @@ def downsample(y, sr, down_sr):
 
 def parallel(f):
     y = read_wav(f)[0]
-    y = random_sampling(y, length = random.randint(3000, 10000))
-    y = y / (np.max(np.abs(y)) + 1e-9)
-    y_ = downsample(y, sr, sr // reduction_factor)
+    y = random_sampling(y, length = 1000)
+    y_ = malaya_speech.resample(y, sr, sr // reduction_factor)
     return y_, y
 
 
@@ -111,14 +111,12 @@ with tf.variable_scope('generator') as gen:
     gen_out.set_shape((None, partition_size, 1))
 
 with tf.variable_scope('discriminator') as dis:
-    hr_output = srgan.Discriminator(
-        partitioned_y, num_filters = 256, training = True
-    ).logits
+    discriminator = srgan.Discriminator(
+        partition_size, num_filters = 24, training = True
+    )
 
-with tf.variable_scope('discriminator', reuse = True) as dis:
-    sr_output = srgan.Discriminator(
-        gen_out, num_filters = 128, training = True
-    ).logits
+hr_output = discriminator.model(partitioned_y, training = True)
+sr_output = discriminator.model(gen_out, training = True)
 
 mse_loss = tf.keras.losses.MeanSquaredError()
 binary_cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits = False)
