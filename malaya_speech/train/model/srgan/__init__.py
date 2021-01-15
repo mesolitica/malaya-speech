@@ -1,1 +1,1 @@
-from .model import Model, Discriminator
+from .model import Model, Discriminator, Model_Keras, MultiScaleDiscriminator

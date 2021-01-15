@@ -46,7 +46,7 @@ def read_audio(data, old_samplerate, sample_rate = 22050):
 
 
 @check_type
-def load(file: str, sr: int = 16000, scale: bool = True):
+def load(file: str, sr = 16000, scale: bool = True):
     """
     Read sound file, any format supported by soundfile.read
 

@@ -51,7 +51,7 @@ def deep_model(model: str = 'resnet-unet', quantized: bool = False, **kwargs):
 
     Parameters
     ----------
-    model : str, optional (default='wavenet')
+    model : str, optional (default='resnet-unet')
         Model architecture supported. Allowed values:
 
         * ``'unet'`` - pretrained UNET.
