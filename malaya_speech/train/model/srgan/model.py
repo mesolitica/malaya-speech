@@ -160,9 +160,16 @@ class MultiScaleDiscriminator:
         )
         x_out.append(x)
 
-        x = Flatten()(x)
+        x = discriminator_block(x, num_filters * 10, training = training)
+        x = discriminator_block(
+            x, num_filters * 10, strides = 2, training = training
+        )
+        x_out.append(x)
 
-        x = Dense(1024)(x)
+        x = discriminator_block(x, num_filters * 12, training = training)
+        x = discriminator_block(
+            x, num_filters * 12, strides = 2, training = training
+        )
         x_out.append(x)
 
         self.model = KerasModel(x_in, x_out)
