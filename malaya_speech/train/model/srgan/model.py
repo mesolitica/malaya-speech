@@ -8,6 +8,7 @@ from tensorflow.python.keras.layers import (
     LeakyReLU,
     PReLU,
     Lambda,
+    Reshape,
 )
 from tensorflow.python.keras.models import Model as KerasModel
 from .layer import pixel_shuffle
@@ -16,8 +17,8 @@ import tensorflow as tf
 
 def upsample(x_in, num_filters):
     x = Conv1D(num_filters, kernel_size = 3, padding = 'same')(x_in)
-    last = int(x.shape[-1])
-    x = tf.reshape(x, (tf.shape(x)[0], -1, last // 2))
+    static = x.shape.as_list()[-1]
+    x = Reshape((-1, static // 2))(x)
     return PReLU(shared_axes = [1, 2])(x)
 
 
@@ -169,6 +170,12 @@ class MultiScaleDiscriminator:
         x = discriminator_block(x, num_filters * 12, training = training)
         x = discriminator_block(
             x, num_filters * 12, strides = 2, training = training
+        )
+        x_out.append(x)
+
+        x = discriminator_block(x, num_filters * 14, training = training)
+        x = discriminator_block(
+            x, num_filters * 14, strides = 2, training = training
         )
         x_out.append(x)
 
