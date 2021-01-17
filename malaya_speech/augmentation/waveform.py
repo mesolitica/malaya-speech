@@ -184,7 +184,12 @@ def add_uniform_noise(sample, power = 0.01, return_noise = False):
 
 
 def add_noise(
-    sample, noise, random_sample = True, factor = 0.1, return_noise = False
+    sample,
+    noise,
+    random_sample = True,
+    factor = 0.1,
+    return_noise = False,
+    rescale = True,
 ):
     y_noise = sample.copy()
     if len(y_noise) > len(noise):
@@ -194,9 +199,11 @@ def add_noise(
             noise = noise[np.random.randint(0, len(noise) - len(y_noise) + 1) :]
     noise = noise[: len(y_noise)] * factor
     y_noise = y_noise + noise
-    y_noise = y_noise / (np.max(np.abs(y_noise)) + 1e-9)
+    if rescale:
+        y_noise = y_noise / (np.max(np.abs(y_noise)) + 1e-9)
     if return_noise:
-        noise = noise / (np.max(np.abs(y_noise)) + 1e-9)
+        if rescale:
+            noise = noise / (np.max(np.abs(y_noise)) + 1e-9)
         return y_noise, noise
     else:
         return y_noise

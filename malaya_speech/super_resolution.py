@@ -1,21 +1,14 @@
 from herpetologist import check_type
 
 _availability = {
-    'srgan-256': {
+    'sr-256': {
         'Size (MB)': 78.9,
         'Quantized Size (MB)': 20,
         'SDR': 12.12805,
         'ISR': 14.67067,
         'SAR': 15.019682,
     },
-    'srgan-512': {
-        'Size (MB)': 78.9,
-        'Quantized Size (MB)': 20,
-        'SDR': 12.12805,
-        'ISR': 14.67067,
-        'SAR': 15.019682,
-    },
-    'srgan-768': {
+    'sr-512': {
         'Size (MB)': 78.9,
         'Quantized Size (MB)': 20,
         'SDR': 12.12805,

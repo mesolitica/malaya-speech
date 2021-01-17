@@ -49,6 +49,7 @@ Features
 -  **Speaker Vector**, calculate similarity between speakers using Pretrained Malaya-Speech models.
 -  **Speech Enhancement**, enhance voice activities using Pretrained STFT UNET Malaya-Speech models.
 -  **Speech-to-Text**, End-to-End Speech to Text using Pretrained CTC and RNN Transducer Malaya-Speech models.
+-  **Super Resolution**, Super Resolution 4x using Pretrained Super Resolution Malaya-Speech models.
 -  **Text-to-Speech**, using Pretrained Tacotron2 and FastSpeech2 Malaya-Speech models.
 -  **Vocoder**, convert Mel to Waveform using Pretrained MelGAN and Multiband MelGAN Vocoder Malaya-Speech models.
 -  **Voice Activity Detection**, detect voice activities using Finetuned Speaker Vector Malaya-Speech models.

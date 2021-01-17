@@ -501,9 +501,9 @@ class MultiScaleDiscriminator(tf.keras.Model):
         for i in range(stft_config.scales):
             self.stft_discriminator += [
                 STFTDiscriminator(
-                    fft_length = stft_config.fft_length,
-                    frame_length = stft_config.frame_length,
-                    frame_step = stft_config.frame_step,
+                    fft_length = stft_config.fft_length[i],
+                    frame_length = stft_config.frame_length[i],
+                    frame_step = stft_config.frame_step[i],
                     out_channels = stft_config.out_channels,
                     kernel_sizes = stft_config.kernel_sizes,
                     filters = stft_config.filters,

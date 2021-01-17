@@ -24,9 +24,9 @@ config = {
         'is_weight_norm': False,
     },
     'melgan_stft_discriminator_params': {
-        'fft_length': 1024,
-        'frame_length': 1024,
-        'frame_step': 256,
+        'fft_length': [1024, 2048, 512],
+        'frame_length': [600, 1200, 240],
+        'frame_step': [120, 240, 50],
         'out_channels': 1,
         'scales': 3,
         'downsample_pooling': 'AveragePooling2D',

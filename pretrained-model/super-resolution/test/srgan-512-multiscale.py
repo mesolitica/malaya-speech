@@ -62,7 +62,7 @@ def downsample(y, sr, down_sr):
 
 def parallel(f):
     y = read_wav(f)[0]
-    y = random_sampling(y, length = 1000)
+    y = random_sampling(y, length = 3000)
     y_ = malaya_speech.resample(y, sr, sr // reduction_factor)
     return y_, y
 
@@ -106,7 +106,9 @@ partitioned_y = malaya_speech.tf_featurization.pad_and_partition(
 )
 
 with tf.variable_scope('generator') as gen:
-    generator = srgan.Model_Keras(partition_size // 4)
+    generator = srgan.Model_Keras(
+        partition_size // reduction_factor, num_filters = 512, training = True
+    )
 
 with tf.variable_scope('discriminator') as dis:
     discriminator = srgan.MultiScaleDiscriminator(
