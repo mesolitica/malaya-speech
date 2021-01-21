@@ -1,9 +1,9 @@
 import numpy as np
 from malaya_speech.utils.astype import float_to_int, to_byte, to_ndarray
-from malaya_speech.model.frame import FRAME
+from malaya_speech.model.frame import Frame
 
 
-class WEBRTC:
+class WebRTC:
 
     __name__ = 'vad'
 
@@ -20,7 +20,7 @@ class WEBRTC:
 
     def is_speech(self, frame):
 
-        if isinstance(frame, FRAME):
+        if isinstance(frame, Frame):
             frame = frame.array
 
         frame = to_byte(frame)

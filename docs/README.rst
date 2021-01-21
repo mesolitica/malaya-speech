@@ -47,8 +47,9 @@ Features
 -  **Speaker Change**, detect changing speakers using Finetuned Speaker Vector Malaya-Speech models.
 -  **Speaker overlap**, detect overlap speakers using Finetuned Speaker Vector Malaya-Speech models.
 -  **Speaker Vector**, calculate similarity between speakers using Pretrained Malaya-Speech models.
--  **Speech Enhancement**, enhance voice activities using Pretrained STFT UNET Malaya-Speech models.
+-  **Speech Enhancement**, enhance voice activities using Pretrained Waveform UNET Malaya-Speech models.
 -  **Speech-to-Text**, End-to-End Speech to Text using Pretrained CTC and RNN Transducer Malaya-Speech models.
+-  **Super Resolution**, Super Resolution 4x using Pretrained Super Resolution Malaya-Speech models.
 -  **Text-to-Speech**, using Pretrained Tacotron2 and FastSpeech2 Malaya-Speech models.
 -  **Vocoder**, convert Mel to Waveform using Pretrained MelGAN and Multiband MelGAN Vocoder Malaya-Speech models.
 -  **Voice Activity Detection**, detect voice activities using Finetuned Speaker Vector Malaya-Speech models.
@@ -71,6 +72,8 @@ Malaya-Speech also released pretrained models, simply check at `malaya-speech/pr
 -  **FastSpeech2**, Fast and High-Quality End-to-End Text to Speech, https://arxiv.org/abs/2006.04558
 -  **MelGAN**, Generative Adversarial Networks for Conditional Waveform Synthesis, https://arxiv.org/abs/1910.06711
 -  **Multi-band MelGAN**, Faster Waveform Generation for High-Quality Text-to-Speech, https://arxiv.org/abs/2005.05106
+-  **SRGAN**, Modified version of SRGAN to do 1D Convolution, Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network, https://arxiv.org/abs/1609.04802
+-  **Speech Enhancement UNET**, https://github.com/haoxiangsnr/Wave-U-Net-for-Speech-Enhancement
 
 References
 -----------

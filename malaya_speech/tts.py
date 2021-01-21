@@ -100,7 +100,7 @@ MALAYA_SPEECH_SYMBOLS = (
 )
 
 
-class TEXT_IDS:
+class TextIDS:
     def __init__(
         self,
         normalizer,
@@ -203,7 +203,7 @@ def load_text_ids(
             model = true_case, quantized = quantized, **kwargs
         )
 
-    return TEXT_IDS(
+    return TextIDS(
         normalizer = normalizer,
         pad_to = pad_to,
         sentence_tokenizer = sentence_tokenizer,

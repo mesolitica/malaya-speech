@@ -12,10 +12,10 @@ def load(file: str):
 
     Returns
     -------
-    result : Dict[str, malaya_speech.model.annotation.ANNOTATION]
+    result : Dict[str, malaya_speech.model.annotation.Annotation]
     """
-    from malaya_speech.model.annotation import ANNOTATION
-    from malaya_speech.model.frame import SEGMENT
+    from malaya_speech.model.annotation import Annotation
+    from malaya_speech.model.frame import Segment
 
     try:
         import pandas as pd
@@ -46,9 +46,9 @@ def load(file: str):
     )
     annotations = {}
     for uri, turns in data.groupby('uri'):
-        annotation = ANNOTATION(uri)
+        annotation = Annotation(uri)
         for i, turn in turns.iterrows():
-            segment = SEGMENT(turn['start'], turn['start'] + turn['duration'])
+            segment = Segment(turn['start'], turn['start'] + turn['duration'])
             annotation[segment, i] = turn['speaker']
         annotations[uri] = annotation
     return annotations

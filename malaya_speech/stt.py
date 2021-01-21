@@ -184,7 +184,7 @@ def deep_transducer(
 
         * ``'small-conformer'`` - SMALL size Google Conformer, https://arxiv.org/pdf/2005.08100.pdf
         * ``'conformer'`` - BASE size Google Conformer, https://arxiv.org/pdf/2005.08100.pdf
-        * ``'alconformer'`` - BASE size A-Lite Google Conformer, https://arxiv.org/pdf/1811.06621.pdf
+        * ``'alconformer'`` - BASE size A-Lite Google Conformer.
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 

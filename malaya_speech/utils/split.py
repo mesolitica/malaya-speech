@@ -7,7 +7,7 @@ def split_vad(frames, n = 3, negative_threshold: float = 0.1):
 
     Parameters
     ----------
-    frames: List[Tuple[FRAME, label]]
+    frames: List[Tuple[Frame, label]]
     n: int, optional (default=3)
         `n` size of negative VAD to assume in one subsample.
     negative_threshold: float, optional (default = 0.1)
@@ -15,7 +15,7 @@ def split_vad(frames, n = 3, negative_threshold: float = 0.1):
 
     Returns
     -------
-    result : List[FRAME]
+    result : List[Frame]
     """
     grouped = group_frames(frames)
     grouped = group_frames_threshold(

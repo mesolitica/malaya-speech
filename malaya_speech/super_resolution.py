@@ -1,19 +1,21 @@
+from malaya_speech.path import PATH_SUPER_RESOLUTION, S3_PATH_SUPER_RESOLUTION
+from malaya_speech.supervised import unet
 from herpetologist import check_type
 
 _availability = {
-    'sr-256': {
-        'Size (MB)': 78.9,
-        'Quantized Size (MB)': 20,
-        'SDR': 12.12805,
-        'ISR': 14.67067,
-        'SAR': 15.019682,
+    'srgan-128': {
+        'Size (MB)': 7.37,
+        'Quantized Size (MB)': 2.04,
+        'SDR': 17.03345,
+        'ISR': 22.33026,
+        'SAR': 17.454372,
     },
-    'sr-512': {
-        'Size (MB)': 78.9,
-        'Quantized Size (MB)': 20,
-        'SDR': 12.12805,
-        'ISR': 14.67067,
-        'SAR': 15.019682,
+    'srgan-256': {
+        'Size (MB)': 29.5,
+        'Quantized Size (MB)': 7.55,
+        'SDR': 16.34558,
+        'ISR': 22.067493,
+        'SAR': 17.02439,
     },
 }
 
@@ -40,19 +42,26 @@ def deep_model(model: str = 'srgan-256', quantized: bool = False, **kwargs):
     model : str, optional (default='srgan-256')
         Model architecture supported. Allowed values:
 
+        * ``'srgan-128'`` - srgan with 128 filter size and 16 residual blocks.
         * ``'srgan-256'`` - srgan with 256 filter size and 16 residual blocks.
-        * ``'srgan-512'`` - srgan with 512 filter size and 16 residual blocks.
-        * ``'srgan-768'`` - srgan with 768 filter size and 16 residual blocks.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 
         Quantized model not necessary faster, totally depends on the machine.
 
     Returns
     -------
-    result : malaya_speech.model.tf.SUPER_RESOLUTION class
+    result : malaya_speech.model.tf.UNET1D class
     """
     model = model.lower()
     if model not in _availability:
         raise Exception(
             'model not supported, please check supported models from `malaya_speech.super_resolution.available_model()`.'
         )
+    return unet.load_1d(
+        path = PATH_SUPER_RESOLUTION,
+        s3_path = S3_PATH_SUPER_RESOLUTION,
+        model = model,
+        name = 'super-resolution',
+        quantized = quantized,
+        **kwargs
+    )

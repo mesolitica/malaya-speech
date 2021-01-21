@@ -1,5 +1,5 @@
 from malaya_speech.utils import check_file, load_graph, generate_session
-from malaya_speech.model.tf import VOCODER
+from malaya_speech.model.tf import Vocoder
 
 
 def load(path, s3_path, model, name, quantized = False, **kwargs):
@@ -11,7 +11,7 @@ def load(path, s3_path, model, name, quantized = False, **kwargs):
 
     g = load_graph(path[model][model_path], **kwargs)
 
-    return VOCODER(
+    return Vocoder(
         X = g.get_tensor_by_name('import/Placeholder:0'),
         logits = g.get_tensor_by_name('import/logits:0'),
         sess = generate_session(graph = g, **kwargs),

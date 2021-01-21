@@ -1,27 +1,27 @@
-from malaya_speech.model.frame import FRAME
+from malaya_speech.model.frame import Frame
 from collections import defaultdict
 from typing import List
 import operator
 import numpy as np
 
 
-def combine_frames(frames: List[FRAME]):
+def combine_frames(frames: List[Frame]):
     """
     Combine multiple frames into one frame.
 
     Parameters
     ----------
-    frames: List[FRAME]
+    frames: List[Frame]
 
     Returns
     -------
-    result : FRAME
+    result : Frame
     """
     a, duration = [], 0
     for r in frames:
         a.extend(r.array)
         duration += r.duration
-    return FRAME(a, frames[0].timestamp, duration)
+    return Frame(a, frames[0].timestamp, duration)
 
 
 def group_frames(frames):
@@ -30,11 +30,11 @@ def group_frames(frames):
 
     Parameters
     ----------
-    frames: List[Tuple[FRAME, label]]
+    frames: List[Tuple[Frame, label]]
 
     Returns
     -------
-    result : List[Tuple[FRAME, label]]
+    result : List[Tuple[Frame, label]]
     """
     results, result, last = [], [], None
 
@@ -49,7 +49,7 @@ def group_frames(frames):
             for r in result:
                 a.extend(r.array)
                 duration += r.duration
-            results.append((FRAME(a, result[0].timestamp, duration), last))
+            results.append((Frame(a, result[0].timestamp, duration), last))
             result = [frame[0]]
             last = frame[1]
 
@@ -58,7 +58,7 @@ def group_frames(frames):
         for r in result:
             a.extend(r.array)
             duration += r.duration
-        results.append((FRAME(a, result[0].timestamp, duration), last))
+        results.append((Frame(a, result[0].timestamp, duration), last))
     return results
 
 
@@ -68,13 +68,13 @@ def group_frames_threshold(frames, threshold_to_stop: float = 0.3):
 
     Parameters
     ----------
-    frames: List[Tuple[FRAME, label]]
+    frames: List[Tuple[Frame, label]]
     threshold_to_stop: float, optional (default = 0.3)
         If `threshold_to_stop` is 0.3, means that, length same label samples must at least 0.3 second.
 
     Returns
     -------
-    result : List[Tuple[FRAME, label]]
+    result : List[Tuple[Frame, label]]
     """
     d = defaultdict(float)
 
@@ -87,7 +87,7 @@ def group_frames_threshold(frames, threshold_to_stop: float = 0.3):
             durations = sum([i.duration for i in result])
             results.append(
                 (
-                    FRAME(a, result[0].timestamp, durations),
+                    Frame(a, result[0].timestamp, durations),
                     max(d.items(), key = operator.itemgetter(1))[0],
                 )
             )
@@ -99,7 +99,7 @@ def group_frames_threshold(frames, threshold_to_stop: float = 0.3):
         durations = sum([i.duration for i in result])
         results.append(
             (
-                FRAME(a, result[0].timestamp, durations),
+                Frame(a, result[0].timestamp, durations),
                 max(d.items(), key = operator.itemgetter(1))[0],
             )
         )

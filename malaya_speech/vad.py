@@ -1,4 +1,4 @@
-from malaya_speech.model.webrtc import WEBRTC
+from malaya_speech.model.webrtc import WebRTC
 from malaya_speech.path import PATH_VAD, S3_PATH_VAD
 from malaya_speech.supervised import classification
 from herpetologist import check_type
@@ -52,7 +52,7 @@ def webrtc(
 
     Returns
     -------
-    result : malaya_speech.model.webrtc.WEBRTC class
+    result : malaya_speech.model.webrtc.WebRTC class
     """
 
     try:
@@ -63,7 +63,7 @@ def webrtc(
         )
 
     vad = webrtcvad.Vad(aggressiveness)
-    return WEBRTC(vad, sample_rate, minimum_amplitude)
+    return WebRTC(vad, sample_rate, minimum_amplitude)
 
 
 @check_type

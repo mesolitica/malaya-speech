@@ -1,9 +1,9 @@
 import numpy as np
 from itertools import groupby
-from malaya_speech.model.frame import SEGMENT
+from malaya_speech.model.frame import Segment
 
 
-class ANNOTATION:
+class Annotation:
     def __init__(self, uri: str = None):
         try:
             from sortedcontainers import SortedDict
@@ -46,13 +46,13 @@ class ANNOTATION:
                     yield segment, track
 
     def __getitem__(self, key):
-        if isinstance(key, SEGMENT):
+        if isinstance(key, Segment):
             key = (key, '_')
 
         return self._tracks[key[0]][key[1]]
 
     def __setitem__(self, key, label):
-        if isinstance(key, SEGMENT):
+        if isinstance(key, Segment):
             key = (key, '_')
 
         segment, track = key
@@ -95,7 +95,7 @@ class ANNOTATION:
 
         Returns
         -------
-        result : malaya_speech.model.annotation.ANNOTATION class
+        result : malaya_speech.model.annotation.Annotation class
         """
 
         mode = mode.lower()
@@ -109,7 +109,7 @@ class ANNOTATION:
         if not to_t:
             to_t = self.max
 
-        cropped = ANNOTATION(self._uri)
+        cropped = Annotation(self._uri)
 
         for segment, i, speaker in self.itertracks():
             if (
@@ -130,12 +130,12 @@ class ANNOTATION:
                     mode == 'intersection'
                     and segment.start <= from_t <= segment.end
                 ):
-                    segment = SEGMENT(from_t, segment.end)
+                    segment = Segment(from_t, segment.end)
                 if (
                     mode == 'intersection'
                     and segment.start <= to_t <= segment.end
                 ):
-                    segment = SEGMENT(segment.start, to_t)
+                    segment = Segment(segment.start, to_t)
                 cropped[segment, i] = speaker
 
         return cropped

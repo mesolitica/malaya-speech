@@ -4,7 +4,7 @@ from dataclasses import dataclass
 SEGMENT_PRECISION = 1e-6
 
 
-class FRAME:
+class Frame:
     def __init__(self, array, timestamp, duration):
         if not isinstance(array, np.ndarray):
             array = np.array(array)
@@ -14,7 +14,7 @@ class FRAME:
 
 
 @dataclass(frozen = True, order = True)
-class SEGMENT:
+class Segment:
     start: float = 0.0
     end: float = 0.0
 
@@ -24,21 +24,21 @@ class SEGMENT:
     @property
     def duration(self) -> float:
         """
-        SEGMENT duration (read-only)
+        Segment duration (read-only)
         """
         return self.end - self.start if self else 0.0
 
     @property
     def middle(self) -> float:
-        """SEGMENT mid-time (read-only)"""
+        """Segment mid-time (read-only)"""
         return 0.5 * (self.start + self.end)
 
-    def __contains__(self, other: 'SEGMENT'):
+    def __contains__(self, other: 'Segment'):
         """Inclusion
-        >>> segment = SEGMENT(start=0, end=10)
-        >>> SEGMENT(start=3, end=10) in segment:
+        >>> segment = Segment(start=0, end=10)
+        >>> Segment(start=3, end=10) in segment:
         True
-        >>> SEGMENT(start=5, end=15) in segment:
+        >>> Segment(start=5, end=15) in segment:
         False
         """
         return (self.start <= other.start) and (self.end >= other.end)
@@ -46,29 +46,29 @@ class SEGMENT:
     def __and__(self, other):
         """
         Intersection
-        >>> segment = SEGMENT(0, 10)
-        >>> other_segment = SEGMENT(5, 15)
+        >>> segment = Segment(0, 10)
+        >>> other_segment = Segment(5, 15)
         >>> segment & other_segment
-        <SEGMENT(5, 10)>
+        <Segment(5, 10)>
         Note
         ----
         When the intersection is empty, an empty segment is returned:
-        >>> segment = SEGMENT(0, 10)
-        >>> other_segment = SEGMENT(15, 20)
+        >>> segment = Segment(0, 10)
+        >>> other_segment = Segment(15, 20)
         >>> intersection = segment & other_segment
         >>> if not intersection:
         ...    # intersection is empty.
         """
         start = max(self.start, other.start)
         end = min(self.end, other.end)
-        return SEGMENT(start = start, end = end)
+        return Segment(start = start, end = end)
 
-    def intersects(self, other: 'SEGMENT') -> bool:
+    def intersects(self, other: 'Segment') -> bool:
         """
         Check whether two segments intersect each other
         Parameters
         ----------
-        other : SEGMENT
+        other : Segment
             Other segment
         Returns
         -------
@@ -105,17 +105,17 @@ class SEGMENT:
     def __or__(self, other):
         """
         Union
-        >>> segment = SEGMENT(0, 10)
-        >>> other_segment = SEGMENT(5, 15)
+        >>> segment = Segment(0, 10)
+        >>> other_segment = Segment(5, 15)
         >>> segment | other_segment
-        <SEGMENT(0, 15)>
+        <Segment(0, 15)>
         Note
         ----
         When a gap exists between the segment, their union covers the gap as well:
-        >>> segment = SEGMENT(0, 10)
-        >>> other_segment = SEGMENT(15, 20)
+        >>> segment = Segment(0, 10)
+        >>> other_segment = Segment(15, 20)
         >>> segment | other_segment
-        <SEGMENT(0, 20)
+        <Segment(0, 20)
         """
 
         if not self:
@@ -124,20 +124,20 @@ class SEGMENT:
             return self
         start = min(self.start, other.start)
         end = max(self.end, other.end)
-        return SEGMENT(start = start, end = end)
+        return Segment(start = start, end = end)
 
     def __xor__(self, other):
         """
         Gap
-        >>> segment = SEGMENT(0, 10)
-        >>> other_segment = SEGMENT(15, 20)
+        >>> segment = Segment(0, 10)
+        >>> other_segment = Segment(15, 20)
         >>> segment ^ other_segment
-        <SEGMENT(10, 15)
+        <Segment(10, 15)
         Note
         ----
         The gap between a segment and an empty segment is not defined.
-        >>> segment = SEGMENT(0, 10)
-        >>> empty_segment = SEGMENT(11, 11)
+        >>> segment = Segment(0, 10)
+        >>> empty_segment = Segment(11, 11)
         >>> segment ^ empty_segment
         ValueError: The gap between a segment and an empty segment is not defined.
         """
@@ -150,7 +150,7 @@ class SEGMENT:
 
         start = min(self.end, other.end)
         end = max(self.start, other.start)
-        return SEGMENT(start = start, end = end)
+        return Segment(start = start, end = end)
 
     def _str_helper(self, seconds: float):
         from datetime import timedelta
@@ -173,18 +173,18 @@ class SEGMENT:
     def __str__(self):
         """
         Human-readable representation
-        >>> print(SEGMENT(1337, 1337 + 0.42))
+        >>> print(Segment(1337, 1337 + 0.42))
         [ 00:22:17.000 -->  00:22:17.420]
         Note
         ----
         Empty segments are printed as "[]"
         """
-        return '<SEGMENT(%g, %g)>' % (self.start, self.end)
+        return '<Segment(%g, %g)>' % (self.start, self.end)
 
     def __repr__(self):
         """
         Computer-readable representation
-        >>> SEGMENT(1337, 1337 + 0.42)
-        <SEGMENT(1337, 1337.42)>
+        >>> Segment(1337, 1337 + 0.42)
+        <Segment(1337, 1337.42)>
         """
-        return '<SEGMENT(%g, %g)>' % (self.start, self.end)
+        return '<Segment(%g, %g)>' % (self.start, self.end)

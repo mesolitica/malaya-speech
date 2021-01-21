@@ -1,4 +1,4 @@
-from malaya_speech.model.frame import FRAME
+from malaya_speech.model.frame import Frame
 from herpetologist import check_type
 from typing import List
 
@@ -24,7 +24,7 @@ def frames(
 
     Returns
     -------
-    result: List[malaya_speech.model.frame.FRAME]
+    result: List[malaya_speech.model.frame.Frame]
     """
 
     n = int(sample_rate * (frame_duration_ms / 1000.0))
@@ -33,12 +33,12 @@ def frames(
     duration = float(n) / sample_rate
     results = []
     while offset + n <= len(audio):
-        results.append(FRAME(audio[offset : offset + n], timestamp, duration))
+        results.append(Frame(audio[offset : offset + n], timestamp, duration))
         timestamp += duration
         offset += n
     if append_ending_trail and offset < len(audio):
         results.append(
-            FRAME(
+            Frame(
                 audio[offset:], timestamp, len(audio) / sample_rate - timestamp
             )
         )

@@ -11,7 +11,7 @@ def without_silent(
 
     Parameters
     ----------
-    frames: List[Tuple[FRAME, label]]
+    frames: List[Tuple[Frame, label]]
         Output from VAD.
     threshold_to_stop: float, optional (default = 0.1)
         If `threshold_to_stop` is 0.1, means that, length same label samples must at least 0.1 second.

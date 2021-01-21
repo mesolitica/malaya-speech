@@ -31,3 +31,11 @@ Tensorboard, https://tensorboard.dev/experiment/nq6XKjhxQfKDsKrpyys6iA/
 2. RESNET-UNET, last update 4rd November 2020, [speech-enhancement-resnet-unet-output-500k.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/speech-enhancement-resnet-unet-output-500k.tar.gz)
 
 Tensorboard, https://tensorboard.dev/experiment/v446IlUvRMq1PhQ9JqfABg/
+
+3. UNET-24, last update 21st January 2021, [speech-enhancement-24.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/speech-enhancement-24.tar.gz)
+
+Tensorboard, https://tensorboard.dev/experiment/yBxCZgaCRkOxvEJIjHgsPw/
+
+3. UNET-36, last update 21st January 2021, [speech-enhancement-36.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/speech-enhancement-36.tar.gz)
+
+Tensorboard, https://tensorboard.dev/experiment/RQ0ZKeldSKy664MdSl4xEA/

@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from malaya_speech.utils import featurization
-from malaya_speech.model.frame import FRAME
+from malaya_speech.model.frame import Frame
 from malaya_speech.utils.padding import (
     sequence_nd as padding_sequence_nd,
     sequence_1d,
@@ -11,12 +11,12 @@ from malaya_speech.utils.subword import decode as subword_decode
 from malaya_speech.utils.beam_search import transducer as transducer_beam
 
 
-class ABSTRACT:
+class Abstract:
     def __str__(self):
         return f'<{self.__name__}: {self.__model__}>'
 
 
-class SPEAKERNET(ABSTRACT):
+class Speakernet(Abstract):
     def __init__(
         self, X, X_len, logits, vectorizer, sess, model, extra, label, name
     ):
@@ -36,7 +36,7 @@ class SPEAKERNET(ABSTRACT):
         Parameters
         ----------
         inputs: List[np.array]
-            List[np.array] or List[malaya_speech.model.frame.FRAME].
+            List[np.array] or List[malaya_speech.model.frame.Frame].
 
         Returns
         -------
@@ -44,7 +44,7 @@ class SPEAKERNET(ABSTRACT):
             returned [B, D].
         """
         inputs = [
-            input.array if isinstance(input, FRAME) else input
+            input.array if isinstance(input, Frame) else input
             for input in inputs
         ]
 
@@ -61,7 +61,7 @@ class SPEAKERNET(ABSTRACT):
         return self.vectorize(inputs)
 
 
-class SPEAKER2VEC(ABSTRACT):
+class Speaker2Vec(Abstract):
     def __init__(self, X, logits, vectorizer, sess, model, extra, label, name):
         self._X = X
         self._logits = logits
@@ -78,7 +78,7 @@ class SPEAKER2VEC(ABSTRACT):
         Parameters
         ----------
         inputs: List[np.array]
-            List[np.array] or List[malaya_speech.model.frame.FRAME].
+            List[np.array] or List[malaya_speech.model.frame.Frame].
 
         Returns
         -------
@@ -86,7 +86,7 @@ class SPEAKER2VEC(ABSTRACT):
             returned [B, D].
         """
         inputs = [
-            input.array if isinstance(input, FRAME) else input
+            input.array if isinstance(input, Frame) else input
             for input in inputs
         ]
 
@@ -105,7 +105,7 @@ class SPEAKER2VEC(ABSTRACT):
         return self.vectorize(inputs)
 
 
-class SPEAKERNET_CLASSIFICATION(ABSTRACT):
+class SpeakernetClassification(Abstract):
     def __init__(
         self, X, X_len, logits, vectorizer, sess, model, extra, label, name
     ):
@@ -126,7 +126,7 @@ class SPEAKERNET_CLASSIFICATION(ABSTRACT):
         Parameters
         ----------
         inputs: List[np.array]
-            List[np.array] or List[malaya_speech.model.frame.FRAME].
+            List[np.array] or List[malaya_speech.model.frame.Frame].
 
         Returns
         -------
@@ -134,7 +134,7 @@ class SPEAKERNET_CLASSIFICATION(ABSTRACT):
             returned [B, D].
         """
         inputs = [
-            input.array if isinstance(input, FRAME) else input
+            input.array if isinstance(input, Frame) else input
             for input in inputs
         ]
 
@@ -154,7 +154,7 @@ class SPEAKERNET_CLASSIFICATION(ABSTRACT):
         Parameters
         ----------
         inputs: List[np.array]
-            List[np.array] or List[malaya_speech.model.frame.FRAME].
+            List[np.array] or List[malaya_speech.model.frame.Frame].
 
         Returns
         -------
@@ -171,7 +171,7 @@ class SPEAKERNET_CLASSIFICATION(ABSTRACT):
         Parameters
         ----------
         inputs: np.array
-            np.array or malaya_speech.model.frame.FRAME.
+            np.array or malaya_speech.model.frame.Frame.
 
         Returns
         -------
@@ -181,7 +181,7 @@ class SPEAKERNET_CLASSIFICATION(ABSTRACT):
         return self.predict([input])[0]
 
 
-class CLASSIFICATION(ABSTRACT):
+class Classification(Abstract):
     def __init__(self, X, logits, vectorizer, sess, model, extra, label, name):
         self._X = X
         self._logits = tf.nn.softmax(logits)
@@ -199,7 +199,7 @@ class CLASSIFICATION(ABSTRACT):
         Parameters
         ----------
         inputs: List[np.array]
-            List[np.array] or List[malaya_speech.model.frame.FRAME].
+            List[np.array] or List[malaya_speech.model.frame.Frame].
 
         Returns
         -------
@@ -207,7 +207,7 @@ class CLASSIFICATION(ABSTRACT):
             returned [B, D].
         """
         inputs = [
-            input.array if isinstance(input, FRAME) else input
+            input.array if isinstance(input, Frame) else input
             for input in inputs
         ]
 
@@ -228,7 +228,7 @@ class CLASSIFICATION(ABSTRACT):
         Parameters
         ----------
         inputs: List[np.array]
-            List[np.array] or List[malaya_speech.model.frame.FRAME].
+            List[np.array] or List[malaya_speech.model.frame.Frame].
 
         Returns
         -------
@@ -245,7 +245,7 @@ class CLASSIFICATION(ABSTRACT):
         Parameters
         ----------
         inputs: np.array
-            np.array or malaya_speech.model.frame.FRAME.
+            np.array or malaya_speech.model.frame.Frame.
 
         Returns
         -------
@@ -254,7 +254,7 @@ class CLASSIFICATION(ABSTRACT):
         return self.predict([input])[0]
 
 
-class UNET(ABSTRACT):
+class UNET(Abstract):
     def __init__(self, X, logits, sess, model, name):
         self._X = X
         self._logits = logits
@@ -275,7 +275,7 @@ class UNET(ABSTRACT):
         result: List
         """
         inputs = [
-            input.array if isinstance(input, FRAME) else input
+            input.array if isinstance(input, Frame) else input
             for input in inputs
         ]
         mels = [featurization.scale_mel(s).T for s in inputs]
@@ -296,7 +296,7 @@ class UNET(ABSTRACT):
         return self.predict(inputs)
 
 
-class UNET_STFT(ABSTRACT):
+class UNETSTFT(Abstract):
     def __init__(self, X, logits, instruments, sess, model, name):
         self._X = X
         self._logits = {
@@ -314,13 +314,13 @@ class UNET_STFT(ABSTRACT):
         Parameters
         ----------
         input: np.array
-            np.array or malaya_speech.model.frame.FRAME.
+            np.array or malaya_speech.model.frame.Frame.
 
         Returns
         -------
         result: Dict
         """
-        if isinstance(input, FRAME):
+        if isinstance(input, Frame):
             input = input.array
 
         return self._sess.run(self._logits, feed_dict = {self._X: input})
@@ -332,7 +332,7 @@ class UNET_STFT(ABSTRACT):
         Parameters
         ----------
         input: np.array
-            np.array or malaya_speech.model.frame.FRAME.
+            np.array or malaya_speech.model.frame.Frame.
 
         Returns
         -------
@@ -341,7 +341,49 @@ class UNET_STFT(ABSTRACT):
         return self.predict(input)
 
 
-class STT(ABSTRACT):
+class UNET1D(Abstract):
+    def __init__(self, X, logits, sess, model, name):
+        self._X = X
+        self._logits = logits
+        self._sess = sess
+        self.__model__ = model
+        self.__name__ = name
+
+    def predict(self, input):
+        """
+        Enhance inputs, will return waveform.
+
+        Parameters
+        ----------
+        input: np.array
+            np.array or malaya_speech.model.frame.Frame.
+
+        Returns
+        -------
+        result: np.array
+        """
+        if isinstance(input, Frame):
+            input = input.array
+
+        return self._sess.run(self._logits, feed_dict = {self._X: input})
+
+    def __call__(self, input):
+        """
+        Enhance inputs, will return waveform.
+
+        Parameters
+        ----------
+        input: np.array
+            np.array or malaya_speech.model.frame.Frame.
+
+        Returns
+        -------
+        result: np.array
+        """
+        return self.predict(input)
+
+
+class STT(Abstract):
     def __init__(
         self, X, X_len, logits, seq_lens, featurizer, vocab, sess, model, name
     ):
@@ -375,7 +417,7 @@ class STT(ABSTRACT):
         Parameters
         ----------
         input: List[np.array]
-            List[np.array] or List[malaya_speech.model.frame.FRAME].
+            List[np.array] or List[malaya_speech.model.frame.Frame].
         decoder: str, optional (default='beam')
             decoder mode, allowed values:
 
@@ -392,7 +434,7 @@ class STT(ABSTRACT):
         decoder = self._check_decoder(decoder, beam_size)
 
         inputs = [
-            input.array if isinstance(input, FRAME) else input
+            input.array if isinstance(input, Frame) else input
             for input in inputs
         ]
 
@@ -435,7 +477,7 @@ class STT(ABSTRACT):
         Parameters
         ----------
         input: List[np.array]
-            List[np.array] or List[malaya_speech.model.frame.FRAME].
+            List[np.array] or List[malaya_speech.model.frame.Frame].
         lm: ctc_decoders.Scorer
             Returned from `malaya_speech.stt.language_model()`.
         beam_size: int, optional (default=100)
@@ -454,7 +496,7 @@ class STT(ABSTRACT):
             )
 
         inputs = [
-            input.array if isinstance(input, FRAME) else input
+            input.array if isinstance(input, Frame) else input
             for input in inputs
         ]
 
@@ -485,7 +527,7 @@ class STT(ABSTRACT):
         Parameters
         ----------
         input: np.array
-            np.array or malaya_speech.model.frame.FRAME.
+            np.array or malaya_speech.model.frame.Frame.
         decoder: str, optional (default='beam')
             decoder mode, allowed values:
 
@@ -505,7 +547,7 @@ class STT(ABSTRACT):
         return method([input], decoder = decoder, **kwargs)[0]
 
 
-class TRANSDUCER(ABSTRACT):
+class Transducer(Abstract):
     def __init__(
         self,
         X_placeholder,
@@ -563,7 +605,7 @@ class TRANSDUCER(ABSTRACT):
         Parameters
         ----------
         input: List[np.array]
-            List[np.array] or List[malaya_speech.model.frame.FRAME].
+            List[np.array] or List[malaya_speech.model.frame.Frame].
         decoder: str, optional (default='beam')
             decoder mode, allowed values:
 
@@ -579,7 +621,7 @@ class TRANSDUCER(ABSTRACT):
         decoder = self._check_decoder(decoder, beam_size)
 
         inputs = [
-            input.array if isinstance(input, FRAME) else input
+            input.array if isinstance(input, Frame) else input
             for input in inputs
         ]
 
@@ -622,7 +664,7 @@ class TRANSDUCER(ABSTRACT):
         Parameters
         ----------
         input: np.array
-            np.array or malaya_speech.model.frame.FRAME.
+            np.array or malaya_speech.model.frame.Frame.
         decoder: str, optional (default='beam')
             decoder mode, allowed values:
 
@@ -637,7 +679,7 @@ class TRANSDUCER(ABSTRACT):
         return self.predict([input], decoder = decoder, **kwargs)[0]
 
 
-class VOCODER:
+class Vocoder:
     def __init__(self, X, logits, sess, model, name):
         self._X = X
         self._logits = logits
@@ -652,13 +694,13 @@ class VOCODER:
         Parameters
         ----------
         inputs: List[np.array]
-            List[np.array] or List[malaya_speech.model.frame.FRAME].
+            List[np.array] or List[malaya_speech.model.frame.Frame].
         Returns
         -------
         result: List
         """
         inputs = [
-            input.array if isinstance(input, FRAME) else input
+            input.array if isinstance(input, Frame) else input
             for input in inputs
         ]
         padded, lens = sequence_1d(inputs, return_len = True)
@@ -670,7 +712,7 @@ class VOCODER:
         return self.predict([input])[0]
 
 
-class TACOTRON:
+class Tacotron(Abstract):
     def __init__(self, X, X_len, logits, normalizer, sess, model, name):
         self._X = X
         self._X_len = X_len
@@ -709,7 +751,7 @@ class TACOTRON:
         return self.predict(input)
 
 
-class FASTSPEECH:
+class Fastspeech(Abstract):
     def __init__(
         self,
         X,

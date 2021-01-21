@@ -1,9 +1,9 @@
 from malaya_speech.utils import check_file, load_graph, generate_session
 from malaya_speech.model.tf import (
-    SPEAKERNET,
-    SPEAKER2VEC,
-    SPEAKERNET_CLASSIFICATION,
-    CLASSIFICATION,
+    Speakernet,
+    Speaker2Vec,
+    SpeakernetClassification,
+    Classification,
 )
 from malaya_speech.utils import featurization
 from malaya_speech.config import (
@@ -33,14 +33,14 @@ def load(path, s3_path, model, name, extra, label, quantized = False, **kwargs):
 
     if name == 'speaker-vector':
         if model == 'speakernet':
-            model_class = SPEAKERNET
+            model_class = Speakernet
         else:
-            model_class = SPEAKER2VEC
+            model_class = Speaker2Vec
     else:
         if model == 'speakernet':
-            model_class = SPEAKERNET_CLASSIFICATION
+            model_class = SpeakernetClassification
         else:
-            model_class = CLASSIFICATION
+            model_class = Classification
 
     if model == 'speakernet':
         return model_class(

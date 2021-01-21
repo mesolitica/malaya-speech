@@ -231,26 +231,55 @@ S3_PATH_SPEAKER_OVERLAP = {
 
 
 PATH_SPEECH_ENHANCEMENT = {
-    'unet': {
-        'model': home + '/speech-enhancement/unet.pb',
-        'quantized': home + '/speech-enhancement/quantized/unet.pb',
-        'version': 'v1',
+    'masking': {
+        'unet': {
+            'model': home + '/speech-enhancement/unet/model.pb',
+            'quantized': home + '/speech-enhancement/unet/quantized/unet.pb',
+            'version': 'v1',
+        },
+        'resnet-unet': {
+            'model': home + '/speech-enhancement/resnet-unet/model.pb',
+            'quantized': home
+            + '/speech-enhancement/resnet-unet/quantized/model.pb',
+            'version': 'v1',
+        },
     },
-    'resnet-unet': {
-        'model': home + '/speech-enhancement/resnet-unet.pb',
-        'quantized': home + '/speech-enhancement/quantized/resnet-unet.pb',
-        'version': 'v1',
+    'enhance': {
+        'unet-enhance-24': {
+            'model': home + '/speech-enhancement/enhance-24/model.pb',
+            'quantized': home
+            + '/speech-enhancement/enhance-24/quantized/model.pb',
+            'version': 'v1',
+        },
+        'unet-enhance-36': {
+            'model': home + '/speech-enhancement/enhance-36/model.pb',
+            'quantized': home
+            + '/speech-enhancement/enhance-36/quantized/model.pb',
+            'version': 'v1',
+        },
     },
 }
 
 S3_PATH_SPEECH_ENHANCEMENT = {
-    'unet': {
-        'model': 'v1/speech-enhancement/unet.pb',
-        'quantized': 'v1/speech-enhancement/unet.pb.quantized',
+    'masking': {
+        'unet': {
+            'model': 'v1/speech-enhancement/unet.pb',
+            'quantized': 'v1/speech-enhancement/unet.pb.quantized',
+        },
+        'resnet-unet': {
+            'model': 'v1/speech-enhancement/resnet-unet.pb',
+            'quantized': 'v1/speech-enhancement/resnet-unet.pb.quantized',
+        },
     },
-    'resnet-unet': {
-        'model': 'v1/speech-enhancement/resnet-unet.pb',
-        'quantized': 'v1/speech-enhancement/resnet-unet.pb.quantized',
+    'enhance': {
+        'unet-enhance-24': {
+            'model': 'v1/speech-enhancement/speech-enhancement-24.pb',
+            'quantized': 'v1/speech-enhancement/speech-enhancement-24.pb.quantized',
+        },
+        'unet-enhance-36': {
+            'model': 'v1/speech-enhancement/speech-enhancement-36.pb',
+            'quantized': 'v1/speech-enhancement/speech-enhancement-36.pb.quantized',
+        },
     },
 }
 
@@ -383,6 +412,29 @@ S3_PATH_STT_TRANSDUCER = {
         'model': 'v1/stt/alconformer-transducer.pb',
         'quantized': 'v1/stt/alconformer-transducer.pb.quantized',
         'vocab': 'v1/vocab/malaya-speech.tokenizer.subwords',
+    },
+}
+
+PATH_SUPER_RESOLUTION = {
+    'srgan-128': {
+        'model': home + '/super-resolution/srgan-128/model.pb',
+        'quantized': home + '/super-resolution/srgan-128/quantized/model.pb',
+        'version': 'v1',
+    },
+    'srgan-256': {
+        'model': home + '/super-resolution/srgan-256/model.pb',
+        'quantized': home + '/super-resolution/srgan-256/quantized/model.pb',
+        'version': 'v1',
+    },
+}
+S3_PATH_SUPER_RESOLUTION = {
+    'srgan-128': {
+        'model': 'v1/super-resolution/srgan-128.pb',
+        'quantized': 'v1/super-resolution/srgan-128.pb.quantized',
+    },
+    'srgan-256': {
+        'model': 'v1/super-resolution/srgan-256.pb',
+        'quantized': 'v1/super-resolution/srgan-256.pb.quantized',
     },
 }
 

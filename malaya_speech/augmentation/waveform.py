@@ -170,14 +170,16 @@ def random_sampling(sample, sr, length = 500):
     return sample[r : r + sr * length]
 
 
-def add_uniform_noise(sample, power = 0.01, return_noise = False):
+def add_uniform_noise(sample, power = 0.01, return_noise = False, scale = True):
     y_noise = sample.copy()
     noise_amp = power * np.random.uniform() * np.amax(y_noise)
     noise = noise_amp * np.random.normal(size = y_noise.shape[0])
     y_noise = y_noise + noise
-    y_noise = y_noise / (np.max(np.abs(y_noise)) + 1e-9)
+    if scale:
+        y_noise = y_noise / (np.max(np.abs(y_noise)) + 1e-9)
     if return_noise:
-        noise = noise / (np.max(np.abs(y_noise)) + 1e-9)
+        if scale:
+            noise = noise / (np.max(np.abs(y_noise)) + 1e-9)
         return y_noise, noise
     else:
         return y_noise

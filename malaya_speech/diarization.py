@@ -1,4 +1,4 @@
-from malaya_speech.model.clustering import CLUSTERING_AP
+from malaya_speech.model.clustering import ClusteringAP
 from scipy.spatial.distance import cdist
 from malaya_speech.utils.dist import l2_normalize, compute_log_dist_matrix
 import numpy as np
@@ -19,11 +19,11 @@ def speaker_similarity(
 
     Parameters
     ----------
-    vad_results: List[Tuple[FRAME, label]]
+    vad_results: List[Tuple[Frame, label]]
         results from VAD.
     speaker_vector: callable
         speaker vector object.
-    speaker_change_results: List[Tuple[FRAME, float]], optional (default=None)
+    speaker_change_results: List[Tuple[Frame, float]], optional (default=None)
         results from speaker change module, must in float result.
     similarity_threshold: float, optional (default=0.8)
         if current voice activity sample similar at least 80%, we assumed it is from the same speaker.
@@ -34,7 +34,7 @@ def speaker_similarity(
 
     Returns
     -------
-    result : List[Tuple[FRAME, label]]
+    result : List[Tuple[Frame, label]]
     """
     if not 0 < similarity_threshold <= 1.0:
         raise ValueError(
@@ -90,7 +90,7 @@ def affinity_propagation(
 
     Parameters
     ----------
-    vad_results: List[Tuple[FRAME, label]]
+    vad_results: List[Tuple[Frame, label]]
         results from VAD.
     speaker_vector: callable
         speaker vector object.
@@ -101,10 +101,10 @@ def affinity_propagation(
 
     Returns
     -------
-    result : List[Tuple[FRAME, label]]
+    result : List[Tuple[Frame, label]]
     """
 
-    affinity = CLUSTERING_AP(
+    affinity = ClusteringAP(
         metric = log_distance_metric, damping = damping, preference = preference
     )
     speakers, activities, mapping = [], [], {}
@@ -154,7 +154,7 @@ def spectral_cluster(
 
     Parameters
     ----------
-    vad_results: List[Tuple[FRAME, label]]
+    vad_results: List[Tuple[Frame, label]]
         results from VAD.
     speaker_vector: callable
         speaker vector object.
@@ -174,7 +174,7 @@ def spectral_cluster(
 
     Returns
     -------
-    result : List[Tuple[FRAME, label]]
+    result : List[Tuple[Frame, label]]
     """
     try:
         from spectralcluster import SpectralClusterer

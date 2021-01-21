@@ -1,7 +1,7 @@
 from malaya_speech.utils.dist import compute_log_dist_matrix
 
 
-class CLUSTERING_AP:
+class ClusteringAP:
     def __init__(self, damping = 0.8, preference = None, metric = 'angular'):
 
         self.damping = damping

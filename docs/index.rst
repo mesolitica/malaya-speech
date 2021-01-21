@@ -66,6 +66,7 @@ Contents:
    
    load-noise-reduction
    load-speech-enhancement
+   load-super-resolution
 
 .. toctree::
    :maxdepth: 2

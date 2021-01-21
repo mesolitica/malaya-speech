@@ -1,6 +1,6 @@
 import numpy as np
 from itertools import cycle, product
-from malaya_speech.model.frame import FRAME
+from malaya_speech.model.frame import Frame
 from herpetologist import check_type
 from typing import List, Tuple
 from itertools import groupby
@@ -55,7 +55,7 @@ def get_styles(size):
 
 def visualize_vad(
     signal,
-    preds: List[Tuple[FRAME, bool]],
+    preds: List[Tuple[Frame, bool]],
     sample_rate: int = 16000,
     figsize: Tuple[int, int] = (15, 3),
     ax = None,
@@ -67,7 +67,7 @@ def visualize_vad(
     Parameters
     -----------
     signal: list / np.array
-    preds: List[Tuple[FRAME, bool]]
+    preds: List[Tuple[Frame, bool]]
     sample_rate: int, optional (default=16000)
     figsize: Tuple[int, int], optional (default=(15, 7))
         matplotlib figure size.
@@ -129,7 +129,7 @@ def plot_classification(
     
     Parameters
     -----------
-    preds: List[Tuple[FRAME, label]]
+    preds: List[Tuple[Frame, label]]
     description: str
     ax: ax, optional (default = None)
     fontsize_text: int, optional (default = 14)

@@ -1,6 +1,6 @@
 from malaya_speech.path import PATH_SPEAKER_CHANGE, S3_PATH_SPEAKER_CHANGE
 from malaya_speech.supervised import classification
-from malaya_speech.model.frame import FRAME
+from malaya_speech.model.frame import Frame
 from herpetologist import check_type
 
 _availability = {
@@ -84,9 +84,9 @@ def split_activities(
 
     Parameters
     ----------
-    vad_results: List[Tuple[FRAME, label]]
+    vad_results: List[Tuple[Frame, label]]
         results from VAD.
-    speaker_change_results: List[Tuple[FRAME, float]], optional (default=None)
+    speaker_change_results: List[Tuple[Frame, float]], optional (default=None)
         results from speaker change module, must in float result.
     speaker_change_threshold: float, optional (default=0.5)
         in one voice activity sample can be more than one speaker, split it using this threshold.
@@ -97,7 +97,7 @@ def split_activities(
 
     Returns
     -------
-    result : List[Tuple[FRAME, label]]
+    result : List[Tuple[Frame, label]]
     """
 
     if not 0 < speaker_change_threshold <= 1.0:
@@ -130,7 +130,7 @@ def split_activities(
                 before_timestamp = result[0].timestamp
                 for t in group:
                     after = t - before_timestamp
-                    f = FRAME(
+                    f = Frame(
                         result[0].array[
                             int(before * sr) : int((before + after) * sr)
                         ],
@@ -142,7 +142,7 @@ def split_activities(
                     before_timestamp = t
 
                 if result[0].timestamp + result[0].duration > before_timestamp:
-                    f = FRAME(
+                    f = Frame(
                         result[0].array[int(before * sr) :],
                         before_timestamp,
                         (result[0].timestamp + result[0].duration)

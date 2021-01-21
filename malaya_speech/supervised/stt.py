@@ -1,7 +1,7 @@
 from malaya_speech.utils import check_file, load_graph, generate_session
 from malaya_speech.utils.tf_featurization import STTFeaturizer
 from malaya_speech.utils.subword import load as subword_load
-from malaya_speech.model.tf import STT, TRANSDUCER
+from malaya_speech.model.tf import STT, Transducer
 import json
 
 
@@ -66,7 +66,7 @@ def transducer_load(path, s3_path, model, name, quantized = False, **kwargs):
     inputs = {n: g.get_tensor_by_name(f'import/{n}:0') for n in input_nodes}
     outputs = {n: g.get_tensor_by_name(f'import/{n}:0') for n in output_nodes}
 
-    return TRANSDUCER(
+    return Transducer(
         X_placeholder = inputs['X_placeholder'],
         X_len_placeholder = inputs['X_len_placeholder'],
         encoded_placeholder = inputs['encoded_placeholder'],

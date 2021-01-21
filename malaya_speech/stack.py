@@ -26,7 +26,7 @@ def available_aggregate_function():
     return describe_availability(_aggregate_availability)
 
 
-class STACK:
+class Stack:
     def __init__(self, models):
         self._models = models
 
@@ -112,7 +112,7 @@ def predict_stack(models):
 
     Returns
     -------
-    result: malaya_speech.stack.STACK class
+    result: malaya_speech.stack.Stack class
     """
 
     labels = None
@@ -125,4 +125,4 @@ def predict_stack(models):
             if labels != models[i].labels:
                 raise ValueError('domain classification must be same!')
 
-    return STACK(models)
+    return Stack(models)
