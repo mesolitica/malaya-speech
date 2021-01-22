@@ -190,7 +190,7 @@ S3_PATH_SPEAKER_VECTOR = {
     },
     'vggvox-v2': {
         'model': 'v1/speaker-vector/pretrained-vggvox-v2.pb',
-        'model': 'v1/speaker-vector/pretrained-vggvox-v2.pb.quantized',
+        'quantized': 'v1/speaker-vector/pretrained-vggvox-v2.pb.quantized',
     },
     'inception-v4': {
         'model': 'v1/speaker-vector/pretrained-inception-v4.pb',
