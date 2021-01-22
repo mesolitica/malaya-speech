@@ -16,7 +16,7 @@ _availability = {
         'EER': 0.1407,
     },
     'vggvox-v2': {
-        'Size (MB)': 30.9,
+        'Size (MB)': 43.2,
         'Quantized Size (MB)': 7.92,
         'Embedding Size': 512,
         'EER': 0.0445,
