@@ -1,9 +1,5 @@
 import tensorflow as tf
-from ..fastspeech.model import (
-    TFFastSpeechEncoder,
-    TFTacotronPostnet,
-    TFEmbedding,
-)
+from ..fastspeech.model import TFFastSpeechEncoder, TFTacotronPostnet
 import numpy as np
 
 
@@ -96,12 +92,8 @@ class Decoder(tf.keras.layers.Layer):
         super(Decoder, self).__init__(name = 'Decoder', **kwargs)
         self.config = config
         self.encoder = TFFastSpeechEncoder(config, name = 'encoder')
-        self.position_embeddings = TFEmbedding(
-            config.max_position_embeddings + 1,
-            config.hidden_size,
-            weights = [self._sincos_embedding()],
-            name = 'position_embeddings',
-            trainable = False,
+        self.position_embeddings = tf.convert_to_tensor(
+            self._sincos_embedding()
         )
 
     def call(self, x, attention_mask, training = True):
@@ -111,7 +103,8 @@ class Decoder(tf.keras.layers.Layer):
         position_ids = tf.range(1, seq_length + 1, dtype = tf.int32)[
             tf.newaxis, :
         ]
-        position_embeddings = self.position_embeddings(position_ids)
+        inputs = tf.cast(position_ids, tf.int32)
+        position_embeddings = tf.gather(self.position_embeddings, inputs)
         x = x + tf.cast(position_embeddings, x.dtype)
         return self.encoder([x, attention_mask])[0]
 
