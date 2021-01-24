@@ -28,6 +28,16 @@ _melgan_availability = {
         'Quantized Size (MB)': 4.53,
         'Mel loss': 0.4819,
     },
+    'universal': {
+        'Size (MB)': 309,
+        'Quantized Size (MB)': 77.5,
+        'Mel loss': 0.4819,
+    },
+    'universal-1024': {
+        'Size (MB)': 78.4,
+        'Quantized Size (MB)': 19.9,
+        'Mel loss': 0.4819,
+    },
 }
 _mbmelgan_availability = {
     'female': {
@@ -85,6 +95,8 @@ def melgan(model: str = 'female', quantized: bool = False, **kwargs):
         * ``'male'`` - MelGAN trained on male voice.
         * ``'husein'`` - MelGAN trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
         * ``'haqkiem'`` - MelGAN trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
+        * ``'universal'`` - Universal MelGAN trained on multiple speakers.
+        * ``'universal-1024'`` - Universal MelGAN with 1024 filters trained on multiple speakers.
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 

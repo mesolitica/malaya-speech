@@ -15,8 +15,9 @@ from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 import random
 
 mels = glob('output-universal/mels/*.npy')
+mels.extend(glob('speech-augmentation/mels/*.npy'))
+random.shuffle(mels)
 file_cycle = cycle(mels)
-f = next(file_cycle)
 
 
 def generate(batch_max_steps = 8192, hop_size = 256):

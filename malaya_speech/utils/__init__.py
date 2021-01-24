@@ -267,6 +267,7 @@ from . import astype
 from . import beam_search
 from . import char
 from . import combine
+from . import constant
 from . import dist
 from . import featurization
 from . import generator
