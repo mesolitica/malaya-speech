@@ -192,14 +192,16 @@ class Model(tf.keras.Model):
             c = tf.tile(
                 c, (1, tf.cast(tf.shape(x)[1] / stack_size, tf.int32), 1)
             )
+            c = tf.transpose(c, [1, 0, 2])
             return i + 1, tmp.write(i, c)
 
         _, tmp = tf.while_loop(condition, body, init_state)
-        tmp = tmp.stack()  # [STACK, B, T, D]
+        tmp = tmp.stack()  # [STACK, T, B, D]
 
         code_exp = tf.reshape(
-            tmp, (tf.shape(x)[0], -1, self.encoder.dim_neck * 2)
+            tmp, (-1, tf.shape(x)[0], self.encoder.dim_neck * 2)
         )
+        code_exp = tf.transpose(code_exp, [1, 0, 2])
         c_trg = tf.tile(tf.expand_dims(c_trg, 1), (1, tf.shape(x)[1], 1))
         encoder_outputs = tf.concat([code_exp, c_trg], axis = -1)
         mel_before = self.decoder(encoder_outputs, training = training)
