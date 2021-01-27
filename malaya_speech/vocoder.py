@@ -31,12 +31,12 @@ _melgan_availability = {
     'universal': {
         'Size (MB)': 309,
         'Quantized Size (MB)': 77.5,
-        'Mel loss': 0.4819,
+        'Mel loss': 0.4463,
     },
     'universal-1024': {
         'Size (MB)': 78.4,
         'Quantized Size (MB)': 19.9,
-        'Mel loss': 0.4819,
+        'Mel loss': 0.4591,
     },
 }
 _mbmelgan_availability = {
@@ -88,7 +88,7 @@ def melgan(model: str = 'female', quantized: bool = False, **kwargs):
 
     Parameters
     ----------
-    model : str, optional (default='jasper')
+    model : str, optional (default='universal-1024')
         Model architecture supported. Allowed values:
 
         * ``'female'`` - MelGAN trained on female voice.
@@ -129,13 +129,13 @@ def mbmelgan(model: str = 'female', quantized: bool = False, **kwargs):
 
     Parameters
     ----------
-    model : str, optional (default='jasper')
+    model : str, optional (default='female')
         Model architecture supported. Allowed values:
 
-        * ``'female'`` - MelGAN trained on female voice.
-        * ``'male'`` - MelGAN trained on male voice.
-        * ``'husein'`` - MelGAN trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
-        * ``'haqkiem'`` - MelGAN trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
+        * ``'female'`` - MBMelGAN trained on female voice.
+        * ``'male'`` - MBMelGAN trained on male voice.
+        * ``'husein'`` - MBMelGAN trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
+        * ``'haqkiem'`` - MBMelGAN trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 

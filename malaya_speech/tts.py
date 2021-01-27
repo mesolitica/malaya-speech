@@ -92,7 +92,7 @@ _punctuation = "!'(),.:;? "
 _special = '-'
 _letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 _rejected = '\'():;"'
-_punct = ':;,.'
+_punct = ':;,.?'
 
 
 MALAYA_SPEECH_SYMBOLS = (

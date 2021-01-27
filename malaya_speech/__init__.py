@@ -5,8 +5,8 @@ import logging
 
 
 home = os.path.join(str(Path.home()), 'Malaya-Speech')
-version = '0.0.1.5'
-bump_version = '0.0.1.5'
+version = '0.0.1.5.1'
+bump_version = '0.0.1.5.1'
 version_path = os.path.join(home, 'version')
 __version__ = bump_version
 path = os.path.dirname(__file__)

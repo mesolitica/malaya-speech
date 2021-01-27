@@ -607,6 +607,16 @@ PATH_VOCODER_MELGAN = {
         'quantized': home + '/vocoder/melgan-haqkiem/quantized/model.pb',
         'version': 'v2',
     },
+    'universal': {
+        'model': home + '/vocoder/universal-melgan/model.pb',
+        'quantized': home + '/vocoder/universal-melgan/quantized/model.pb',
+        'version': 'v2',
+    },
+    'universal-1024': {
+        'model': home + '/vocoder/universal-melgan-1024/model.pb',
+        'quantized': home + '/vocoder/universal-melgan-1024/quantized/model.pb',
+        'version': 'v2',
+    },
 }
 
 PATH_VOCODER_MBMELGAN = {
@@ -649,6 +659,14 @@ S3_PATH_VOCODER_MELGAN = {
     'haqkiem': {
         'model': 'v2/vocoder/melgan-haqkiem.pb',
         'quantized': 'v2/vocoder/melgan-haqkiem.pb.quantized',
+    },
+    'universal': {
+        'model': 'v2/vocoder/universal-melgan.pb',
+        'quantized': 'v2/vocoder/universal-melgan.pb.quantized',
+    },
+    'universal-1024': {
+        'model': 'v2/vocoder/universal-melgan-1024.pb',
+        'quantized': 'v2/vocoder/universal-melgan-1024.pb.quantized',
     },
 }
 

@@ -6,6 +6,7 @@ import librosa
 import decimal
 import math
 from python_speech_features import fbank
+from .constant import MEL_MEAN, MEL_STD
 
 
 class SpeakerNetFeaturizer:
@@ -451,3 +452,35 @@ def to_mel(
     signal = np.pad(signal, (0, fft_size), mode = 'edge')
     signal = signal[: len(mel) * hop_size]
     return signal
+
+
+def universal_mel(
+    signal,
+    sampling_rate = 22050,
+    fft_size = 1024,
+    hop_size = 256,
+    win_length = None,
+    window = 'hann',
+    num_mels = 80,
+    fmin = 80,
+    fmax = 7600,
+):
+    D = librosa.stft(
+        signal,
+        n_fft = fft_size,
+        hop_length = hop_size,
+        win_length = win_length,
+        window = window,
+        pad_mode = 'reflect',
+    )
+    S, _ = librosa.magphase(D)
+    mel_basis = librosa.filters.mel(
+        sr = sampling_rate,
+        n_fft = fft_size,
+        n_mels = num_mels,
+        fmin = fmin,
+        fmax = fmax,
+    )
+    mel = np.log10(np.maximum(np.dot(mel_basis, S), 1e-10)).T
+    mel = (mel - MEL_MEAN) / MEL_STD
+    return mel

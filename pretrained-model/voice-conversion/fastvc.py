@@ -20,14 +20,7 @@ mels = glob('output-universal/mels/*.npy')
 file_cycle = cycle(mels)
 
 
-def pad_seq(x, base = 32):
-    len_out = int(base * ceil(float(x.shape[0]) / base))
-    len_pad = len_out - x.shape[0]
-    assert len_pad >= 0
-    return np.pad(x, ((0, len_pad), (0, 0)), 'constant'), x.shape[0]
-
-
-def generate(batch_max_steps = 16384, hop_size = 256):
+def generate(batch_max_steps = 24576, hop_size = 256):
     while True:
         f = next(file_cycle)
         mel = np.load(f)
@@ -47,8 +40,6 @@ def generate(batch_max_steps = 16384, hop_size = 256):
         else:
             audio = np.pad(audio, [[0, batch_max_steps - len(audio)]])
             mel = np.pad(mel, [[0, batch_max_frames - len(mel)], [0, 0]])
-
-        mel, len_pad = pad_seq(mel)
 
         v = speaker_model([audio])
 
@@ -93,19 +84,24 @@ def get_dataset(batch_size = 32):
     return get
 
 
+total_steps = 300000
+
+
 def model_fn(features, labels, mode, params):
     vectors = features['v']
     mels = features['mel']
     mels_len = features['mel_length'][:, 0]
+    dim_neck = 64
     config = malaya_speech.config.fastspeech_config
-    config['encoder_hidden_size'] = 256
+    config['encoder_hidden_size'] = 512 + 80
+    config['decoder_hidden_size'] = 512 + dim_neck
     config = fastspeech.Config(vocab_size = 1, **config)
-    model = fastvc.model.Model(config, 32)
+    model = fastvc.model.Model(dim_neck, config)
     encoder_outputs, mel_before, mel_after, codes = model(
         mels, vectors, vectors, mels_len
     )
     codes_ = model.call_second(mel_after, vectors, mels_len)
-    loss_f = tf.losses.mean_squared_error
+    loss_f = tf.losses.absolute_difference
     max_length = tf.cast(tf.reduce_max(mels_len), tf.int32)
     mask = tf.sequence_mask(
         lengths = mels_len, maxlen = max_length, dtype = tf.float32
@@ -134,9 +130,18 @@ def model_fn(features, labels, mode, params):
 
     if mode == tf.estimator.ModeKeys.TRAIN:
 
-        optimizer = tf.train.AdamOptimizer(learning_rate = 0.0001)
-
-        train_op = optimizer.minimize(loss, global_step = global_step)
+        train_op = train.optimizer.adamw.create_optimizer(
+            loss,
+            init_lr = 0.001,
+            num_train_steps = total_steps,
+            num_warmup_steps = int(0.02 * total_steps),
+            end_learning_rate = 0.00005,
+            weight_decay_rate = 0.001,
+            beta_1 = 0.9,
+            beta_2 = 0.98,
+            epsilon = 1e-6,
+            clip_norm = 1.0,
+        )
         estimator_spec = tf.estimator.EstimatorSpec(
             mode = mode, loss = loss, train_op = train_op
         )
@@ -167,7 +172,7 @@ train.run_training(
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 2000,
-    max_steps = 300000,
+    max_steps = total_steps,
     train_hooks = train_hooks,
     eval_step = 0,
 )

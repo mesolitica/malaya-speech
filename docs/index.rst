@@ -42,9 +42,15 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
-   :caption: TTS Module
+   :caption: Vocoder Module
 
    load-vocoder
+   load-universal-melgan
+
+.. toctree::
+   :maxdepth: 2
+   :caption: TTS Module
+
    tts-tacotron2-model
    tts-fastspeech2-model
    more-tts-fastspeech2
