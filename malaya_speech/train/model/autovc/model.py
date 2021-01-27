@@ -175,13 +175,11 @@ class Model(tf.keras.Model):
     def call(self, x, c_org, c_trg, training = True, **kwargs):
         codes = self.encoder(x, c_org, training = training)  # [STACK, B, D]
 
-        tmp = tf.TensorArray(
+        tmp = tf.zeros(
+            shape = [tf.shape(x)[0], 0, self.encoder.dim_neck * 2],
             dtype = tf.float32,
-            size = 0,
-            dynamic_size = True,
-            infer_shape = True,
         )
-        init_state = (0, tmp)
+        i = tf.constant(0, dtype = tf.int32)
         stack_size = tf.shape(codes)[0]
 
         def condition(i, tmp):
@@ -192,16 +190,17 @@ class Model(tf.keras.Model):
             c = tf.tile(
                 c, (1, tf.cast(tf.shape(x)[1] / stack_size, tf.int32), 1)
             )
-            c = tf.transpose(c, [1, 0, 2])
-            return i + 1, tmp.write(i, c)
+            return i + 1, tf.concat([tmp, c], axis = 1)
 
-        _, tmp = tf.while_loop(condition, body, init_state)
-        tmp = tmp.stack()  # [STACK, T, B, D]
-
-        code_exp = tf.reshape(
-            tmp, (-1, tf.shape(x)[0], self.encoder.dim_neck * 2)
+        _, code_exp = tf.while_loop(
+            condition,
+            body,
+            [i, tmp],
+            shape_invariants = [
+                i.get_shape(),
+                tf.TensorShape([None, None, self.encoder.dim_neck * 2]),
+            ],
         )
-        code_exp = tf.transpose(code_exp, [1, 0, 2])
         c_trg = tf.tile(tf.expand_dims(c_trg, 1), (1, tf.shape(x)[1], 1))
         encoder_outputs = tf.concat([code_exp, c_trg], axis = -1)
         mel_before = self.decoder(encoder_outputs, training = training)
