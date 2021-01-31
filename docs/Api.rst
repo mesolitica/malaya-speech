@@ -99,6 +99,13 @@ malaya_speech.model.tf.Fastspeech
 .. autoclass:: malaya_speech.model.tf.Fastspeech()
     :members:
 
+
+malaya_speech.model.tf.FastVC
+----------------------------------
+
+.. autoclass:: malaya_speech.model.tf.FastVC()
+    :members:
+
 malaya_speech.model.webrtc.WebRTC
 ----------------------------------
 
@@ -319,4 +326,10 @@ malaya_speech.vocoder
 -----------------------------------
 
 .. automodule:: malaya_speech.vocoder
+    :members:
+
+malaya_speech.voice_conversion
+-----------------------------------
+
+.. automodule:: malaya_speech.voice_conversion
     :members:

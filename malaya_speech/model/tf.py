@@ -818,3 +818,73 @@ class Fastspeech(Abstract):
 
     def __call__(self, input, **kwargs):
         return self.predict(input, **kwargs)
+
+
+class FastVC(Abstract):
+    def __init__(
+        self,
+        mel,
+        ori_vector,
+        target_vector,
+        mel_lengths,
+        logits,
+        waveform_to_mel,
+        speaker_vector,
+        sess,
+        model,
+        name,
+    ):
+        self._mel = mel
+        self._ori_vector = ori_vector
+        self._target_vector = target_vector
+        self._mel_lengths = mel_lengths
+        self._logits = logits
+        self._waveform_to_mel = waveform_to_mel
+        self._speaker_vector = speaker_vector
+        self._sess = sess
+        self.__model__ = model
+        self.__name__ = name
+
+    def predict(self, original_audio, target_audio):
+        """
+        Change original voice audio to follow targeted voice.
+
+        Parameters
+        ----------
+        original_audio: np.array or malaya_speech.model.frame.Frame
+        target_audio: np.array or malaya_speech.model.frame.Frame
+
+        Returns
+        -------
+        result: Dict[decoder-output, postnet-output]
+        """
+        original_audio = (
+            input.array if isinstance(original_audio, Frame) else original_audio
+        )
+        target_audio = (
+            input.array if isinstance(target_audio, Frame) else target_audio
+        )
+
+        original_mel = self._waveform_to_mel(original_audio)
+        target_mel = self._waveform_to_mel(target_audio)
+
+        original_v = self._speaker_vector([original_audio])[0] * 30 - 3.5
+        target_v = self._speaker_vector([target_audio])[0] * 30 - 3.5
+
+        r = self._sess.run(
+            self._logits,
+            feed_dict = {
+                self._mel: [original_mel],
+                self._ori_vector: [original_v],
+                self._target_vector: [target_v],
+                self._mel_lengths: [len(original_mel)],
+            },
+        )
+
+        return {
+            'decoder-output': r['mel_before'][0],
+            'postnet-output': r['mel_after'][0],
+        }
+
+    def __call__(self, original_audio, target_audio):
+        return self.predict(original_audio, target_audio)

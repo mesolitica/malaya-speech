@@ -688,3 +688,27 @@ S3_PATH_VOCODER_MBMELGAN = {
         'quantized': 'v2/vocoder/mbmelgan-haqkiem.pb.quantized',
     },
 }
+
+PATH_VOICE_CONVERSION = {
+    'fastvc-32': {
+        'model': home + '/vc/fastvc-32/model.pb',
+        'quantized': home + '/vc/fastvc-32/quantized/model.pb',
+        'version': 'v1',
+    },
+    'fastvc-64': {
+        'model': home + '/vc/fastvc-64/model.pb',
+        'quantized': home + '/vc/fastvc-64/quantized/model.pb',
+        'version': 'v1',
+    },
+}
+
+S3_PATH_VOICE_CONVERSION = {
+    'fastvc-32': {
+        'model': 'v1/vc/fastvc-32.pb',
+        'quantized': 'v1/vc/fastvc-32.pb.quantized',
+    },
+    'fastvc-64': {
+        'model': 'v1/vc/fastvc-64.pb',
+        'quantized': 'v1/vc/fastvc-64.pb.quantized',
+    },
+}

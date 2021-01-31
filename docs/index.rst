@@ -49,6 +49,12 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+   :caption: Conversion Module
+
+   load-voice-conversion
+   
+.. toctree::
+   :maxdepth: 2
    :caption: TTS Module
 
    tts-tacotron2-model
