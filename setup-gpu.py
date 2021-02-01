@@ -9,6 +9,9 @@ def readme():
         return f.read().decode('UTF-8')
 
 
+with open('requirements.txt') as fopen:
+    req = list(filter(None, fopen.read().split('\n')))
+
 setuptools.setup(
     name = __packagename__,
     packages = setuptools.find_packages(),
@@ -21,17 +24,7 @@ setuptools.setup(
     url = 'https://github.com/huseinzol05/malaya-speech-gpu',
     download_url = 'https://github.com/huseinzol05/malaya-speech-gpu/archive/master.zip',
     keywords = ['nlp', 'bm'],
-    install_requires = [
-        'tensorflow-gpu>=1.14,<2.0',
-        'numpy',
-        'scipy',
-        'librosa',
-        'soundfile',
-        'herpetologist',
-        'dataclasses',
-        'python_speech_features',
-        'tqdm',
-    ],
+    install_requires = req + ['tensorflow-gpu>=1.14'],
     license = 'MIT',
     classifiers = [
         'Programming Language :: Python :: 3.6',

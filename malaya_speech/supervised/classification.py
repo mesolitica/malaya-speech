@@ -1,4 +1,9 @@
-from malaya_speech.utils import check_file, load_graph, generate_session
+from malaya_speech.utils import (
+    check_file,
+    load_graph,
+    generate_session,
+    nodes_session,
+)
 from malaya_speech.model.tf import (
     Speakernet,
     Speaker2Vec,
@@ -43,26 +48,22 @@ def load(path, s3_path, model, name, extra, label, quantized = False, **kwargs):
             model_class = Classification
 
     if model == 'speakernet':
-        return model_class(
-            X = g.get_tensor_by_name('import/Placeholder:0'),
-            X_len = g.get_tensor_by_name('import/Placeholder_1:0'),
-            logits = g.get_tensor_by_name('import/logits:0'),
-            vectorizer = vectorizer_mapping[model],
-            sess = generate_session(graph = g, **kwargs),
-            model = model,
-            extra = extra,
-            label = label,
-            name = name,
-        )
-
+        inputs = ['Placeholder', 'Placeholder_1']
+        outputs = ['logits']
     else:
-        return model_class(
-            X = g.get_tensor_by_name('import/Placeholder:0'),
-            logits = g.get_tensor_by_name('import/logits:0'),
-            vectorizer = vectorizer_mapping[model],
-            sess = generate_session(graph = g, **kwargs),
-            model = model,
-            extra = extra,
-            label = label,
-            name = name,
-        )
+        inputs = ['Placeholder']
+        outputs = ['logits']
+
+    eager_g, input_nodes, output_nodes = nodes_session(g, inputs, outputs)
+
+    return model_class(
+        input_nodes = input_nodes,
+        output_nodes = output_nodes,
+        vectorizer = vectorizer_mapping[model],
+        sess = generate_session(graph = g, **kwargs),
+        eager_g = eager_g,
+        model = model,
+        extra = extra,
+        label = label,
+        name = name,
+    )

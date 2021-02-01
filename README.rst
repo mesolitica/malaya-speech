@@ -33,7 +33,7 @@ GPU version
 
     $ pip install malaya-speech-gpu
 
-Only **Python 3.6.x and above** and **Tensorflow 1.10 and above but not 2.0** are supported.
+Only **Python 3.6.x and above** and **Tensorflow 1.15.0 and above** are supported.
 
 Features
 --------

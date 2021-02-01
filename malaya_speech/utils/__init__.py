@@ -8,14 +8,10 @@ from tqdm import tqdm
 from pathlib import Path
 from malaya_speech import home, _delete_folder, gpu_available, __gpu__
 
-try:
-    from tensorflow.contrib.seq2seq.python.ops import beam_search_ops
-except:
-    import warnings
 
-    warnings.warn(
-        'Cannot import beam_search_ops from tensorflow, some deep learning models may not able to load, make sure Tensorflow version is, 1.10 < version < 2.0'
-    )
+def check_tf_version():
+    version = tf.__version__
+    return int(version.split('.')[0])
 
 
 def download_file(url, filename):
@@ -38,7 +34,31 @@ def download_file(url, filename):
             f.write(data)
 
 
+def nodes_session(graph, inputs, outputs):
+    if tf.executing_eagerly():
+        inputs = [f'import/{i}:0' for i in inputs]
+        outputs = [f'import/{o}:0' for o in outputs]
+        g = graph.prune(
+            tf.nest.map_structure(graph.graph.as_graph_element, inputs),
+            tf.nest.map_structure(graph.graph.as_graph_element, outputs),
+        )
+        input_nodes = None
+        output_nodes = None
+    else:
+        input_nodes = {
+            i: graph.get_tensor_by_name(f'import/{i}:0') for i in inputs
+        }
+        output_nodes = {
+            o: graph.get_tensor_by_name(f'import/{o}:0') for o in outputs
+        }
+        g = None
+    return g, input_nodes, output_nodes
+
+
 def generate_session(graph, **kwargs):
+    if tf.executing_eagerly():
+        return None
+
     if gpu_available():
         config = tf.ConfigProto()
         if 'gpu' in kwargs:
@@ -55,17 +75,17 @@ def generate_session(graph, **kwargs):
             config.gpu_options.per_process_gpu_memory_fraction = gpu_limit
 
         config.gpu_options.allow_growth = True
-        sess = tf.InteractiveSession(config = config, graph = graph)
+        sess = tf.compat.v1.InteractiveSession(config = config, graph = graph)
 
     else:
-        sess = tf.InteractiveSession(graph = graph)
+        sess = tf.compat.v1.InteractiveSession(graph = graph)
     return sess
 
 
 def load_graph(frozen_graph_filename, **kwargs):
-    with tf.gfile.GFile(frozen_graph_filename, 'rb') as f:
+    with tf.io.gfile.GFile(frozen_graph_filename, 'rb') as f:
         try:
-            graph_def = tf.GraphDef()
+            graph_def = tf.compat.v1.GraphDef()
             graph_def.ParseFromString(f.read())
         except Exception as e:
             path = frozen_graph_filename.split('Malaya-Speech/')[1]
@@ -74,7 +94,7 @@ def load_graph(frozen_graph_filename, **kwargs):
                 f"{e}, file corrupted due to some reasons, please run `malaya_speech.clear_cache('{path}')` and try again"
             )
 
-    with tf.Graph().as_default() as graph:
+    def get_gpu():
         if gpu_available():
             if 'gpu' in kwargs:
                 gpu = kwargs.get('gpu', 0)
@@ -84,11 +104,23 @@ def load_graph(frozen_graph_filename, **kwargs):
                     raise ValueError(f'gpu must 0 <= gpu < {len(__gpu__)}')
                 gpu = str(gpu)
                 with tf.device(f'/device:GPU:{gpu}'):
-                    tf.import_graph_def(graph_def)
+                    tf.compat.v1.import_graph_def(graph_def)
             else:
-                tf.import_graph_def(graph_def)
+                tf.compat.v1.import_graph_def(graph_def)
         else:
-            tf.import_graph_def(graph_def)
+            tf.compat.v1.import_graph_def(graph_def)
+
+    if tf.executing_eagerly():
+
+        def _imports_graph_def():
+            get_gpu()
+
+        graph = tf.compat.v1.wrap_function(_imports_graph_def, [])
+
+    else:
+        with tf.Graph().as_default() as graph:
+            get_gpu()
+
     return graph
 
 
@@ -245,10 +277,8 @@ def add_neutral(x, alpha = 1e-2):
 
 def describe_availability(dict, transpose = True, text = ''):
     if len(text):
-        import logging
 
         logging.basicConfig(level = logging.INFO)
-
         logging.info(text)
     try:
         import pandas as pd
@@ -260,6 +290,7 @@ def describe_availability(dict, transpose = True, text = ''):
         else:
             return df
     except:
+        logging.warning('pandas not installed, will return as dictionary.')
         return dict
 
 

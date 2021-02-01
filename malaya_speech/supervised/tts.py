@@ -1,4 +1,9 @@
-from malaya_speech.utils import check_file, load_graph, generate_session
+from malaya_speech.utils import (
+    check_file,
+    load_graph,
+    generate_session,
+    nodes_session,
+)
 from malaya_speech.model.tf import Tacotron, Fastspeech
 
 
@@ -12,15 +17,16 @@ def tacotron_load(
         model_path = 'model'
 
     g = load_graph(path[model][model_path], **kwargs)
+    input_nodes = ['Placeholder', 'Placeholder_1']
     output_nodes = ['decoder_output', 'post_mel_outputs', 'alignment_histories']
-    outputs = {n: g.get_tensor_by_name(f'import/{n}:0') for n in output_nodes}
+    eager_g, input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
     return Tacotron(
-        X = g.get_tensor_by_name('import/Placeholder:0'),
-        X_len = g.get_tensor_by_name('import/Placeholder_1:0'),
-        logits = outputs,
+        input_nodes = input_nodes,
+        output_nodes = output_nodes,
         normalizer = normalizer,
         sess = generate_session(graph = g, **kwargs),
+        eager_g = eager_g,
         model = model,
         name = name,
     )

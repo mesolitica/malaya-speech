@@ -1,0 +1,9 @@
+numpy
+unidecode
+librosa
+soundfile
+herpetologist
+dataclasses
+python_speech_features
+unidecode
+tqdm
