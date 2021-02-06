@@ -3,31 +3,6 @@ from ..fastspeech.model import TFFastSpeechEncoder, TFTacotronPostnet
 import numpy as np
 
 
-class ConvNorm(tf.keras.layers.Layer):
-    def __init__(
-        self,
-        out_channels,
-        kernel_size = 1,
-        stride = 1,
-        padding = 'SAME',
-        dilation = 1,
-        bias = True,
-        **kwargs,
-    ):
-        super(ConvNorm, self).__init__(name = 'ConvNorm', **kwargs)
-        self.conv = tf.keras.layers.Conv1D(
-            out_channels,
-            kernel_size = kernel_size,
-            strides = stride,
-            padding = padding,
-            dilation_rate = dilation,
-            use_bias = bias,
-        )
-
-    def call(self, x):
-        return self.conv(x)
-
-
 class Encoder(tf.keras.layers.Layer):
     def __init__(self, dim_neck, config, **kwargs):
         super(Encoder, self).__init__(name = 'Encoder', **kwargs)
@@ -137,7 +112,13 @@ class Model(tf.keras.Model):
             lengths = mel_lengths, maxlen = max_length, dtype = tf.float32
         )
         attention_mask.set_shape((None, None))
-        return self.encoder(x, c_org, attention_mask, training = training)
+        extended_mask = tf.cast(
+            tf.expand_dims(attention_mask, axis = 2), outputs.dtype
+        )
+        return (
+            self.encoder(x, c_org, attention_mask, training = training)
+            * extended_mask
+        )
 
     def call(self, x, c_org, c_trg, mel_lengths, training = True, **kwargs):
 
@@ -146,11 +127,18 @@ class Model(tf.keras.Model):
             lengths = mel_lengths, maxlen = max_length, dtype = tf.float32
         )
         attention_mask.set_shape((None, None))
-        code_exp = self.encoder(x, c_org, attention_mask, training = training)
+        extended_mask = tf.cast(
+            tf.expand_dims(attention_mask, axis = 2), outputs.dtype
+        )
+        code_exp = (
+            self.encoder(x, c_org, attention_mask, training = training)
+            * extended_mask
+        )
         c_trg = tf.tile(tf.expand_dims(c_trg, 1), (1, tf.shape(x)[1], 1))
         encoder_outputs = tf.concat([code_exp, c_trg], axis = -1)
-        decoder_output = self.decoder(
-            encoder_outputs, attention_mask, training = training
+        decoder_output = (
+            self.decoder(encoder_outputs, attention_mask, training = training)
+            * extended_mask
         )
         mel_before = self.mel_dense(decoder_output)
         mel_after = (

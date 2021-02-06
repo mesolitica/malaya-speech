@@ -23,6 +23,30 @@ S3_PATH_AGE_DETECTION = {
     },
 }
 
+PATH_BACKGROUND_ENHANCE = {
+    'unet-enhance-24': {
+        'model': home + '/speech-enhancement/enhance-24/model.pb',
+        'quantized': home + '/speech-enhancement/enhance-24/quantized/model.pb',
+        'version': 'v1',
+    },
+    'unet-enhance-36': {
+        'model': home + '/speech-enhancement/enhance-36/model.pb',
+        'quantized': home + '/speech-enhancement/enhance-36/quantized/model.pb',
+        'version': 'v1',
+    },
+}
+
+S3_PATH_BACKGROUND_ENHANCE = {
+    'unet-enhance-24': {
+        'model': 'v1/speech-enhancement/speech-enhancement-24.pb',
+        'quantized': 'v1/speech-enhancement/speech-enhancement-24.pb.quantized',
+    },
+    'unet-enhance-36': {
+        'model': 'v1/speech-enhancement/speech-enhancement-36.pb',
+        'quantized': 'v1/speech-enhancement/speech-enhancement-36.pb.quantized',
+    },
+}
+
 PATH_EMOTION = {
     'vggvox-v1': {
         'model': home + '/emotion/vggvox-v1/model.pb',

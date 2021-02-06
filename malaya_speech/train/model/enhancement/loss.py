@@ -16,6 +16,37 @@ def sdr(pred, true, eps = 1e-8):
     )
 
 
+def sdr_v2(s_sep, s_ref, eps = 1e-8):
+    # pred = [B, T], true = [B, T]
+    s_sep = tf.expand_dims(s_sep, 1)
+    s_ref = tf.expand_dims(s_ref, 1)
+    s_sep_mean = tf.reduce_mean(s_sep, axis = -1, keep_dims = True)
+    s_ref_mean = tf.reduce_mean(s_ref, axis = -1, keep_dims = True)
+    s_sep -= s_sep_mean
+    s_ref -= s_ref_mean
+    s_dot = tf.reduce_sum(
+        s_ref * s_sep, axis = -1, keep_dims = True
+    )  # [batch_size, C(speakers), 1]
+    p_ref = tf.reduce_sum(
+        s_ref ** 2, axis = -1, keep_dims = True
+    )  # [batch_size, C(speakers), 1]
+    s_target = (
+        s_dot * s_ref / (p_ref + eps)
+    )  # [batch_size, C(speakers), length]
+    e_noise = s_sep - s_target  # [batch_size, C(speakers), length]
+    s_target_norm = tf.reduce_sum(
+        s_target ** 2, axis = -1
+    )  # [batch_size, C(speakers)]
+    e_noise_norm = tf.reduce_sum(
+        e_noise ** 2, axis = -1
+    )  # [batch_size, C(speakers)]
+    si_snr = 10 * tf.log(
+        s_target_norm / (e_noise_norm + eps)
+    )  # [batch_size, C(speakers)]
+    si_snr = tf.reduce_mean(si_snr) / tf.log(10.0)
+    return si_snr
+
+
 def weighted_sdr(noisy_speech, pred_speech, true_speech):
     pred_noise = noisy_speech - pred_speech
     true_noise = noisy_speech - true_speech

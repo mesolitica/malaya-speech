@@ -1,6 +1,7 @@
 from . import alconformer
 from . import autovc
 from . import conformer
+from . import conv_tasnet
 from . import ctc
 from . import deep_speaker
 from . import deepspeech2
