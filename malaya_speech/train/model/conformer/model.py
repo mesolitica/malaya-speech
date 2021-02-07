@@ -326,19 +326,25 @@ class Model(tf.keras.Model):
         super(Model, self).__init__(name = name, **kwargs)
 
         subsampling_name = subsampling.pop('type', 'conv2d')
+        print(subsampling_name)
         if subsampling_name == 'vgg':
             subsampling_class = VggSubsampling
         elif subsampling_name == 'conv2d':
             subsampling_class = Conv2dSubsampling
+        elif subsampling_name == 'none':
+            subsampling_class = None
         else:
             raise ValueError("subsampling must be either  'conv2d' or 'vgg'")
 
-        self.conv_subsampling = subsampling_class(
-            **subsampling,
-            name = f'{name}_subsampling',
-            kernel_regularizer = kernel_regularizer,
-            bias_regularizer = bias_regularizer,
-        )
+        if subsampling_class:
+            self.conv_subsampling = subsampling_class(
+                **subsampling,
+                name = f'{name}_subsampling',
+                kernel_regularizer = kernel_regularizer,
+                bias_regularizer = bias_regularizer,
+            )
+        else:
+            self.conv_subsampling = None
 
         if positional_encoding == 'sinusoid':
             self.pe = PositionalEncoding(name = f'{name}_pe')
@@ -378,7 +384,10 @@ class Model(tf.keras.Model):
 
     def call(self, inputs, training = False, **kwargs):
         # input with shape [B, T, V1, V2]
-        outputs = self.conv_subsampling(inputs, training = training)
+        if self.conv_subsampling:
+            outputs = self.conv_subsampling(inputs, training = training)
+        else:
+            outputs = inputs
         outputs = self.linear(outputs, training = training)
         pe = self.pe(outputs)
         outputs = self.do(outputs, training = training)
