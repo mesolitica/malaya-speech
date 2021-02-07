@@ -17,7 +17,7 @@ class Encoder(tf.keras.layers.Layer):
     def call(self, x, c_org, training = True):
         c_org = tf.tile(tf.expand_dims(c_org, 1), (1, tf.shape(x)[1], 1))
         x = tf.concat([x, c_org], axis = -1)
-        f = self.encoder(x, training = training)
+        f = self.encoder(x)
         return self.encoder_dense(f)
 
 
@@ -28,7 +28,7 @@ class Decoder(tf.keras.layers.Layer):
         self.encoder = ConformerModel(**self.config)
 
     def call(self, x, training = True):
-        return self.encoder(x, training = training)
+        return self.encoder(x)
 
 
 class Model(tf.keras.Model):

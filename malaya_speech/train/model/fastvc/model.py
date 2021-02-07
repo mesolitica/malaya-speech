@@ -52,7 +52,7 @@ class Encoder(tf.keras.layers.Layer):
         inputs = tf.cast(position_ids, tf.int32)
         position_embeddings = tf.gather(self.position_embeddings, inputs)
         x = x + tf.cast(position_embeddings, x.dtype)
-        f = self.encoder([x, attention_mask], training = training)[0]
+        f = self.encoder([x, attention_mask])[0]
         return self.encoder_dense(f)
 
     def _sincos_embedding(self):
@@ -95,7 +95,7 @@ class Decoder(tf.keras.layers.Layer):
         inputs = tf.cast(position_ids, tf.int32)
         position_embeddings = tf.gather(self.position_embeddings, inputs)
         x = x + tf.cast(position_embeddings, x.dtype)
-        return self.encoder([x, attention_mask], training = training)[0]
+        return self.encoder([x, attention_mask])[0]
 
     def _sincos_embedding(self):
         position_enc = np.array(
