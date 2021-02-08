@@ -9,7 +9,7 @@ _availability = {
         'Quantized Size (MB)': 54.1,
         'Total loss': 0.2918,
     },
-    'fastvc-64': {
+    'fastvc-32-v2': {
         'Size (MB)': 194,
         'Quantized Size (MB)': 55.7,
         'Total loss': 0.2764,
@@ -38,7 +38,7 @@ def deep_conversion(
         Model architecture supported. Allowed values:
 
         * ``'fastvc-32'`` - FastVC with bottleneck size 32.
-        * ``'fastvc-64'`` - FastVC with bottleneck size 64.
+        * ``'fastvc-32-v2'`` - FastVC V2 with bottleneck size 32.
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 

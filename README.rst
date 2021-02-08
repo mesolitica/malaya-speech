@@ -54,6 +54,7 @@ Features
 -  **Vocoder**, convert Mel to Waveform using Pretrained MelGAN, Multiband MelGAN and Universal MelGAN Vocoder Malaya-Speech models.
 -  **Voice Activity Detection**, detect voice activities using Finetuned Speaker Vector Malaya-Speech models.
 -  **Voice Conversion**, Many-to-One, One-to-Many, Many-to-Many, and Zero-shot Voice Conversion.
+-  **Hybrid 8-bit Quantization**, provide hybrid 8-bit quantization for all models to reduce inference time up to 2x and model size up to 4x.
 
 Pretrained Models
 ------------------

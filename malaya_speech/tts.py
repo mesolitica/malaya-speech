@@ -319,8 +319,11 @@ def fastspeech2(
         Model architecture supported. Allowed values:
 
         * ``'female'`` - Fastspeech2 trained on female voice.
+        * ``'female'`` - Fastspeech2 V2 trained on female voice.
         * ``'male'`` - Fastspeech2 trained on male voice.
+        * ``'male'`` - Fastspeech2 V2 trained on male voice.
         * ``'husein'`` - Fastspeech2 trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
+        * ``'husein'`` - Fastspeech2 V2 trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
         * ``'haqkiem'`` - Fastspeech2 trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
         
     quantized : bool, optional (default=False)

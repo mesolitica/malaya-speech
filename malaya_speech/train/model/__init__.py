@@ -18,7 +18,11 @@ from . import melgan
 from . import mini_jasper
 from . import pix2pix
 from . import quartznet
+from . import resnest
+from . import resnest_enhancement
 from . import resnet_unet
+from . import resnext
+from . import resnext_enhancement
 from . import speakernet
 from . import srgan
 from . import stft
