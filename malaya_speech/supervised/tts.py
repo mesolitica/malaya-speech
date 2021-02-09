@@ -5,6 +5,7 @@ from malaya_speech.utils import (
     nodes_session,
 )
 from malaya_speech.model.tf import Tacotron, Fastspeech
+import numpy as np
 
 
 def tacotron_load(
@@ -17,14 +18,17 @@ def tacotron_load(
         model_path = 'model'
 
     g = load_graph(path[model][model_path], **kwargs)
-    input_nodes = ['Placeholder', 'Placeholder_1']
-    output_nodes = ['decoder_output', 'post_mel_outputs', 'alignment_histories']
+    inputs = ['Placeholder', 'Placeholder_1']
+    outputs = ['decoder_output', 'post_mel_outputs', 'alignment_histories']
     eager_g, input_nodes, output_nodes = nodes_session(g, inputs, outputs)
+
+    stats = np.load(path[model]['stats'])
 
     return Tacotron(
         input_nodes = input_nodes,
         output_nodes = output_nodes,
         normalizer = normalizer,
+        stats = stats,
         sess = generate_session(graph = g, **kwargs),
         eager_g = eager_g,
         model = model,
@@ -44,6 +48,9 @@ def fastspeech_load(
     g = load_graph(path[model][model_path], **kwargs)
     output_nodes = ['decoder_output', 'post_mel_outputs']
     outputs = {n: g.get_tensor_by_name(f'import/{n}:0') for n in output_nodes}
+
+    stats = np.load(path[model]['stats'])
+
     return Fastspeech(
         X = g.get_tensor_by_name('import/Placeholder:0'),
         speed_ratios = g.get_tensor_by_name('import/speed_ratios:0'),
@@ -51,6 +58,7 @@ def fastspeech_load(
         energy_ratios = g.get_tensor_by_name('import/energy_ratios:0'),
         logits = outputs,
         normalizer = normalizer,
+        stats = stats,
         sess = generate_session(graph = g, **kwargs),
         model = model,
         name = name,

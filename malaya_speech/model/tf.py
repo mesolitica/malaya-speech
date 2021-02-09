@@ -10,6 +10,7 @@ from malaya_speech.utils.char import decode as char_decode
 from malaya_speech.utils.subword import decode as subword_decode
 from malaya_speech.utils.beam_search import transducer as transducer_beam
 from malaya_speech.utils.astype import to_tf
+from malaya_speech.utils.constant import MEL_MEAN, MEL_STD
 
 
 class Abstract:
@@ -842,11 +843,20 @@ class Vocoder:
 
 class Tacotron(Abstract):
     def __init__(
-        self, input_nodes, output_nodes, normalizer, sess, eager_g, model, name
+        self,
+        input_nodes,
+        output_nodes,
+        normalizer,
+        stats,
+        sess,
+        eager_g,
+        model,
+        name,
     ):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
         self._normalizer = normalizer
+        self._stats = stats
         self._sess = sess
         self._eager_g = eager_g
         self.__model__ = model
@@ -862,7 +872,7 @@ class Tacotron(Abstract):
 
         Returns
         -------
-        result: Dict[string, decoder-output, postnet-output, alignment]
+        result: Dict[string, decoder-output, postnet-output, universal-output, alignment]
         """
 
         t, ids = self._normalizer.normalize(string, **kwargs)
@@ -874,11 +884,14 @@ class Tacotron(Abstract):
                     self._input_nodes['Placeholder_1']: [len(ids)],
                 },
             )
+            v = r['post_mel_outputs'][0] * self._stats[1] + self._stats[0]
+            v = (v - MEL_MEAN) / MEL_STD
             return {
                 'string': t,
                 'ids': ids,
                 'decoder-output': r['decoder_output'][0],
                 'postnet-output': r['post_mel_outputs'][0],
+                'universal-output': v,
                 'alignment': r['alignment_histories'][0],
             }
         else:
@@ -901,6 +914,7 @@ class Fastspeech(Abstract):
         energy_ratios,
         logits,
         normalizer,
+        stats,
         sess,
         model,
         name,
@@ -911,6 +925,7 @@ class Fastspeech(Abstract):
         self._energy_ratios = energy_ratios
         self._logits = logits
         self._normalizer = normalizer
+        self._stats = stats
         self._sess = sess
         self.__model__ = model
         self.__name__ = name
@@ -938,7 +953,7 @@ class Fastspeech(Abstract):
 
         Returns
         -------
-        result: Dict[string, decoder-output, postnet-output]
+        result: Dict[string, decoder-output, postnet-output, universal-output]
         """
         t, ids = self._normalizer.normalize(string, **kwargs)
         r = self._sess.run(
@@ -950,11 +965,14 @@ class Fastspeech(Abstract):
                 self._energy_ratios: [energy_ratio],
             },
         )
+        v = r['post_mel_outputs'][0] * self._stats[1] + self._stats[0]
+        v = (v - MEL_MEAN) / MEL_STD
         return {
             'string': t,
             'ids': ids,
             'decoder-output': r['decoder_output'][0],
             'postnet-output': r['post_mel_outputs'][0],
+            'universal-output': v,
         }
 
     def __call__(self, input, **kwargs):

@@ -46,6 +46,13 @@ _sampling_availability = {
         'ISR': 14.512658,
         'SAR': 13.963656,
     },
+    'resnext-enhance-24': {
+        'Size (MB)': 40.7,
+        'Quantized Size (MB)': 10.3,
+        'SDR': 9.877178,
+        'ISR': 15.916217,
+        'SAR': 13.709130,
+    },
 }
 
 
