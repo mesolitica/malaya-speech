@@ -27,7 +27,7 @@ class Model:
         self,
         inputs,
         training = True,
-        ksize = 3,
+        ksize = 5,
         n_layers = 12,
         channels_interval = 24,
         logging = True,
@@ -81,6 +81,7 @@ class Model:
                 outchannel = out_channels[i],
                 name = f'down_{i}',
                 logging = logging,
+                training = training,
             )
             tmp.append(o)
             o = o[:, ::2]
@@ -107,7 +108,14 @@ class Model:
         self.logits = o
 
     def residual_X(
-        self, input, ksize, inchannel, outchannel, name = '', logging = False
+        self,
+        input,
+        ksize,
+        inchannel,
+        outchannel,
+        name = '',
+        logging = False,
+        training = True,
     ):
         convtmp_1 = self.customlayers.conv1d(
             input,
@@ -117,8 +125,8 @@ class Model:
             stride_size = 1,
             padding = 'SAME',
         )
-        convtmp_1bn = self.customlayers.batch_norm(
-            convtmp_1, name = '%s_1bn' % (name)
+        convtmp_1bn = BatchNormalization(axis = -1)(
+            convtmp_1, training = training
         )
         convtmp_1act = self.customlayers.elu(convtmp_1bn)
         convtmp_2 = self.customlayers.conv1d(
@@ -129,8 +137,8 @@ class Model:
             stride_size = 1,
             padding = 'SAME',
         )
-        convtmp_2bn = self.customlayers.batch_norm(
-            convtmp_2, name = '%s_2bn' % (name)
+        convtmp_2bn = BatchNormalization(axis = -1)(
+            convtmp_2, training = training
         )
         convtmp_2act = self.customlayers.elu(convtmp_2bn)
         convtmp_3 = self.customlayers.conv1d(
@@ -141,8 +149,8 @@ class Model:
             stride_size = 1,
             padding = 'SAME',
         )
-        convtmp_3bn = self.customlayers.batch_norm(
-            convtmp_3, name = '%s_3bn' % (name)
+        convtmp_3bn = BatchNormalization(axis = -1)(
+            convtmp_3, training = training
         )
         convtmp_3act = self.customlayers.elu(convtmp_3bn)
 
@@ -155,8 +163,8 @@ class Model:
                 stride_size = 1,
                 padding = 'SAME',
             )
-            convtmp_scbn = self.customlayers.batch_norm(
-                convtmp_sc, name = '%s_scbn' % (name)
+            convtmp_scbn = BatchNormalization(axis = -1)(
+                convtmp_sc, training = training
             )
             convtmp_scact = self.customlayers.elu(convtmp_scbn)
             input = convtmp_scact

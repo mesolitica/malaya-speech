@@ -10,7 +10,7 @@ import numpy as np
 import IPython.display as ipd
 import matplotlib.pyplot as plt
 import malaya_speech.augmentation.waveform as augmentation
-import malaya_speech.train.model.unet_enhancement as unet
+import malaya_speech.train.model.resnext_enhancement as unet
 from malaya_speech.train.model import enhancement
 from malaya_speech.utils import tf_featurization
 import malaya_speech.train as train
@@ -309,7 +309,7 @@ def model_fn(features, labels, mode, params):
     y = tf.expand_dims(features['y'], -1)
     partitioned_x = tf_featurization.pad_and_partition(x, partition_size)
     partitioned_y = tf_featurization.pad_and_partition(y, partition_size)
-    model = unet.Model(partitioned_x, channels_interval = 36)
+    model = unet.Model(partitioned_x, channels_interval = 24)
     l2_loss, snr = enhancement.loss.snr(model.logits, partitioned_y)
     sdr = enhancement.loss.sdr(model.logits, partitioned_y)
     mae = tf.losses.absolute_difference
@@ -355,7 +355,7 @@ def model_fn(features, labels, mode, params):
 train_hooks = [tf.train.LoggingTensorHook(['total_loss'], every_n_iter = 1)]
 train_dataset = get_dataset()
 
-save_directory = 'speech-enhancement-unet-36'
+save_directory = 'speech-enhancement-resnext'
 
 train.run_training(
     train_fn = train_dataset,

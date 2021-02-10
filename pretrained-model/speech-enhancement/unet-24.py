@@ -1,7 +1,7 @@
 import os
 import warnings
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 warnings.filterwarnings('ignore')
 
 import tensorflow as tf
@@ -100,7 +100,10 @@ def add_uniform_noise(
         return y_noise
 
 
-def calc(signal, choice, add_uniform = False):
+def calc(signal, seed, add_uniform = False):
+    random.seed(seed)
+    choice = random.randint(0, 9)
+    print('choice', choice)
     if choice == 0:
 
         x = augmentation.sox_augment_high(
@@ -207,14 +210,14 @@ def combine_speakers(files, n = 5):
     return left, y
 
 
-def parallel(f, choice):
+def parallel(f):
     y = random_sampling(read_wav(f)[0], length = length)
     seed = random.randint(0, 100_000_000)
-    x = calc(y, choice)
+    x = calc(y, seed)
     if random.gauss(0.5, 0.14) > 0.6:
         print('add small noise')
         n = combine_speakers(noises, random.randint(1, 20))[0]
-        n = calc(n, choice, True)
+        n = calc(n, seed, True)
         combined, noise = augmentation.add_noise(
             x,
             n,
@@ -249,8 +252,7 @@ def loop(files):
     files = files[0]
     results = []
     for no, f in enumerate(files):
-        no = no % 10
-        results.append(parallel(f, no))
+        results.append(parallel(f))
     return results
 
 
@@ -353,7 +355,7 @@ def model_fn(features, labels, mode, params):
 train_hooks = [tf.train.LoggingTensorHook(['total_loss'], every_n_iter = 1)]
 train_dataset = get_dataset()
 
-save_directory = 'speech-enhancement-unet-24-v2'
+save_directory = 'speech-enhancement-unet-24'
 
 train.run_training(
     train_fn = train_dataset,

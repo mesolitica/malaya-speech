@@ -85,6 +85,7 @@ class Model:
                 kpaths = kpaths,
                 name = f'down_{i}',
                 logging = logging,
+                training = training,
             )
             tmp.append(o)
             o = o[:, ::2]
@@ -120,6 +121,7 @@ class Model:
         kpaths,
         name = '',
         logging = False,
+        training = True,
     ):
         convtmp_1 = self.customlayers.conv1d(
             input,
@@ -129,8 +131,8 @@ class Model:
             stride_size = 1,
             padding = 'SAME',
         )
-        convtmp_1bn = self.customlayers.batch_norm(
-            convtmp_1, name = '%s_1bn' % (name)
+        convtmp_1bn = BatchNormalization(axis = -1)(
+            convtmp_1, training = training
         )
         convtmp_1act = self.customlayers.elu(convtmp_1bn)
         convtmp_2 = self.customlayers.conv1d(
@@ -141,9 +143,10 @@ class Model:
             stride_size = 1,
             padding = 'SAME',
         )
-        convtmp_2bn = self.customlayers.batch_norm(
-            convtmp_2, name = '%s_2bn' % (name)
+        convtmp_2bn = BatchNormalization(axis = -1)(
+            convtmp_2, training = training
         )
+
         convtmp_2act = self.customlayers.elu(convtmp_2bn)
 
         concats_1 = None
@@ -156,6 +159,7 @@ class Model:
                 radix,
                 kpaths,
                 name = '%s_car_k%d' % (name, idx_k),
+                training = training,
             )
             if idx_k == 0:
                 concats_1 = cardinal
@@ -180,8 +184,8 @@ class Model:
                 stride_size = 1,
                 padding = 'SAME',
             )
-            convtmp_scbn = self.customlayers.batch_norm(
-                convtmp_sc, name = '%s_scbn' % (name)
+            convtmp_scbn = BatchNormalization(axis = -1)(
+                convtmp_sc, training = training
             )
             convtmp_scact = self.customlayers.elu(convtmp_scbn)
             input = convtmp_scact
@@ -201,6 +205,7 @@ class Model:
         kpaths,
         name = '',
         logging = False,
+        training = True,
     ):
 
         if logging:
@@ -219,9 +224,7 @@ class Model:
                 stride_size = 1,
                 padding = 'SAME',
             )
-            conv1_bn = self.customlayers.batch_norm(
-                conv1, name = '%s1_bn' % (name)
-            )
+            conv1_bn = BatchNormalization(axis = -1)(conv1, training = training)
             conv1_act = self.customlayers.elu(conv1_bn)
 
             conv2 = self.customlayers.conv1d(
@@ -233,17 +236,20 @@ class Model:
                 stride_size = 1,
                 padding = 'SAME',
             )
-            conv2_bn = self.customlayers.batch_norm(
-                conv2, name = '%s2_bn' % (name)
-            )
+            conv2_bn = BatchNormalization(axis = -1)(conv2, training = training)
             conv2_act = self.customlayers.elu(conv2_bn)
             inputs.append(conv2_act)
 
         return self.split_attention(
-            inputs, outchannel_cvkk, name = '%s_att' % (name)
+            inputs,
+            outchannel_cvkk,
+            name = '%s_att' % (name),
+            training = training,
         )
 
-    def split_attention(self, inputs, inchannel, name = '', verbose = False):
+    def split_attention(
+        self, inputs, inchannel, name = '', verbose = False, training = True
+    ):
 
         if verbose:
             print('split attention')
@@ -265,9 +271,7 @@ class Model:
             stride_size = 1,
             padding = 'SAME',
         )
-        dense1_bn = self.customlayers.batch_norm(
-            dense1, name = '%s_bn' % (name)
-        )
+        dense1_bn = BatchNormalization(axis = -1)(dense1, training = training)
         dense1_act = self.customlayers.elu(dense1_bn)
 
         output_holder = None
