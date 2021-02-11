@@ -35,3 +35,5 @@ Tensorboard, https://tensorboard.dev/experiment/noreU9R0QRmbkWbbmiokvA/
 2. FastVC 64, last update 31st January 2021, [fastvc-64-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastvc-64-output.tar.gz)
 
 Tensorboard, https://tensorboard.dev/experiment/wrrGljsQSOWvPDPk4HvK1A/
+
+3. FastVC 32, last update 10st Feb 2021, [fastvc-32-output-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastvc-32-output-v2.tar.gz)

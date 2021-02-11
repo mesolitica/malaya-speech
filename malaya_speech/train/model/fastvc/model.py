@@ -52,7 +52,7 @@ class Encoder(tf.keras.layers.Layer):
         inputs = tf.cast(position_ids, tf.int32)
         position_embeddings = tf.gather(self.position_embeddings, inputs)
         x = x + tf.cast(position_embeddings, x.dtype)
-        f = self.encoder([x, attention_mask])[0]
+        f = self.encoder([x, attention_mask], training = training)[0]
         return self.encoder_dense(f)
 
     def _sincos_embedding(self):
@@ -95,7 +95,7 @@ class Decoder(tf.keras.layers.Layer):
         inputs = tf.cast(position_ids, tf.int32)
         position_embeddings = tf.gather(self.position_embeddings, inputs)
         x = x + tf.cast(position_embeddings, x.dtype)
-        return self.encoder([x, attention_mask])[0]
+        return self.encoder([x, attention_mask], training = training)[0]
 
     def _sincos_embedding(self):
         position_enc = np.array(
@@ -119,7 +119,7 @@ class Decoder(tf.keras.layers.Layer):
 
 
 class Model(tf.keras.Model):
-    def __init__(self, dim_neck, config, **kwargs):
+    def __init__(self, dim_neck, config, dim_speaker = 0, **kwargs):
         super(Model, self).__init__(name = 'fastvc', **kwargs)
         self.encoder = Encoder(dim_neck, config.encoder_self_attention_params)
         self.decoder = Decoder(config.decoder_self_attention_params)
@@ -130,6 +130,12 @@ class Model(tf.keras.Model):
             config = config, dtype = tf.float32, name = 'postnet'
         )
         self.config = config
+        if dim_speaker > 0:
+            self.dim_speaker = tf.keras.layers.Dense(
+                units = dim_speaker, dtype = tf.float32, name = 'dim_speaker'
+            )
+        else:
+            self.dim_speaker = None
 
     def call_second(self, x, c_org, mel_lengths, training = True):
         max_length = tf.cast(tf.reduce_max(mel_lengths), tf.int32)
@@ -137,9 +143,15 @@ class Model(tf.keras.Model):
             lengths = mel_lengths, maxlen = max_length, dtype = tf.float32
         )
         attention_mask.set_shape((None, None))
+        if self.dim_speaker:
+            c_org = self.dim_speaker(c_org)
         return self.encoder(x, c_org, attention_mask, training = training)
 
     def call(self, x, c_org, c_trg, mel_lengths, training = True, **kwargs):
+
+        if self.dim_speaker:
+            c_org = self.dim_speaker(c_org)
+            c_trg = self.dim_speaker(c_trg)
 
         max_length = tf.cast(tf.reduce_max(mel_lengths), tf.int32)
         attention_mask = tf.sequence_mask(

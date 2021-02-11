@@ -7,9 +7,9 @@ _availability = {
     'fastvc-32': {
         'Size (MB)': 190,
         'Quantized Size (MB)': 54.1,
-        'Total loss': 0.2918,
+        'Total loss': 0.2851,
     },
-    'fastvc-32-v2': {
+    'fastvc-64': {
         'Size (MB)': 194,
         'Quantized Size (MB)': 55.7,
         'Total loss': 0.2764,

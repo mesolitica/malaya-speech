@@ -86,7 +86,7 @@ def get_dataset(batch_size = 12):
     return get
 
 
-total_steps = 500000
+total_steps = 300000
 
 
 def model_fn(features, labels, mode, params):
