@@ -1,5 +1,6 @@
 from . import alconformer
 from . import autovc
+from . import autovc_fast
 from . import conformer
 from . import conv_tasnet
 from . import ctc
