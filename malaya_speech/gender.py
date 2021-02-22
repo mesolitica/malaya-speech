@@ -1,4 +1,3 @@
-from malaya_speech.path import PATH_GENDER, S3_PATH_GENDER
 from malaya_speech.supervised import classification
 from herpetologist import check_type
 
@@ -62,10 +61,8 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     }
 
     return classification.load(
-        path = PATH_GENDER,
-        s3_path = S3_PATH_GENDER,
         model = model,
-        name = 'gender',
+        module = 'gender',
         extra = settings[model],
         label = labels,
         quantized = quantized,

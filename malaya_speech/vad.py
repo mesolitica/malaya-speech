@@ -1,5 +1,4 @@
 from malaya_speech.model.webrtc import WebRTC
-from malaya_speech.path import PATH_VAD, S3_PATH_VAD
 from malaya_speech.supervised import classification
 from herpetologist import check_type
 
@@ -99,10 +98,8 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     }
 
     return classification.load(
-        path = PATH_VAD,
-        s3_path = S3_PATH_VAD,
         model = model,
-        name = 'vad',
+        module = 'vad',
         extra = settings[model],
         label = [False, True],
         quantized = quantized,

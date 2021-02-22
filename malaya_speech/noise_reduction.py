@@ -1,4 +1,3 @@
-from malaya_speech.path import PATH_NOISE_REDUCTION, S3_PATH_NOISE_REDUCTION
 from malaya_speech.supervised import unet
 from malaya_speech.utils.astype import int_to_float
 from herpetologist import check_type
@@ -72,10 +71,8 @@ def deep_model(model: str = 'resnet-unet', quantized: bool = False, **kwargs):
         )
 
     return unet.load_stft(
-        path = PATH_NOISE_REDUCTION,
-        s3_path = S3_PATH_NOISE_REDUCTION,
         model = model,
-        name = 'noise-reduction',
+        module = 'noise-reduction',
         instruments = ['voice', 'noise'],
         quantized = quantized,
         **kwargs

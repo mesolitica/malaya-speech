@@ -1,4 +1,3 @@
-from malaya_speech.path import PATH_EMOTION, S3_PATH_EMOTION
 from malaya_speech.supervised import classification
 from herpetologist import check_type
 
@@ -72,10 +71,8 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     }
 
     return classification.load(
-        path = PATH_EMOTION,
-        s3_path = S3_PATH_EMOTION,
         model = model,
-        name = 'emotion',
+        module = 'emotion',
         extra = settings[model],
         label = labels,
         quantized = quantized,

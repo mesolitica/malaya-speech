@@ -16,16 +16,16 @@ from malaya_speech.config import (
 )
 
 
-def load(path, s3_path, model, name, extra, label, quantized = False, **kwargs):
+def load(model, module, extra, label, quantized = False, **kwargs):
 
-    check_file(path[model], s3_path[model], quantized = quantized, **kwargs)
-
-    if quantized:
-        model_path = 'quantized'
-    else:
-        model_path = 'model'
-
-    g = load_graph(path[model][model_path], **kwargs)
+    path = check_file(
+        file = model,
+        module = module,
+        keys = {'model': 'model.pb'},
+        quantized = quantized,
+        **kwargs,
+    )
+    g = load_graph(path['model'], **kwargs)
 
     vectorizer_mapping = {
         'vggvox-v1': featurization.vggvox_v1,
@@ -36,7 +36,7 @@ def load(path, s3_path, model, name, extra, label, quantized = False, **kwargs):
         ),
     }
 
-    if name == 'speaker-vector':
+    if module == 'speaker-vector':
         if model == 'speakernet':
             model_class = Speakernet
         else:
@@ -65,5 +65,5 @@ def load(path, s3_path, model, name, extra, label, quantized = False, **kwargs):
         model = model,
         extra = extra,
         label = label,
-        name = name,
+        name = module,
     )

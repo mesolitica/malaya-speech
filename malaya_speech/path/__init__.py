@@ -1,28 +1,5 @@
 from malaya_speech import home
 
-PATH_AGE_DETECTION = {
-    'vggvox-v2': {
-        'model': home + '/age-detection/vggvox-v2/model.pb',
-        'quantized': home + '/age-detection/vggvox-v2/quantized/model.pb',
-        'version': 'v1',
-    },
-    'deep-speaker': {
-        'model': home + '/age-detection/deep-speaker/model.pb',
-        'quantized': home + '/age-detection/deep-speaker/quantized/model.pb',
-        'version': 'v1',
-    },
-}
-S3_PATH_AGE_DETECTION = {
-    'vggvox-v2': {
-        'model': 'v1/age-detection/finetuned-vggvox-v2.pb',
-        'quantized': 'v1/age-detection/finetuned-vggvox-v2.pb.quantized',
-    },
-    'deep-speaker': {
-        'model': 'v1/age-detection/finetuned-deep-speaker.pb',
-        'quantized': 'v1/age-detection/finetuned-deep-speaker.pb.quantized',
-    },
-}
-
 PATH_BACKGROUND_ENHANCE = {
     'unet-enhance-24': {
         'model': home + '/speech-enhancement/enhance-24/model.pb',
@@ -44,62 +21,6 @@ S3_PATH_BACKGROUND_ENHANCE = {
     'unet-enhance-36': {
         'model': 'v1/speech-enhancement/speech-enhancement-36.pb',
         'quantized': 'v1/speech-enhancement/speech-enhancement-36.pb.quantized',
-    },
-}
-
-PATH_EMOTION = {
-    'vggvox-v1': {
-        'model': home + '/emotion/vggvox-v1/model.pb',
-        'version': 'v1',
-    },
-    'vggvox-v2': {
-        'model': home + '/emotion/vggvox-v2/model.pb',
-        'quantized': home + '/emotion/vggvox-v2/quantized/model.pb',
-        'version': 'v1',
-    },
-    'deep-speaker': {
-        'model': home + '/emotion/deep-speaker/model.pb',
-        'quantized': home + '/emotion/deep-speaker/quantized/model.pb',
-        'version': 'v1',
-    },
-}
-S3_PATH_EMOTION = {
-    'vggvox-v1': {'model': 'v1/emotion/finetuned-vggvox-v1.pb'},
-    'vggvox-v2': {
-        'model': 'v1/emotion/finetuned-vggvox-v2.pb',
-        'quantized': 'v1/emotion/finetuned-vggvox-v2.pb.quantized',
-    },
-    'deep-speaker': {
-        'model': 'v1/emotion/finetuned-deep-speaker.pb',
-        'quantized': 'v1/emotion/finetuned-deep-speaker.pb.quantized',
-    },
-}
-
-PATH_GENDER = {
-    'vggvox-v1': {
-        'model': home + '/gender/vggvox-v1/model.pb',
-        'version': 'v1',
-    },
-    'vggvox-v2': {
-        'model': home + '/gender/vggvox-v2/model.pb',
-        'quantized': home + '/gender/vggvox-v2/quantized/model.pb',
-        'version': 'v1',
-    },
-    'deep-speaker': {
-        'model': home + '/gender/deep-speaker/model.pb',
-        'quantized': home + '/gender/deep-speaker/quantized/model.pb',
-        'version': 'v1',
-    },
-}
-S3_PATH_GENDER = {
-    'vggvox-v1': {'model': 'v1/gender/finetuned-vggvox-v1.pb'},
-    'vggvox-v2': {
-        'model': 'v1/gender/finetuned-vggvox-v2.pb',
-        'quantized': 'v1/gender/finetuned-vggvox-v2.pb.quantized',
-    },
-    'deep-speaker': {
-        'model': 'v1/gender/finetuned-deep-speaker.pb',
-        'quantized': 'v1/gender/finetuned-deep-speaker.pb.quantized',
     },
 }
 
@@ -155,104 +76,6 @@ S3_PATH_NOISE_REDUCTION = {
         'quantized': 'v1/noise-reduction/resnet-unet.pb.quantized',
     },
 }
-
-PATH_SPEAKER_CHANGE = {
-    'vggvox-v2': {
-        'model': home + '/speaker-change/vggvox-v2/model.pb',
-        'quantized': home + '/speaker-change/vggvox-v2/quantized/model.pb',
-        'version': 'v1',
-    },
-    'speakernet': {
-        'model': home + '/speaker-change/speakernet/model.pb',
-        'quantized': home + '/speaker-change/speakernet/quantized/model.pb',
-        'version': 'v1',
-    },
-}
-S3_PATH_SPEAKER_CHANGE = {
-    'vggvox-v2': {
-        'model': 'v1/speaker-change/finetuned-vggvox-v2.pb',
-        'quantized': 'v1/speaker-change/finetuned-vggvox-v2.pb.quantized',
-    },
-    'speakernet': {
-        'model': 'v1/speaker-change/finetuned-speakernet.pb',
-        'quantized': 'v1/speaker-change/finetuned-vggvox-v2.pb.quantized',
-    },
-}
-
-PATH_SPEAKER_VECTOR = {
-    'vggvox-v1': {
-        'model': home + '/speaker-vector/vggvox-v1/model.pb',
-        'quantized': home + '/speaker-vector/vggvox-v1/quantized/model.pb',
-        'version': 'v1',
-    },
-    'vggvox-v2': {
-        'model': home + '/speaker-vector/vggvox-v2/model.pb',
-        'quantized': home + '/speaker-vector/vggvox-v2/quantized/model.pb',
-        'version': 'v1',
-    },
-    'inception-v4': {
-        'model': home + '/speaker-vector/inception-v4/model.pb',
-        'quantized': home + '/speaker-vector/inception-v4/quantized/model.pb',
-        'version': 'v1',
-    },
-    'deep-speaker': {
-        'model': home + '/speaker-vector/deep-speaker/model.pb',
-        'quantized': home + '/speaker-vector/deep-speaker/quantized/model.pb',
-        'version': 'v1',
-    },
-    'speakernet': {
-        'model': home + '/speaker-vector/speakernet/model.pb',
-        'quantized': home + '/speaker-vector/speakernet/quantized/model.pb',
-        'version': 'v1',
-    },
-}
-
-S3_PATH_SPEAKER_VECTOR = {
-    'vggvox-v1': {
-        'model': 'v1/speaker-vector/pretrained-vggvox-v1.pb',
-        'quantized': 'v1/speaker-vector/pretrained-vggvox-v1.pb.quantized',
-    },
-    'vggvox-v2': {
-        'model': 'v1/speaker-vector/vggvox-v2.pb',
-        'quantized': 'v1/speaker-vector/vggvox-v2.pb.quantized',
-    },
-    'inception-v4': {
-        'model': 'v1/speaker-vector/pretrained-inception-v4.pb',
-        'quantized': 'v1/speaker-vector/pretrained-inception-v4.pb.quantized',
-    },
-    'deep-speaker': {
-        'model': 'v1/speaker-vector/pretrained-deep-speaker.pb',
-        'quantized': 'v1/speaker-vector/pretrained-deep-speaker.pb.quantized',
-    },
-    'speakernet': {
-        'model': 'v1/speaker-vector/pretrained-speakernet.pb',
-        'quantized': 'v1/speaker-vector/pretrained-speakernet.pb.quantized',
-    },
-}
-
-PATH_SPEAKER_OVERLAP = {
-    'vggvox-v2': {
-        'model': home + '/speaker-overlap/vggvox-v2/model.pb',
-        'quantized': home + '/speaker-overlap/vggvox-v2/quantized/model.pb',
-        'version': 'v1',
-    },
-    'speakernet': {
-        'model': home + '/speaker-overlap/speakernet/model.pb',
-        'quantized': home + '/speaker-overlap/speakernet/quantized/model.pb',
-        'version': 'v1',
-    },
-}
-S3_PATH_SPEAKER_OVERLAP = {
-    'vggvox-v2': {
-        'model': 'v1/speaker-overlap/finetuned-vggvox-v2.pb',
-        'quantized': 'v1/speaker-overlap/finetuned-vggvox-v2.pb.quantized',
-    },
-    'speakernet': {
-        'model': 'v1/speaker-overlap/finetuned-speakernet.pb',
-        'quantized': 'v1/speaker-overlap/finetuned-vggvox-v2.pb.quantized',
-    },
-}
-
 
 PATH_SPEECH_ENHANCEMENT = {
     'masking': {
@@ -592,43 +415,6 @@ S3_PATH_TTS_FASTSPEECH2 = {
         'model': 'v1/tts/fastspeech2-husein-v2.pb',
         'quantized': 'v1/tts/fastspeech2-husein-v2.pb.quantized',
         'stats': 'v1/vocoder-stats/husein.npy',
-    },
-}
-
-PATH_VAD = {
-    'vggvox-v1': {
-        'model': home + '/vad/vggvox-v1/model.pb',
-        'quantized': home + '/vad/vggvox-v1/quantized/model.pb',
-        'version': 'v1',
-    },
-    'vggvox-v2': {
-        'model': home + '/vad/vggvox-v2/model.pb',
-        'quantized': home + '/vad/vggvox-v2/quantized/model.pb',
-        'version': 'v1',
-    },
-    'inception-v4': {
-        'model': home + '/vad/inception-v4/model.pb',
-        'version': 'v1',
-    },
-    'speakernet': {
-        'model': home + '/vad/speakernet/model.pb',
-        'quantized': home + '/vad/speakernet/quantized/model.pb',
-        'version': 'v1',
-    },
-}
-S3_PATH_VAD = {
-    'vggvox-v1': {
-        'model': 'v1/vad/finetuned-vggvox-v1.pb',
-        'quantized': 'v1/vad/finetuned-vggvox-v1.pb.quantized',
-    },
-    'vggvox-v2': {
-        'model': 'v1/vad/finetuned-vggvox-v2.pb',
-        'quantized': 'v1/vad/finetuned-vggvox-v2.pb.quantized',
-    },
-    'inception-v4': {'model': 'v1/vad/finetuned-inception-v4.pb'},
-    'speakernet': {
-        'model': 'v1/vad/finetuned-speakernet.pb',
-        'quantized': 'v1/vad/finetuned-speakernet.pb.quantized',
     },
 }
 

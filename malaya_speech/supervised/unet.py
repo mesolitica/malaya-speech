@@ -7,14 +7,17 @@ from malaya_speech.utils import (
 from malaya_speech.model.tf import UNET, UNETSTFT, UNET1D
 
 
-def load(path, s3_path, model, name, quantized = False, **kwargs):
-    check_file(path[model], s3_path[model], quantized = quantized, **kwargs)
-    if quantized:
-        model_path = 'quantized'
-    else:
-        model_path = 'model'
+def load(model, module, quantized = False, **kwargs):
 
-    g = load_graph(path[model][model_path], **kwargs)
+    path = check_file(
+        file = model,
+        module = module,
+        keys = {'model': 'model.pb'},
+        quantized = quantized,
+        **kwargs,
+    )
+    g = load_graph(path['model'], **kwargs)
+
     inputs = ['Placeholder']
     outputs = ['logits']
     eager_g, input_nodes, output_nodes = nodes_session(g, inputs, outputs)
@@ -25,20 +28,19 @@ def load(path, s3_path, model, name, quantized = False, **kwargs):
         sess = generate_session(graph = g, **kwargs),
         eager_g = eager_g,
         model = model,
-        name = name,
+        name = module,
     )
 
 
-def load_stft(
-    path, s3_path, model, name, instruments, quantized = False, **kwargs
-):
-    check_file(path[model], s3_path[model], quantized = quantized, **kwargs)
-    if quantized:
-        model_path = 'quantized'
-    else:
-        model_path = 'model'
-
-    g = load_graph(path[model][model_path], **kwargs)
+def load_stft(model, module, instruments, quantized = False, **kwargs):
+    path = check_file(
+        file = model,
+        module = module,
+        keys = {'model': 'model.pb'},
+        quantized = quantized,
+        **kwargs,
+    )
+    g = load_graph(path['model'], **kwargs)
     inputs = ['Placeholder']
     outputs = [f'logits_{i}' for i in range(len(instruments))]
     eager_g, input_nodes, output_nodes = nodes_session(g, inputs, outputs)
@@ -50,18 +52,19 @@ def load_stft(
         sess = generate_session(graph = g, **kwargs),
         eager_g = eager_g,
         model = model,
-        name = name,
+        name = module,
     )
 
 
-def load_1d(path, s3_path, model, name, quantized = False, **kwargs):
-    check_file(path[model], s3_path[model], quantized = quantized, **kwargs)
-    if quantized:
-        model_path = 'quantized'
-    else:
-        model_path = 'model'
-
-    g = load_graph(path[model][model_path], **kwargs)
+def load_1d(model, module, quantized = False, **kwargs):
+    path = check_file(
+        file = model,
+        module = module,
+        keys = {'model': 'model.pb'},
+        quantized = quantized,
+        **kwargs,
+    )
+    g = load_graph(path['model'], **kwargs)
     inputs = ['Placeholder']
     outputs = ['logits']
     eager_g, input_nodes, output_nodes = nodes_session(g, inputs, outputs)
@@ -72,5 +75,5 @@ def load_1d(path, s3_path, model, name, quantized = False, **kwargs):
         sess = generate_session(graph = g, **kwargs),
         eager_g = eager_g,
         model = model,
-        name = name,
+        name = module,
     )

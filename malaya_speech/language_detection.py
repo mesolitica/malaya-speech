@@ -1,7 +1,3 @@
-from malaya_speech.path import (
-    PATH_LANGUAGE_DETECTION,
-    S3_PATH_LANGUAGE_DETECTION,
-)
 from malaya_speech.supervised import classification
 from herpetologist import check_type
 
@@ -74,10 +70,8 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     }
 
     return classification.load(
-        path = PATH_LANGUAGE_DETECTION,
-        s3_path = S3_PATH_LANGUAGE_DETECTION,
         model = model,
-        name = 'language-detection',
+        module = 'language-detection',
         extra = settings[model],
         label = labels,
         quantized = quantized,

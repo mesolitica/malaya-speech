@@ -1,4 +1,3 @@
-from malaya_speech.path import PATH_SPEAKER_CHANGE, S3_PATH_SPEAKER_CHANGE
 from malaya_speech.supervised import classification
 from malaya_speech.model.frame import Frame
 from herpetologist import check_type
@@ -61,10 +60,8 @@ def deep_model(model: str = 'speakernet', quantized: bool = False, **kwargs):
     }
 
     return classification.load(
-        path = PATH_SPEAKER_CHANGE,
-        s3_path = S3_PATH_SPEAKER_CHANGE,
         model = model,
-        name = 'speaker-change',
+        module = 'speaker-change',
         extra = settings[model],
         label = [False, True],
         quantized = quantized,

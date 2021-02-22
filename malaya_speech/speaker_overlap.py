@@ -1,4 +1,3 @@
-from malaya_speech.path import PATH_SPEAKER_OVERLAP, S3_PATH_SPEAKER_OVERLAP
 from malaya_speech.supervised import classification
 from herpetologist import check_type
 
@@ -57,10 +56,8 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     }
 
     return classification.load(
-        path = PATH_SPEAKER_OVERLAP,
-        s3_path = S3_PATH_SPEAKER_OVERLAP,
         model = model,
-        name = 'speaker-overlap',
+        module = 'speaker-overlap',
         extra = settings[model],
         label = [False, True],
         quantized = quantized,

@@ -1,4 +1,3 @@
-from malaya_speech.path import PATH_SPEAKER_VECTOR, S3_PATH_SPEAKER_VECTOR
 from malaya_speech.supervised import classification
 from herpetologist import check_type
 
@@ -73,10 +72,8 @@ def deep_model(model: str = 'speakernet', quantized: bool = False, **kwargs):
         )
 
     return classification.load(
-        path = PATH_SPEAKER_VECTOR,
-        s3_path = S3_PATH_SPEAKER_VECTOR,
         model = model,
-        name = 'speaker-vector',
+        module = 'speaker-vector',
         extra = {},
         label = {},
         quantized = quantized,
