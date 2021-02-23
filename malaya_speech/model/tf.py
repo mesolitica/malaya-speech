@@ -719,7 +719,7 @@ class Transducer(Abstract):
         return decoder
 
     def predict(
-        self, inputs, decoder: str = 'beam', beam_size: int = 5, **kwargs
+        self, inputs, decoder: str = 'greedy', beam_size: int = 5, **kwargs
     ):
         """
         Transcribe inputs, will return list of strings.
@@ -748,35 +748,43 @@ class Transducer(Abstract):
         ]
 
         padded, lens = sequence_1d(inputs, return_len = True)
+        results = []
 
         if decoder == 'greedy':
-            beam_size = 1
-
-        encoded_, padded_lens_ = self._sess.run(
-            [self._encoded, self._padded_lens],
-            feed_dict = {
-                self._X_placeholder: padded,
-                self._X_len_placeholder: lens,
-            },
-        )
-        padded_lens_ = padded_lens_ // self._time_reduction_factor
-        s = self._sess.run(self._initial_states)
-        results = []
-        for i in range(len(encoded_)):
-            r = transducer_beam(
-                enc = encoded_[i],
-                total = padded_lens_[i],
-                initial_states = s,
-                encoded_placeholder = self._encoded_placeholder,
-                predicted_placeholder = self._predicted_placeholder,
-                states_placeholder = self._states_placeholder,
-                ytu = self._ytu,
-                new_states = self._new_states,
-                sess = self._sess,
-                beam_width = beam_size,
-                **kwargs,
+            r = test_sess.run(
+                self._greedy,
+                feed_dict = {
+                    self._X_placeholder: padded,
+                    self._X_len_placeholder: lens,
+                },
             )
-            results.append(subword_decode(self._vocab, r))
+            for row in r:
+                results.append(subword_decode(self._vocab, row[row > 0]))
+
+        else:
+            encoded_, padded_lens_, s = self._sess.run(
+                [self._encoded, self._padded_lens, self._initial_states],
+                feed_dict = {
+                    self._X_placeholder: padded,
+                    self._X_len_placeholder: lens,
+                },
+            )
+            padded_lens_ = padded_lens_ // self._time_reduction_factor
+            for i in range(len(encoded_)):
+                r = transducer_beam(
+                    enc = encoded_[i],
+                    total = padded_lens_[i],
+                    initial_states = s,
+                    encoded_placeholder = self._encoded_placeholder,
+                    predicted_placeholder = self._predicted_placeholder,
+                    states_placeholder = self._states_placeholder,
+                    ytu = self._ytu,
+                    new_states = self._new_states,
+                    sess = self._sess,
+                    beam_width = beam_size,
+                    **kwargs,
+                )
+                results.append(subword_decode(self._vocab, r))
         return results
 
     def __call__(self, input, decoder: str = 'greedy', **kwargs):

@@ -326,7 +326,6 @@ class Model(tf.keras.Model):
         super(Model, self).__init__(name = name, **kwargs)
 
         subsampling_name = subsampling.pop('type', 'conv2d')
-        print(subsampling_name)
         if subsampling_name == 'vgg':
             subsampling_class = VggSubsampling
         elif subsampling_name == 'conv2d':

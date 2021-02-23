@@ -108,10 +108,8 @@ def deep_masking(model: str = 'resnet-unet', quantized: bool = False, **kwargs):
         )
 
     return unet.load_stft(
-        path = PATH_SPEECH_ENHANCEMENT['masking'],
-        s3_path = S3_PATH_SPEECH_ENHANCEMENT['masking'],
         model = model,
-        name = 'speech-enhancement',
+        module = 'speech-enhancement-mask',
         instruments = ['voice', 'noise'],
         quantized = quantized,
         **kwargs
@@ -132,6 +130,7 @@ def deep_enhance(
 
         * ``'unet-enhance-24'`` - pretrained UNET Speech Enhancement 24 filter size.
         * ``'unet-enhance-36'`` - pretrained UNET Speech Enhancement 36 filter size.
+        * ``'resnext-enhance-24'`` - pretrained ResNext Speech Enhancement 24 filter size.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 
         Quantized model not necessary faster, totally depends on the machine.
@@ -148,10 +147,8 @@ def deep_enhance(
         )
 
     return unet.load_1d(
-        path = PATH_SPEECH_ENHANCEMENT['enhance'],
-        s3_path = S3_PATH_SPEECH_ENHANCEMENT['enhance'],
         model = model,
-        name = 'speech-enhancement',
+        module = 'speech-enhancement',
         quantized = quantized,
         **kwargs
     )

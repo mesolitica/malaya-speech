@@ -14,11 +14,21 @@
 """ https://arxiv.org/pdf/1811.06621.pdf """
 
 import tensorflow as tf
-from .layer import Embedding, get_rnn, get_shape_invariants
+from .layer import (
+    Embedding,
+    get_rnn,
+    get_shape_invariants,
+    pad_prediction_tfarray,
+    count_non_blank,
+)
+from ..utils import shape_list
 import collections
 
 Hypothesis = collections.namedtuple(
     'Hypothesis', ('index', 'prediction', 'states')
+)
+BeamHypothesis = collections.namedtuple(
+    'BeamHypothesis', ('score', 'indices', 'prediction', 'states')
 )
 BLANK = 0
 
@@ -292,103 +302,410 @@ class Model(tf.keras.Model):
         conf.update(self.joint_net.get_config())
         return conf
 
-    def greedy_decoder(self, features):
+    def greedy_decoder(
+        self,
+        features,
+        encoded_length,
+        parallel_iterations = 10,
+        swap_memory = False,
+        training = False,
+    ):
+        encoded = self.encoder(features, training = training)
+        encoded_length = (
+            encoded_length
+            // self.encoder.conv_subsampling.time_reduction_factor
+        )
         total = tf.shape(features)[0]
         batch = tf.constant(0, dtype = tf.int32)
         decoded = tf.zeros(shape = (0, tf.shape(features)[1]), dtype = tf.int32)
 
-        def condition(batch, total, features, decoded):
+        def condition(batch, decoded):
             return tf.less(batch, total)
 
-        def body(batch, total, features, decoded):
-            yseq = self.perform_greedy(
-                features[batch],
+        def body(batch, decoded):
+            hypothesis = self._perform_greedy(
+                encoded = encoded[batch],
+                encoded_length = encoded_length[batch],
                 predicted = tf.constant(BLANK, dtype = tf.int32),
                 states = self.predict_net.get_initial_state(),
-                swap_memory = True,
+                parallel_iterations = parallel_iterations,
+                swap_memory = swap_memory,
             )
-            yseq = tf.expand_dims(yseq.prediction, axis = 0)
+            yseq = tf.expand_dims(hypothesis.prediction, axis = 0)
             padding = [[0, 0], [0, tf.shape(features)[1] - tf.shape(yseq)[1]]]
             yseq = tf.pad(yseq, padding, 'CONSTANT')
             decoded = tf.concat([decoded, yseq], axis = 0)
-            return batch + 1, total, features, decoded
+            return batch + 1, decoded
 
-        batch, total, features, decoded = tf.while_loop(
+        batch, decoded = tf.while_loop(
             condition,
             body,
-            loop_vars = (batch, total, features, decoded),
+            loop_vars = (batch, decoded),
+            parallel_iterations = parallel_iterations,
             swap_memory = True,
             shape_invariants = (
                 batch.get_shape(),
-                total.get_shape(),
-                get_shape_invariants(features),
                 tf.TensorShape([None, None]),
             ),
+            back_prop = False,
         )
 
         return decoded
 
-    def perform_greedy(self, features, predicted, states, swap_memory = False):
-        encoded = self.encoder_inference(features)
-        prediction = tf.TensorArray(
-            dtype = tf.int32,
-            size = (tf.shape(encoded)[0] + 1),
-            dynamic_size = False,
-            element_shape = tf.TensorShape([]),
-            clear_after_read = False,
-        )
+    def _perform_greedy(
+        self,
+        encoded,
+        encoded_length,
+        predicted,
+        states,
+        parallel_iterations = 10,
+        swap_memory = False,
+    ):
         time = tf.constant(0, dtype = tf.int32)
-        total = tf.shape(encoded)[0]
+        total = encoded_length
 
         hypothesis = Hypothesis(
-            index = tf.constant(0, dtype = tf.int32),
-            prediction = prediction.write(0, predicted),
+            index = predicted,
+            prediction = tf.TensorArray(
+                dtype = tf.int32,
+                size = total,
+                dynamic_size = False,
+                clear_after_read = False,
+                element_shape = tf.TensorShape([]),
+            ),
             states = states,
         )
 
-        def condition(time, total, encoded, hypothesis):
-            return tf.less(time, total)
+        def condition(_time, _hypothesis):
+            return tf.less(_time, total)
 
-        def body(time, total, encoded, hypothesis):
-            ytu, new_states = self.decoder_inference(
+        def body(_time, _hypothesis):
+            ytu, _states = self.decoder_inference(
                 encoded = tf.gather_nd(
-                    encoded, tf.expand_dims(time, axis = -1)
+                    encoded, tf.expand_dims(_time, axis = -1)
                 ),
-                predicted = hypothesis.prediction.read(hypothesis.index),
-                states = hypothesis.states,
+                predicted = _hypothesis.index,
+                states = _hypothesis.states,
             )
-            char = tf.argmax(ytu, axis = -1, output_type = tf.int32)
-            index, char, new_states = tf.cond(
-                tf.equal(char, BLANK),
-                true_fn = lambda: (
-                    hypothesis.index + 1,
-                    BLANK,
-                    hypothesis.states,
-                ),
-                false_fn = lambda: (hypothesis.index + 1, char, new_states),
-            )
-            hypothesis = Hypothesis(
-                index = index,
-                prediction = hypothesis.prediction.write(index, char),
-                states = new_states,
-            )
-            return time + 1, total, encoded, hypothesis
+            _predict = tf.argmax(ytu, axis = -1, output_type = tf.int32)
+            _equal = tf.equal(_predict, BLANK)
+            _index = tf.where(_equal, _hypothesis.index, _predict)
+            _states = tf.where(_equal, _hypothesis.states, _states)
 
-        time, total, encoded, hypothesis = tf.while_loop(
+            _prediction = _hypothesis.prediction.write(_time, _predict)
+            _hypothesis = Hypothesis(
+                index = _index, prediction = _prediction, states = _states
+            )
+
+            return _time + 1, _hypothesis
+
+        time, hypothesis = tf.while_loop(
             condition,
             body,
-            loop_vars = (time, total, encoded, hypothesis),
+            loop_vars = (time, hypothesis),
+            parallel_iterations = parallel_iterations,
             swap_memory = swap_memory,
+            back_prop = False,
         )
-        hypothesis = Hypothesis(
+        return Hypothesis(
             index = hypothesis.index,
-            prediction = tf.gather_nd(
-                params = hypothesis.prediction.stack(),
-                indices = tf.expand_dims(
-                    tf.range(hypothesis.index + 1), axis = -1
-                ),
-            ),
+            prediction = hypothesis.prediction.stack(),
             states = hypothesis.states,
         )
 
-        return hypothesis
+    def beam_decoder(
+        self,
+        features,
+        encoded_length,
+        beam_width = 5,
+        norm_score = True,
+        parallel_iterations = 10,
+        swap_memory = False,
+        training = False,
+    ):
+        encoded = self.encoder(features, training = training)
+        encoded_length = (
+            encoded_length
+            // self.encoder.conv_subsampling.time_reduction_factor
+        )
+        total = tf.shape(features)[0]
+        batch = tf.constant(0, dtype = tf.int32)
+        decoded = tf.zeros(shape = (0, tf.shape(features)[1]), dtype = tf.int32)
+
+        def condition(batch, decoded):
+            return tf.less(batch, total)
+
+        def body(batch, decoded):
+            hypothesis = self._perform_beam(
+                encoded = encoded[batch],
+                encoded_length = encoded_length[batch],
+                beam_width = beam_width,
+                norm_score = norm_score,
+                parallel_iterations = parallel_iterations,
+                swap_memory = swap_memory,
+            )
+            yseq = tf.expand_dims(hypothesis.prediction, axis = 0)
+            padding = [[0, 0], [0, tf.shape(features)[1] - tf.shape(yseq)[1]]]
+            yseq = tf.pad(yseq, padding, 'CONSTANT')
+            decoded = tf.concat([decoded, yseq], axis = 0)
+            return batch + 1, decoded
+
+        batch, decoded = tf.while_loop(
+            condition,
+            body,
+            loop_vars = (batch, decoded),
+            parallel_iterations = parallel_iterations,
+            swap_memory = True,
+            shape_invariants = (
+                batch.get_shape(),
+                tf.TensorShape([None, None]),
+            ),
+            back_prop = False,
+        )
+
+        return decoded
+
+    def _perform_beam(
+        self,
+        encoded,
+        encoded_length,
+        beam_width = 5,
+        norm_score = True,
+        parallel_iterations = 10,
+        swap_memory = True,
+    ):
+        total = encoded_length
+
+        def initialize_beam(dynamic = False):
+            return BeamHypothesis(
+                score = tf.TensorArray(
+                    dtype = tf.float32,
+                    size = beam_width if not dynamic else 0,
+                    dynamic_size = dynamic,
+                    element_shape = tf.TensorShape([]),
+                    clear_after_read = False,
+                ),
+                indices = tf.TensorArray(
+                    dtype = tf.int32,
+                    size = beam_width if not dynamic else 0,
+                    dynamic_size = dynamic,
+                    element_shape = tf.TensorShape([]),
+                    clear_after_read = False,
+                ),
+                prediction = tf.TensorArray(
+                    dtype = tf.int32,
+                    size = beam_width if not dynamic else 0,
+                    dynamic_size = dynamic,
+                    element_shape = None,
+                    clear_after_read = False,
+                ),
+                states = tf.TensorArray(
+                    dtype = tf.float32,
+                    size = beam_width if not dynamic else 0,
+                    dynamic_size = dynamic,
+                    element_shape = tf.TensorShape(
+                        shape_list(self.predict_net.get_initial_state())
+                    ),
+                    clear_after_read = False,
+                ),
+            )
+
+        B = initialize_beam()
+        B = BeamHypothesis(
+            score = B.score.write(0, 0.0),
+            indices = B.indices.write(0, BLANK),
+            prediction = B.prediction.write(
+                0, tf.ones([total], dtype = tf.int32) * BLANK
+            ),
+            states = B.states.write(0, self.predict_net.get_initial_state()),
+        )
+
+        def condition(time, total, B):
+            return tf.less(time, total)
+
+        def body(time, total, B):
+            A = initialize_beam(dynamic = True)
+            A = BeamHypothesis(
+                score = A.score.unstack(B.score.stack()),
+                indices = A.indices.unstack(B.indices.stack()),
+                prediction = A.prediction.unstack(
+                    pad_prediction_tfarray(B.prediction, blank = BLANK).stack()
+                ),
+                states = A.states.unstack(B.states.stack()),
+            )
+            A_i = tf.constant(0, tf.int32)
+            B = initialize_beam()
+
+            encoded_t = tf.gather_nd(encoded, tf.expand_dims(time, axis = -1))
+
+            def beam_condition(beam, beam_width, A, A_i, B):
+                return tf.less(beam, beam_width)
+
+            def beam_body(beam, beam_width, A, A_i, B):
+                # get y_hat
+                y_hat_score, y_hat_score_index = tf.math.top_k(
+                    A.score.stack(), k = 1, sorted = True
+                )
+                y_hat_score = y_hat_score[0]
+                y_hat_index = tf.gather_nd(A.indices.stack(), y_hat_score_index)
+                y_hat_prediction = tf.gather_nd(
+                    pad_prediction_tfarray(A.prediction, blank = BLANK).stack(),
+                    y_hat_score_index,
+                )
+                y_hat_states = tf.gather_nd(A.states.stack(), y_hat_score_index)
+
+                # remove y_hat from A
+                remain_indices = tf.range(
+                    0, tf.shape(A.score.stack())[0], dtype = tf.int32
+                )
+                remain_indices = tf.gather_nd(
+                    remain_indices,
+                    tf.where(
+                        tf.not_equal(remain_indices, y_hat_score_index[0])
+                    ),
+                )
+                remain_indices = tf.expand_dims(remain_indices, axis = -1)
+                A = BeamHypothesis(
+                    score = A.score.unstack(
+                        tf.gather_nd(A.score.stack(), remain_indices)
+                    ),
+                    indices = A.indices.unstack(
+                        tf.gather_nd(A.indices.stack(), remain_indices)
+                    ),
+                    prediction = A.prediction.unstack(
+                        tf.gather_nd(
+                            pad_prediction_tfarray(
+                                A.prediction, blank = BLANK
+                            ).stack(),
+                            remain_indices,
+                        )
+                    ),
+                    states = A.states.unstack(
+                        tf.gather_nd(A.states.stack(), remain_indices)
+                    ),
+                )
+                A_i = tf.cond(
+                    tf.equal(A_i, 0),
+                    true_fn = lambda: A_i,
+                    false_fn = lambda: A_i - 1,
+                )
+
+                ytu, new_states = self.decoder_inference(
+                    encoded = encoded_t,
+                    predicted = y_hat_index,
+                    states = y_hat_states,
+                )
+
+                def predict_condition(pred, A, A_i, B):
+                    return tf.less(pred, self.vocabulary_size)
+
+                def predict_body(pred, A, A_i, B):
+                    new_score = y_hat_score + tf.gather_nd(
+                        ytu, tf.expand_dims(pred, axis = -1)
+                    )
+
+                    def true_fn():
+                        return (
+                            B.score.write(beam, new_score),
+                            B.indices.write(beam, y_hat_index),
+                            B.prediction.write(beam, y_hat_prediction),
+                            B.states.write(beam, y_hat_states),
+                            A.score,
+                            A.indices,
+                            A.prediction,
+                            A.states,
+                            A_i,
+                        )
+
+                    def false_fn():
+                        scatter_index = count_non_blank(
+                            y_hat_prediction, blank = BLANK
+                        )
+                        updated_prediction = tf.tensor_scatter_nd_update(
+                            y_hat_prediction,
+                            indices = tf.reshape(scatter_index, [1, 1]),
+                            updates = tf.expand_dims(pred, axis = -1),
+                        )
+                        return (
+                            B.score,
+                            B.indices,
+                            B.prediction,
+                            B.states,
+                            A.score.write(A_i, new_score),
+                            A.indices.write(A_i, pred),
+                            A.prediction.write(A_i, updated_prediction),
+                            A.states.write(A_i, new_states),
+                            A_i + 1,
+                        )
+
+                    b_score, b_indices, b_prediction, b_states, a_score, a_indices, a_prediction, a_states, A_i = tf.cond(
+                        tf.equal(pred, BLANK),
+                        true_fn = true_fn,
+                        false_fn = false_fn,
+                    )
+
+                    B = BeamHypothesis(
+                        score = b_score,
+                        indices = b_indices,
+                        prediction = b_prediction,
+                        states = b_states,
+                    )
+                    A = BeamHypothesis(
+                        score = a_score,
+                        indices = a_indices,
+                        prediction = a_prediction,
+                        states = a_states,
+                    )
+
+                    return pred + 1, A, A_i, B
+
+                _, A, A_i, B = tf.while_loop(
+                    predict_condition,
+                    predict_body,
+                    loop_vars = [0, A, A_i, B],
+                    parallel_iterations = parallel_iterations,
+                    swap_memory = swap_memory,
+                    back_prop = False,
+                )
+
+                return beam + 1, beam_width, A, A_i, B
+
+            _, _, A, A_i, B = tf.while_loop(
+                beam_condition,
+                beam_body,
+                loop_vars = [0, beam_width, A, A_i, B],
+                parallel_iterations = parallel_iterations,
+                swap_memory = swap_memory,
+                back_prop = False,
+            )
+
+            return time + 1, total, B
+
+        _, _, B = tf.while_loop(
+            condition,
+            body,
+            loop_vars = [0, total, B],
+            parallel_iterations = parallel_iterations,
+            swap_memory = swap_memory,
+            back_prop = False,
+        )
+
+        scores = B.score.stack()
+        prediction = pad_prediction_tfarray(B.prediction, blank = BLANK).stack()
+        if norm_score:
+            prediction_lengths = count_non_blank(
+                prediction, blank = BLANK, axis = 1
+            )
+            scores /= tf.cast(prediction_lengths, dtype = scores.dtype)
+
+        y_hat_score, y_hat_score_index = tf.math.top_k(scores, k = 1)
+        y_hat_score = y_hat_score[0]
+        y_hat_index = tf.gather_nd(B.indices.stack(), y_hat_score_index)
+        y_hat_prediction = tf.gather_nd(prediction, y_hat_score_index)
+        y_hat_states = tf.gather_nd(B.states.stack(), y_hat_score_index)
+
+        return Hypothesis(
+            index = y_hat_index,
+            prediction = y_hat_prediction,
+            states = y_hat_states,
+        )
