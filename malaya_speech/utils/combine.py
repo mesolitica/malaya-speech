@@ -1,4 +1,4 @@
-from .split import group_frames, group_frames_threshold
+from malaya_speech.utils.split import group_frames, group_frames_threshold
 import numpy as np
 from typing import List
 

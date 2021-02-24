@@ -1,5 +1,7 @@
 from malaya_speech import home
 
+TRANSDUCER_VOCAB = 'vocab/transducer.tokenizer.subwords'
+
 PATH_BACKGROUND_ENHANCE = {
     'unet-enhance-24': {
         'model': home + '/speech-enhancement/enhance-24/model.pb',

@@ -683,6 +683,7 @@ class Transducer(Abstract):
         ytu,
         new_states,
         initial_states,
+        greedy,
         featurizer,
         vocab,
         time_reduction_factor,
@@ -703,6 +704,7 @@ class Transducer(Abstract):
         self._new_states = new_states
         self._initial_states = initial_states
 
+        self._greedy = greedy
         self._featurizer = featurizer
         self._vocab = vocab
         self._time_reduction_factor = time_reduction_factor
@@ -750,8 +752,8 @@ class Transducer(Abstract):
         padded, lens = sequence_1d(inputs, return_len = True)
         results = []
 
-        if decoder == 'greedy':
-            r = test_sess.run(
+        if decoder == 'greedy' and self._greedy is not None:
+            r = self._sess.run(
                 self._greedy,
                 feed_dict = {
                     self._X_placeholder: padded,
@@ -762,6 +764,8 @@ class Transducer(Abstract):
                 results.append(subword_decode(self._vocab, row[row > 0]))
 
         else:
+            if decoder == 'greedy':
+                beam_size = 1
             encoded_, padded_lens_, s = self._sess.run(
                 [self._encoded, self._padded_lens, self._initial_states],
                 feed_dict = {
