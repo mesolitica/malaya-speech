@@ -13,21 +13,21 @@ Malay-Speech dataset is available to download for research purposes under a Crea
 
 ## Dataset
 
-### [Ambient](https://github.com/huseinzol05/malaya-speech/tree/master/data/ambient)
+### [Ambient](ambient)
 
 Simple ambients gathered from Youtube.
 
-### [Audiobook](https://github.com/huseinzol05/malaya-speech/tree/master/data/audiobook)
+### [Audiobook](audiobook)
 
 Gather Youtube urls for indonesian, english and low quality english audiobooks only.
 
-### [language](https://github.com/huseinzol05/malaya-speech/tree/master/data/language)
+### [language](language)
 
 Gather youtube urls for hyperlocal language detection from speech {malay, indonesian, manglish, english, mandarin}.
 
 Check hyperlocal language detection models at https://malaya-speech.readthedocs.io/en/latest/load-language-detection.html
 
-### [news](https://github.com/huseinzol05/malaya-speech/tree/master/data/news)
+### [news](news)
 
 Read random sentences from bahasa news.
 
@@ -38,15 +38,11 @@ Read random sentences from bahasa news.
 - approximate 3.01 hours.
 - Still on going recording.
 
-### [noise](https://github.com/huseinzol05/malaya-speech/tree/master/data/noise)
+### [noise](noise)
 
 Simple noises gathered from Youtube.
 
-### [podcast](https://github.com/huseinzol05/malaya-speech/tree/master/data/podcast)
-
-Gathered Jeorogan, malay, malaysian, the thirsty sisters, richroll podcasts.
-
-### [Sebut perkataan](https://github.com/huseinzol05/malaya-speech/tree/master/data/sebut-perkataan)
+### [Sebut perkataan](sebut-perkataan)
 
 Read random words from malay dictionary started with 'tolong sebut <word>'.
 
@@ -55,7 +51,7 @@ Read random words from malay dictionary started with 'tolong sebut <word>'.
 - `sebut-perkataan-woman` voice by [Mas Aisyah Ahmad](https://www.linkedin.com/in/mas-aisyah-ahmad-b46508a9/)
 - Recorded using low-end tech microphones.
 
-### [Semisupervised audiobook](https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-audiobook)
+### [Semisupervised audiobook](semisupervised-audiobook)
 
 Semisupervised malay audiobooks from Nusantara Audiobook using Google Speech to Text.
 
@@ -63,7 +59,7 @@ Semisupervised malay audiobooks from Nusantara Audiobook using Google Speech to 
 - semisupervised approximate 45.29 hours.
 - windowed using Malaya-Speech VAD, each atleast 5 negative voice activities.
 
-### [Semisupervised malay](https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-malay)
+### [Semisupervised malay](semisupervised-malay)
 
 Semisupervised malay youtube videos using Google Speech to Text, after that corrected by human.
 
@@ -72,7 +68,7 @@ Semisupervised malay youtube videos using Google Speech to Text, after that corr
 - random length between 2 - 20 seconds, windowed using google VAD.
 - supervised 768 samples, approximate 1.3 hours.
 
-### [Semisupervised manglish](https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-manglish)
+### [Semisupervised manglish](semisupervised-manglish)
 
 Semisupervised manglish youtube videos using Google Speech to Text.
 
@@ -80,7 +76,7 @@ Semisupervised manglish youtube videos using Google Speech to Text.
 - semisupervised approximate 107 hours.
 - random length between 2 - 20 seconds, windowed using google VAD.
 
-### [IIUM](https://github.com/huseinzol05/malaya-speech/tree/master/data/iium)
+### [IIUM](iium)
 
 Read random sentences from IIUM Confession.
 
@@ -91,7 +87,7 @@ Read random sentences from IIUM Confession.
 - approximate 2.4 hours.
 - Still on going recording.
 
-### [wattpad](https://github.com/huseinzol05/malaya-speech/tree/master/data/wattpad)
+### [wattpad](wattpad)
 
 Read random sentences from bahasa wattpad.
 
@@ -102,7 +98,7 @@ Read random sentences from bahasa wattpad.
 - approximate 0.15 hours.
 - Still on going recording.
 
-### [Wikipedia](https://github.com/huseinzol05/malaya-speech/tree/master/data/wikipedia)
+### [Wikipedia](wikipedia)
 
 Read random sentences from Bahasa Wikipedia.
 
@@ -112,6 +108,10 @@ Read random sentences from Bahasa Wikipedia.
 - 44100 sample rate, 4 words window.
 - approximate 3.4 hours.
 - Still on going recording.
+
+### [youtube](youtube)
+
+Gathered Jeorogan, malay, malaysian, the thirsty sisters, richroll podcasts.
 
 ## Contribution
 

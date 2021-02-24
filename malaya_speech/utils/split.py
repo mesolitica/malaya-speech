@@ -105,7 +105,7 @@ def split_vad_duration(
                 timestamp = g[0].timestamp,
                 duration = len(a) / sample_rate,
             )
-        l = len(a.array) / audio.frame_rate
+        l = len(a.array) / sample_rate
         lengths += l
         temp.append(a)
         if lengths >= min_duration:
