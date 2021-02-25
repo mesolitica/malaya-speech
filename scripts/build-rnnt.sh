@@ -17,4 +17,4 @@ make
 cd ../tensorflow_binding
 python3 setup.py install --user
 
-wget -qO-  https://raw.githubusercontent.com/usimarit/warp-transducer/master/tensorflow_binding/tests/test_basic.py | python3 -
+wget -qO-  https://raw.githubusercontent.com/noahchalifour/warp-transducer/master/tensorflow_binding/tests/test_warprnnt_op.py | python3 -
