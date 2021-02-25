@@ -11,22 +11,32 @@ _availability = {
     'unet': {
         'Size (MB)': 78.9,
         'Quantized Size (MB)': 20,
-        'SUM MAE': 0.860744,
-        'MAE_SPEAKER': 0.56171,
-        'MAE_NOISE': 0.299029,
-        'SDR': 8.512531,
-        'ISR': 13.411639,
-        'SAR': 11.407554,
+        'SUM MAE': 0.862316,
+        'MAE_SPEAKER': 0.460676,
+        'MAE_NOISE': 0.401640,
+        'SDR': 9.17312,
+        'ISR': 13.92435,
+        'SAR': 13.20592,
     },
     'resnet-unet': {
         'Size (MB)': 96.4,
         'Quantized Size (MB)': 24.6,
-        'SUM MAE': 0.813386,
-        'MAE_SPEAKER': 0.53433,
-        'MAE_NOISE': 0.27905,
-        'SDR': 8.806321,
-        'ISR': 13.51750,
-        'SAR': 11.75246,
+        'SUM MAE': 0.82535,
+        'MAE_SPEAKER': 0.43885,
+        'MAE_NOISE': 0.38649,
+        'SDR': 9.45413,
+        'ISR': 13.9639,
+        'SAR': 13.60276,
+    },
+    'resnext': {
+        'Size (MB)': 75.4,
+        'Quantized Size (MB)': 19,
+        'SUM MAE': 0.81102,
+        'MAE_SPEAKER': 0.44719,
+        'MAE_NOISE': 0.363830,
+        'SDR': 8.992832,
+        'ISR': 13.49194,
+        'SAR': 13.13210,
     },
 }
 
@@ -55,6 +65,7 @@ def deep_model(model: str = 'resnet-unet', quantized: bool = False, **kwargs):
 
         * ``'unet'`` - pretrained UNET.
         * ``'resnet-unet'`` - pretrained resnet-UNET.
+        * ``'resnext'`` - pretrained resnext-UNET.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 
         Quantized model not necessary faster, totally depends on the machine.

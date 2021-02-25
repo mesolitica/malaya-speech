@@ -26,6 +26,10 @@ python3 resnet_unet.py
 
 1. UNET, last update 22th October 2020, [noise-reduction-unet-output-500k.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/noise-reduction-unet-output-500k.tar.gz)
 
-Tensorboard, https://tensorboard.dev/experiment/o4xZQVvmRoWwgAf2LswKOA/
-
 2. Resnet-UNET, last update 30th October 2020, [noise-reduction-resnet-unet.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/finetuned/noise-reduction-resnet-unet.tar.gz)
+
+3. ResNext, last update 25th February 2021, [noise-reduction-resnext.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/noise-reduction-resnext.tar.gz)
+
+4. UNET, last update 25th February 2021, [noise-reduction-unet.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/noise-reduction-unet.tar.gz)
+
+5. Resnet-UNET, last update 25th February 2021, [noise-reduction-resnet-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/noise-reduction-resnet-output.tar.gz)

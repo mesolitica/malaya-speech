@@ -142,6 +142,7 @@ rejected = [
     'ultraman',
     'terjemahan',
     'vlog',
+    'puisi',
 ]
 files = [f for f in files if all([r not in f.lower() for r in rejected])]
 len(files)
@@ -162,6 +163,7 @@ rejected = [
     'ultraman',
     'terjemahan',
     'vlog',
+    'puisi',
 ]
 files = [f for f in files if all([r not in f.lower() for r in rejected])]
 

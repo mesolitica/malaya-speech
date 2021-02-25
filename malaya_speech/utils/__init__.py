@@ -105,6 +105,30 @@ def load_graph(frozen_graph_filename, **kwargs):
                 f"{e}, file corrupted due to some reasons, please run `malaya_speech.clear_cache('{path}')` and try again"
             )
 
+    for node in graph_def.node:
+        if node.op == 'RefSwitch':
+            node.op = 'Switch'
+            for index in xrange(len(node.input)):
+                if 'moving_' in node.input[index]:
+                    node.input[index] = node.input[index] + '/read'
+        elif node.op == 'AssignSub':
+            node.op = 'Sub'
+            if 'use_locking' in node.attr:
+                del node.attr['use_locking']
+        elif node.op == 'AssignAdd':
+            node.op = 'Add'
+            if 'use_locking' in node.attr:
+                del node.attr['use_locking']
+        elif node.op == 'Assign':
+            node.op = 'Identity'
+            if 'use_locking' in node.attr:
+                del node.attr['use_locking']
+            if 'validate_shape' in node.attr:
+                del node.attr['validate_shape']
+            if len(node.input) == 2:
+                node.input[0] = node.input[1]
+                del node.input[1]
+
     def get_gpu():
         if gpu_available():
             if 'gpu' in kwargs:
