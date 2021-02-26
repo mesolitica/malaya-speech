@@ -97,6 +97,27 @@ def discriminator_block(
     return LeakyReLU(alpha = 0.2)(x)
 
 
+def discriminator_block_multiscale(
+    x_in,
+    num_filters,
+    strides = 1,
+    batchnorm = True,
+    momentum = 0.8,
+    training = False,
+):
+    x_out = []
+    x = Conv1D(
+        num_filters, kernel_size = 3, strides = strides, padding = 'same'
+    )(x_in)
+    x_out.append(x)
+    if batchnorm:
+        x = BatchNormalization(momentum = momentum)(x, training = training)
+        x_out.append(x)
+    x = LeakyReLU(alpha = 0.2)(x)
+    x_out.append(x)
+    return x, x_out
+
+
 class Discriminator:
     def __init__(self, partition_size, num_filters = 256, training = True):
         x_in = Input(shape = (partition_size, 1))
@@ -134,49 +155,67 @@ class MultiScaleDiscriminator:
     def __init__(self, partition_size, num_filters = 256, training = True):
         x_in = Input(shape = (partition_size, 1))
         x_out = []
-        x = discriminator_block(
+        x, x_out_ = discriminator_block_multiscale(
             x_in, num_filters, batchnorm = False, training = training
         )
-        x_out.append(x)
-        x = discriminator_block(
+        x_out.append(x_out_)
+        x, x_out_ = discriminator_block_multiscale(
             x, num_filters, strides = 2, training = training
         )
-        x_out.append(x)
+        x_out.append(x_out_)
 
-        x = discriminator_block(x, num_filters * 2, training = training)
-        x = discriminator_block(
+        x, x_out_ = discriminator_block_multiscale(
+            x, num_filters * 2, training = training
+        )
+        x_out.append(x_out_)
+        x, x_out_ = discriminator_block_multiscale(
             x, num_filters * 2, strides = 2, training = training
         )
-        x_out.append(x)
+        x_out.append(x_out_)
 
-        x = discriminator_block(x, num_filters * 4, training = training)
-        x = discriminator_block(
+        x, x_out_ = discriminator_block_multiscale(
+            x, num_filters * 4, training = training
+        )
+        x_out.append(x_out_)
+        x, x_out_ = discriminator_block_multiscale(
             x, num_filters * 4, strides = 2, training = training
         )
-        x_out.append(x)
+        x_out.append(x_out_)
 
-        x = discriminator_block(x, num_filters * 8, training = training)
-        x = discriminator_block(
+        x, x_out_ = discriminator_block_multiscale(
+            x, num_filters * 8, training = training
+        )
+        x_out.append(x_out_)
+        x, x_out_ = discriminator_block_multiscale(
             x, num_filters * 8, strides = 2, training = training
         )
-        x_out.append(x)
+        x_out.append(x_out_)
 
-        x = discriminator_block(x, num_filters * 10, training = training)
-        x = discriminator_block(
+        x, x_out_ = discriminator_block_multiscale(
+            x, num_filters * 10, training = training
+        )
+        x_out.append(x_out_)
+        x, x_out_ = discriminator_block_multiscale(
             x, num_filters * 10, strides = 2, training = training
         )
-        x_out.append(x)
+        x_out.append(x_out_)
 
-        x = discriminator_block(x, num_filters * 12, training = training)
-        x = discriminator_block(
+        x, x_out_ = discriminator_block_multiscale(
+            x, num_filters * 12, training = training
+        )
+        x_out.append(x_out_)
+        x, x_out_ = discriminator_block_multiscale(
             x, num_filters * 12, strides = 2, training = training
         )
-        x_out.append(x)
+        x_out.append(x_out_)
 
-        x = discriminator_block(x, num_filters * 14, training = training)
-        x = discriminator_block(
+        x, x_out_ = discriminator_block_multiscale(
+            x, num_filters * 14, training = training
+        )
+        x_out.append(x_out_)
+        x, x_out_ = discriminator_block_multiscale(
             x, num_filters * 14, strides = 2, training = training
         )
-        x_out.append(x)
+        x_out.append(x_out_)
 
         self.model = KerasModel(x_in, x_out)
