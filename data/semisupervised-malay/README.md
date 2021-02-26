@@ -26,6 +26,14 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
 
 16k sample rate, atleast 90% voice activity, 59 hours.
 
+4. V2, https://f000.backblazeb2.com/file/malay-dataset/speech/semisupervised-26-02-2021-part1.tar
+
+16k sample rate, atleast 90% voice activity, 36 hours.
+
+5. V2, https://f000.backblazeb2.com/file/malay-dataset/speech/semisupervised-26-02-2021-part2.tar
+
+16k sample rate, atleast 90% voice activity, 68 hours.
+
 
 ## Download supervised
 
