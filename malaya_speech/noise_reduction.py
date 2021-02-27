@@ -28,7 +28,7 @@ _availability = {
         'ISR': 13.9639,
         'SAR': 13.60276,
     },
-    'resnext': {
+    'resnext-unet': {
         'Size (MB)': 75.4,
         'Quantized Size (MB)': 19,
         'SUM MAE': 0.81102,

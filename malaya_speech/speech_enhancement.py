@@ -1,7 +1,3 @@
-from malaya_speech.path import (
-    PATH_SPEECH_ENHANCEMENT,
-    S3_PATH_SPEECH_ENHANCEMENT,
-)
 from malaya_speech.supervised import unet
 from herpetologist import check_type
 
@@ -32,21 +28,21 @@ _masking_availability = {
 }
 
 _sampling_availability = {
-    'unet-enhance-24': {
+    'unet': {
         'Size (MB)': 40.7,
         'Quantized Size (MB)': 10.3,
         'SDR': 9.877178,
         'ISR': 15.916217,
         'SAR': 13.709130,
     },
-    'unet-enhance-36': {
-        'Size (MB)': 91.3,
-        'Quantized Size (MB)': 23.4,
-        'SDR': 8.749694,
-        'ISR': 14.512658,
-        'SAR': 13.963656,
+    'resnet-unet': {
+        'Size (MB)': 36.4,
+        'Quantized Size (MB)': 9.29,
+        'SDR': 9.43617,
+        'ISR': 16.86103,
+        'SAR': 12.32157,
     },
-    'resnext-enhance-24': {
+    'resnext-unet': {
         'Size (MB)': 36.1,
         'Quantized Size (MB)': 9.26,
         'SDR': 9.685578,
@@ -117,20 +113,18 @@ def deep_masking(model: str = 'resnet-unet', quantized: bool = False, **kwargs):
 
 
 @check_type
-def deep_enhance(
-    model: str = 'unet-enhance-24', quantized: bool = False, **kwargs
-):
+def deep_enhance(model: str = 'unet', quantized: bool = False, **kwargs):
     """
     Load Speech Enhancement UNET Waveform sampling deep learning model.
 
     Parameters
     ----------
-    model : str, optional (default='unet-enhance-24')
+    model : str, optional (default='unet')
         Model architecture supported. Allowed values:
 
-        * ``'unet-enhance-24'`` - pretrained UNET Speech Enhancement 24 filter size.
-        * ``'unet-enhance-36'`` - pretrained UNET Speech Enhancement 36 filter size.
-        * ``'resnext-enhance-24'`` - pretrained ResNext Speech Enhancement 24 filter size.
+        * ``'unet'`` - pretrained UNET Speech Enhancement.
+        * ``'resnet-unet'`` - pretrained resnet-UNET Speech Enhancement.
+        * ``'resnext-unet'`` - pretrained resnext-UNET Speech Enhancement.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 
         Quantized model not necessary faster, totally depends on the machine.
