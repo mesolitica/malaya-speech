@@ -19,6 +19,7 @@ from collections import defaultdict
 from itertools import cycle
 from multiprocessing import Pool
 import itertools
+import pandas as pd
 
 
 def chunks(l, n):
@@ -159,7 +160,9 @@ def combine_speakers(files, n = 5, limit = 4):
     w_samples = [
         random_sampling(
             read_wav(f)[0],
-            length = min(random.randint(5000 // n, 50000 // n), 6000),
+            length = min(
+                random.randint(20000 // n, 240_000 // n), 100_000 // n
+            ),
         )
         for f in w_samples
     ]
@@ -206,15 +209,18 @@ def combine_speakers(files, n = 5, limit = 4):
 def parallel(f):
     count = random.randint(0, 10)
     while True:
-        if count > 0:
-            combined, y = combine_speakers(random_speakers(count), count)
-        else:
-            combined, y = combine_speakers(noises, random.randint(1, 10))
-            for i in range(len(y)):
-                y[i] = np.zeros((len(combined)))
+        try:
+            if count > 0:
+                combined, y = combine_speakers(random_speakers(count), count)
+            else:
+                combined, y = combine_speakers(noises, random.randint(1, 10))
+                for i in range(len(y)):
+                    y[i] = np.zeros((len(combined)))
 
-        if (len(combined) / sr) < 30:
-            break
+            if 10 < (len(combined) / sr):
+                break
+        except:
+            pass
 
     while len(y) < 4:
         y.append(np.zeros((len(combined))))
@@ -253,7 +259,7 @@ def get_dataset(batch_size = 4):
             },
         )
         dataset = dataset.padded_batch(
-            32,
+            batch_size,
             padded_shapes = {
                 'combined': tf.TensorShape([None]),
                 'y': tf.TensorShape([speakers_size, None]),
@@ -273,24 +279,24 @@ def get_stft(X):
     stft_X = tf.TensorArray(
         dtype = tf.complex64,
         size = batch_size,
-        dynamic_size = True,
+        dynamic_size = False,
         infer_shape = False,
     )
     D_X = tf.TensorArray(
         dtype = tf.float32,
         size = batch_size,
-        dynamic_size = True,
+        dynamic_size = False,
         infer_shape = False,
     )
 
     init_state = (0, stft_X, D_X)
 
-    def condition(i, features, features_len):
+    def condition(i, stft, D):
         return i < batch_size
 
-    def body(i, features, features_len):
+    def body(i, stft, D):
         stft_x, D_x = tf_featurization.get_stft(X[i])
-        return i + 1, stft_X.write(i, stft_x), D_X.write(i, D_x)
+        return i + 1, stft.write(i, stft_x), D.write(i, D_x)
 
     _, stft_X, D_X = tf.while_loop(condition, body, init_state)
     stft_X = stft_X.stack()
@@ -318,7 +324,7 @@ class Model:
         for i in range(size):
             with tf.variable_scope(f'model_{i}'):
                 output = unet.Model3D(
-                    D_X, dropout = 0.0, training = False
+                    D_X, dropout = 0.0, training = True
                 ).logits
                 self.outputs.append(output)
 
@@ -358,7 +364,9 @@ class Model:
             masked_stft = (
                 tf.cast(instrument_mask, dtype = tf.complex64) * stft_X[0]
             )
-            self.istft.append(tf_featurization.istft(masked_stft, self.X)[:, 0])
+            self.istft.append(
+                tf_featurization.istft(masked_stft, self.X[0])[:, 0]
+            )
 
 
 init_lr = 1e-4
