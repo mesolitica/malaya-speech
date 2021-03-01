@@ -33,7 +33,7 @@ GPU version
 
     $ pip install malaya-speech-gpu
 
-Only **Python 3.6.x and above** and **Tensorflow 1.10 and above but not 2.0** are supported.
+Only **Python 3.6.0 and above** and **Tensorflow 1.15.0 and above** are supported.
 
 Features
 --------
@@ -54,6 +54,7 @@ Features
 -  **Vocoder**, convert Mel to Waveform using Pretrained MelGAN, Multiband MelGAN and Universal MelGAN Vocoder Malaya-Speech models.
 -  **Voice Activity Detection**, detect voice activities using Finetuned Speaker Vector Malaya-Speech models.
 -  **Voice Conversion**, Many-to-One, One-to-Many, Many-to-Many, and Zero-shot Voice Conversion.
+-  **Hybrid 8-bit Quantization**, provide hybrid 8-bit quantization for all models to reduce inference time up to 2x and model size up to 4x.
 
 Pretrained Models
 ------------------
@@ -62,6 +63,7 @@ Malaya-Speech also released pretrained models, simply check at `malaya-speech/pr
 
 -  **Wave UNET**,  Multi-Scale Neural Network for End-to-End Audio Source Separation, https://arxiv.org/abs/1806.03185
 -  **Wave ResNet UNET**, added ResNet style into Wave UNET, no paper produced.
+-  **Wave ResNext UNET**, added ResNext style into Wave UNET, no paper produced.
 -  **Deep Speaker**, An End-to-End Neural Speaker Embedding System, https://arxiv.org/pdf/1705.02304.pdf
 -  **SpeakerNet**, 1D Depth-wise Separable Convolutional Network for Text-Independent Speaker Recognition and Verification, https://arxiv.org/abs/2010.12653
 -  **VGGVox**, a large-scale speaker identification dataset, https://arxiv.org/pdf/1706.08612.pdf
@@ -75,6 +77,8 @@ Malaya-Speech also released pretrained models, simply check at `malaya-speech/pr
 -  **Multi-band MelGAN**, Faster Waveform Generation for High-Quality Text-to-Speech, https://arxiv.org/abs/2005.05106
 -  **SRGAN**, Modified version of SRGAN to do 1D Convolution, Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network, https://arxiv.org/abs/1609.04802
 -  **Speech Enhancement UNET**, https://github.com/haoxiangsnr/Wave-U-Net-for-Speech-Enhancement
+-  **Speech Enhancement ResNet UNET**, Added ResNet style into Speech Enhancement UNET.
+-  **Speech Enhancement ResNext UNET**, Added ResNext style into Speech Enhancement UNET.
 -  **Universal MelGAN**, Universal MelGAN: A Robust Neural Vocoder for High-Fidelity Waveform Generation in Multiple Domains, https://arxiv.org/abs/2011.09631
 -  **FastVC**, Faster and Accurate Voice Conversion using Transformer, no paper produced.
 

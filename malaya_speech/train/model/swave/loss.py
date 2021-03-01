@@ -12,6 +12,7 @@ def cal_si_snr_with_pit(source, estimate_source, source_lengths, C):
         tf.sequence_mask(source_lengths, tf.reduce_max(source_lengths)),
         source.dtype,
     )
+    mask = tf.expand_dims(mask, 1)
     estimate_source *= mask
 
     num_samples = tf.cast(tf.reshape(source_lengths, (-1, 1, 1)), tf.float32)
@@ -21,6 +22,7 @@ def cal_si_snr_with_pit(source, estimate_source, source_lengths, C):
     )
     zero_mean_target = source - mean_target
     zero_mean_estimate = estimate_source - mean_estimate
+    print(zero_mean_target, zero_mean_estimate)
     zero_mean_target *= mask
     zero_mean_estimate *= mask
 

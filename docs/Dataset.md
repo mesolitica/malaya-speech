@@ -113,6 +113,10 @@ Read random sentences from Bahasa Wikipedia.
 - approximate 3.4 hours.
 - Still on going recording.
 
+### [youtube](https://github.com/huseinzol05/malaya-speech/tree/master/data/youtube)
+
+Gathered Jeorogan, malay, malaysian, the thirsty sisters, richroll podcasts.
+
 ## Contribution
 
 Contact us at husein.zol05@gmail.com or husein@mesolitica.com if want to contribute to speech bahasa dataset.

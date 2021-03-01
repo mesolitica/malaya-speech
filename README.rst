@@ -63,6 +63,7 @@ Malaya-Speech also released pretrained models, simply check at `malaya-speech/pr
 
 -  **Wave UNET**,  Multi-Scale Neural Network for End-to-End Audio Source Separation, https://arxiv.org/abs/1806.03185
 -  **Wave ResNet UNET**, added ResNet style into Wave UNET, no paper produced.
+-  **Wave ResNext UNET**, added ResNext style into Wave UNET, no paper produced.
 -  **Deep Speaker**, An End-to-End Neural Speaker Embedding System, https://arxiv.org/pdf/1705.02304.pdf
 -  **SpeakerNet**, 1D Depth-wise Separable Convolutional Network for Text-Independent Speaker Recognition and Verification, https://arxiv.org/abs/2010.12653
 -  **VGGVox**, a large-scale speaker identification dataset, https://arxiv.org/pdf/1706.08612.pdf
@@ -76,6 +77,8 @@ Malaya-Speech also released pretrained models, simply check at `malaya-speech/pr
 -  **Multi-band MelGAN**, Faster Waveform Generation for High-Quality Text-to-Speech, https://arxiv.org/abs/2005.05106
 -  **SRGAN**, Modified version of SRGAN to do 1D Convolution, Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network, https://arxiv.org/abs/1609.04802
 -  **Speech Enhancement UNET**, https://github.com/haoxiangsnr/Wave-U-Net-for-Speech-Enhancement
+-  **Speech Enhancement ResNet UNET**, Added ResNet style into Speech Enhancement UNET.
+-  **Speech Enhancement ResNext UNET**, Added ResNext style into Speech Enhancement UNET.
 -  **Universal MelGAN**, Universal MelGAN: A Robust Neural Vocoder for High-Fidelity Waveform Generation in Multiple Domains, https://arxiv.org/abs/2011.09631
 -  **FastVC**, Faster and Accurate Voice Conversion using Transformer, no paper produced.
 
