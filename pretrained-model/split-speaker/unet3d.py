@@ -248,7 +248,7 @@ def generate(batch_size = 10, repeat = 20):
                     yield {'combined': r[0], 'y': r[1]}
 
 
-def get_dataset(batch_size = 4):
+def get_dataset(batch_size = 2):
     def get():
         dataset = tf.data.Dataset.from_generator(
             generate,
