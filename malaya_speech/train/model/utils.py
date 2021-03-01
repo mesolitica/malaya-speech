@@ -20,3 +20,15 @@ def shape_list(x):
     static = x.shape.as_list()
     dynamic = tf.shape(x)
     return [dynamic[i] if s is None else s for i, s in enumerate(static)]
+
+
+def get_mask_between(start, end, maxlen):
+    s = tf.math.logical_not(tf.sequence_mask(start, maxlen))
+    e = tf.sequence_mask(end, maxlen)
+    return tf.math.logical_and(s, e)
+
+
+def log10(x):
+    numerator = tf.log(x)
+    denominator = tf.log(tf.constant(10, dtype = numerator.dtype))
+    return numerator / denominator
