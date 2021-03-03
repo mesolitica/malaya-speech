@@ -12,9 +12,6 @@ class Attention(tf.keras.layers.Layer):
         self.position_embeddings = tf.convert_to_tensor(
             self._sincos_embedding()
         )
-        self.encoder_dense = tf.keras.layers.Dense(
-            units = dim_neck, dtype = tf.float32, name = 'encoder_dense'
-        )
 
     def call(self, x, training = True):
         lengths = tf.math.count_nonzero(x, axis = 2)
@@ -24,7 +21,6 @@ class Attention(tf.keras.layers.Layer):
             lengths = lengths, maxlen = tf.shape(x)[1], dtype = tf.float32
         )
         attention_mask.set_shape((None, None))
-        x = self.encoder_dense(x)
         seq_length = tf.shape(x)[1]
         position_ids = tf.range(1, seq_length + 1, dtype = tf.int32)[
             tf.newaxis, :
@@ -315,15 +311,15 @@ class Model(tf.keras.Model):
             segment_size = segment_size,
             input_normalize = input_normalize,
         )
-        self.conv = tf.keras.layers.Conv1D(
-            N, kernel_size = 1, strides = 1, use_bias = False
+        self.dense = tf.keras.layers.Dense(
+            N, dtype = tf.float32, name = 'dense'
         )
         self.mel_dense = tf.keras.layers.Dense(
             units = config.num_mels, dtype = tf.float32, name = 'mel_before'
         )
 
     def call(self, mixture, training = True):
-        mixture = self.conv(mixture)
+        mixture = self.dense(mixture)
         output_all = self.separator(mixture, training = training)
         T_mix = tf.shape(mixture)[1]
         batch_size = tf.shape(mixture)[0]
