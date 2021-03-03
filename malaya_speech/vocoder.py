@@ -1,9 +1,3 @@
-from malaya_speech.path import (
-    PATH_VOCODER_MELGAN,
-    PATH_VOCODER_MBMELGAN,
-    S3_PATH_VOCODER_MELGAN,
-    S3_PATH_VOCODER_MBMELGAN,
-)
 from malaya_speech.supervised import vocoder
 from herpetologist import check_type
 
@@ -113,10 +107,8 @@ def melgan(model: str = 'female', quantized: bool = False, **kwargs):
         )
 
     return vocoder.load(
-        path = PATH_VOCODER_MELGAN,
-        s3_path = S3_PATH_VOCODER_MELGAN,
         model = model,
-        name = 'vocoder',
+        module = 'vocoder-melgan',
         quantized = quantized,
         **kwargs
     )
@@ -151,10 +143,8 @@ def mbmelgan(model: str = 'female', quantized: bool = False, **kwargs):
             'model not supported, please check supported models from `malaya_speech.vocoder.available_mbmelgan()`.'
         )
     return vocoder.load(
-        path = PATH_VOCODER_MBMELGAN,
-        s3_path = S3_PATH_VOCODER_MBMELGAN,
         model = model,
-        name = 'vocoder',
+        module = 'vocoder-mbmelgan',
         quantized = quantized,
         **kwargs
     )

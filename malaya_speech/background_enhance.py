@@ -1,7 +1,3 @@
-from malaya_speech.path import (
-    PATH_BACKGROUND_ENHANCE,
-    S3_PATH_BACKGROUND_ENHANCE,
-)
 from malaya_speech.supervised import unet
 from herpetologist import check_type
 
@@ -9,14 +5,14 @@ from herpetologist import check_type
 # Only calculate SDR, ISR, SAR on voice sample
 
 _sampling_availability = {
-    'unet-enhance-24': {
+    'unet': {
         'Size (MB)': 40.7,
         'Quantized Size (MB)': 10.3,
         'SDR': 9.877178,
         'ISR': 15.916217,
         'SAR': 13.709130,
     },
-    'unet-enhance-36': {
+    'resnext-unet': {
         'Size (MB)': 91.3,
         'Quantized Size (MB)': 23.4,
         'SDR': 8.749694,
@@ -68,10 +64,8 @@ def deep_enhance(
         )
 
     return unet.load_1d(
-        path = PATH_BACKGROUND_ENHANCE,
-        s3_path = S3_PATH_BACKGROUND_ENHANCE,
         model = model,
-        name = 'background-enhance',
+        module = 'background-enhance',
         quantized = quantized,
         **kwargs
     )
