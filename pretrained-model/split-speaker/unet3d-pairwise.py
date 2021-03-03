@@ -1,7 +1,7 @@
 import os
 import warnings
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
 warnings.filterwarnings('ignore')
 
 import tensorflow as tf
@@ -10,10 +10,11 @@ import numpy as np
 import IPython.display as ipd
 import matplotlib.pyplot as plt
 import malaya_speech.augmentation.waveform as augmentation
-from malaya_speech.train.model import swave
+from malaya_speech.train.model import unet as unet
 from malaya_speech.utils import tf_featurization
 import malaya_speech.train as train
 import random
+from itertools import permutations
 from glob import glob
 from collections import defaultdict
 from itertools import cycle
@@ -124,7 +125,7 @@ drums = glob('HHDS/Sources/**/*drums.wav', recursive = True)
 others = glob('HHDS/Sources/**/*other.wav', recursive = True)
 noises = noises + basses + drums + others
 random.shuffle(noises)
-sr = 8000
+sr = 44100
 speakers_size = 4
 
 s = {
@@ -160,7 +161,9 @@ def combine_speakers(files, n = 5, limit = 4):
     w_samples = [
         random_sampling(
             read_wav(f)[0],
-            length = min(random.randint(10000 // n, 20000 // n), 10000),
+            length = min(
+                random.randint(20000 // n, 240_000 // n), 100_000 // n
+            ),
         )
         for f in w_samples
     ]
@@ -215,7 +218,7 @@ def parallel(f):
                 for i in range(len(y)):
                     y[i] = np.zeros((len(combined)))
 
-            if 2 < (len(combined) / sr):
+            if 10 < (len(combined) / sr):
                 break
         except:
             pass
@@ -224,7 +227,6 @@ def parallel(f):
         y.append(np.zeros((len(combined))))
 
     y = np.array(y)
-    print('len', len(combined) / sr)
     return combined, y, [len(combined)]
 
 
@@ -251,7 +253,7 @@ def get_dataset(batch_size = 2):
     def get():
         dataset = tf.data.Dataset.from_generator(
             generate,
-            {'combined': tf.float32, 'y': tf.float32, 'length': tf.int32},
+            {'combined': tf.float32, 'y': tf.float32},
             output_shapes = {
                 'combined': tf.TensorShape([None]),
                 'y': tf.TensorShape([speakers_size, None]),
@@ -276,25 +278,136 @@ def get_dataset(batch_size = 2):
     return get
 
 
-init_lr = 5e-4
-epochs = 100_000
+def get_stft(X):
+    batch_size = tf.shape(X)[0]
+    stft_X = tf.TensorArray(
+        dtype = tf.complex64,
+        size = batch_size,
+        dynamic_size = False,
+        infer_shape = False,
+    )
+    D_X = tf.TensorArray(
+        dtype = tf.float32,
+        size = batch_size,
+        dynamic_size = False,
+        infer_shape = False,
+    )
+
+    init_state = (0, stft_X, D_X)
+
+    def condition(i, stft, D):
+        return i < batch_size
+
+    def body(i, stft, D):
+        stft_x, D_x = tf_featurization.get_stft(X[i])
+        return i + 1, stft.write(i, stft_x), D.write(i, D_x)
+
+    _, stft_X, D_X = tf.while_loop(condition, body, init_state)
+    stft_X = stft_X.stack()
+    stft_X.set_shape((None, None, 2049, 1))
+    D_X = D_X.stack()
+    D_X.set_shape((None, None, 512, 1024, 1))
+    return stft_X, D_X
+
+
+class Model:
+    def __init__(self, X, Y, length, size = 4):
+        # self.X = tf.placeholder(tf.float32, (None, None))
+        # self.Y = tf.placeholder(tf.float32, (None, size, None))
+
+        reduce_time = 0.023_076_558_492_249_36
+        EPS = 1e-8
+
+        self.X = X
+        self.Y = Y
+        self.length
+        self.lengths = tf.cast(self.length / reduce_time, tf.int32)
+
+        stft_X, D_X = get_stft(self.X)
+
+        self.stft = []
+        for i in range(size):
+            self.stft.append(get_stft(self.Y[:, i]))
+
+        self.outputs = []
+        for i in range(size):
+            with tf.variable_scope(f'model_{i}'):
+                output = unet.Model3D(
+                    D_X, dropout = 0.0, training = True
+                ).logits
+                self.outputs.append(output)
+
+        batch_size = tf.shape(self.outputs[0])[0]
+        fft_size = self.outputs[0].shape[3]
+
+        labels = [i[1] for i in self.stft]
+        labels = tf.concat(labels, axis = 4)
+        labels = tf.reshape(labels, [batch_size, -1, fft_size, size])
+        labels = tf.transpose(labels, perm = [0, 3, 1, 2])
+
+        concatenated = tf.concat(self.outputs, axis = 4)
+        concatenated = tf.reshape(
+            concatenated, [batch_size, -1, fft_size, size]
+        )
+        concatenated = tf.transpose(concatenated, perm = [0, 3, 1, 2])
+
+        mask = tf.cast(
+            tf.sequence_mask(self.lengths, tf.shape(concatenated)[2]),
+            concatenated.dtype,
+        )
+        mask = tf.expand_dims(mask, 1)
+        mask = tf.expand_dims(mask, -1)
+
+        labels = labels * mask
+        concatenated = concatenated * mask
+
+        # https://github.com/asteroid-team/asteroid/blob/master/asteroid/losses/mse.py
+        targets = tf.expand_dims(labels, 1)
+        est_targets = tf.expand_dims(concatenated, 2)
+        pw_loss = tf.abs(targets - est_targets)
+        pair_wise_abs = tf.reduce_mean(pw_loss, axis = [3, 4])
+
+        perms = tf.convert_to_tensor(np.array(list(permutations(range(size)))))
+        perms = tf.cast(perms, tf.int32)
+        index = tf.expand_dims(perms, 2)
+        ones = tf.ones(tf.reduce_prod(tf.shape(index)))
+        perms_one_hot = tf.zeros((tf.shape(perms)[0], tf.shape(perms)[1], size))
+
+        indices = index
+        tensor = perms_one_hot
+        original_tensor = tensor
+        indices = tf.reshape(indices, shape = [-1, tf.shape(indices)[-1]])
+        indices_add = tf.expand_dims(
+            tf.range(0, tf.shape(indices)[0], 1) * (tf.shape(tensor)[-1]),
+            axis = -1,
+        )
+        indices += indices_add
+        tensor = tf.reshape(perms_one_hot, shape = [-1])
+        indices = tf.reshape(indices, shape = [-1, 1])
+        updates = tf.reshape(ones, shape = [-1])
+        scatter = tf.tensor_scatter_nd_update(tensor, indices, updates)
+        perms_one_hot = tf.reshape(
+            scatter,
+            shape = [
+                tf.shape(original_tensor)[0],
+                tf.shape(original_tensor)[1],
+                -1,
+            ],
+        )
+
+        abs_set = tf.einsum('bij,pij->bp', pair_wise_abs, perms_one_hot)
+        min_abs = tf.reduce_min(abs_set, axis = 1, keepdims = True)
+        min_abs /= size
+        self.cost = tf.reduce_mean(min_abs)
+
+
+init_lr = 1e-4
+epochs = 500_000
 
 
 def model_fn(features, labels, mode, params):
-    lengths = features['length'][:, 0]
-    model = swave.Model(C = speakers_size, sample_rate = sr)
-    outputs, output_all = model(features['combined'])
-
-    loss = 0
-    for c_idx, est_src in enumerate(outputs):
-        coeff = (c_idx + 1) * (1 / len(outputs))
-        print(c_idx, est_src, coeff)
-        sisnr_loss, snr, est_src = swave.calculate_loss(
-            features['y'], est_src, lengths, C = speakers_size
-        )
-        loss += coeff * sisnr_loss
-
-    loss /= len(outputs)
+    model = Model(features['combined'], features['y'], size = speakers_size)
+    loss = model.cost
     tf.identity(loss, 'total_loss')
     tf.summary.scalar('total_loss', loss)
 
@@ -331,13 +444,13 @@ def model_fn(features, labels, mode, params):
 train_hooks = [tf.train.LoggingTensorHook(['total_loss'], every_n_iter = 1)]
 train_dataset = get_dataset()
 
-save_directory = 'speaker-split-swave'
+save_directory = 'speaker-split-unet3d-pairwise'
 
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
     model_dir = save_directory,
-    num_gpus = 1,
+    num_gpus = 2,
     log_step = 1,
     save_checkpoint_step = 3000,
     max_steps = epochs,

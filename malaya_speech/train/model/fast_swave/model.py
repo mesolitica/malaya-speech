@@ -56,38 +56,6 @@ class Attention(tf.keras.layers.Layer):
         return position_enc
 
 
-class Encoder(tf.keras.layers.Layer):
-    def __init__(self, L, N, **kwargs):
-        super(Encoder, self).__init__(name = 'Encoder', **kwargs)
-        self.conv = tf.keras.layers.Conv1D(
-            N, kernel_size = L, strides = L // 2, use_bias = False
-        )
-
-    def call(self, mixture):
-        mixture = tf.expand_dims(mixture, -1)
-        mixture_w = tf.nn.relu(self.conv(mixture))
-        return mixture_w
-
-
-class Decoder(tf.keras.layers.Layer):
-    def __init__(self, L, **kwargs):
-        super(Decoder, self).__init__(name = 'Decoder', **kwargs)
-        self.L = L
-
-    def call(self, est_source):
-        # torch.Size([1, 256, 22521])
-        # pt (1, 2, 128, 22521), tf (1, 22521, 2, 128)
-        est_source = tf.transpose(est_source, (0, 1, 3, 2))
-        est_source = tf.compat.v1.layers.average_pooling2d(
-            est_source, 1, (1, 8), padding = 'SAME'
-        )
-        est_source = tf.signal.overlap_and_add(
-            tf.transpose(est_source, (0, 3, 1, 2)), self.L // 2
-        )
-
-        return est_source
-
-
 class MulCatBlock(tf.keras.layers.Layer):
     def __init__(self, config, input_size, hidden_size, dropout = 0, **kwargs):
         super(MulCatBlock, self).__init__(name = 'MulCatBlock', **kwargs)
@@ -319,13 +287,11 @@ class Model(tf.keras.Model):
         self,
         config,
         N = 128,
-        L = 8,
         H = 128,
         R = 1,
-        C = 2,
+        C = 4,
         input_normalize = False,
         sample_rate = 8000,
-        segment = 4,
         **kwargs
     ):
         super(Model, self).__init__(name = 'fast-swave', **kwargs)
@@ -335,49 +301,37 @@ class Model(tf.keras.Model):
         layer = R
         filter_dim = context * 2 + 1
         num_spk = C
-        segment_size = int(np.sqrt(2 * sr * segment / (L / 2)))
+        segment_size = int(np.sqrt(2 * sr * C))
         self.C = C
         self.N = N
-        self.encoder = Encoder(L, N)
         self.separator = Separator(
-            config.encoder_self_attention_params,
-            filter_dim + N,
-            N,
-            H,
-            filter_dim,
-            num_spk,
-            layer,
-            segment_size,
-            input_normalize,
+            config = config.encoder_self_attention_params,
+            input_dim = filter_dim + N,
+            feature_dim = N,
+            hidden_dim = H,
+            output_dim = filter_dim,
+            num_spk = num_spk,
+            layer = layer,
+            segment_size = segment_size,
+            input_normalize = input_normalize,
         )
-        self.decoder = Decoder(L)
+        self.conv = tf.keras.layers.Conv1D(
+            N, kernel_size = 1, strides = 1, use_bias = False
+        )
+        self.mel_dense = tf.keras.layers.Dense(
+            units = config.num_mels, dtype = tf.float32, name = 'mel_before'
+        )
 
     def call(self, mixture, training = True):
-        mixture_w = self.encoder(mixture)
-        output_all = self.separator(mixture_w, training = training)
+        mixture = self.conv(mixture)
+        output_all = self.separator(mixture, training = training)
         T_mix = tf.shape(mixture)[1]
         batch_size = tf.shape(mixture)[0]
-        T_mix_w = tf.shape(mixture_w)[1]
-
-        def pad(x, l):
-            return tf.pad(x, [[0, 0], [0, 0], [0]])
-
-        def slice(x, l):
-            return x[:, :, :l]
 
         outputs = []
         for ii in range(len(output_all)):
             output_ii = tf.reshape(
-                output_all[ii], (batch_size, T_mix_w, self.C, self.N)
+                output_all[ii], (batch_size, T_mix, self.C, self.N)
             )
-            output_ii = self.decoder(output_ii)
-            output_ii = tf.cond(
-                tf.shape(output_ii)[2] >= T_mix,
-                lambda: output_ii[:, :, :T_mix],
-                lambda: tf.pad(
-                    output_ii,
-                    [[0, 0], [0, 0], [0, T_mix - tf.shape(output_ii)[2]]],
-                ),
-            )
-            outputs.append(output_ii)
+            outputs.append(self.mel_dense(output_ii))
         return outputs, output_all

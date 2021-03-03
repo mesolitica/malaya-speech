@@ -22,7 +22,7 @@ def cal_si_snr_with_pit(source, estimate_source, source_lengths, C):
     )
     zero_mean_target = source - mean_target
     zero_mean_estimate = estimate_source - mean_estimate
-    print(zero_mean_target, zero_mean_estimate)
+
     zero_mean_target *= mask
     zero_mean_estimate *= mask
 

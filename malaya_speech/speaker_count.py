@@ -19,10 +19,7 @@ labels = [
     '10 speakers',
     '11 speakers',
     '12 speakers',
-    '13 speakers',
-    '14 speakers',
-    '15 speakers',
-    'more than 15 speakers',
+    'more than 12 speakers',
 ]
 
 
@@ -48,7 +45,7 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
         Model architecture supported. Allowed values:
 
         * ``'vggvox-v2'`` - finetuned VGGVox V2.
-        * ``'deep-speaker'`` - finetuned Deep Speaker.
+        * ``'speakernet'`` - finetuned SpeakerNet.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 
         Quantized model not necessary faster, totally depends on the machine.
@@ -63,3 +60,17 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
         raise Exception(
             'model not supported, please check supported models from `malaya_speech.speaker_count.available_model()`.'
         )
+
+    settings = {
+        'vggvox-v2': {'hop_length': 500, 'concat': False, 'mode': 'eval'},
+        'speakernet': {'frame_ms': 20, 'stride_ms': 28.0},
+    }
+
+    return classification.load(
+        model = model,
+        module = 'speaker-count',
+        extra = settings[model],
+        label = labels,
+        quantized = quantized,
+        **kwargs
+    )
