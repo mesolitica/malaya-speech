@@ -164,9 +164,7 @@ class DPMulCat(tf.keras.layers.Layer):
 
             # torch.Size([1, 128, 126, 360]
             t = tf.transpose(output, [0, 2, 3, 1])
-            output_i = self.outputs(
-                tf.keras.layers.PReLU(shared_axes = [1, 2])(t)
-            )
+            output_i = self.outputs(t)
             output_all.append(output_i)
         return output_all
 
