@@ -134,9 +134,10 @@ class DPMulCat(tf.keras.layers.Layer):
                 self.rows_normalization.append(ByPass())
                 self.cols_normalization.append(ByPass())
 
-        self.outputs = tf.keras.layers.Conv2D(
-            output_size * num_spk, 1, padding = 'SAME'
-        )
+        # self.outputs = tf.keras.layers.Conv2D(
+        #     output_size * num_spk, 1, padding = 'SAME'
+        # )
+        self.outputs = tf.keras.layers.Dense(output_size * num_spk)
 
     def call(self, input, training = True):
         # original, [b, d3, d1, d2]
