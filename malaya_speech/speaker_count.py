@@ -1,8 +1,16 @@
 from herpetologist import check_type
 
 _availability = {
-    'vggvox-v2': {'Size (MB)': 31.1, 'Accuracy': 0.99},
-    'speakernet': {'Size (MB)': 30.9, 'Accuracy': 0.99},
+    'vggvox-v2': {
+        'Size (MB)': 31.1,
+        'Quantized Size (MB)': 7.92,
+        'Accuracy': 0.89912,
+    },
+    'speakernet': {
+        'Size (MB)': 20.3,
+        'Quantized Size (MB)': 5.18,
+        'Accuracy': 0.79875,
+    },
 }
 
 labels = [
@@ -17,9 +25,7 @@ labels = [
     '8 speakers',
     '9 speakers',
     '10 speakers',
-    '11 speakers',
-    '12 speakers',
-    'more than 12 speakers',
+    'more than 10 speakers',
 ]
 
 

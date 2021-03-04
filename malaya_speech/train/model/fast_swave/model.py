@@ -174,10 +174,8 @@ class Separator(tf.keras.layers.Layer):
     def __init__(
         self,
         config,
-        input_dim,
         feature_dim,
         hidden_dim,
-        output_dim,
         num_spk = 2,
         layer = 4,
         segment_size = 100,
@@ -185,10 +183,8 @@ class Separator(tf.keras.layers.Layer):
         **kwargs
     ):
         super(Separator, self).__init__(name = 'Separator', **kwargs)
-        self.input_dim = input_dim
         self.feature_dim = feature_dim
         self.hidden_dim = hidden_dim
-        self.output_dim = output_dim
 
         self.layer = layer
         self.segment_size = segment_size
@@ -291,20 +287,15 @@ class Model(tf.keras.Model):
     ):
         super(Model, self).__init__(name = 'fast-swave', **kwargs)
         sr = sample_rate
-        context_len = 2 * sr / 1000
-        context = int(sr * context_len / 1000)
         layer = R
-        filter_dim = context * 2 + 1
         num_spk = C
         segment_size = int(np.sqrt(2 * sr * C))
         self.C = C
         self.N = N
         self.separator = Separator(
             config = config.encoder_self_attention_params,
-            input_dim = filter_dim + N,
             feature_dim = N,
             hidden_dim = H,
-            output_dim = filter_dim,
             num_spk = num_spk,
             layer = layer,
             segment_size = segment_size,

@@ -17,19 +17,7 @@ _transducer_availability = {
         'WER': 0.2692,
         'CER': 0.1058,
     },
-    'small-conformer-v2': {
-        'Size (MB)': 44.1,
-        'Quantized Size (MB)': 13.3,
-        'WER': 0.2692,
-        'CER': 0.1058,
-    },
     'conformer': {
-        'Size (MB)': 120,
-        'Quantized Size (MB)': 32.7,
-        'WER': 0.2442,
-        'CER': 0.0910,
-    },
-    'conformer-v2': {
         'Size (MB)': 120,
         'Quantized Size (MB)': 32.7,
         'WER': 0.2442,
@@ -42,12 +30,6 @@ _transducer_availability = {
         'CER': 0.0812,
     },
     'alconformer': {
-        'Size (MB)': 33.2,
-        'Quantized Size (MB)': 10.5,
-        'WER': 0.30567,
-        'CER': 0.12267,
-    },
-    'alconformer-v2': {
         'Size (MB)': 33.2,
         'Quantized Size (MB)': 10.5,
         'WER': 0.30567,
@@ -201,12 +183,9 @@ def deep_transducer(
         Model architecture supported. Allowed values:
 
         * ``'small-conformer'`` - SMALL size Google Conformer, https://arxiv.org/pdf/2005.08100.pdf
-        * ``'small-conformer-v2'`` - SMALL size Google Conformer, faster decoding, https://arxiv.org/pdf/2005.08100.pdf
         * ``'conformer'`` - BASE size Google Conformer, https://arxiv.org/pdf/2005.08100.pdf
-        * ``'conformer-v2'`` - BASE size Google Conformer, faster decoding, https://arxiv.org/pdf/2005.08100.pdf
         * ``'large-conformer'`` - LARGE size Google Conformer, https://arxiv.org/pdf/2005.08100.pdf
         * ``'alconformer'`` - BASE size A-Lite Google Conformer.
-        * ``'alconformer-v2'`` - BASE size A-Lite Google Conformer, faster decoding.
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 

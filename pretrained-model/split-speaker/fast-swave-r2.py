@@ -1,7 +1,7 @@
 import os
 import warnings
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 warnings.filterwarnings('ignore')
 
 import tensorflow as tf
@@ -201,7 +201,7 @@ def generate(batch_size = 10, repeat = 50):
                     yield {'combined': r[0], 'y': r[1], 'length': r[2]}
 
 
-def get_dataset(batch_size = 8):
+def get_dataset(batch_size = 4):
     def get():
         dataset = tf.data.Dataset.from_generator(
             generate,
@@ -239,7 +239,7 @@ def model_fn(features, labels, mode, params):
     dim = malaya_speech.config.fastspeech_config['encoder_hidden_size']
     config = fastspeech.Config(vocab_size = 1, **config)
     model = fast_swave.Model(
-        config, C = speakers_size, sample_rate = sr, N = dim, H = dim
+        config, R = 2, C = speakers_size, sample_rate = sr, N = dim, H = dim
     )
     outputs, output_all = model(features['combined'])
 
@@ -287,7 +287,7 @@ def model_fn(features, labels, mode, params):
 train_hooks = [tf.train.LoggingTensorHook(['total_loss'], every_n_iter = 1)]
 train_dataset = get_dataset()
 
-save_directory = 'speaker-split-fast-swave'
+save_directory = 'speaker-split-fast-swave-r2'
 
 train.run_training(
     train_fn = train_dataset,

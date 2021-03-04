@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from itertools import permutations
+from tensorflow.python.ops import weights_broadcast_ops
 
 EPS = 1e-8
 
@@ -15,14 +16,24 @@ def cal_abs_with_pit(source, estimate_source, source_lengths, C):
     )
     mask = tf.expand_dims(mask, 1)
     mask = tf.expand_dims(mask, -1)
-    estimate_source *= mask
-
-    print(source, estimate_source)
+    # estimate_source *= mask
 
     targets = tf.expand_dims(source, 1)
     est_targets = tf.expand_dims(estimate_source, 2)
     pw_loss = tf.abs(targets - est_targets)
-    pair_wise_abs = tf.reduce_mean(pw_loss, axis = [3, 4])
+    # pair_wise_abs = tf.reduce_mean(pw_loss, axis = [3, 4])
+
+    losses = pw_loss
+    m = tf.expand_dims(mask, 1)
+    weights = tf.cast(m, dtype = tf.float32)
+    weighted_losses = tf.multiply(losses, weights)
+    total_loss = tf.reduce_sum(weighted_losses, axis = [3, 4])
+    present = tf.where(
+        tf.equal(weights, 0.0), tf.zeros_like(weights), tf.ones_like(weights)
+    )
+    present = weights_broadcast_ops.broadcast_weights(present, losses)
+    present = tf.reduce_sum(present, axis = [3, 4])
+    pair_wise_abs = tf.div_no_nan(total_loss, present)
 
     perms = tf.convert_to_tensor(np.array(list(permutations(range(C)))))
     perms = tf.cast(perms, tf.int32)
