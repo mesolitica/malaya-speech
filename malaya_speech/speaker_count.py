@@ -68,8 +68,8 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
         )
 
     settings = {
-        'vggvox-v2': {'hop_length': 500, 'concat': False, 'mode': 'eval'},
-        'speakernet': {'frame_ms': 20, 'stride_ms': 28.0},
+        'vggvox-v2': {'hop_length': 300, 'concat': False, 'mode': 'eval'},
+        'speakernet': {'frame_ms': 20, 'stride_ms': 12.0},
     }
 
     return classification.load(

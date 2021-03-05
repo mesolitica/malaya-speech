@@ -5,7 +5,7 @@ import numpy as np
 
 
 class Attention(tf.keras.layers.Layer):
-    def __init__(self, dim_neck, config, **kwargs):
+    def __init__(self, config, **kwargs):
         super(Attention, self).__init__(name = 'Attention', **kwargs)
         self.config = config
         self.encoder = TFFastSpeechEncoder(config, name = 'encoder')
@@ -53,14 +53,13 @@ class Attention(tf.keras.layers.Layer):
 
 
 class MulCatBlock(tf.keras.layers.Layer):
-    def __init__(self, config, input_size, hidden_size, dropout = 0, **kwargs):
+    def __init__(self, config, input_size, dropout = 0, **kwargs):
         super(MulCatBlock, self).__init__(name = 'MulCatBlock', **kwargs)
 
         self.input_size = input_size
-        self.hidden_size = hidden_size
 
-        self.rnn = Attention(hidden_size, config)
-        self.gate_rnn = Attention(hidden_size, config)
+        self.rnn = Attention(config)
+        self.gate_rnn = Attention(config)
         self.rnn_proj = tf.keras.layers.Dense(input_size)
         self.gate_rnn_proj = tf.keras.layers.Dense(input_size)
         self.block_projection = tf.keras.layers.Dense(input_size)
@@ -98,7 +97,6 @@ class DPMulCat(tf.keras.layers.Layer):
         self,
         config,
         input_size,
-        hidden_size,
         output_size,
         num_spk,
         dropout = 0,
@@ -110,7 +108,6 @@ class DPMulCat(tf.keras.layers.Layer):
 
         self.input_size = input_size
         self.output_size = output_size
-        self.hidden_size = hidden_size
         self.in_norm = input_normalize
         self.num_layers = num_layers
 
@@ -120,12 +117,8 @@ class DPMulCat(tf.keras.layers.Layer):
         self.cols_normalization = []
 
         for i in range(num_layers):
-            self.rows_grnn.append(
-                MulCatBlock(config, input_size, hidden_size, dropout)
-            )
-            self.cols_grnn.append(
-                MulCatBlock(config, input_size, hidden_size, dropout)
-            )
+            self.rows_grnn.append(MulCatBlock(config, output_size, dropout))
+            self.cols_grnn.append(MulCatBlock(config, output_size, dropout))
             if self.in_norm:
                 self.rows_normalization.append(GroupNorm())
                 self.cols_normalization.append(GroupNorm())
@@ -174,8 +167,8 @@ class Separator(tf.keras.layers.Layer):
     def __init__(
         self,
         config,
-        feature_dim,
-        hidden_dim,
+        input_dim,
+        output_dim,
         num_spk = 2,
         layer = 4,
         segment_size = 100,
@@ -183,8 +176,8 @@ class Separator(tf.keras.layers.Layer):
         **kwargs
     ):
         super(Separator, self).__init__(name = 'Separator', **kwargs)
-        self.feature_dim = feature_dim
-        self.hidden_dim = hidden_dim
+        self.input_dim = input_dim
+        self.output_dim = output_dim
 
         self.layer = layer
         self.segment_size = segment_size
@@ -193,10 +186,9 @@ class Separator(tf.keras.layers.Layer):
 
         self.rnn_model = DPMulCat(
             config,
-            self.feature_dim,
-            self.hidden_dim,
-            self.feature_dim,
-            self.num_spk,
+            input_size = self.input_dim,
+            output_size = self.output_dim,
+            num_spk = self.num_spk,
             num_layers = layer,
             input_normalize = input_normalize,
         )
@@ -273,29 +265,70 @@ class Separator(tf.keras.layers.Layer):
         return output_all_wav
 
 
+class Decoder(tf.keras.layers.Layer):
+    def __init__(self, config, **kwargs):
+        super(Decoder, self).__init__(name = 'Decoder', **kwargs)
+        self.config = config
+        self.encoder = TFFastSpeechEncoder(config, name = 'encoder')
+        self.position_embeddings = tf.convert_to_tensor(
+            self._sincos_embedding()
+        )
+
+    def call(self, x, attention_mask, training = True):
+        input_shape = tf.shape(x)
+        seq_length = input_shape[1]
+
+        position_ids = tf.range(1, seq_length + 1, dtype = tf.int32)[
+            tf.newaxis, :
+        ]
+        inputs = tf.cast(position_ids, tf.int32)
+        position_embeddings = tf.gather(self.position_embeddings, inputs)
+        x = x + tf.cast(position_embeddings, x.dtype)
+        return self.encoder([x, attention_mask], training = training)[0]
+
+    def _sincos_embedding(self):
+        position_enc = np.array(
+            [
+                [
+                    pos
+                    / np.power(10000, 2.0 * (i // 2) / self.config.hidden_size)
+                    for i in range(self.config.hidden_size)
+                ]
+                for pos in range(self.config.max_position_embeddings + 1)
+            ]
+        )
+
+        position_enc[:, 0::2] = np.sin(position_enc[:, 0::2])
+        position_enc[:, 1::2] = np.cos(position_enc[:, 1::2])
+
+        # pad embedding.
+        position_enc[0] = 0.0
+
+        return position_enc
+
+
 class Model(tf.keras.Model):
     def __init__(
         self,
         config,
         N = 128,
-        H = 128,
+        O = 128,
         R = 1,
         C = 4,
         input_normalize = False,
-        sample_rate = 8000,
+        segment_size = 32,
         **kwargs
     ):
         super(Model, self).__init__(name = 'fast-swave', **kwargs)
-        sr = sample_rate
         layer = R
         num_spk = C
-        segment_size = int(np.sqrt(2 * sr * C))
         self.C = C
         self.N = N
+        self.O = O
         self.separator = Separator(
             config = config.encoder_self_attention_params,
-            feature_dim = N,
-            hidden_dim = H,
+            input_dim = N,
+            output_dim = O,
             num_spk = num_spk,
             layer = layer,
             segment_size = segment_size,
@@ -304,20 +337,30 @@ class Model(tf.keras.Model):
         self.dense = tf.keras.layers.Dense(
             N, dtype = tf.float32, name = 'dense'
         )
+        self.decoder = Decoder(config.decoder_self_attention_params)
         self.mel_dense = tf.keras.layers.Dense(
             units = config.num_mels, dtype = tf.float32, name = 'mel_before'
         )
 
-    def call(self, mixture, training = True):
+    def call(self, mixture, mel_lengths, training = True):
         mixture = self.dense(mixture)
         output_all = self.separator(mixture, training = training)
         T_mix = tf.shape(mixture)[1]
         batch_size = tf.shape(mixture)[0]
 
+        max_length = tf.cast(tf.reduce_max(mel_lengths), tf.int32)
+        attention_mask = tf.sequence_mask(
+            lengths = mel_lengths, maxlen = max_length, dtype = tf.float32
+        )
+        attention_mask.set_shape((None, None))
+
         outputs = []
         for ii in range(len(output_all)):
+            decoder_output = self.decoder(
+                output_all[ii], attention_mask, training = training
+            )
             output_ii = tf.reshape(
-                output_all[ii], (batch_size, T_mix, self.C, self.N)
+                decoder_output, (batch_size, T_mix, self.C, self.O)
             )
             outputs.append(self.mel_dense(output_ii))
         return outputs, output_all

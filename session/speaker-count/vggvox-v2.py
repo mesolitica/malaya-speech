@@ -135,16 +135,14 @@ labels = [
     '8 speakers',
     '9 speakers',
     '10 speakers',
-    '11 speakers',
-    '12 speakers',
-    'more than 12 speakers',
+    'more than 10 speakers',
 ]
 
 
 def parallel(f):
-    count = random.randint(0, 15)
-    if count > 12:
-        count = random.randint(13, 20)
+    count = random.randint(0, 12)
+    if count > 10:
+        count = random.randint(11, 15)
     while True:
         try:
             if count > 0:
@@ -267,7 +265,7 @@ init_checkpoint = '../vggvox-speaker-identification/v2/vggvox.ckpt'
 
 def model_fn(features, labels, mode, params):
     Y = tf.cast(features['targets'][:, 0], tf.int32)
-    model = vggvox_v2.Model(features['inputs'], num_class = 14, mode = 'train')
+    model = vggvox_v2.Model(features['inputs'], num_class = 12, mode = 'train')
 
     logits = model.logits
     loss = tf.reduce_mean(
