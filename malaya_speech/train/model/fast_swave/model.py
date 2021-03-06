@@ -133,7 +133,8 @@ class DPMulCat(tf.keras.layers.Layer):
         self.outputs = tf.keras.layers.Dense(output_size * num_spk)
 
     def call(self, input, training = True):
-        # original, [b, d3, d1, d2]
+        # original, [b, d3, d1, d2],
+        # [b, segment, d, t], [b, d, segment, tZ]
         input = tf.transpose(input, (0, 2, 1, 3))
         batch_size, d3, d1, d2 = shape_list(input)
         output = input
@@ -316,7 +317,7 @@ class Model(tf.keras.Model):
         R = 1,
         C = 4,
         input_normalize = False,
-        segment_size = 32,
+        segment_size = 420,
         **kwargs
     ):
         super(Model, self).__init__(name = 'fast-swave', **kwargs)
