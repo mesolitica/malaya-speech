@@ -105,7 +105,7 @@ class TransducerPrediction(tf.keras.Model):
 
     def call(self, inputs, training = False):
         outputs, prediction_length = inputs
-        outputs = self.embed(inputs, training = training)
+        outputs = self.embed(outputs, training = training)
         outputs = self.do(outputs, training = training)
         for rnn in self.rnns:
             mask = tf.sequence_mask(
@@ -265,7 +265,7 @@ class Model(tf.keras.Model):
         features, predicted, prediction_length = inputs
         enc = self.encoder(features, training = training)
         pred = self.predict_net(
-            [prediction, prediction_length], training = training
+            [predicted, prediction_length], training = training
         )
         outputs = self.joint_net([enc, pred], training = training)
         return outputs
