@@ -1,4 +1,5 @@
 from typing import List
+from malaya_speech.utils.text_encoder.subword_encoder import SubwordTextEncoder
 
 BLANK = 0
 
@@ -10,13 +11,7 @@ def generate_tokenizer(
     max_corpus_chars = None,
     reserved_tokens = None,
 ):
-    try:
-        import tensorflow_datasets as tds
-    except:
-        raise ModuleNotFoundError(
-            'tensorflow-datasets not installed. Please install it by `pip install tensorflow-datasets` and try again.'
-        )
-    return tds.features.text.SubwordTextEncoder.build_from_corpus(
+    return SubwordTextEncoder.build_from_corpus(
         strings,
         target_vocab_size = target_vocab_size,
         max_subword_length = max_subword_length,
@@ -67,10 +62,4 @@ def save(tokenizer, path: str):
 
 
 def load(path: str):
-    try:
-        import tensorflow_datasets as tds
-    except:
-        raise ModuleNotFoundError(
-            'tensorflow-datasets not installed. Please install it by `pip install tensorflow-datasets` and try again.'
-        )
-    return tds.features.text.SubwordTextEncoder.load_from_file(path)
+    return SubwordTextEncoder.load_from_file(path)

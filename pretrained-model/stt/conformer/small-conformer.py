@@ -170,16 +170,17 @@ def model_fn(features, labels, mode, params):
     transducer_model = transducer.rnn.Model(
         conformer_model, vocabulary_size = subwords.vocab_size, **decoder_config
     )
+    targets_length = features['targets_length'][:, 0]
     v = tf.expand_dims(features['inputs'], -1)
     z = tf.zeros((tf.shape(features['targets'])[0], 1), dtype = tf.int64)
     c = tf.concat([z, features['targets']], axis = 1)
 
-    logits = transducer_model([v, c], training = True)
+    logits = transducer_model([v, c, targets_length + 1], training = True)
 
     cost = transducer.loss.rnnt_loss(
         logits = logits,
         labels = features['targets'],
-        label_length = features['targets_length'][:, 0],
+        label_length = targets_length,
         logit_length = features['inputs_length'][:, 0]
         // conformer_model.conv_subsampling.time_reduction_factor,
     )
