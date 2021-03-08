@@ -47,14 +47,16 @@ class Encoder(tf.keras.layers.Layer):
 
 
 class Model(tf.keras.Model):
-    def __init__(self, config, O, C, **kwargs):
+    def __init__(self, config, O, C, kernel_size = 5, **kwargs):
         super(Model, self).__init__(name = 'fastvc', **kwargs)
         self.encoder = Encoder(config.encoder_self_attention_params)
         self.decoder = Encoder(config.decoder_self_attention_params)
-        self.encoder_dense = tf.keras.layers.Dense(
-            units = config.encoder_self_attention_params.hidden_size,
-            dtype = tf.float32,
-            name = 'dense',
+        self.encoder_dense = tf.keras.layers.Conv1D(
+            config.encoder_self_attention_params.hidden_size,
+            kernel_size = kernel_size,
+            strides = 1,
+            use_bias = False,
+            padding = 'SAME',
         )
         self.mel_dense = tf.keras.layers.Dense(
             units = config.num_mels, dtype = tf.float32, name = 'mel_before'

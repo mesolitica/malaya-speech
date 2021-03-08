@@ -119,7 +119,7 @@ def combine_speakers(files, n = 5, limit = 4):
 
     for i in range(1, n):
         right = w_samples[i].copy() * random.uniform(0.5, 1.0)
-        overlap = random.uniform(0.1, 0.7)
+        overlap = random.uniform(0.1, 0.9)
         print(i, overlap)
         len_overlap = int(overlap * len(right))
         minus = len(left) - len_overlap
@@ -155,29 +155,28 @@ def combine_speakers(files, n = 5, limit = 4):
 
 
 def parallel(f):
-    count = random.randint(0, 6)
+    count = random.randint(0, 5)
     while True:
         try:
             if count > 0:
                 combined, y = combine_speakers(random_speakers(count), count)
             else:
-                combined, y = combine_speakers(noises, random.randint(1, 6))
+                combined, y = combine_speakers(noises, random.randint(1, 5))
                 for i in range(len(y)):
                     y[i] = np.zeros((len(combined)))
 
-            if 1 < (len(combined) / sr):
-                break
+            while len(y) < 4:
+                y.append(np.zeros((len(combined))))
+
+            y = np.array(y)
+            print('len', len(combined) / sr)
+
+            combined = malaya_speech.featurization.universal_mel(combined)
+            y = [malaya_speech.featurization.universal_mel(i) for i in y]
+
+            break
         except:
             pass
-
-    while len(y) < 4:
-        y.append(np.zeros((len(combined))))
-
-    y = np.array(y)
-    print('len', len(combined) / sr)
-
-    combined = malaya_speech.featurization.universal_mel(combined)
-    y = [malaya_speech.featurization.universal_mel(i) for i in y]
 
     return combined, y, [len(combined)]
 
@@ -236,12 +235,12 @@ total_steps = 300000
 def model_fn(features, labels, mode, params):
     lengths = features['length'][:, 0]
     config = malaya_speech.config.fastspeech_config
-    dim = malaya_speech.config.fastspeech_config['encoder_hidden_size']
+    dim = 192
+    config['encoder_hidden_size'] = dim
+    config['decoder_hidden_size'] = dim * speakers_size
     config = fastspeech.Config(vocab_size = 1, **config)
-    model = fast_swave.Model(
-        config, R = 2, C = speakers_size, sample_rate = sr, N = dim, H = dim
-    )
-    outputs, output_all = model(features['combined'])
+    model = fast_swave.Model(config, R = 2, C = speakers_size, N = dim, O = dim)
+    outputs, output_all = model(features['combined'], lengths)
 
     loss = 0
     for c_idx, est_src in enumerate(outputs):

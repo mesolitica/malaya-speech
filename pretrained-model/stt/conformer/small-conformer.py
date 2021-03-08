@@ -23,7 +23,10 @@ config = malaya_speech.config.conformer_small_encoder_config
 
 parameters = {
     'optimizer_params': {'beta1': 0.9, 'beta2': 0.98, 'epsilon': 10e-9},
-    'lr_policy_params': {'warmup_steps': 40000},
+    'lr_policy_params': {
+        'warmup_steps': 40000,
+        'max_lr': (0.05 / config['dmodel']),
+    },
 }
 
 
