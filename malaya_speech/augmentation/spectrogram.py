@@ -6,9 +6,30 @@ import random
 # https://github.com/NVIDIA/OpenSeq2Seq/blob/master/open_seq2seq/data/speech2text/speech_utils.py#L420
 # https://github.com/Kyubyong/specAugment/blob/master/USER_DIR/speech_recognition.py
 # https://github.com/KimJeongSun/SpecAugment_numpy_scipy
+# https://espnet.github.io/espnet/_modules/espnet/transform/spec_augment.html
 
 
-def warp(features, W = 40, T = 30, mt = 2):
+def warp_time_pil(features, max_time_warp = 80):
+    from PIL import Image
+    from PIL.Image import BICUBIC
+
+    window = max_time_warp
+    t = features.shape[0]
+    if t - window <= window:
+        return features
+    center = random.randrange(window, t - window)
+    warped = random.randrange(center - window, center + window) + 1
+
+    left = Image.fromarray(features[:center]).resize(
+        (features.shape[1], warped), BICUBIC
+    )
+    right = Image.fromarray(features[center:]).resize(
+        (features.shape[1], t - warped), BICUBIC
+    )
+    return np.concatenate((left, right), 0)
+
+
+def warp_time_interpolate(features, W = 40, T = 30, mt = 2):
 
     from scipy.spatial.distance import pdist, cdist, squareform
     from scipy import interpolate
