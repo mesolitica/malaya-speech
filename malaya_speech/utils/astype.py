@@ -1,20 +1,5 @@
 import numpy as np
-import tensorflow as tf
 from malaya_speech.model.frame import Frame
-
-
-def to_tf(input_nodes, inputs):
-    if len(input_nodes) != len(inputs):
-        raise Exception(
-            'length of `input_nodes` not same as length of `inputs` for this eager graph.'
-        )
-
-    mapping = {}
-    for i in range(len(input_nodes)):
-        t = tf.convert_to_tensor(inputs[i])
-        t = tf.cast(t, input_nodes[i].dtype)
-        mapping[input_nodes[i].name.split(':')[0]] = t
-    return mapping
 
 
 def to_ndarray(array):

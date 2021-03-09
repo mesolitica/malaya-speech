@@ -10,14 +10,10 @@ import malaya_speech.train.model.conformer as conformer
 import malaya_speech.train.model.transducer as transducer
 import malaya_speech.config
 import malaya_speech.train as train
+import json
 import numpy as np
 import random
 from glob import glob
-import json
-
-subwords = malaya_speech.subword.load('malaya-speech.tokenizer')
-with open('malaya-speech-sst-vocab.json') as fopen:
-    unique_vocab = json.load(fopen) + ['{', '}', '[']
 
 config = malaya_speech.config.conformer_small_encoder_config
 
@@ -28,6 +24,15 @@ parameters = {
         'max_lr': (0.05 / config['dmodel']),
     },
 }
+
+sr = 16000
+maxlen = 18
+minlen_text = 1
+
+featurizer = malaya_speech.tf_featurization.STTFeaturizer(
+    normalize_per_feature = True
+)
+n_mels = featurizer.num_feature_bins
 
 
 def transformer_schedule(step, d_model, warmup_steps = 4000, max_lr = None):
@@ -53,27 +58,14 @@ def learning_rate_scheduler(global_step):
     )
 
 
-featurizer = malaya_speech.tf_featurization.STTFeaturizer(
-    normalize_per_feature = True
-)
-n_mels = featurizer.num_feature_bins
-
-
 def mel_augmentation(features):
 
+    features = mask_augmentation.warp(features)
     features = mask_augmentation.mask_frequency(features, width_freq_mask = 12)
     features = mask_augmentation.mask_time(
         features, width_time_mask = int(features.shape[0] * 0.05)
     )
     return features
-
-
-def char_to_subwords(features):
-    t = malaya_speech.char.decode(features, lookup = unique_vocab).replace(
-        '<PAD>', ''
-    )
-    t = malaya_speech.subword.encode(subwords, t, add_blank = False)
-    return np.array(t)
 
 
 def preprocess_inputs(example):
@@ -85,15 +77,9 @@ def preprocess_inputs(example):
     length = tf.expand_dims(length, 0)
     example['inputs'] = mel_fbanks
     example['inputs_length'] = length
-
-    s = tf.compat.v1.numpy_function(
-        char_to_subwords, [example['targets']], tf.int64
-    )
-    s = tf.reshape(s, (1, -1))[0]
-
-    example['targets'] = s
+    example['targets'] = tf.cast(example['targets'], tf.int32)
     example['targets_length'] = tf.expand_dims(
-        tf.cast(tf.shape(s)[0], tf.int32), 0
+        tf.cast(tf.shape(example['targets'])[0], tf.int32), 0
     )
     return example
 
@@ -114,13 +100,7 @@ def parse(serialized_example):
 
     keys = list(features.keys())
     for k in keys:
-        if k not in [
-            'waveforms',
-            'inputs',
-            'inputs_length',
-            'targets',
-            'targets_length',
-        ]:
+        if k not in ['inputs', 'inputs_length', 'targets', 'targets_length']:
             features.pop(k, None)
 
     return features
@@ -139,21 +119,21 @@ def get_dataset(
         dataset = dataset.shuffle(shuffle_size)
         dataset = dataset.repeat()
         dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
-        dataset = dataset.map(parse, num_parallel_calls = thread_count)
+        dataset = dataset.map(
+            parse, num_parallel_calls = tf.contrib.data.AUTOTUNE
+        )
         dataset = dataset.padded_batch(
             batch_size,
             padded_shapes = {
-                'waveforms': tf.TensorShape([None]),
                 'inputs': tf.TensorShape([None, n_mels]),
                 'inputs_length': tf.TensorShape([None]),
                 'targets': tf.TensorShape([None]),
                 'targets_length': tf.TensorShape([None]),
             },
             padding_values = {
-                'waveforms': tf.constant(0, dtype = tf.float32),
                 'inputs': tf.constant(0, dtype = tf.float32),
                 'inputs_length': tf.constant(0, dtype = tf.int32),
-                'targets': tf.constant(0, dtype = tf.int64),
+                'targets': tf.constant(0, dtype = tf.int32),
                 'targets_length': tf.constant(0, dtype = tf.int32),
             },
         )
@@ -172,7 +152,7 @@ def model_fn(features, labels, mode, params):
     )
     targets_length = features['targets_length'][:, 0]
     v = tf.expand_dims(features['inputs'], -1)
-    z = tf.zeros((tf.shape(features['targets'])[0], 1), dtype = tf.int64)
+    z = tf.zeros((tf.shape(features['targets'])[0], 1), dtype = tf.int32)
     c = tf.concat([z, features['targets']], axis = 1)
 
     logits = transducer_model([v, c, targets_length + 1], training = True)
@@ -215,12 +195,8 @@ def model_fn(features, labels, mode, params):
 
 
 train_hooks = [tf.train.LoggingTensorHook(['train_loss'], every_n_iter = 1)]
-train_dataset = get_dataset(
-    '../speech-bahasa/bahasa-asr/data/bahasa-asr-train-*'
-)
-dev_dataset = get_dataset(
-    '../speech-bahasa/bahasa-asr-test/data/bahasa-asr-dev-*'
-)
+train_dataset = get_dataset('bahasa-asr/data/bahasa-asr-train-*')
+dev_dataset = get_dataset('bahasa-asr-test/data/bahasa-asr-dev-*')
 
 train.run_training(
     train_fn = train_dataset,

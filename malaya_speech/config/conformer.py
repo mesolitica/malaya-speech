@@ -57,6 +57,44 @@ large_encoder_config = {
     'dropout': 0.1,
 }
 
+xlarge_encoder_config = {
+    'name': 'conformer',
+    'subsampling': {
+        'type': 'conv2d',
+        'filters': 144,
+        'kernel_size': 3,
+        'strides': 2,
+    },
+    'positional_encoding': 'sinusoid_concat',
+    'dmodel': 1024,
+    'num_blocks': 16,
+    'head_size': 36,
+    'num_heads': 16,
+    'mha_type': 'relmha',
+    'kernel_size': 32,
+    'fc_factor': 0.5,
+    'dropout': 0.1,
+}
+
+xxlarge_encoder_config = {
+    'name': 'conformer',
+    'subsampling': {
+        'type': 'conv2d',
+        'filters': 144,
+        'kernel_size': 3,
+        'strides': 2,
+    },
+    'positional_encoding': 'sinusoid_concat',
+    'dmodel': 2048,
+    'num_blocks': 16,
+    'head_size': 36,
+    'num_heads': 32,
+    'mha_type': 'relmha',
+    'kernel_size': 32,
+    'fc_factor': 0.5,
+    'dropout': 0.1,
+}
+
 small_decoder_config = {
     'embed_dim': 320,
     'embed_dropout': 0.1,

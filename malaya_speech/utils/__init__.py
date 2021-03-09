@@ -47,14 +47,13 @@ def check_file_cloud(url):
 
 def nodes_session(graph, inputs, outputs):
     if tf.executing_eagerly():
-        inputs = [f'import/{i}:0' for i in inputs]
-        outputs = [f'import/{o}:0' for o in outputs]
-        g = graph.prune(
-            tf.nest.map_structure(graph.graph.as_graph_element, inputs),
-            tf.nest.map_structure(graph.graph.as_graph_element, outputs),
-        )
-        input_nodes = None
-        output_nodes = None
+        input_nodes = {
+            i: graph.graph.get_tensor_by_name(f'import/{i}:0') for i in inputs
+        }
+        output_nodes = {
+            o: graph.graph.get_tensor_by_name(f'import/{o}:0') for o in outputs
+        }
+        g = graph.prune(input_nodes, output_nodes)
     else:
         input_nodes = {
             i: graph.get_tensor_by_name(f'import/{i}:0') for i in inputs

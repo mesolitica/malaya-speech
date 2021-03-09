@@ -46,20 +46,19 @@ def fastspeech_load(
         model_path = 'model'
 
     g = load_graph(path[model][model_path], **kwargs)
-    output_nodes = ['decoder_output', 'post_mel_outputs']
-    outputs = {n: g.get_tensor_by_name(f'import/{n}:0') for n in output_nodes}
+    inputs = ['Placeholder', 'speed_ratios', 'f0_ratios', 'energy_ratios']
+    outputs = ['decoder_output', 'post_mel_outputs']
+    eager_g, input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
     stats = np.load(path[model]['stats'])
 
     return Fastspeech(
-        X = g.get_tensor_by_name('import/Placeholder:0'),
-        speed_ratios = g.get_tensor_by_name('import/speed_ratios:0'),
-        f0_ratios = g.get_tensor_by_name('import/f0_ratios:0'),
-        energy_ratios = g.get_tensor_by_name('import/energy_ratios:0'),
-        logits = outputs,
+        input_nodes = input_nodes,
+        output_nodes = output_nodes,
         normalizer = normalizer,
         stats = stats,
         sess = generate_session(graph = g, **kwargs),
+        eager_g = eager_g,
         model = model,
         name = name,
     )

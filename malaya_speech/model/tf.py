@@ -9,13 +9,24 @@ from malaya_speech.utils.padding import (
 from malaya_speech.utils.char import decode as char_decode
 from malaya_speech.utils.subword import decode as subword_decode
 from malaya_speech.utils.beam_search import transducer as transducer_beam
-from malaya_speech.utils.astype import to_tf
+from malaya_speech.utils.execute import execute_graph
 from malaya_speech.utils.constant import MEL_MEAN, MEL_STD
 
 
 class Abstract:
     def __str__(self):
         return f'<{self.__name__}: {self.__model__}>'
+
+    def execute(self, inputs, input_labels, output_labels):
+        return execute_graph(
+            inputs = inputs,
+            input_labels = input_labels,
+            output_labels = output_labels,
+            sess = self._sess,
+            eager_graph = self._eager_g,
+            input_nodes = self._input_nodes,
+            output_nodes = self._output_nodes,
+        )
 
 
 class Speakernet(Abstract):
@@ -65,18 +76,12 @@ class Speakernet(Abstract):
             inputs, dim = 0, return_len = True
         )
 
-        if self._output_nodes:
-            r = self._sess.run(
-                self._output_nodes['logits'],
-                feed_dict = {
-                    self._input_nodes['Placeholder']: inputs,
-                    self._input_nodes['Placeholder_1']: lengths,
-                },
-            )
-        else:
-            inputs = to_tf(self._eager_g.inputs, [inputs, lengths])
-            r = self._eager_g(**inputs)[0].numpy()
-        return r
+        r = self.execute(
+            inputs = [inputs, lengths],
+            input_labels = ['Placeholder', 'Placeholder_1'],
+            output_labels = ['logits'],
+        )
+        return r['logits']
 
     def __call__(self, inputs):
         return self.vectorize(inputs)
@@ -133,15 +138,12 @@ class Speaker2Vec(Abstract):
         inputs = padding_sequence_nd(inputs, dim = dim)
         inputs = np.expand_dims(inputs, -1)
 
-        if self._output_nodes:
-            r = self._sess.run(
-                self._output_nodes['logits'],
-                feed_dict = {self._input_nodes['Placeholder']: inputs},
-            )
-        else:
-            inputs = to_tf(self._eager_g.inputs, [inputs])
-            r = self._eager_g(**inputs)[0].numpy()
-        return r
+        r = self.execute(
+            inputs = [inputs],
+            input_labels = ['Placeholder'],
+            output_labels = ['logits'],
+        )
+        return r['logits']
 
     def __call__(self, inputs):
         return self.vectorize(inputs)
@@ -170,7 +172,7 @@ class SpeakernetClassification(Abstract):
         self.__model__ = model
         self.__name__ = name
 
-        if self._output_nodes:
+        if self._sess:
             self._output_nodes['logits'] = tf.nn.softmax(
                 self._output_nodes['logits']
             )
@@ -198,18 +200,13 @@ class SpeakernetClassification(Abstract):
         inputs, lengths = padding_sequence_nd(
             inputs, dim = 0, return_len = True
         )
-        if self._output_nodes:
-            r = self._sess.run(
-                self._output_nodes['logits'],
-                feed_dict = {
-                    self._input_nodes['Placeholder']: inputs,
-                    self._input_nodes['Placeholder_1']: lengths,
-                },
-            )
-        else:
-            inputs = to_tf(self._eager_g.inputs, [inputs, lengths])
-            r = self._eager_g(**inputs)[0].numpy()
-        return r
+
+        r = self.execute(
+            inputs = [inputs, lengths],
+            input_labels = ['Placeholder', 'Placeholder_1'],
+            output_labels = ['logits'],
+        )
+        return r['logits']
 
     def predict(self, inputs):
         """
@@ -268,7 +265,7 @@ class Classification(Abstract):
         self.__model__ = model
         self.__name__ = name
 
-        if self._output_nodes:
+        if self._sess:
             self._output_nodes['logits'] = tf.nn.softmax(
                 self._output_nodes['logits']
             )
@@ -297,19 +294,16 @@ class Classification(Abstract):
             dim = 0
         else:
             dim = 1
+
         inputs = padding_sequence_nd(inputs, dim = dim)
         inputs = np.expand_dims(inputs, -1)
 
-        if self._output_nodes:
-            r = self._sess.run(
-                self._output_nodes['logits'],
-                feed_dict = {self._input_nodes['Placeholder']: inputs},
-            )
-        else:
-            inputs = to_tf(self._eager_g.inputs, [inputs])
-            r = self._eager_g(**inputs)[0].numpy()
-
-        return r
+        r = self.execute(
+            inputs = [inputs],
+            input_labels = ['Placeholder'],
+            output_labels = ['logits'],
+        )
+        return r['logits']
 
     def predict(self, inputs):
         """
@@ -373,14 +367,13 @@ class UNET(Abstract):
         x, lens = padding_sequence_nd(
             mels, maxlen = 256, dim = 0, return_len = True
         )
-        if self._output_nodes:
-            l = self._sess.run(
-                self._output_nodes['logits'],
-                feed_dict = {self._input_nodes['Placeholder']: x},
-            )
-        else:
-            inputs = to_tf(self._eager_g.inputs, [x])
-            l = self._eager_g(**inputs)[0].numpy()
+
+        r = self.execute(
+            inputs = [x],
+            input_labels = ['Placeholder'],
+            output_labels = ['logits'],
+        )
+        l = r['logits']
 
         results = []
         for index in range(len(x)):
@@ -423,15 +416,11 @@ class UNETSTFT(Abstract):
         if isinstance(input, Frame):
             input = input.array
 
-        if self._output_nodes:
-            r = self._sess.run(
-                self._output_nodes,
-                feed_dict = {self._input_nodes['Placeholder']: input},
-            )
-        else:
-            inputs = to_tf(self._eager_g.inputs, [input])
-            r = self._eager_g(**inputs)
-            r = {f'logits_{no}': i.numpy() for no, i in enumerate(r)}
+        r = self.execute(
+            inputs = [input],
+            input_labels = ['Placeholder'],
+            output_labels = list(self._output_nodes.keys()),
+        )
         results = {}
         for no, instrument in enumerate(self._instruments):
             results[instrument] = r[f'logits_{no}']
@@ -478,16 +467,12 @@ class UNET1D(Abstract):
         if isinstance(input, Frame):
             input = input.array
 
-        if self._output_nodes:
-            r = self._sess.run(
-                self._output_nodes['logits'],
-                feed_dict = {self._input_nodes['Placeholder']: input},
-            )
-        else:
-            inputs = to_tf(self._eager_g.inputs, [input])
-            r = self._eager_g(**inputs)[0].numpy()
-
-        return r
+        r = self.execute(
+            inputs = [input],
+            input_labels = ['Placeholder'],
+            output_labels = ['logits'],
+        )
+        return r['logits']
 
     def __call__(self, input):
         """
@@ -503,170 +488,6 @@ class UNET1D(Abstract):
         result: np.array
         """
         return self.predict(input)
-
-
-class STT(Abstract):
-    def __init__(
-        self, X, X_len, logits, seq_lens, featurizer, vocab, sess, model, name
-    ):
-        self._X = X
-        self._X_len = X_len
-        self._logits = logits
-        self._seq_lens = seq_lens
-        self._featurizer = featurizer
-        self._vocab = vocab
-        self._softmax = tf.nn.softmax(logits)
-        self._sess = sess
-        self.__model__ = model
-        self.__name__ = name
-        self._decoder = None
-        self._beam_size = 0
-
-    def _check_decoder(self, decoder, beam_size):
-        decoder = decoder.lower()
-        if decoder not in ['greedy', 'beam']:
-            raise ValueError('mode only supports [`greedy`, `beam`]')
-        if beam_size < 1:
-            raise ValueError('beam_size must bigger than 0')
-        return decoder
-
-    def predict(
-        self, inputs, decoder: str = 'beam', beam_size: int = 100, **kwargs
-    ):
-        """
-        Transcribe inputs, will return list of strings.
-
-        Parameters
-        ----------
-        input: List[np.array]
-            List[np.array] or List[malaya_speech.model.frame.Frame].
-        decoder: str, optional (default='beam')
-            decoder mode, allowed values:
-
-            * ``'greedy'`` - greedy decoder.
-            * ``'beam'`` - beam decoder.
-        beam_size: int, optional (default=100)
-            beam size for beam decoder.
-
-        Returns
-        -------
-        result: List[str]
-        """
-
-        decoder = self._check_decoder(decoder, beam_size)
-
-        inputs = [
-            input.array if isinstance(input, Frame) else input
-            for input in inputs
-        ]
-
-        padded, lens = sequence_1d(inputs, return_len = True)
-
-        if decoder == 'greedy':
-            beam_size = 1
-        if beam_size != self._beam_size:
-            self._beam_size = beam_size
-            self._decoded = tf.nn.ctc_beam_search_decoder(
-                self._logits,
-                self._seq_lens,
-                beam_width = self._beam_size,
-                top_paths = 1,
-                merge_repeated = True,
-                **kwargs,
-            )[0][0]
-
-        r = self._sess.run(
-            self._decoded, feed_dict = {self._X: padded, self._X_len: lens}
-        )
-        decoded = np.zeros(r.dense_shape, dtype = np.int32)
-        for i in range(r.values.shape[0]):
-            decoded[r.indices[i][0], r.indices[i][1]] = r.values[i]
-
-        results = []
-        for i in range(len(decoded)):
-            results.append(
-                char_decode(decoded[i], lookup = self._vocab).replace(
-                    '<PAD>', ''
-                )
-            )
-        return results
-
-    def predict_lm(self, inputs, lm, beam_size: int = 100, **kwargs):
-        """
-        Transcribe inputs using Beam Search + LM, will return list of strings.
-        This method will not able to utilise batch decoding, instead will do loop to decode for each elements.
-
-        Parameters
-        ----------
-        input: List[np.array]
-            List[np.array] or List[malaya_speech.model.frame.Frame].
-        lm: ctc_decoders.Scorer
-            Returned from `malaya_speech.stt.language_model()`.
-        beam_size: int, optional (default=100)
-            beam size for beam decoder.
-        
-
-        Returns
-        -------
-        result: List[str]
-        """
-        try:
-            from ctc_decoders import ctc_beam_search_decoder
-        except:
-            raise ModuleNotFoundError(
-                'ctc_decoders not installed. Please install it by `pip install ctc-decoders` and try again.'
-            )
-
-        inputs = [
-            input.array if isinstance(input, Frame) else input
-            for input in inputs
-        ]
-
-        padded, lens = sequence_1d(inputs, return_len = True)
-        logits, seq_lens = self._sess.run(
-            [self._softmax, self._seq_lens],
-            feed_dict = {self._X: padded, self._X_len: lens},
-        )
-        logits = np.transpose(logits, axes = (1, 0, 2))
-        results = []
-        for i in range(len(logits)):
-            d = ctc_beam_search_decoder(
-                logits[i][: seq_lens[i]],
-                self._vocab,
-                beam_size,
-                ext_scoring_func = lm,
-                **kwargs,
-            )
-            results.append(d[0][1])
-        return results
-
-    def __call__(
-        self, input, decoder: str = 'greedy', lm: bool = False, **kwargs
-    ):
-        """
-        Transcribe input, will return a string.
-
-        Parameters
-        ----------
-        input: np.array
-            np.array or malaya_speech.model.frame.Frame.
-        decoder: str, optional (default='beam')
-            decoder mode, allowed values:
-
-            * ``'greedy'`` - greedy decoder.
-            * ``'beam'`` - beam decoder.
-        lm: bool, optional (default=False)
-        **kwargs: keyword arguments passed to `predict` or `predict_lm`.
-
-        Returns
-        -------
-        result: str
-        """
-        if lm:
-            method = self.predict_lm
-        else:
-            method = self.predict
-        return method([input], decoder = decoder, **kwargs)[0]
 
 
 class Transducer(Abstract):
@@ -813,7 +634,7 @@ class Transducer(Abstract):
         return self.predict([input], decoder = decoder, **kwargs)[0]
 
 
-class Vocoder:
+class Vocoder(Abstract):
     def __init__(self, input_nodes, output_nodes, sess, eager_g, model, name):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
@@ -839,15 +660,13 @@ class Vocoder:
             for input in inputs
         ]
         padded, lens = sequence_1d(inputs, return_len = True)
-        if self._output_nodes:
-            r = self._sess.run(
-                self._output_nodes['logits'],
-                feed_dict = {self._input_nodes['Placeholder']: padded},
-            )
-        else:
-            inputs = to_tf(self._eager_g.inputs, [padded])
-            r = self._eager_g(**inputs)[0]
-        return r[:, :, 0]
+
+        r = self.execute(
+            inputs = [padded],
+            input_labels = ['Placeholder'],
+            output_labels = ['logits'],
+        )
+        return r['logits'][:, :, 0]
 
     def __call__(self, input):
         return self.predict([input])[0]
@@ -888,30 +707,25 @@ class Tacotron(Abstract):
         """
 
         t, ids = self._normalizer.normalize(string, **kwargs)
-        if self._output_nodes:
-            r = self._sess.run(
-                self._output_nodes,
-                feed_dict = {
-                    self._input_nodes['Placeholder']: [ids],
-                    self._input_nodes['Placeholder_1']: [len(ids)],
-                },
-            )
-            v = r['post_mel_outputs'][0] * self._stats[1] + self._stats[0]
-            v = (v - MEL_MEAN) / MEL_STD
-            return {
-                'string': t,
-                'ids': ids,
-                'decoder-output': r['decoder_output'][0],
-                'postnet-output': r['post_mel_outputs'][0],
-                'universal-output': v,
-                'alignment': r['alignment_histories'][0],
-            }
-        else:
-            inputs = to_tf(
-                self._eager_g.inputs, [np.array([ids]), np.array([len(ids)])]
-            )
-            r = self._eager_g(**inputs)
-            return r
+        r = self.execute(
+            inputs = [np.array([ids]), np.array([len(ids)])],
+            input_labels = ['Placeholder', 'Placeholder_1'],
+            output_labels = [
+                'decoder_output',
+                'post_mel_outputs',
+                'alignment_histories',
+            ],
+        )
+        v = r['post_mel_outputs'][0] * self._stats[1] + self._stats[0]
+        v = (v - MEL_MEAN) / MEL_STD
+        return {
+            'string': t,
+            'ids': ids,
+            'decoder-output': r['decoder_output'][0],
+            'postnet-output': r['post_mel_outputs'][0],
+            'universal-output': v,
+            'alignment': r['alignment_histories'][0],
+        }
 
     def __call__(self, input):
         return self.predict(input)
@@ -920,25 +734,21 @@ class Tacotron(Abstract):
 class Fastspeech(Abstract):
     def __init__(
         self,
-        X,
-        speed_ratios,
-        f0_ratios,
-        energy_ratios,
-        logits,
+        input_nodes,
+        output_nodes,
         normalizer,
         stats,
         sess,
+        eager_g,
         model,
         name,
     ):
-        self._X = X
-        self._speed_ratios = speed_ratios
-        self._f0_ratios = f0_ratios
-        self._energy_ratios = energy_ratios
-        self._logits = logits
+        self._input_nodes = input_nodes
+        self._output_nodes = output_nodes
         self._normalizer = normalizer
         self._stats = stats
         self._sess = sess
+        self._eager_g = eager_g
         self.__model__ = model
         self.__name__ = name
 
@@ -968,14 +778,20 @@ class Fastspeech(Abstract):
         result: Dict[string, decoder-output, postnet-output, universal-output]
         """
         t, ids = self._normalizer.normalize(string, **kwargs)
-        r = self._sess.run(
-            self._logits,
-            feed_dict = {
-                self._X: [ids],
-                self._speed_ratios: [speed_ratio],
-                self._f0_ratios: [f0_ratio],
-                self._energy_ratios: [energy_ratio],
-            },
+        r = self.execute(
+            inputs = [
+                np.array([ids]),
+                np.array([speed_ratio]),
+                np.array([f0_ratio]),
+                np.array([energy_ratio]),
+            ],
+            input_labels = [
+                'Placeholder',
+                'speed_ratios',
+                'f0_ratios',
+                'energy_ratios',
+            ],
+            output_labels = ['decoder_output', 'post_mel_outputs'],
         )
         v = r['post_mel_outputs'][0] * self._stats[1] + self._stats[0]
         v = (v - MEL_MEAN) / MEL_STD
@@ -1038,37 +854,25 @@ class FastVC(Abstract):
         original_v = self._speaker_vector([original_audio])[0] * 30 - 3.5
         target_v = self._speaker_vector([target_audio])[0] * 30 - 3.5
 
-        if self._output_nodes:
-            r = self._sess.run(
-                self._output_nodes,
-                feed_dict = {
-                    self._input_nodes['mel']: [original_mel],
-                    self._input_nodes['ori_vector']: [original_v],
-                    self._input_nodes['target_vector']: [target_v],
-                    self._input_nodes['mel_lengths']: [len(original_mel)],
-                },
-            )
-            r = {
-                'decoder-output': r['mel_before'][0],
-                'postnet-output': r['mel_after'][0],
-            }
-        else:
-            inputs = to_tf(
-                self._eager_g.inputs,
-                [
-                    np.array([original_mel]),
-                    np.array([original_v]),
-                    np.array([target_v]),
-                    np.array([len(original_mel)]),
-                ],
-            )
-            r = self._eager_g(**inputs)
-            r = {
-                'decoder-output': r[0][0].numpy(),
-                'postnet-output': r[1][0].numpy(),
-            }
-
-        return r
+        r = self.execute(
+            inputs = [
+                np.array([original_mel]),
+                np.array([original_v]),
+                np.array([target_v]),
+                np.array([len(original_mel)]),
+            ],
+            input_labels = [
+                'mel',
+                'ori_vector',
+                'target_vector',
+                'mel_lengths',
+            ],
+            output_labels = ['mel_before', 'mel_after'],
+        )
+        return {
+            'decoder-output': r['mel_before'][0],
+            'postnet-output': r['mel_after'][0],
+        }
 
     def __call__(self, original_audio, target_audio):
         return self.predict(original_audio, target_audio)
