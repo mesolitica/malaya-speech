@@ -41,3 +41,7 @@ def logsumexp(a, axis = None, b = None, keepdims = False, return_sign = False):
 
 def softmax(x, axis = None):
     return np.exp(x - logsumexp(x, axis = axis, keepdims = True))
+
+
+def sigmoid(x):
+    return np.exp(-np.logaddexp(0, -x))

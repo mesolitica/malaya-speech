@@ -18,7 +18,7 @@ class Abstract:
     def __str__(self):
         return f'<{self.__name__}: {self.__model__}>'
 
-    def execute(self, inputs, input_labels, output_labels):
+    def _execute(self, inputs, input_labels, output_labels):
         return execute_graph(
             inputs = inputs,
             input_labels = input_labels,
@@ -74,7 +74,7 @@ class Speakernet(Abstract):
             inputs, dim = 0, return_len = True
         )
 
-        r = self.execute(
+        r = self._execute(
             inputs = [inputs, lengths],
             input_labels = ['Placeholder', 'Placeholder_1'],
             output_labels = ['logits'],
@@ -134,7 +134,7 @@ class Speaker2Vec(Abstract):
         inputs = padding_sequence_nd(inputs, dim = dim)
         inputs = np.expand_dims(inputs, -1)
 
-        r = self.execute(
+        r = self._execute(
             inputs = [inputs],
             input_labels = ['Placeholder'],
             output_labels = ['logits'],
@@ -190,7 +190,7 @@ class SpeakernetClassification(Abstract):
             inputs, dim = 0, return_len = True
         )
 
-        r = self.execute(
+        r = self._execute(
             inputs = [inputs, lengths],
             input_labels = ['Placeholder', 'Placeholder_1'],
             output_labels = ['logits'],
@@ -280,7 +280,7 @@ class Classification(Abstract):
         inputs = padding_sequence_nd(inputs, dim = dim)
         inputs = np.expand_dims(inputs, -1)
 
-        r = self.execute(
+        r = self._execute(
             inputs = [inputs],
             input_labels = ['Placeholder'],
             output_labels = ['logits'],
@@ -349,7 +349,7 @@ class UNET(Abstract):
             mels, maxlen = 256, dim = 0, return_len = True
         )
 
-        r = self.execute(
+        r = self._execute(
             inputs = [x],
             input_labels = ['Placeholder'],
             output_labels = ['logits'],
@@ -396,7 +396,7 @@ class UNETSTFT(Abstract):
         if isinstance(input, Frame):
             input = input.array
 
-        r = self.execute(
+        r = self._execute(
             inputs = [input],
             input_labels = ['Placeholder'],
             output_labels = list(self._output_nodes.keys()),
@@ -446,7 +446,7 @@ class UNET1D(Abstract):
         if isinstance(input, Frame):
             input = input.array
 
-        r = self.execute(
+        r = self._execute(
             inputs = [input],
             input_labels = ['Placeholder'],
             output_labels = ['logits'],
@@ -520,6 +520,23 @@ class Transducer(Abstract):
             raise ValueError('beam_size must bigger than 0')
         return decoder
 
+    def predict_timestamp(self, input):
+        """
+        Transcribe input and get timestamp, only support greedy decoder.
+
+        Parameters
+        ----------
+        input: np.array
+            np.array or malaya_speech.model.frame.Frame.
+
+        Returns
+        -------
+        result: Dict[timestamp, decoded]
+        """
+        input = input.array if isinstance(input, Frame) else input
+
+        padded, lens = sequence_1d([inputs], return_len = True)
+
     def predict(
         self, inputs, decoder: str = 'greedy', beam_size: int = 5, **kwargs
     ):
@@ -528,7 +545,7 @@ class Transducer(Abstract):
 
         Parameters
         ----------
-        input: List[np.array]
+        inputs: List[np.array]
             List[np.array] or List[malaya_speech.model.frame.Frame].
         decoder: str, optional (default='beam')
             decoder mode, allowed values:
@@ -552,7 +569,7 @@ class Transducer(Abstract):
         padded, lens = sequence_1d(inputs, return_len = True)
         results = []
 
-        if decoder == 'greedy' and self._greedy is not None:
+        if decoder == 'greedy':
             r = self._sess.run(
                 self._greedy,
                 feed_dict = {
@@ -564,8 +581,6 @@ class Transducer(Abstract):
                 results.append(subword_decode(self._vocab, row[row > 0]))
 
         else:
-            if decoder == 'greedy':
-                beam_size = 1
             encoded_, padded_lens_, s = self._sess.run(
                 [self._encoded, self._padded_lens, self._initial_states],
                 feed_dict = {
@@ -639,7 +654,7 @@ class Vocoder(Abstract):
         ]
         padded, lens = sequence_1d(inputs, return_len = True)
 
-        r = self.execute(
+        r = self._execute(
             inputs = [padded],
             input_labels = ['Placeholder'],
             output_labels = ['logits'],
@@ -676,7 +691,7 @@ class Tacotron(Abstract):
         """
 
         t, ids = self._normalizer.normalize(string, **kwargs)
-        r = self.execute(
+        r = self._execute(
             inputs = [[ids], [len(ids)]],
             input_labels = ['Placeholder', 'Placeholder_1'],
             output_labels = [
@@ -738,7 +753,7 @@ class Fastspeech(Abstract):
         result: Dict[string, decoder-output, postnet-output, universal-output]
         """
         t, ids = self._normalizer.normalize(string, **kwargs)
-        r = self.execute(
+        r = self._execute(
             inputs = [[ids], [speed_ratio], [f0_ratio], [energy_ratio]],
             input_labels = [
                 'Placeholder',
@@ -807,7 +822,7 @@ class FastVC(Abstract):
         original_v = self._speaker_vector([original_audio])[0] * 30 - 3.5
         target_v = self._speaker_vector([target_audio])[0] * 30 - 3.5
 
-        r = self.execute(
+        r = self._execute(
             inputs = [
                 [original_mel],
                 [original_v],
