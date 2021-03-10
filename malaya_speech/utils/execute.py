@@ -21,20 +21,13 @@ def execute_graph(
     input_labels,
     output_labels,
     sess = None,
-    eager_graph = None,
     input_nodes = None,
     output_nodes = None,
 ):
-    if tf.executing_eagerly():
-        inputs = to_tf(eager_graph.inputs, inputs)
-        r = eager_graph(**inputs)
-        r = {label: r[label].numpy() for label in output_labels}
-    else:
-        output_nodes = {label: output_nodes[label] for label in output_labels}
-        input_nodes = {
-            input_nodes[label]: inputs[no]
-            for no, label in enumerate(input_labels)
-        }
-        r = sess.run(output_nodes, feed_dict = input_nodes)
+    output_nodes = {label: output_nodes[label] for label in output_labels}
+    input_nodes = {
+        input_nodes[label]: inputs[no] for no, label in enumerate(input_labels)
+    }
+    r = sess.run(output_nodes, feed_dict = input_nodes)
 
     return r

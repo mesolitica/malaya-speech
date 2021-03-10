@@ -20,7 +20,7 @@ def tacotron_load(
     g = load_graph(path[model][model_path], **kwargs)
     inputs = ['Placeholder', 'Placeholder_1']
     outputs = ['decoder_output', 'post_mel_outputs', 'alignment_histories']
-    eager_g, input_nodes, output_nodes = nodes_session(g, inputs, outputs)
+    input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
     stats = np.load(path[model]['stats'])
 
@@ -30,7 +30,6 @@ def tacotron_load(
         normalizer = normalizer,
         stats = stats,
         sess = generate_session(graph = g, **kwargs),
-        eager_g = eager_g,
         model = model,
         name = name,
     )
@@ -48,7 +47,7 @@ def fastspeech_load(
     g = load_graph(path[model][model_path], **kwargs)
     inputs = ['Placeholder', 'speed_ratios', 'f0_ratios', 'energy_ratios']
     outputs = ['decoder_output', 'post_mel_outputs']
-    eager_g, input_nodes, output_nodes = nodes_session(g, inputs, outputs)
+    input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
     stats = np.load(path[model]['stats'])
 
@@ -58,7 +57,6 @@ def fastspeech_load(
         normalizer = normalizer,
         stats = stats,
         sess = generate_session(graph = g, **kwargs),
-        eager_g = eager_g,
         model = model,
         name = name,
     )

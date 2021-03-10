@@ -46,31 +46,16 @@ def check_file_cloud(url):
 
 
 def nodes_session(graph, inputs, outputs):
-    if tf.executing_eagerly():
-        input_nodes = {
-            i: graph.graph.get_tensor_by_name(f'import/{i}:0') for i in inputs
-        }
-        output_nodes = {
-            o: graph.graph.get_tensor_by_name(f'import/{o}:0') for o in outputs
-        }
-        g = graph.prune(input_nodes, output_nodes)
-    else:
-        input_nodes = {
-            i: graph.get_tensor_by_name(f'import/{i}:0') for i in inputs
-        }
-        output_nodes = {
-            o: graph.get_tensor_by_name(f'import/{o}:0') for o in outputs
-        }
-        g = None
-    return g, input_nodes, output_nodes
+    input_nodes = {i: graph.get_tensor_by_name(f'import/{i}:0') for i in inputs}
+    output_nodes = {
+        o: graph.get_tensor_by_name(f'import/{o}:0') for o in outputs
+    }
+    return input_nodes, output_nodes
 
 
 def generate_session(graph, **kwargs):
-    if tf.executing_eagerly():
-        return None
-
+    config = tf.compat.v1.ConfigProto()
     if gpu_available():
-        config = tf.ConfigProto()
         if 'gpu' in kwargs:
             config.allow_soft_placement = True
 
@@ -85,10 +70,8 @@ def generate_session(graph, **kwargs):
             config.gpu_options.per_process_gpu_memory_fraction = gpu_limit
 
         config.gpu_options.allow_growth = True
-        sess = tf.compat.v1.InteractiveSession(config = config, graph = graph)
 
-    else:
-        sess = tf.compat.v1.InteractiveSession(graph = graph)
+    sess = tf.compat.v1.Session(config = config, graph = graph)
     return sess
 
 
@@ -128,7 +111,7 @@ def load_graph(frozen_graph_filename, **kwargs):
                 node.input[0] = node.input[1]
                 del node.input[1]
 
-    def get_gpu():
+    with tf.Graph().as_default() as graph:
         if gpu_available():
             if 'gpu' in kwargs:
                 gpu = kwargs.get('gpu', 0)
@@ -143,17 +126,6 @@ def load_graph(frozen_graph_filename, **kwargs):
                 tf.compat.v1.import_graph_def(graph_def)
         else:
             tf.compat.v1.import_graph_def(graph_def)
-
-    if tf.executing_eagerly():
-
-        def _imports_graph_def():
-            get_gpu()
-
-        graph = tf.compat.v1.wrap_function(_imports_graph_def, [])
-
-    else:
-        with tf.Graph().as_default() as graph:
-            get_gpu()
 
     return graph
 

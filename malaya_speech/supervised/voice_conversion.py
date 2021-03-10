@@ -19,7 +19,7 @@ def load(path, s3_path, model, name, quantized = False, **kwargs):
     g = load_graph(path[model][model_path], **kwargs)
     inputs = ['mel', 'ori_vector', 'target_vector', 'mel_lengths']
     outputs = ['mel_before', 'mel_after']
-    eager_g, input_nodes, output_nodes = nodes_session(g, inputs, outputs)
+    input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
     speaker_model = speaker_vector.deep_model('vggvox-v2', **kwargs)
     return FastVC(
@@ -28,7 +28,6 @@ def load(path, s3_path, model, name, quantized = False, **kwargs):
         waveform_to_mel = universal_mel,
         speaker_vector = speaker_model,
         sess = generate_session(graph = g, **kwargs),
-        eager_g = eager_g,
         model = model,
         name = name,
     )

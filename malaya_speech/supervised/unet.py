@@ -20,13 +20,12 @@ def load(model, module, quantized = False, **kwargs):
 
     inputs = ['Placeholder']
     outputs = ['logits']
-    eager_g, input_nodes, output_nodes = nodes_session(g, inputs, outputs)
+    input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
     return UNET(
         input_nodes = input_nodes,
         output_nodes = output_nodes,
         sess = generate_session(graph = g, **kwargs),
-        eager_g = eager_g,
         model = model,
         name = module,
     )
@@ -43,14 +42,13 @@ def load_stft(model, module, instruments, quantized = False, **kwargs):
     g = load_graph(path['model'], **kwargs)
     inputs = ['Placeholder']
     outputs = [f'logits_{i}' for i in range(len(instruments))]
-    eager_g, input_nodes, output_nodes = nodes_session(g, inputs, outputs)
+    input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
     return UNETSTFT(
         input_nodes = input_nodes,
         output_nodes = output_nodes,
         instruments = instruments,
         sess = generate_session(graph = g, **kwargs),
-        eager_g = eager_g,
         model = model,
         name = module,
     )
@@ -67,13 +65,12 @@ def load_1d(model, module, quantized = False, **kwargs):
     g = load_graph(path['model'], **kwargs)
     inputs = ['Placeholder']
     outputs = ['logits']
-    eager_g, input_nodes, output_nodes = nodes_session(g, inputs, outputs)
+    input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
     return UNET1D(
         input_nodes = input_nodes,
         output_nodes = output_nodes,
         sess = generate_session(graph = g, **kwargs),
-        eager_g = eager_g,
         model = model,
         name = module,
     )

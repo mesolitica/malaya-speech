@@ -10,6 +10,7 @@ from malaya_speech.utils.char import decode as char_decode
 from malaya_speech.utils.subword import decode as subword_decode
 from malaya_speech.utils.beam_search import transducer as transducer_beam
 from malaya_speech.utils.execute import execute_graph
+from malaya_speech.utils.activation import softmax
 from malaya_speech.utils.constant import MEL_MEAN, MEL_STD
 
 
@@ -23,7 +24,6 @@ class Abstract:
             input_labels = input_labels,
             output_labels = output_labels,
             sess = self._sess,
-            eager_graph = self._eager_g,
             input_nodes = self._input_nodes,
             output_nodes = self._output_nodes,
         )
@@ -36,7 +36,6 @@ class Speakernet(Abstract):
         output_nodes,
         vectorizer,
         sess,
-        eager_g,
         model,
         extra,
         label,
@@ -46,7 +45,6 @@ class Speakernet(Abstract):
         self._output_nodes = output_nodes
         self._vectorizer = vectorizer
         self._sess = sess
-        self._eager_g = eager_g
         self._extra = extra
         self.labels = label
         self.__model__ = model
@@ -94,7 +92,6 @@ class Speaker2Vec(Abstract):
         output_nodes,
         vectorizer,
         sess,
-        eager_g,
         model,
         extra,
         label,
@@ -104,7 +101,6 @@ class Speaker2Vec(Abstract):
         self._output_nodes = output_nodes
         self._vectorizer = vectorizer
         self._sess = sess
-        self._eager_g = eager_g
         self._extra = extra
         self.labels = label
         self.__model__ = model
@@ -156,7 +152,6 @@ class SpeakernetClassification(Abstract):
         output_nodes,
         vectorizer,
         sess,
-        eager_g,
         model,
         extra,
         label,
@@ -166,16 +161,10 @@ class SpeakernetClassification(Abstract):
         self._output_nodes = output_nodes
         self._vectorizer = vectorizer
         self._sess = sess
-        self._eager_g = eager_g
         self._extra = extra
         self.labels = label
         self.__model__ = model
         self.__name__ = name
-
-        if self._sess:
-            self._output_nodes['logits'] = tf.nn.softmax(
-                self._output_nodes['logits']
-            )
 
     def predict_proba(self, inputs):
         """
@@ -206,7 +195,7 @@ class SpeakernetClassification(Abstract):
             input_labels = ['Placeholder', 'Placeholder_1'],
             output_labels = ['logits'],
         )
-        return r['logits']
+        return softmax(r['logits'], axis = -1)
 
     def predict(self, inputs):
         """
@@ -249,7 +238,6 @@ class Classification(Abstract):
         output_nodes,
         vectorizer,
         sess,
-        eager_g,
         model,
         extra,
         label,
@@ -259,16 +247,10 @@ class Classification(Abstract):
         self._output_nodes = output_nodes
         self._vectorizer = vectorizer
         self._sess = sess
-        self._eager_g = eager_g
         self._extra = extra
         self.labels = label
         self.__model__ = model
         self.__name__ = name
-
-        if self._sess:
-            self._output_nodes['logits'] = tf.nn.softmax(
-                self._output_nodes['logits']
-            )
 
     def predict_proba(self, inputs):
         """
@@ -303,7 +285,7 @@ class Classification(Abstract):
             input_labels = ['Placeholder'],
             output_labels = ['logits'],
         )
-        return r['logits']
+        return softmax(r['logits'], axis = -1)
 
     def predict(self, inputs):
         """
@@ -339,11 +321,10 @@ class Classification(Abstract):
 
 
 class UNET(Abstract):
-    def __init__(self, input_nodes, output_nodes, sess, eager_g, model, name):
+    def __init__(self, input_nodes, output_nodes, sess, model, name):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
         self._sess = sess
-        self._eager_g = eager_g
         self.__model__ = model
         self.__name__ = name
 
@@ -390,13 +371,12 @@ class UNET(Abstract):
 
 class UNETSTFT(Abstract):
     def __init__(
-        self, input_nodes, output_nodes, instruments, sess, eager_g, model, name
+        self, input_nodes, output_nodes, instruments, sess, model, name
     ):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
         self._instruments = instruments
         self._sess = sess
-        self._eager_g = eager_g
         self.__model__ = model
         self.__name__ = name
 
@@ -443,11 +423,10 @@ class UNETSTFT(Abstract):
 
 
 class UNET1D(Abstract):
-    def __init__(self, input_nodes, output_nodes, sess, eager_g, model, name):
+    def __init__(self, input_nodes, output_nodes, sess, model, name):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
         self._sess = sess
-        self._eager_g = eager_g
         self.__model__ = model
         self.__name__ = name
 
@@ -635,11 +614,10 @@ class Transducer(Abstract):
 
 
 class Vocoder(Abstract):
-    def __init__(self, input_nodes, output_nodes, sess, eager_g, model, name):
+    def __init__(self, input_nodes, output_nodes, sess, model, name):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
         self._sess = sess
-        self._eager_g = eager_g
         self.__model__ = model
         self.__name__ = name
 
@@ -674,22 +652,13 @@ class Vocoder(Abstract):
 
 class Tacotron(Abstract):
     def __init__(
-        self,
-        input_nodes,
-        output_nodes,
-        normalizer,
-        stats,
-        sess,
-        eager_g,
-        model,
-        name,
+        self, input_nodes, output_nodes, normalizer, stats, sess, model, name
     ):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
         self._normalizer = normalizer
         self._stats = stats
         self._sess = sess
-        self._eager_g = eager_g
         self.__model__ = model
         self.__name__ = name
 
@@ -708,7 +677,7 @@ class Tacotron(Abstract):
 
         t, ids = self._normalizer.normalize(string, **kwargs)
         r = self.execute(
-            inputs = [np.array([ids]), np.array([len(ids)])],
+            inputs = [[ids], [len(ids)]],
             input_labels = ['Placeholder', 'Placeholder_1'],
             output_labels = [
                 'decoder_output',
@@ -733,22 +702,13 @@ class Tacotron(Abstract):
 
 class Fastspeech(Abstract):
     def __init__(
-        self,
-        input_nodes,
-        output_nodes,
-        normalizer,
-        stats,
-        sess,
-        eager_g,
-        model,
-        name,
+        self, input_nodes, output_nodes, normalizer, stats, sess, model, name
     ):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
         self._normalizer = normalizer
         self._stats = stats
         self._sess = sess
-        self._eager_g = eager_g
         self.__model__ = model
         self.__name__ = name
 
@@ -779,12 +739,7 @@ class Fastspeech(Abstract):
         """
         t, ids = self._normalizer.normalize(string, **kwargs)
         r = self.execute(
-            inputs = [
-                np.array([ids]),
-                np.array([speed_ratio]),
-                np.array([f0_ratio]),
-                np.array([energy_ratio]),
-            ],
+            inputs = [[ids], [speed_ratio], [f0_ratio], [energy_ratio]],
             input_labels = [
                 'Placeholder',
                 'speed_ratios',
@@ -814,7 +769,6 @@ class FastVC(Abstract):
         output_nodes,
         waveform_to_mel,
         speaker_vector,
-        eager_g,
         sess,
         model,
         name,
@@ -823,7 +777,6 @@ class FastVC(Abstract):
         self._output_nodes = output_nodes
         self._waveform_to_mel = waveform_to_mel
         self._speaker_vector = speaker_vector
-        self._eager_g = eager_g
         self._sess = sess
         self.__model__ = model
         self.__name__ = name
@@ -856,10 +809,10 @@ class FastVC(Abstract):
 
         r = self.execute(
             inputs = [
-                np.array([original_mel]),
-                np.array([original_v]),
-                np.array([target_v]),
-                np.array([len(original_mel)]),
+                [original_mel],
+                [original_v],
+                [target_v],
+                [len(original_mel)],
             ],
             input_labels = [
                 'mel',

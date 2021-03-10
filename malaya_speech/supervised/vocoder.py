@@ -20,13 +20,12 @@ def load(model, module, quantized = False, **kwargs):
 
     inputs = ['Placeholder']
     outputs = ['logits']
-    eager_g, input_nodes, output_nodes = nodes_session(g, inputs, outputs)
+    input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
     return Vocoder(
         input_nodes = input_nodes,
         output_nodes = output_nodes,
         sess = generate_session(graph = g, **kwargs),
-        eager_g = eager_g,
         model = model,
         name = module,
     )

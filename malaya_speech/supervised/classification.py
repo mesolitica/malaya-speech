@@ -54,14 +54,13 @@ def load(model, module, extra, label, quantized = False, **kwargs):
         inputs = ['Placeholder']
         outputs = ['logits']
 
-    eager_g, input_nodes, output_nodes = nodes_session(g, inputs, outputs)
+    input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
     return model_class(
         input_nodes = input_nodes,
         output_nodes = output_nodes,
         vectorizer = vectorizer_mapping[model],
         sess = generate_session(graph = g, **kwargs),
-        eager_g = eager_g,
         model = model,
         extra = extra,
         label = label,
