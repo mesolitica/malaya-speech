@@ -69,12 +69,6 @@ malaya_speech.model.tf.UNET1D
 .. autoclass:: malaya_speech.model.tf.UNET1D()
     :members:
 
-malaya_speech.model.tf.STT
-----------------------------------
-
-.. autoclass:: malaya_speech.model.tf.STT()
-    :members:
-
 malaya_speech.model.tf.Transducer
 ----------------------------------
 
