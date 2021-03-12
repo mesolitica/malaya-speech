@@ -403,7 +403,6 @@ def describe_availability(dict, transpose = True, text = ''):
 
 
 from . import astype
-from . import beam_search
 from . import char
 from . import combine
 from . import constant

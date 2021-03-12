@@ -15,6 +15,7 @@ import numpy as np
 import random
 from glob import glob
 
+subwords = malaya_speech.subword.load('transducer.subword')
 config = malaya_speech.config.conformer_small_encoder_config
 
 parameters = {
@@ -24,10 +25,6 @@ parameters = {
         'max_lr': (0.05 / config['dmodel']),
     },
 }
-
-sr = 16000
-maxlen = 18
-minlen_text = 1
 
 featurizer = malaya_speech.tf_featurization.STTFeaturizer(
     normalize_per_feature = True
@@ -60,7 +57,7 @@ def learning_rate_scheduler(global_step):
 
 def mel_augmentation(features):
 
-    features = mask_augmentation.warp(features)
+    features = mask_augmentation.warp_time_pil(features)
     features = mask_augmentation.mask_frequency(features, width_freq_mask = 12)
     features = mask_augmentation.mask_time(
         features, width_time_mask = int(features.shape[0] * 0.05)
@@ -119,9 +116,7 @@ def get_dataset(
         dataset = dataset.shuffle(shuffle_size)
         dataset = dataset.repeat()
         dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
-        dataset = dataset.map(
-            parse, num_parallel_calls = tf.contrib.data.AUTOTUNE
-        )
+        dataset = dataset.map(parse, num_parallel_calls = thread_count)
         dataset = dataset.padded_batch(
             batch_size,
             padded_shapes = {

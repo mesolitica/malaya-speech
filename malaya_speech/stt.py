@@ -4,10 +4,10 @@ import json
 
 _transducer_availability = {
     'small-conformer': {
-        'Size (MB)': 44.1,
-        'Quantized Size (MB)': 13.3,
-        'WER': 0.2692,
-        'CER': 0.1058,
+        'Size (MB)': 49.2,
+        'Quantized Size (MB)': 18.1,
+        'WER': 0.23728,
+        'CER': 0.08524,
     },
     'conformer': {
         'Size (MB)': 120,
@@ -33,6 +33,14 @@ _transducer_availability = {
         'WER': 0.30567,
         'CER': 0.12267,
     },
+}
+
+google_accuracy = {
+    'WER': 0.14270,
+    'CER': 0.04682,
+    'last update': '2021-03-11',
+    'library use': 'https://pypi.org/project/SpeechRecognition/',
+    'notebook link': 'https://github.com/huseinzol05/malaya-speech/blob/master/data/semisupervised-audiobook/benchmark-google-speech-malaya-speech-test-dataset.ipynb',
 }
 
 
@@ -61,6 +69,7 @@ def deep_transducer(
         * ``'conformer'`` - BASE size Google Conformer, https://arxiv.org/pdf/2005.08100.pdf
         * ``'large-conformer'`` - LARGE size Google Conformer, https://arxiv.org/pdf/2005.08100.pdf
         * ``'alconformer'`` - BASE size A-Lite Google Conformer.
+        * ``'large-alconformer'`` - LARGE size A-Lite Google Conformer.
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 

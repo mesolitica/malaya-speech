@@ -166,12 +166,6 @@ malaya_speech.utils.astype
 .. automodule:: malaya_speech.utils.astype
     :members:
 
-malaya_speech.utils.beam_search
-----------------------------------
-
-.. automodule:: malaya_speech.utils.beam_search
-    :members:
-
 malaya_speech.utils.char
 --------------------------
 

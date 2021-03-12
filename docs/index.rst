@@ -33,12 +33,9 @@ Contents:
    :maxdepth: 2
    :caption: ASR Module
 
-   ctc-language-model
-   load-stt-ctc-model
    load-stt-transducer-model
    transcribe-long-audio
    realtime-asr
-   convert-asr-to-tflite
 
 .. toctree::
    :maxdepth: 2
