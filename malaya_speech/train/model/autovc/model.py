@@ -63,7 +63,7 @@ class Encoder(tf.keras.layers.Layer):
         x = tf.concat([x, c_org], axis = -1)
         for c in self.convolutions:
             x = c(x, training = training)
-            x = tf.nn.relu(x)
+            x = tf.nn.tanh(x)
         outputs = self.lstm(x)
         out_forward = outputs[:, :, : self.dim_neck]
         out_backward = outputs[:, :, self.dim_neck :]
