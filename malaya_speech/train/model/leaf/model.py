@@ -15,6 +15,8 @@
 
 
 import tensorflow as tf
+import numpy as np
+import math
 from . import normalization
 
 
@@ -88,10 +90,7 @@ class ExponentialMovingAverage(tf.keras.layers.Layer):
     """Computes of an exponential moving average of an sequential input."""
 
     def __init__(
-        self,
-        coeff_init: Union[float, tf.Tensor],
-        per_channel: bool = False,
-        trainable: bool = False,
+        self, coeff_init, per_channel: bool = False, trainable: bool = False
     ):
         """Initializes the ExponentialMovingAverage.
     Args:
@@ -561,7 +560,7 @@ class Model(tf.keras.models.Model):
         conv1d_cls = GaborConv1D,
         activation = SquaredModulus(),
         pooling_cls = GaussianLowpass,
-        n_filters: int = 40,
+        n_filters: int = 80,
         sample_rate: int = 16000,
         window_len: float = 25.0,
         window_stride: float = 10.0,
@@ -574,15 +573,14 @@ class Model(tf.keras.models.Model):
             learn_smooth_coef = True,
             per_channel_smooth_coef = True,
         ),
-        preemp: bool = False,
+        preemp: bool = True,
         preemp_init = PreempInit(),
         complex_conv_init = GaborInit(
             sample_rate = 16000, min_freq = 60.0, max_freq = 7800.0
         ),
         pooling_init = tf.keras.initializers.Constant(0.4),
         regularizer_fn = None,
-        mean_var_norm: bool = False,
-        spec_augment: bool = False,
+        mean_var_norm: bool = True,
         name = 'leaf',
     ):
         super().__init__(name = name)

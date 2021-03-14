@@ -29,6 +29,43 @@ def warp_time_pil(features, max_time_warp = 80):
     return np.concatenate((left, right), 0)
 
 
+def tf_warp_time(features, max_time_warp = 80):
+    window = max_time_warp
+    t = tf.shape(features)[0]
+
+    def warp(features):
+        center = tf.random.uniform(
+            shape = [], minval = window, maxval = t - window, dtype = tf.int32
+        )
+        warped = (
+            tf.random.uniform(
+                shape = [],
+                minval = center - window,
+                maxval = center + window,
+                dtype = tf.int32,
+            )
+            + 1
+        )
+        f = features[:center]
+        im = f[tf.newaxis, :, :, tf.newaxis]
+        left = tf.image.resize(
+            im, (warped, features.shape[1]), method = 'bicubic'
+        )
+        f = features[center:]
+        im = f[tf.newaxis, :, :, tf.newaxis]
+        right = tf.image.resize(
+            im, (t - warped, features.shape[1]), method = 'bicubic'
+        )
+        left = left[0, :, :, 0]
+        right = right[0, :, :, 0]
+
+        return tf.concat((left, right), 0)
+
+    return tf.cond(
+        t - window <= window, lambda: features, lambda: warp(features)
+    )
+
+
 def warp_time_interpolate(features, W = 40, T = 30, mt = 2):
 
     from scipy.spatial.distance import pdist, cdist, squareform
@@ -186,7 +223,7 @@ def mask_time(
     return features
 
 
-def tf_mask_frequency(features, F = 27):
+def tf_mask_frequency(features, n_freq_mask = 2, F = 27):
     """
     Mask frequency using Tensorflow.
 
@@ -199,21 +236,24 @@ def tf_mask_frequency(features, F = 27):
     features_shape = tf.shape(features)
     n, v = features_shape[0], features_shape[1]
 
-    f = tf.random_uniform([], 0, F, tf.int32)
-    f0 = tf.random_uniform([], 0, v - f, tf.int32)
-    mask = tf.concat(
-        (
-            tf.ones(shape = (n, v - f0 - f)),
-            tf.zeros(shape = (n, f)),
-            tf.ones(shape = (n, f0)),
-        ),
-        1,
-    )
-    masked = features * mask
+    for idx in range(n_freq_mask):
+
+        f = tf.random_uniform([], 0, F, tf.int32)
+        f0 = tf.random_uniform([], 0, v - f, tf.int32)
+        mask = tf.concat(
+            (
+                tf.ones(shape = (n, v - f0 - f)),
+                tf.zeros(shape = (n, f)),
+                tf.ones(shape = (n, f0)),
+            ),
+            1,
+        )
+        masked = features * mask
+        features = masked
     return tf.to_float(masked)
 
 
-def tf_mask_time(features, T = 80):
+def tf_mask_time(features, n_time_mask = 2, T = 80):
     """
     Mask time using Tensorflow.
     
@@ -225,15 +265,17 @@ def tf_mask_time(features, T = 80):
     """
     features_shape = tf.shape(features)
     n, v = features_shape[0], features_shape[1]
-    t = tf.random_uniform([], 0, T, tf.int32)
-    t0 = tf.random_uniform([], 0, n - T, tf.int32)
-    mask = tf.concat(
-        (
-            tf.ones(shape = (n - t0 - t, v)),
-            tf.zeros(shape = (t, v)),
-            tf.ones(shape = (t0, v)),
-        ),
-        0,
-    )
-    masked = features * mask
+    for idx in range(n_time_mask):
+        t = tf.random_uniform([], 0, T, tf.int32)
+        t0 = tf.random_uniform([], 0, n - T, tf.int32)
+        mask = tf.concat(
+            (
+                tf.ones(shape = (n - t0 - t, v)),
+                tf.zeros(shape = (t, v)),
+                tf.ones(shape = (t0, v)),
+            ),
+            0,
+        )
+        masked = features * mask
+        features = masked
     return tf.to_float(masked)

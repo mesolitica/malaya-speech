@@ -27,7 +27,7 @@ Look through the `Github issue`_ or `Malaya-Speech-project`_ for features. Any
 unassigned ``improvement`` issue is open to whoever wants to implement
 it.
 
-We use frozen graph Tensorflow, should able to freeze any Tensorflow (version 1.15 and above) models.
+We use frozen graph Tensorflow, should able to freeze any Tensorflow (version 1.15 and above) or Keras models.
 
 Dataset
 -------

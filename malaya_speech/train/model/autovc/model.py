@@ -121,7 +121,7 @@ class Decoder(tf.keras.layers.Layer):
         x = self.lstm1(x)
         for c in self.convolutions:
             x = c(x, training = training)
-            x = tf.nn.relu(x)
+            x = tf.nn.tanh(x)
 
         x = self.lstm(x)
         return self.linear_projection(x)

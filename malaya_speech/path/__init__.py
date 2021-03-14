@@ -1,6 +1,7 @@
 from malaya_speech import home
 
 TRANSDUCER_VOCAB = 'vocab/transducer.subword.subwords'
+TRANSDUCER_2048_VOCAB = 'vocab/transducer-2048.subword.subwords'
 
 PATH_SUPER_RESOLUTION = {
     'srgan-128': {
