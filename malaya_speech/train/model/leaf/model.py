@@ -269,13 +269,14 @@ class SquaredModulus(tf.keras.layers.Layer):
 
     def __init__(self):
         super().__init__(name = 'squared_modulus')
-        self._pool = tf.keras.layers.AveragePooling1D(
-            pool_size = 2, strides = 2
-        )
+        # self._pool = tf.keras.layers.AveragePooling1D(
+        #     pool_size = 2, strides = 2
+        # )
 
     def call(self, x):
         x = tf.transpose(x, perm = [0, 2, 1])
-        output = 2 * self._pool(x ** 2)
+        output = 2 * tf.nn.avg_pool1d(x ** 2, 2, 2, padding = 'VALID')
+        # output = 2 * self._pool(x ** 2)
         return tf.transpose(output, perm = [0, 2, 1])
 
 
