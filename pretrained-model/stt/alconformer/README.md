@@ -16,6 +16,8 @@ python3 base-alconformer.py
 
 ## download
 
-1. Al-Conformer, last update 8th December 2020, [asr-base-alconformer-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/asr-base-alconformer-output.tar.gz)
+1. AlConformer, last update 8th December 2020, [asr-base-alconformer-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/asr-base-alconformer-output.tar.gz)
 
 Tensorboard, https://tensorboard.dev/experiment/qrr67AeIRymuQLIAnqi8lA/
+
+5. AlConformer V2, last update 15th March 2021, [output-base-alconformer-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-base-alconformer-v2.tar.gz)

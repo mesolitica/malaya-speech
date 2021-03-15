@@ -22,10 +22,10 @@ _transducer_availability = {
         'CER': 0.08241,
     },
     'alconformer': {
-        'Size (MB)': 33.2,
-        'Quantized Size (MB)': 10.5,
-        'WER': 0.30567,
-        'CER': 0.12267,
+        'Size (MB)': 38,
+        'Quantized Size (MB)': 14.9,
+        'WER': 0.25893,
+        'CER': 0.09803,
     },
     'large-alconformer': {
         'Size (MB)': 33.2,

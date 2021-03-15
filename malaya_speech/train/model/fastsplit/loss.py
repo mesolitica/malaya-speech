@@ -66,9 +66,16 @@ def cal_abs_with_pit(source, estimate_source, source_lengths, C):
     min_abs = tf.reduce_min(abs_set, axis = 1, keepdims = True)
     min_abs /= C
 
-    return min_abs
+    return min_abs, abs_set
 
 
-def calculate_loss(source, estimate_source, source_lengths, C):
-    min_abs = cal_abs_with_pit(source, estimate_source, source_lengths, C)
-    return tf.reduce_mean(min_abs)
+def calculate_loss(
+    source, estimate_source, source_lengths, C, return_set = False
+):
+    min_abs, abs_set = cal_abs_with_pit(
+        source, estimate_source, source_lengths, C
+    )
+    if return_set:
+        return tf.reduce_mean(min_abs), abs_set
+    else:
+        return tf.reduce_mean(min_abs)

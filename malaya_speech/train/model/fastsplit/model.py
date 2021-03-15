@@ -65,6 +65,7 @@ class Model(tf.keras.Model):
         self.C = C
 
     def call(self, x, mel_lengths, training = True, **kwargs):
+        original = x
         T_mix = tf.shape(x)[1]
         batch_size = tf.shape(x)[0]
         max_length = tf.cast(tf.reduce_max(mel_lengths), tf.int32)
@@ -81,5 +82,6 @@ class Model(tf.keras.Model):
         decoder_output = tf.reshape(
             decoder_output, (batch_size, T_mix, self.C, self.dim)
         )
-        mel_before = self.mel_dense(decoder_output)
-        return mel_before
+        mel_before = tf.nn.tanh(self.mel_dense(decoder_output))
+        tiled = tf.tile(tf.expand_dims(original, 2), [1, 1, self.C, 1])
+        return tiled * mel_before
