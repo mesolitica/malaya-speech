@@ -6,7 +6,9 @@ from tensorflow.python.ops import weights_broadcast_ops
 EPS = 1e-8
 
 
-def cal_abs_with_pit(source, estimate_source, source_lengths, C):
+def cal_abs_with_pit(
+    source, estimate_source, source_lengths, C, method = tf.abs
+):
 
     estimate_source = tf.transpose(estimate_source, perm = [0, 2, 1, 3])
 
@@ -20,7 +22,7 @@ def cal_abs_with_pit(source, estimate_source, source_lengths, C):
 
     targets = tf.expand_dims(source, 1)
     est_targets = tf.expand_dims(estimate_source, 2)
-    pw_loss = tf.abs(targets - est_targets)
+    pw_loss = method(targets - est_targets)
     # pair_wise_abs = tf.reduce_mean(pw_loss, axis = [3, 4])
 
     losses = pw_loss
@@ -70,10 +72,15 @@ def cal_abs_with_pit(source, estimate_source, source_lengths, C):
 
 
 def calculate_loss(
-    source, estimate_source, source_lengths, C, return_set = False
+    source,
+    estimate_source,
+    source_lengths,
+    C,
+    method = tf.abs,
+    return_set = False,
 ):
     min_abs, abs_set = cal_abs_with_pit(
-        source, estimate_source, source_lengths, C
+        source, estimate_source, source_lengths, C, method = method
     )
     if return_set:
         return tf.reduce_mean(min_abs), abs_set

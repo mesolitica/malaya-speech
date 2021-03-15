@@ -47,7 +47,9 @@ class Encoder(tf.keras.layers.Layer):
 
 
 class Model(tf.keras.Model):
-    def __init__(self, config, O, C, kernel_size = 5, **kwargs):
+    def __init__(
+        self, config, O, C, kernel_size = 5, masking = False, **kwargs
+    ):
         super(Model, self).__init__(name = 'fastvc', **kwargs)
         self.encoder = Encoder(config.encoder_self_attention_params)
         self.decoder = Encoder(config.decoder_self_attention_params)
@@ -63,6 +65,7 @@ class Model(tf.keras.Model):
         )
         self.dim = O
         self.C = C
+        self.masking = masking
 
     def call(self, x, mel_lengths, training = True, **kwargs):
         original = x
@@ -82,6 +85,10 @@ class Model(tf.keras.Model):
         decoder_output = tf.reshape(
             decoder_output, (batch_size, T_mix, self.C, self.dim)
         )
-        mel_before = tf.nn.tanh(self.mel_dense(decoder_output))
-        tiled = tf.tile(tf.expand_dims(original, 2), [1, 1, self.C, 1])
-        return tiled * mel_before
+        mel_before = self.mel_dense(decoder_output)
+        if self.masking:
+            mel_before = tf.nn.tanh(mel_before)
+            tiled = tf.tile(tf.expand_dims(original, 2), [1, 1, self.C, 1])
+            return tiled * mel_before
+        else:
+            return mel_before
