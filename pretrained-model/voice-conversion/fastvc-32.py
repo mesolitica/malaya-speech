@@ -1,51 +1,76 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import numpy as np
 from glob import glob
-from itertools import cycle
 import random
 import tensorflow as tf
 from malaya_speech.train.model import fastspeech, fastvc
 from math import ceil
-from functools import partial
 from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 import malaya_speech.train as train
 import malaya_speech
-import random
+from collections import defaultdict
+import sklearn
 
 speaker_model = malaya_speech.speaker_vector.deep_model('vggvox-v2')
 
-mels = glob('output-universal/mels/*.npy')
-file_cycle = cycle(mels)
+dari_pasentran = glob(
+    '/home/husein/speech-bahasa/dari-pasentran-ke-istana/*/*.wav'
+)
+turki = glob('/home/husein/speech-bahasa/turki/*/*.wav')
+salina = glob('/home/husein/speech-bahasa/salina/*/*.wav')
+
+husein = glob('/home/husein/speech-bahasa/audio-wattpad/*.wav')
+husein.extend(glob('/home/husein/speech-bahasa/audio-iium/*.wav'))
+husein.extend(glob('/home/husein/speech-bahasa/audio/*.wav'))
+
+haqkiem = glob('/home/husein/speech-bahasa/haqkiem/*.wav')
+vctk = glob('vtck/**/*.flac', recursive = True)
+
+vctk_speakers = defaultdict(list)
+for f in vctk:
+    s = f.split('/')[-1].split('_')[0]
+    vctk_speakers[s].append(f)
+
+speakers = []
+
+for s in vctk_speakers.keys():
+    speakers.extend(
+        random.sample(vctk_speakers[s], min(500, len(vctk_speakers[s])))
+    )
+
+files = dari_pasentran + turki + salina + husein + haqkiem + speakers
+sr = 22050
 
 
 def generate(hop_size = 256):
     while True:
-        f = next(file_cycle)
-        mel = np.load(f)
-        audio = np.load(f.replace('mels', 'audios'))
+        shuffled = sklearn.utils.shuffle(files)
+        for f in shuffled:
+            audio, _ = malaya_speech.load(f, sr = sr)
+            mel = malaya_speech.featurization.universal_mel(audio)
 
-        batch_max_steps = random.randint(16384, 110250)
-        batch_max_frames = batch_max_steps // hop_size
-        if len(audio) < len(mel) * hop_size:
-            audio = np.pad(audio, [[0, len(mel) * hop_size - len(audio)]])
+            batch_max_steps = random.randint(16384, 110250)
+            batch_max_frames = batch_max_steps // hop_size
 
-        if len(mel) > batch_max_frames:
-            interval_start = 0
-            interval_end = len(mel) - batch_max_frames
-            start_frame = random.randint(interval_start, interval_end)
-            start_step = start_frame * hop_size
-            audio = audio[start_step : start_step + batch_max_steps]
-            mel = mel[start_frame : start_frame + batch_max_frames, :]
-        else:
-            audio = np.pad(audio, [[0, batch_max_steps - len(audio)]])
-            mel = np.pad(mel, [[0, batch_max_frames - len(mel)], [0, 0]])
+            if len(mel) > batch_max_frames:
+                interval_start = 0
+                interval_end = len(mel) - batch_max_frames
+                start_frame = random.randint(interval_start, interval_end)
+                start_step = start_frame * hop_size
+                audio = audio[start_step : start_step + batch_max_steps]
+                mel = mel[start_frame : start_frame + batch_max_frames, :]
 
-        v = speaker_model([audio])
+            v = speaker_model([audio])
 
-        yield {'mel': mel, 'mel_length': [len(mel)], 'audio': audio, 'v': v[0]}
+            yield {
+                'mel': mel,
+                'mel_length': [len(mel)],
+                'audio': audio,
+                'v': v[0],
+            }
 
 
 def get_dataset(batch_size = 12):
@@ -94,9 +119,10 @@ def model_fn(features, labels, mode, params):
     mels = features['mel']
     mels_len = features['mel_length'][:, 0]
     dim_neck = 32
+    bottleneck = 512
     config = malaya_speech.config.fastspeech_config
-    config['encoder_hidden_size'] = 512 + 80
-    config['decoder_hidden_size'] = 512 + dim_neck
+    config['encoder_hidden_size'] = bottleneck + 80
+    config['decoder_hidden_size'] = bottleneck + dim_neck
     config = fastspeech.Config(vocab_size = 1, **config)
     model = fastvc.model.Model(dim_neck, config)
     encoder_outputs, mel_before, mel_after, codes = model(
@@ -165,7 +191,7 @@ train_hooks = [
 ]
 train_dataset = get_dataset()
 
-save_directory = 'fastvc-32-12'
+save_directory = 'fastvc-32-vggvox-v2'
 
 train.run_training(
     train_fn = train_dataset,

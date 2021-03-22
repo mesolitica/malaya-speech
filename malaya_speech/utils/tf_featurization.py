@@ -1,9 +1,180 @@
 import tensorflow as tf
 import numpy as np
+import math
+import librosa
 from tensorflow.signal import stft, inverse_stft, hann_window
+from malaya_speech.utils.constant import ECAPA_TDNN_WINDOWS
 
 separation_exponent = 2
 EPSILON = 1e-10
+
+
+class ECAPA_TCNNFeaturizer:
+    def __init__(
+        self,
+        sample_rate = 16000,
+        win_length = 25,
+        hop_length = 10,
+        n_fft = 400,
+        n_mels = 80,
+        log_mel = True,
+        f_min = 0,
+        f_max = 8000,
+        power_spectrogram = 2,
+        amin = 1e-10,
+        ref_value = 1.0,
+        top_db = 80.0,
+        param_change_factor = 1.0,
+        param_rand_factor = 0.0,
+        window_length = 5,
+        **kwargs,
+    ):
+        self.sample_rate = sample_rate
+        self.win_length = int(round((sample_rate / 1000.0) * win_length))
+        self.hop_length = int(round((sample_rate / 1000.0) * hop_length))
+        self.n_fft = n_fft
+        self.n_mels = n_mels
+        self.log_mel = log_mel
+        self.f_min = f_min
+        self.f_max = f_max
+        self.n_stft = self.n_fft // 2 + 1
+        self.amin = amin
+        self.ref_value = ref_value
+        self.db_multiplier = math.log10(max(self.amin, self.ref_value))
+        self.power_spectrogram = power_spectrogram
+        self.top_db = top_db
+
+        if self.power_spectrogram == 2:
+            self.multiplier = 10
+        else:
+            self.multiplier = 20
+
+        mel = np.linspace(
+            self._to_mel(self.f_min), self._to_mel(self.f_max), self.n_mels + 2
+        )
+        hz = self._to_hz(mel)
+
+        band = hz[1:] - hz[:-1]
+        self.band = band[:-1]
+        self.f_central = hz[1:-1]
+
+        all_freqs = np.linspace(0, self.sample_rate // 2, self.n_stft)
+        all_freqs = np.expand_dims(all_freqs, 0)
+        self.all_freqs_mat = np.tile(all_freqs, (self.f_central.shape[0], 1))
+
+        self.n = (window_length - 1) // 2
+        self.denom = self.n * (self.n + 1) * (2 * self.n + 1) / 3
+        a = np.arange(-self.n, self.n + 1, dtype = np.float32)
+        a = np.expand_dims(np.expand_dims(a, 0), 0)
+        self.kernel = np.tile(a, (self.n_mels, 1, 1))
+
+        if not tf.executing_eagerly():
+            with tf.device('/cpu:0'):
+                self._X = tf.compat.v1.placeholder(tf.float32, (None, None, 1))
+                self._K = tf.compat.v1.placeholder(tf.float32, (None, 1, 1))
+                self._conv = tf.nn.conv1d(
+                    self._X, self._K, 1, padding = 'VALID'
+                )
+            config = tf.compat.v1.ConfigProto()
+            config.gpu_options.allow_growth = True
+            self._sess = tf.compat.v1.Session(config = config)
+
+    def _to_hz(self, mel):
+        return 700 * (10 ** (mel / 2595) - 1)
+
+    def _to_mel(self, hz):
+        return 2595 * math.log10(1 + hz / 700)
+
+    def _triangular_filters(self, all_freqs, f_central, band):
+        slope = (all_freqs - f_central) / band
+        left_side = slope + 1.0
+        right_side = -slope + 1.0
+        zero = np.zeros(1)
+        fbank_matrix = np.maximum(zero, np.minimum(left_side, right_side)).T
+
+        return fbank_matrix
+
+    def _amplitude_to_DB(self, x):
+        x_db = self.multiplier * np.log10(
+            np.clip(x, a_min = self.amin, a_max = None)
+        )
+        x_db -= self.multiplier * self.db_multiplier
+        new_x_db_max = x_db.max() - self.top_db
+        x_db = np.maximum(x_db, new_x_db_max)
+        return x_db
+
+    def _group_conv(self, x, kernel):
+        x = x.astype(np.float32)
+        kernel = kernel.copy().astype(np.float32)
+        p = []
+        for i in range(self.n_mels):
+            if tf.executing_eagerly():
+                c = tf.nn.conv1d(
+                    x[:, :, i : i + 1],
+                    kernel[:, :, i : i + 1],
+                    1,
+                    padding = 'VALID',
+                )
+            else:
+                c = self._sess.run(
+                    self._conv,
+                    feed_dict = {
+                        self._X: x[:, :, i : i + 1],
+                        self._K: kernel[:, :, i : i + 1],
+                    },
+                )
+            p.append(c)
+
+        return np.concatenate(p, axis = 2)
+
+    def vectorize(self, signal):
+        s = librosa.stft(
+            y,
+            n_fft = self.n_fft,
+            hop_length = self.hop_length,
+            win_length = self.win_length,
+            window = ECAPA_TDNN_WINDOWS,
+            pad_mode = 'constant',
+        )
+        s = np.concatenate(
+            [np.expand_dims(s.real, -1), np.expand_dims(s.imag, -1)], -1
+        )
+        s = np.transpose(s, (1, 0, 2))
+        f_central_mat = np.tile(
+            np.expand_dims(self.f_central, 0), (self.all_freqs_mat.shape[1], 1)
+        ).T
+        band_mat = np.tile(
+            np.expand_dims(self.band, 0), (self.all_freqs_mat.shape[1], 1)
+        ).T
+        fbank_matrix = self._triangular_filters(
+            self.all_freqs_mat, f_central_mat, band_mat
+        )
+        s = np.expand_dims(s, 0)
+        sp_shape = s.shape
+        s = s.reshape(sp_shape[0] * sp_shape[3], sp_shape[1], sp_shape[2])
+        fbanks = np.einsum('ijk,kl->ijl', s, fbank_matrix)
+        fbanks = self._amplitude_to_DB(fbanks)
+        fb_shape = fbanks.shape
+        fbanks = fbanks.reshape(
+            sp_shape[0], fb_shape[1], fb_shape[2], sp_shape[3]
+        )
+        x = np.transpose(fbanks, (0, 2, 3, 1))
+        or_shape = x.shape
+        if len(or_shape) == 4:
+            x = x.reshape(or_shape[0] * or_shape[2], or_shape[1], or_shape[3])
+        x = np.pad(x, ((0, 0), (0, 0), (self.n, self.n)), mode = 'edge')
+        x = np.transpose(x, (0, 2, 1))
+        k = np.transpose(self.kernel, (2, 1, 0))
+        conv = self._group_conv(x, k)
+        conv = np.transpose(conv, (0, 2, 1))
+        delta_coeff = conv / self.denom
+        if len(or_shape) == 4:
+            delta_coeff = delta_coeff.reshape(
+                or_shape[0], or_shape[1], or_shape[2], or_shape[3]
+            )
+        delta_coeff = np.transpose(delta_coeff, (0, 3, 1, 2))
+        return delta_coeff
+
 
 # https://github.com/TensorSpeech/TensorFlowASR/blob/main/tensorflow_asr/featurizers/speech_featurizers.py#L370
 class STTFeaturizer:

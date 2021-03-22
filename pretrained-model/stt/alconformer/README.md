@@ -20,4 +20,6 @@ python3 base-alconformer.py
 
 Tensorboard, https://tensorboard.dev/experiment/qrr67AeIRymuQLIAnqi8lA/
 
-5. AlConformer V2, last update 15th March 2021, [output-base-alconformer-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-base-alconformer-v2.tar.gz)
+2. AlConformer V2, last update 15th March 2021, [output-base-alconformer-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-base-alconformer-v2.tar.gz)
+
+3. Large AlConformer, last update 15th March 2021, [output-large-alconformer.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-large-alconformer.tar.gz)

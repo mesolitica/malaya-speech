@@ -98,6 +98,7 @@ Contents:
    :caption: Speaker Vector Module
 
    load-speaker-vector
+   pca-speaker
 
 .. toctree::
    :maxdepth: 2

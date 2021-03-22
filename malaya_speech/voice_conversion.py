@@ -4,16 +4,8 @@ from malaya_speech.supervised import voice_conversion
 from herpetologist import check_type
 
 _availability = {
-    'fastvc-32': {
-        'Size (MB)': 190,
-        'Quantized Size (MB)': 54.1,
-        'Total loss': 0.2851,
-    },
-    'fastvc-64': {
-        'Size (MB)': 194,
-        'Quantized Size (MB)': 55.7,
-        'Total loss': 0.2764,
-    },
+    'fastvc-32-vggvox-v2': {'Size (MB)': 190, 'Quantized Size (MB)': 54.1},
+    'fastvc-32-speakernet': {'Size (MB)': 190, 'Quantized Size (MB)': 54.1},
 }
 
 
@@ -27,18 +19,18 @@ def available_deep_conversion():
 
 
 def deep_conversion(
-    model: str = 'fastvc-32', quantized: bool = False, **kwargs
+    model: str = 'fastvc-vggvox-v2', quantized: bool = False, **kwargs
 ):
     """
     Load Voice Conversion model.
 
     Parameters
     ----------
-    model : str, optional (default='fastvc-32')
+    model : str, optional (default='fastvc-vggvox-v2')
         Model architecture supported. Allowed values:
 
-        * ``'fastvc-32'`` - FastVC with bottleneck size 32.
-        * ``'fastvc-32-v2'`` - FastVC V2 with bottleneck size 32.
+        * ``'fastvc-32-vggvox-v2'`` - FastVC bottleneck size 32 with VGGVox-v2 Speaker Vector.
+        * ``'fastvc-32-speakernet'`` - FastVC bottleneck size 32 with SpeakerNet Speaker Vector.
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 
@@ -55,10 +47,8 @@ def deep_conversion(
         )
 
     return voice_conversion.load(
-        path = PATH_VOICE_CONVERSION,
-        s3_path = S3_PATH_VOICE_CONVERSION,
         model = model,
-        name = 'voice-conversion',
+        module = 'voice-conversion',
         quantized = quantized,
         **kwargs
     )

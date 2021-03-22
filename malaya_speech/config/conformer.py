@@ -127,3 +127,14 @@ large_decoder_config = {
     'projection_units': 0,
     'joint_dim': 640,
 }
+
+xlarge_decoder_config = {
+    'embed_dim': 1024,
+    'embed_dropout': 0.1,
+    'num_rnns': 1,
+    'rnn_units': 1024,
+    'rnn_type': 'lstm',
+    'layer_norm': True,
+    'projection_units': 0,
+    'joint_dim': 1024,
+}

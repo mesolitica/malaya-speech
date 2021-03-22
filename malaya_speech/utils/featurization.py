@@ -6,7 +6,7 @@ import librosa
 import decimal
 import math
 from python_speech_features import fbank
-from malaya_speech.utils.constant import MEL_MEAN, MEL_STD
+from malaya_speech.utils.constant import MEL_MEAN, MEL_STD, ECAPA_TDNN_WINDOWS
 
 
 class SpeakerNetFeaturizer:

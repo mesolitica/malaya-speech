@@ -190,7 +190,10 @@ class PositionalEncoding(tf.keras.layers.Layer):
     @staticmethod
     def encode(max_len, dmodel):
         pos = tf.expand_dims(
-            tf.range(max_len - 1, -1, -1.0, dtype = tf.float32), axis = 1
+            tf.range(
+                tf.cast(max_len, tf.float32) - 1, -1, -1.0, dtype = tf.float32
+            ),
+            axis = 1,
         )
         index = tf.expand_dims(
             tf.range(0, dmodel, dtype = tf.float32), axis = 0

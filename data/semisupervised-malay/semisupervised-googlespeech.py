@@ -1,3 +1,7 @@
+import os
+
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
 from pydub.silence import split_on_silence, detect_nonsilent
 from pydub import AudioSegment
 from tqdm import tqdm
@@ -25,23 +29,20 @@ vad = malaya_speech.vad.webrtc()
 
 def split_vad_duration(
     frames,
-    min_duration: float = 5.0,
+    max_duration: float = 5.0,
     negative_threshold: float = 0.1,
-    silent_trail = 500,
     sample_rate: int = 16000,
 ):
     """
-    Split a sample into multiple samples based minimum duration of voice activities.
+    Split a sample into multiple samples based maximum duration of voice activities.
 
     Parameters
     ----------
     frames: List[Tuple[Frame, label]]
-    min_duration: float, optional (default = 5.0)
-        Minimum duration to assume one sample combined from voice activities.
+    max_duration: float, optional (default = 5.0)
+        Maximum duration to assume one sample combined from voice activities.
     negative_threshold: float, optional (default = 0.1)
         If `negative_threshold` is 0.1, means that, length negative samples must at least 0.1 second.
-    silent_trail: int, optional (default = 500)
-        If an element is not a voice activity, append with `silent_trail` frame size.
     sample_rate: int, optional (default = 16000)
         sample rate for frames.
 
@@ -53,26 +54,15 @@ def split_vad_duration(
     grouped = group_frames_threshold(
         grouped, threshold_to_stop = negative_threshold
     )
-    results, temp, lengths, last_silent = [], [], 0, None
+    results, temp, lengths = [], [], 0
     for no, g in enumerate(grouped):
-        if g[1]:
-            a = g[0]
-        else:
-            last_silent = g[0]
-            a = np.concatenate(
-                [g[0].array[:silent_trail], g[0].array[-silent_trail:]]
-            )
-            a = Frame(
-                array = a,
-                timestamp = g[0].timestamp,
-                duration = len(a) / sample_rate,
-            )
+        a = g[0]
         l = len(a.array) / sample_rate
         lengths += l
         temp.append(a)
-        if lengths >= min_duration:
+        if lengths >= max_duration:
             results.append(combine_frames(temp))
-            temp = [last_silent] if last_silent else []
+            temp = []
             lengths = 0
 
     if len(temp):
@@ -80,7 +70,7 @@ def split_vad_duration(
     return results
 
 
-def split(file, silent_trail = 500, min_duration = 5.0):
+def split(file, max_duration = 5.0):
     audio = AudioSegment.from_mp3(file).set_channels(1)
     y = np.array(audio.get_array_of_samples())
     y_ = np.array(audio.set_frame_rate(16000).get_array_of_samples())
@@ -93,9 +83,8 @@ def split(file, silent_trail = 500, min_duration = 5.0):
     ]
     splitted = split_vad_duration(
         frames_webrtc,
-        min_duration = min_duration,
-        negative_threshold = 0.01,
-        silent_trail = silent_trail,
+        max_duration = max_duration,
+        negative_threshold = 0.1,
         sample_rate = audio.frame_rate,
     )
     return splitted, audio, audio.frame_rate
@@ -166,17 +155,26 @@ rejected = [
     'puisi',
 ]
 files = [f for f in files if all([r not in f.lower() for r in rejected])]
+maxlen_audio = 17
 
 for no, filename in enumerate(files):
+    wavs = glob('output-wav/*.wav')
+    if any([filename in w for w in wavs]):
+        print(f'skip {filename}, exist')
+        continue
     try:
         audios, audio, sample_rate = split(filename)
         print(filename, len(audios))
 
         for part in tqdm(range(len(audios))):
             temp_filename = f'{filename}-part-{part}.wav'
+
+            if len(audios[part].array) / sample_rate >= maxlen_audio:
+                print(f'{temp_filename} longer than {maxlen_audio} seconds')
+                continue
+
             audiosegment_google_speech(audios[part], temp_filename, sample_rate)
     except Exception as e:
         print(e)
-        pass
 
     print(f'DONE: {no + 1} / {len(files)}')

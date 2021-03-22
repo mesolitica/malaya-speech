@@ -4,19 +4,45 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 import numpy as np
 from glob import glob
-from itertools import cycle
 import random
 import tensorflow as tf
 from malaya_speech.train.model import autovc
 from math import ceil
-from functools import partial
 from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
+import malaya_speech.train as train
 import malaya_speech
+from collections import defaultdict
+import sklearn
 
 speaker_model = malaya_speech.speaker_vector.deep_model('vggvox-v2')
 
-mels = glob('output-universal/mels/*.npy')
-file_cycle = cycle(mels)
+dari_pasentran = glob(
+    '/home/husein/speech-bahasa/dari-pasentran-ke-istana/*/*.wav'
+)
+turki = glob('/home/husein/speech-bahasa/turki/*/*.wav')
+salina = glob('/home/husein/speech-bahasa/salina/*/*.wav')
+
+husein = glob('/home/husein/speech-bahasa/audio-wattpad/*.wav')
+husein.extend(glob('/home/husein/speech-bahasa/audio-iium/*.wav'))
+husein.extend(glob('/home/husein/speech-bahasa/audio/*.wav'))
+
+haqkiem = glob('/home/husein/speech-bahasa/haqkiem/*.wav')
+vctk = glob('vtck/**/*.flac', recursive = True)
+
+vctk_speakers = defaultdict(list)
+for f in vctk:
+    s = f.split('/')[-1].split('_')[0]
+    vctk_speakers[s].append(f)
+
+speakers = []
+
+for s in vctk_speakers.keys():
+    speakers.extend(
+        random.sample(vctk_speakers[s], min(500, len(vctk_speakers[s])))
+    )
+
+files = dari_pasentran + turki + salina + husein + haqkiem + speakers
+sr = 22050
 
 
 def pad_seq(x, base = 32):
@@ -28,33 +54,33 @@ def pad_seq(x, base = 32):
 
 def generate(batch_max_steps = 24576, hop_size = 256):
     while True:
-        f = next(file_cycle)
-        mel = np.load(f)
-        audio = np.load(f.replace('mels', 'audios'))
+        shuffled = sklearn.utils.shuffle(files)
+        for f in shuffled:
+            audio, _ = malaya_speech.load(f, sr = sr)
+            mel = malaya_speech.featurization.universal_mel(audio)
 
-        batch_max_frames = batch_max_steps // hop_size
-        if len(audio) < len(mel) * hop_size:
-            audio = np.pad(audio, [[0, len(mel) * hop_size - len(audio)]])
+            batch_max_frames = batch_max_steps // hop_size
 
-        if len(mel) > batch_max_frames:
-            interval_start = 0
-            interval_end = len(mel) - batch_max_frames
-            start_frame = random.randint(interval_start, interval_end)
-            start_step = start_frame * hop_size
-            audio = audio[start_step : start_step + batch_max_steps]
-            mel = mel[start_frame : start_frame + batch_max_frames, :]
-        else:
-            audio = np.pad(audio, [[0, batch_max_steps - len(audio)]])
-            mel = np.pad(mel, [[0, batch_max_frames - len(mel)], [0, 0]])
+            if len(mel) > batch_max_frames:
+                interval_start = 0
+                interval_end = len(mel) - batch_max_frames
+                start_frame = random.randint(interval_start, interval_end)
+                start_step = start_frame * hop_size
+                mel = mel[start_frame : start_frame + batch_max_frames, :]
 
-        mel, len_pad = pad_seq(mel)
+            mel, len_pad = pad_seq(mel)
 
-        v = speaker_model([audio])
+            v = speaker_model([audio])
 
-        yield {'mel': mel, 'mel_length': [len_pad], 'audio': audio, 'v': v[0]}
+            yield {
+                'mel': mel,
+                'mel_length': [len(mel)],
+                'audio': audio,
+                'v': v[0],
+            }
 
 
-def get_dataset(batch_size = 32):
+def get_dataset(batch_size = 4):
     def get():
         dataset = tf.data.Dataset.from_generator(
             generate,
@@ -92,25 +118,34 @@ def get_dataset(batch_size = 32):
     return get
 
 
+total_steps = 300000
+
+
 def model_fn(features, labels, mode, params):
-    vectors = features['v']
+    vectors = features['v'] * 30 - 3.5
     mels = features['mel']
     mels_len = features['mel_length'][:, 0]
-    model = autovc.Model(dim_neck = 32, dim_pre = 512, freq = 32)
+    dim_neck = 32
+    bottleneck = 512
+    model = autovc.Model(
+        dim_neck = dim_neck, dim_pre = bottleneck, freq = dim_neck
+    )
     encoder_outputs, mel_before, mel_after, codes = model(
         mels, vectors, vectors
     )
     codes_ = model.call_second(mel_after, vectors)
-    loss_f = tf.losses.absolute_difference
+    loss_f = tf.losses.mean_squared_error
     max_length = tf.cast(tf.reduce_max(mels_len), tf.int32)
     mask = tf.sequence_mask(
         lengths = mels_len, maxlen = max_length, dtype = tf.float32
     )
     mask = tf.expand_dims(mask, axis = -1)
-
-    mse_mel = partial(loss_f, weights = mask)
-    mel_loss_before = calculate_3d_loss(mels, mel_before, mse_mel)
-    mel_loss_after = calculate_3d_loss(mels, mel_after, mse_mel)
+    mel_loss_before = loss_f(
+        labels = mels, predictions = mel_before, weights = mask
+    )
+    mel_loss_after = loss_f(
+        labels = mels, predictions = mel_after, weights = mask
+    )
     g_loss_cd = tf.losses.absolute_difference(codes, codes_)
     loss = mel_loss_before + mel_loss_after + g_loss_cd
 
@@ -129,7 +164,6 @@ def model_fn(features, labels, mode, params):
     if mode == tf.estimator.ModeKeys.TRAIN:
 
         optimizer = tf.train.AdamOptimizer(learning_rate = 0.0001)
-
         train_op = optimizer.minimize(loss, global_step = global_step)
         estimator_spec = tf.estimator.EstimatorSpec(
             mode = mode, loss = loss, train_op = train_op
@@ -152,7 +186,7 @@ train_hooks = [
 ]
 train_dataset = get_dataset()
 
-save_directory = 'autovc'
+save_directory = 'autovc-vggvox-v2'
 
 train.run_training(
     train_fn = train_dataset,
@@ -161,7 +195,7 @@ train.run_training(
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 2000,
-    max_steps = 300000,
+    max_steps = total_steps,
     train_hooks = train_hooks,
     eval_step = 0,
 )

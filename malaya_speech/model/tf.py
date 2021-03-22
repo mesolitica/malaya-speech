@@ -866,6 +866,7 @@ class FastVC(Abstract):
         output_nodes,
         waveform_to_mel,
         speaker_vector,
+        magnitude,
         sess,
         model,
         name,
@@ -874,6 +875,7 @@ class FastVC(Abstract):
         self._output_nodes = output_nodes
         self._waveform_to_mel = waveform_to_mel
         self._speaker_vector = speaker_vector
+        self._magnitude = magnitude
         self._sess = sess
         self.__model__ = model
         self.__name__ = name
@@ -901,8 +903,8 @@ class FastVC(Abstract):
         original_mel = self._waveform_to_mel(original_audio)
         target_mel = self._waveform_to_mel(target_audio)
 
-        original_v = self._speaker_vector([original_audio])[0] * 30 - 3.5
-        target_v = self._speaker_vector([target_audio])[0] * 30 - 3.5
+        original_v = self._magnitude(self._speaker_vector([original_audio])[0])
+        target_v = self._magnitude(self._speaker_vector([target_audio])[0])
 
         r = self._execute(
             inputs = [

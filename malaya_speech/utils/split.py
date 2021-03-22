@@ -7,14 +7,7 @@ from malaya_speech.utils.group import (
 import numpy as np
 
 
-def split_vad(
-    frames,
-    n: int = 3,
-    negative_threshold: float = 0.1,
-    silent_trail: int = 500,
-    sample_rate: int = 16000,
-    use_negative_as_silent: bool = False,
-):
+def split_vad(frames, n: int = 3, negative_threshold: float = 0.1):
     """
     Split a sample into multiple samples based `n` size of negative VAD.
 
@@ -25,12 +18,6 @@ def split_vad(
         `n` size of negative VAD to assume in one subsample.
     negative_threshold: float, optional (default = 0.1)
         If `negative_threshold` is 0.1, means that, length negative samples must at least 0.1 second.
-    silent_trail: int, optional (default = 500)
-        If an element is not a voice activity, append with `silent_trail` frame size. 
-    sample_rate: int, optional (default = 16000)
-        sample rate for frames.
-    use_negative_as_silent: bool, optional (default = False)
-        If True, will use negative VAD as silent, else, use zeros array size of `silent_trail`.
 
     Returns
     -------
@@ -42,21 +29,9 @@ def split_vad(
     )
     results, temp, not_activities = [], [], 0
     for no, g in enumerate(grouped):
-        if g[1]:
-            a = g[0]
-        else:
+        a = g[0]
+        if not g[1]:
             not_activities += 1
-            if use_negative_as_silent:
-                a = np.concatenate(
-                    [g[0].array[:silent_trail], g[0].array[-silent_trail:]]
-                )
-            else:
-                a = np.zeros(shape = (silent_trail))
-            a = Frame(
-                array = a,
-                timestamp = g[0].timestamp,
-                duration = len(a) / sample_rate,
-            )
         temp.append(a)
         if not_activities >= n:
             results.append(combine_frames(temp))
@@ -72,9 +47,7 @@ def split_vad_duration(
     frames,
     max_duration: float = 5.0,
     negative_threshold: float = 0.1,
-    silent_trail = 500,
     sample_rate: int = 16000,
-    use_negative_as_silent: bool = False,
 ):
     """
     Split a sample into multiple samples based maximum duration of voice activities.
@@ -86,12 +59,8 @@ def split_vad_duration(
         Maximum duration to assume one sample combined from voice activities.
     negative_threshold: float, optional (default = 0.1)
         If `negative_threshold` is 0.1, means that, length negative samples must at least 0.1 second.
-    silent_trail: int, optional (default = 500)
-        If an element is not a voice activity, append with `silent_trail` frame size.
     sample_rate: int, optional (default = 16000)
         sample rate for frames.
-    use_negative_as_silent: bool, optional (default = False)
-        If True, will use negative VAD as silent, else, use zeros array size of `silent_trail`.
 
     Returns
     -------
@@ -101,29 +70,15 @@ def split_vad_duration(
     grouped = group_frames_threshold(
         grouped, threshold_to_stop = negative_threshold
     )
-    results, temp, lengths, last_silent = [], [], 0, None
+    results, temp, lengths = [], [], 0
     for no, g in enumerate(grouped):
-        if g[1]:
-            a = g[0]
-        else:
-            last_silent = g[0]
-            if use_negative_as_silent:
-                a = np.concatenate(
-                    [g[0].array[:silent_trail], g[0].array[-silent_trail:]]
-                )
-            else:
-                a = np.zeros(shape = (silent_trail))
-            a = Frame(
-                array = a,
-                timestamp = g[0].timestamp,
-                duration = len(a) / sample_rate,
-            )
+        a = g[0]
         l = len(a.array) / sample_rate
         lengths += l
         temp.append(a)
         if lengths >= max_duration:
             results.append(combine_frames(temp))
-            temp = [last_silent] if last_silent else []
+            temp = []
             lengths = 0
 
     if len(temp):
