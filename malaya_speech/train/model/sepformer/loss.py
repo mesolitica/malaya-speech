@@ -42,43 +42,19 @@ def cal_si_snr_with_pit(source, estimate_source, source_lengths, C):
     pair_wise_si_snr = 10.0 * log10(pair_wise_si_snr + EPS)
     pair_wise_si_snr = tf.transpose(pair_wise_si_snr, perm = [0, 2, 1])
 
-    perms = tf.convert_to_tensor(np.array(list(permutations(range(C)))))
-    perms = tf.cast(perms, tf.int32)
-    index = tf.expand_dims(perms, 2)
-    ones = tf.ones(tf.reduce_prod(tf.shape(index)))
-    perms_one_hot = tf.zeros((tf.shape(perms)[0], tf.shape(perms)[1], C))
-
-    indices = index
-    tensor = perms_one_hot
-    original_tensor = tensor
-    indices = tf.reshape(indices, shape = [-1, tf.shape(indices)[-1]])
-    indices_add = tf.expand_dims(
-        tf.range(0, tf.shape(indices)[0], 1) * (tf.shape(tensor)[-1]), axis = -1
-    )
-    indices += indices_add
-    tensor = tf.reshape(perms_one_hot, shape = [-1])
-    indices = tf.reshape(indices, shape = [-1, 1])
-    updates = tf.reshape(ones, shape = [-1])
-    scatter = tf.tensor_scatter_nd_update(tensor, indices, updates)
-    perms_one_hot = tf.reshape(
-        scatter,
-        shape = [
-            tf.shape(original_tensor)[0],
-            tf.shape(original_tensor)[1],
-            -1,
-        ],
-    )
+    v_perms = tf.constant(list(permutations(range(C))))
+    perms_one_hot = tf.one_hot(v_perms, C)
 
     snr_set = tf.einsum('bij,pij->bp', pair_wise_si_snr, perms_one_hot)
     max_snr_idx = tf.argmax(snr_set, axis = 1)
     max_snr = tf.reduce_max(snr_set, axis = 1, keepdims = True)
     max_snr /= C
 
-    return max_snr, perms, max_snr_idx, snr_set / C
+    return max_snr, max_snr_idx, snr_set / C
 
 
 def calculate_loss(source, estimate_source, source_lengths, C):
-    max_snr, perms, max_snr_idx, snr_set = cal_si_snr_with_pit(
+    max_snr, max_snr_idx, snr_set = cal_si_snr_with_pit(
         source, estimate_source, source_lengths, C
     )
     loss = 0 - tf.reduce_mean(max_snr)
