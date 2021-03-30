@@ -24,7 +24,7 @@ setuptools.setup(
     url = 'https://github.com/huseinzol05/malaya-speech',
     download_url = 'https://github.com/huseinzol05/malaya-speech/archive/master.zip',
     keywords = ['nlp', 'bm'],
-    install_requires = req + ['tensorflow>=1.14'],
+    install_requires = req + ['tensorflow>=1.15'],
     license = 'MIT',
     classifiers = [
         'Programming Language :: Python :: 3.6',

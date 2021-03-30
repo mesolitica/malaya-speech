@@ -2,6 +2,7 @@ import tensorflow as tf
 from ..conformer.layer import PositionalEncoding
 from ..fastspeech.model import TFFastSpeechEncoder
 from ..utils import shape_list
+from .layer import Conv1DTranspose
 import numpy as np
 
 
@@ -216,27 +217,6 @@ class Dual_Path_Model(tf.keras.layers.Layer):
 
         input = tf.cond(gap > 0, lambda: input[:, :, :-gap], lambda: input)
         return input
-
-
-class Conv1DTranspose(tf.keras.layers.Layer):
-    def __init__(
-        self, filters, kernel_size, strides, activation, use_bias, **kwargs
-    ):
-        super(Conv1DTranspose, self).__init__(
-            name = 'Conv1DTranspose', **kwargs
-        )
-        self.conv = tf.keras.layers.Conv2DTranspose(
-            filters,
-            (kernel_size, 1),
-            strides = (strides, 1),
-            activation = activation,
-            use_bias = use_bias,
-        )
-
-    def call(self, x):
-        x = tf.expand_dims(x, 2)
-        x = self.conv(x)
-        return x[:, :, 0]
 
 
 class Encoder_FastSpeech(tf.keras.layers.Layer):

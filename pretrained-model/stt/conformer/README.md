@@ -6,24 +6,26 @@ Conformer + RNNT.
 
 ## how-to
 
-1. Run training script, 
+1. Pretrain RNN Language model, [../transducer-rnn-lm](../transducer-rnn-lm).
+
+2. Run training script, 
 
 SMALL size,
 
 ```bash
-python3 base-conformer.py
+python3 small-v2.py
 ```
 
 BASE size,
 
 ```bash
-python3 small-conformer.py
+python3 base-v2.py
 ```
 
 LARGE size,
 
 ```bash
-python3 large-conformer.py
+python3 large-v2.py
 ```
 
 ## download
@@ -40,8 +42,8 @@ Tensorboard, https://tensorboard.dev/experiment/GzzDDqC7Qn2Zr5CotE89Cw/
 
 Tensorboard, https://tensorboard.dev/experiment/1qBD7FGyS32Q8uQvhA1NnA/
 
-4. Small Conformer V2, last update 15th March 2021, [output-small-conformer-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-small-conformer-v2.tar.gz)
+4. Small Conformer, last update 15th March 2021, [output-small-conformer-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-small-conformer-v2.tar.gz)
 
-5. Conformer V2, last update 15th March 2021, [output-base-conformer-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-base-conformer-v2.tar.gz)
+5. Conformer, last update 15th March 2021, [output-base-conformer-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-base-conformer-v2.tar.gz)
 
-6. Large Conformer V2, last update 15th March 2021, [output-large-conformer-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-large-conformer-v2.tar.gz)
+6. Large Conformer, last update 15th March 2021, [output-large-conformer-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-large-conformer-v2.tar.gz)

@@ -6,32 +6,32 @@ _transducer_availability = {
     'small-conformer': {
         'Size (MB)': 49.2,
         'Quantized Size (MB)': 18.1,
-        'WER': 0.23728,
-        'CER': 0.08524,
+        'WER': 0.23582,
+        'CER': 0.08771,
     },
     'conformer': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 37.1,
-        'WER': 0.22465,
-        'CER': 0.07985,
+        'WER': 0.21718,
+        'CER': 0.07562,
     },
     'large-conformer': {
         'Size (MB)': 399,
         'Quantized Size (MB)': 103,
-        'WER': 0.23261,
-        'CER': 0.08241,
+        'WER': 0.21938,
+        'CER': 0.07306,
+    },
+    'small-alconformer': {
+        'Size (MB)': 38,
+        'Quantized Size (MB)': 14.9,
+        'WER': 0.25893,
+        'CER': 0.09803,
     },
     'alconformer': {
         'Size (MB)': 38,
         'Quantized Size (MB)': 14.9,
         'WER': 0.25893,
         'CER': 0.09803,
-    },
-    'large-alconformer': {
-        'Size (MB)': 58.8,
-        'Quantized Size (MB)': 20.2,
-        'WER': 0.2377,
-        'CER': 0.08756,
     },
 }
 
@@ -62,14 +62,14 @@ def deep_transducer(
 
     Parameters
     ----------
-    model : str, optional (default='jasper')
+    model : str, optional (default='conformer')
         Model architecture supported. Allowed values:
 
-        * ``'small-conformer'`` - SMALL size Google Conformer, https://arxiv.org/pdf/2005.08100.pdf
-        * ``'conformer'`` - BASE size Google Conformer, https://arxiv.org/pdf/2005.08100.pdf
-        * ``'large-conformer'`` - LARGE size Google Conformer, https://arxiv.org/pdf/2005.08100.pdf
-        * ``'alconformer'`` - BASE size A-Lite Google Conformer.
-        * ``'large-alconformer'`` - LARGE size A-Lite Google Conformer.
+        * ``'small-conformer'`` - SMALL size Google Conformer with Pretrained LM Malay language.
+        * ``'conformer'`` - BASE size Google Conformer with Pretrained LM Malay language.
+        * ``'large-conformer'`` - LARGE size Google Conformer with Pretrained LM Malay language.
+        * ``'small-alconformer'`` - SMALL size A-Lite Google Conformer with Pretrained LM Malay language.
+        * ``'alconformer'`` - BASE size A-Lite Google Conformer with Pretrained LM Malay language.
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 

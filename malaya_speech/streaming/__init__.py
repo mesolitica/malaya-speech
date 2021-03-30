@@ -7,9 +7,6 @@ from datetime import datetime
 from malaya_speech.utils.validator import check_pipeline
 from herpetologist import check_type
 
-CHANNELS = 1
-BLOCKS_PER_SECOND = 50
-
 
 class Audio:
     @check_type
@@ -21,8 +18,8 @@ class Audio:
         format = None,
         input_rate: int = 16000,
         sample_rate: int = 16000,
-        channels: int = CHANNELS,
-        blocks_per_second: int = BLOCKS_PER_SECOND,
+        blocks_per_second: int = 50,
+        channels: int = 1,
     ):
 
         import pyaudio
@@ -151,6 +148,9 @@ def record(
     device = None,
     input_rate: int = 16000,
     sample_rate: int = 16000,
+    blocks_per_second: int = 50,
+    padding_ms: int = 300,
+    ratio: float = 0.75,
     min_length: float = 0.1,
     filename: str = None,
     spinner: bool = False,
@@ -170,6 +170,13 @@ def record(
         sample rate from input device, this will auto resampling.
     sample_rate: int, optional (default = 16000)
         output sample rate.
+    blocks_per_second: int, optional (default = 50)
+        size of frame returned from pyaudio, frame size = sample rate / (blocks_per_second / 2).
+        50 is good for WebRTC, 30 or less is good for Malaya Speech VAD.
+    padding_ms: int, optional (default = 300)
+        size of queue to store frames, size = padding_ms // (1000 * blocks_per_second // sample_rate)
+    ratio: float, optional (default = 0.75)
+        if 75% of the queue is positive, assumed it is a voice activity.
     min_length: float, optional (default=0.1)
         minimum length (s) to accept a subsample.
     filename: str, optional (default=None)
@@ -200,8 +207,9 @@ def record(
         input_rate = input_rate,
         sample_rate = sample_rate,
         format = pyaudio.paInt16,
+        blocks_per_second = blocks_per_second,
     )
-    frames = audio.vad_collector()
+    frames = audio.vad_collector(padding_ms = padding_ms, ratio = ratio)
 
     if spinner:
         try:
@@ -260,6 +268,9 @@ def record(
 
         bytes_array = [r[0] for r in results]
         audio.write_wav(filename_temp, b''.join(bytes_array))
+
+    except Exception as e:
+        raise e
 
     if spinner:
         spinner.stop()

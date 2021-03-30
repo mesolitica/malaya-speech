@@ -24,7 +24,7 @@ setuptools.setup(
     url = 'https://github.com/huseinzol05/malaya-speech-gpu',
     download_url = 'https://github.com/huseinzol05/malaya-speech-gpu/archive/master.zip',
     keywords = ['nlp', 'bm'],
-    install_requires = req + ['tensorflow-gpu>=1.14'],
+    install_requires = req + ['tensorflow-gpu>=1.15'],
     license = 'MIT',
     classifiers = [
         'Programming Language :: Python :: 3.6',
