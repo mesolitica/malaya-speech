@@ -8,9 +8,13 @@ Prepare ASR dataset for ASR models.
 
 1. Download strong semisupervised audiobook and augment it, [prepare-audiobook-augmentation.ipynb](prepare-audiobook-augmentation.ipynb).
 
-2. Run [download-and-prepare-malaya-speech-train-dataset-v2.ipynb](download-and-prepare-malaya-speech-train-dataset-v2.ipynb) to download train dataset, preprocessing and convert to tfrecord.
+2. Run [prepare-malay-stt-train.ipynb](prepare-malay-stt-train.ipynb) to download train Malay dataset.
 
-3. Run [download-and-prepare-malaya-speech-test-dataset-v2.ipynb](download-and-prepare-malaya-speech-test-dataset-v2.ipynb) to download test dataset, preprocessing and convert to tfrecord.
+3. Run [prepare-malay-stt-test.ipynb](prepare-malay-stt-test.ipynb) to download test Malay dataset.
+
+4. Run [prepare-mixed-stt-train.ipynb](prepare-mixed-stt-train.ipynb) to download train Mixed (Malay and Singlish) dataset.
+
+5. Run [prepare-mixed-stt-test.ipynb](prepare-mixed-stt-test.ipynb) to download test Mixed (Malay and Singlish) dataset.
 
 ## Download
 

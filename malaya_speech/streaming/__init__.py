@@ -145,6 +145,7 @@ class Audio:
 def record(
     vad,
     asr_model = None,
+    classification_model = None,
     device = None,
     input_rate: int = 16000,
     sample_rate: int = 16000,
@@ -164,6 +165,8 @@ def record(
         vad model / pipeline.
     asr_model: object
         ASR model / pipeline, will transcribe each subsamples realtime.
+    classification_model: object
+        classification pipeline, will classify each subsamples realtime.
     device: None
         `device` parameter for pyaudio, check available devices from `sounddevice.query_devices()`.
     input_rate: int, optional (default = 16000)
@@ -200,6 +203,10 @@ def record(
     check_pipeline(vad, 'vad', 'vad')
     if asr_model:
         check_pipeline(asr_model, 'speech-to-text', 'asr_model')
+    if classification_model:
+        check_pipeline(
+            classification_model, 'classification', 'classification_model'
+        )
 
     audio = Audio(
         vad,
@@ -242,15 +249,22 @@ def record(
                 buffered = np.frombuffer(wav_data, np.int16)
                 duration = buffered.shape[0] / audio.input_rate
 
+                wav_data = [wav_data]
+
                 if duration >= min_length:
                     if asr_model:
-                        t = asr_model(wav_data)
+                        t = asr_model(wav_data[0])
                         if isinstance(t, dict):
                             t = t['speech-to-text']
                         print(f'Sample {count} {datetime.now()}: {t}')
-                        wav_data = (wav_data, t)
-                    else:
-                        wav_data = (wav_data,)
+                        wav_data.append(t)
+                    if classification_model:
+                        t = classification_model(wav_data[0])
+                        if isinstance(t, dict):
+                            t = t['classification']
+                        print(f'Sample {count} {datetime.now()}: {t}')
+                        wav_data.append(t)
+
                     results.append(wav_data)
                     wav_data = bytearray()
                     count += 1

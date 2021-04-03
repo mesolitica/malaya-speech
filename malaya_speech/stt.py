@@ -16,31 +16,35 @@ _transducer_availability = {
         'CER': 0.07562,
     },
     'large-conformer': {
-        'Size (MB)': 399,
-        'Quantized Size (MB)': 103,
+        'Size (MB)': 404,
+        'Quantized Size (MB)': 107,
         'WER': 0.21938,
         'CER': 0.07306,
     },
     'small-alconformer': {
-        'Size (MB)': 38,
-        'Quantized Size (MB)': 14.9,
-        'WER': 0.25893,
-        'CER': 0.09803,
+        'Size (MB)': 18.8,
+        'Quantized Size (MB)': 10.1,
+        'WER': 0.30373,
+        'CER': 0.12471,
     },
     'alconformer': {
         'Size (MB)': 38,
         'Quantized Size (MB)': 14.9,
-        'WER': 0.25893,
-        'CER': 0.09803,
+        'WER': 0.25611,
+        'CER': 0.09726,
     },
-}
-
-google_accuracy = {
-    'WER': 0.14270,
-    'CER': 0.04682,
-    'last update': '2021-03-11',
-    'library use': 'https://pypi.org/project/SpeechRecognition/',
-    'notebook link': 'https://github.com/huseinzol05/malaya-speech/blob/master/data/semisupervised-audiobook/benchmark-google-speech-malaya-speech-test-dataset.ipynb',
+    'small-conformer-mixed': {
+        'Size (MB)': 49.2,
+        'Quantized Size (MB)': 18.1,
+        'WER': 0.23582,
+        'CER': 0.08771,
+    },
+    'conformer-mixed': {
+        'Size (MB)': 125,
+        'Quantized Size (MB)': 37.1,
+        'WER': 0.21718,
+        'CER': 0.07562,
+    },
 }
 
 
@@ -70,6 +74,12 @@ def deep_transducer(
         * ``'large-conformer'`` - LARGE size Google Conformer with Pretrained LM Malay language.
         * ``'small-alconformer'`` - SMALL size A-Lite Google Conformer with Pretrained LM Malay language.
         * ``'alconformer'`` - BASE size A-Lite Google Conformer with Pretrained LM Malay language.
+        * ``'small-conformer-mixed'`` - SMALL size Google Conformer with Pretrained LM Mixed (Malay + Singlish) languages.
+        * ``'conformer-mixed'`` - BASE size Google Conformer with Pretrained LM Mixed (Malay + Singlish) languages.
+        * ``'large-conformer-mixed'`` - LARGE size Google Conformer with Pretrained LM Mixed (Malay + Singlish) languages.
+        * ``'small-conformer-singlish'`` - SMALL size Google Conformer with Pretrained LM Singlish language.
+        * ``'conformer-singlish'`` - BASE size Google Conformer with Pretrained LM Singlish language.
+        * ``'large-conformer-singlish'`` - LARGE size Google Conformer with Pretrained LM Singlish language.
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 

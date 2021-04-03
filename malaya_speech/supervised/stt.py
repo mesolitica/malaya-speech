@@ -7,8 +7,12 @@ from malaya_speech.utils import (
 from malaya_speech.utils.tf_featurization import STTFeaturizer
 from malaya_speech.utils.subword import load as subword_load
 from malaya_speech.model.tf import Transducer
-from malaya_speech.path import TRANSDUCER_VOCAB
+from malaya_speech.path import TRANSDUCER_VOCABS
 import json
+
+
+def get_vocab(language):
+    return TRANSDUCER_VOCABS.get(language, TRANSDUCER_VOCABS['malay'])
 
 
 def transducer_load(model, module, quantized = False, **kwargs):
@@ -20,7 +24,9 @@ def transducer_load(model, module, quantized = False, **kwargs):
         **kwargs,
     )
     g = load_graph(path['model'], **kwargs)
-    vocab = subword_load(path['vocab'].replace('.subwords', ''))
+    vocab = subword_load(
+        get_vocab(path['vocab'].split('-')[-1].replace('.subwords', ''))
+    )
     featurizer = STTFeaturizer(normalize_per_feature = True)
 
     time_reduction_factor = {

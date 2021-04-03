@@ -1,12 +1,12 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 import tensorflow as tf
 import malaya_speech
 import malaya_speech.augmentation.waveform as augmentation
 import malaya_speech.augmentation.spectrogram as mask_augmentation
-import malaya_speech.train.model.alconformer as conformer
+import malaya_speech.train.model.conformer as conformer
 import malaya_speech.train.model.transducer as transducer
 import malaya_speech.config
 import malaya_speech.train as train
@@ -19,8 +19,8 @@ from pydub import AudioSegment
 import numpy as np
 import pyroomacoustics as pra
 
-subwords = malaya_speech.subword.load('transducer.subword')
-config = malaya_speech.config.conformer_large_encoder_config
+subwords = malaya_speech.subword.load('transducer-mixed.subword')
+config = malaya_speech.config.conformer_base_encoder_config
 sr = 16000
 maxlen = 18
 minlen_text = 1
@@ -87,9 +87,9 @@ def augment_room(y, scale = 1.0):
 def mel_augmentation(features):
 
     features = mask_augmentation.warp_time_pil(features)
-    features = mask_augmentation.mask_frequency(features, width_freq_mask = 12)
+    features = mask_augmentation.mask_frequency(features, width_freq_mask = 8)
     features = mask_augmentation.mask_time(
-        features, width_time_mask = int(features.shape[0] * 0.05)
+        features, width_time_mask = int(features.shape[0] * 0.02)
     )
     return features
 
@@ -154,7 +154,7 @@ def preprocess_inputs(example):
 
 def get_dataset(
     file,
-    batch_size = 10,
+    batch_size = 16,
     shuffle_size = 20,
     thread_count = 24,
     maxlen_feature = 1800,
@@ -202,7 +202,7 @@ def model_fn(features, labels, mode, params):
     conformer_model = conformer.Model(
         kernel_regularizer = None, bias_regularizer = None, **config
     )
-    decoder_config = malaya_speech.config.conformer_large_decoder_config
+    decoder_config = malaya_speech.config.conformer_base_decoder_config
     transducer_model = transducer.rnn.Model(
         conformer_model, vocabulary_size = subwords.vocab_size, **decoder_config
     )
@@ -225,14 +225,6 @@ def model_fn(features, labels, mode, params):
     loss = mean_error
 
     tf.identity(loss, 'train_loss')
-
-    variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-    variables = [v for v in variables if 'transducer_prediction' in v.name]
-    init_checkpoint = 'transducer-rnn-base/model-rename.ckpt'
-
-    assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
-        variables, init_checkpoint
-    )
 
     if mode == tf.estimator.ModeKeys.TRAIN:
         train_op = train.optimizer.optimize_loss(
@@ -259,17 +251,17 @@ def model_fn(features, labels, mode, params):
 
 
 train_hooks = [tf.train.LoggingTensorHook(['train_loss'], every_n_iter = 1)]
-train_dataset = get_dataset('bahasa-asr-train.json')
-dev_dataset = get_dataset('bahasa-asr-test.json')
+train_dataset = get_dataset('mixed-asr-train.json')
+dev_dataset = get_dataset('mixed-asr-test.json')
 
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'asr-large-alconformer-transducer',
+    model_dir = 'asr-base-conformer-transducer-mixed',
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 5000,
-    max_steps = 500_000,
+    max_steps = 1_000_000,
     eval_fn = dev_dataset,
     train_hooks = train_hooks,
 )

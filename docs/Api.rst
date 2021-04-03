@@ -286,6 +286,18 @@ malaya_speech.speech_enhancement
 .. automodule:: malaya_speech.speech_enhancement
     :members:
 
+malaya_speech.stack
+-----------------------------------
+
+.. automodule:: malaya_speech.stack
+    :members:
+
+malaya_speech.model.stack.Stack
+----------------------------------
+
+.. autoclass:: malaya_speech.model.stack.Stack()
+    :members:
+
 malaya_speech.stt
 -----------------------------------
 

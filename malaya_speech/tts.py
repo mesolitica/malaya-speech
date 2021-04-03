@@ -39,6 +39,12 @@ _tacotron2_availability = {
         'Combined loss': 0.1375,
         'understand punctuations': True,
     },
+    'female-singlish': {
+        'Size (MB)': 104,
+        'Quantized Size (MB)': 26.3,
+        'Combined loss': 0.1375,
+        'understand punctuations': True,
+    },
 }
 _fastspeech2_availability = {
     'male': {
@@ -78,6 +84,12 @@ _fastspeech2_availability = {
         'understand punctuations': False,
     },
     'haqkiem': {
+        'Size (MB)': 125,
+        'Quantized Size (MB)': 31.7,
+        'Combined loss': 0.5663,
+        'understand punctuations': True,
+    },
+    'female-singlish': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
         'Combined loss': 0.5663,
