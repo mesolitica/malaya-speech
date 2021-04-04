@@ -295,7 +295,7 @@ malaya_speech.stack
 malaya_speech.model.stack.Stack
 ----------------------------------
 
-.. autoclass:: malaya_speech.model.stack.Stack()
+.. autoclass:: malaya_speech.stack.Stack()
     :members:
 
 malaya_speech.stt
