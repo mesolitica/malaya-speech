@@ -7,3 +7,4 @@ dataclasses
 python_speech_features
 unidecode
 tqdm
+tornado
