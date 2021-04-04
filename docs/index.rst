@@ -68,8 +68,6 @@ Contents:
    load-gender
    load-language-detection   
    load-speaker-overlap
-   realtime-classification
-   classification-stacking
 
 .. toctree::
    :maxdepth: 2
