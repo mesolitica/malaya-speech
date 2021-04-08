@@ -40,7 +40,6 @@ def cal_abs_with_pit(source, estimate_source, source_lengths, C):
 
     abs_set = tf.einsum('bij,pij->bp', pair_wise_abs, perms_one_hot)
     min_abs = tf.reduce_min(abs_set, axis = 1, keepdims = True)
-    min_abs /= C
 
     return min_abs
 

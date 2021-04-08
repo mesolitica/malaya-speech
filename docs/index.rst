@@ -34,6 +34,7 @@ Contents:
    :caption: ASR Module
 
    load-stt-transducer-model
+   load-stt-transducer-model-mixed
    transcribe-long-audio
    realtime-asr
 

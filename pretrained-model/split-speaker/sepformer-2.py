@@ -43,7 +43,7 @@ def generate():
             yield {'combined': x, 'y': y, 'length': [len(x)]}
 
 
-def get_dataset(batch_size = 1):
+def get_dataset(batch_size = 4):
     def get():
         dataset = tf.data.Dataset.from_generator(
             generate,
@@ -82,8 +82,8 @@ def model_fn(features, labels, mode, params):
     dim = 256
     config['encoder_hidden_size'] = dim
     config['decoder_hidden_size'] = dim
-    config['encoder_num_hidden_layers'] = 6
-    config['encoder_num_attention_heads'] = 8
+    config['encoder_num_hidden_layers'] = 2
+    config['encoder_num_attention_heads'] = 4
     config = fastspeech.Config(vocab_size = 1, **config)
     transformer = lambda: sepformer.Encoder_FastSpeech(
         config.encoder_self_attention_params
@@ -129,7 +129,7 @@ def model_fn(features, labels, mode, params):
 train_hooks = [tf.train.LoggingTensorHook(['total_loss'], every_n_iter = 1)]
 train_dataset = get_dataset()
 
-save_directory = 'split-speaker-sepformer-6'
+save_directory = 'split-speaker-sepformer-2'
 
 train.run_training(
     train_fn = train_dataset,

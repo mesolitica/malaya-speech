@@ -36,6 +36,12 @@ PATH_TTS_TACOTRON2 = {
         'stats': home + '/tts/stats/haqkiem.npy',
         'version': 'v2',
     },
+    'female-singlish': {
+        'model': home + '/tts/tacotron2-female-singlish/model.pb',
+        'quantized': home + '/tts/tacotron2-female-singlish/quantized/model.pb',
+        'stats': home + '/tts/stats/female-singlish.npy',
+        'version': 'v2',
+    },
 }
 
 S3_PATH_TTS_TACOTRON2 = {
@@ -59,10 +65,10 @@ S3_PATH_TTS_TACOTRON2 = {
         'quantized': 'v2/tts/tacotron2-haqkiem.pb.quantized',
         'stats': 'v1/vocoder-stats/haqkiem.npy',
     },
-    'haqkiem': {
-        'model': 'v2/tts/tacotron2-haqkiem.pb',
-        'quantized': 'v2/tts/tacotron2-haqkiem.pb.quantized',
-        'stats': 'v1/vocoder-stats/haqkiem.npy',
+    'female-singlish': {
+        'model': 'v2/tts/tacotron2-female-singlish.pb',
+        'quantized': 'v2/tts/tacotron2-female-singlish.pb.quantized',
+        'stats': 'v1/vocoder-stats/female-singlish.npy',
     },
 }
 

@@ -30,17 +30,17 @@ Features
 -  **Emotion Detection**, detect emotions in speech using Finetuned Speaker Vector.
 -  **Gender Detection**, detect genders in speech using Finetuned Speaker Vector.
 -  **Language Detection**, detect hyperlocal languages in speech using Finetuned Speaker Vector.
--  **Noise Reduction**, reduce multilevel noises using Pretrained STFT UNET.
+-  **Noise Reduction**, reduce multilevel noises using STFT UNET.
 -  **Speaker Change**, detect changing speakers using Finetuned Speaker Vector.
 -  **Speaker Count**, detect unique speakers using Finetuned Speaker Vector.
 -  **Speaker overlap**, detect overlap speakers using Finetuned Speaker Vector.
--  **Speaker Split**, Multispeaker separation using Pretrained FastSep.
+-  **Speaker Split**, Multispeaker separation using FastSep.
 -  **Speaker Vector**, calculate similarity between speakers using Pretrained Speaker Vector.
--  **Speech Enhancement**, enhance voice activities using Pretrained Waveform UNET.
+-  **Speech Enhancement**, enhance voice activities using Waveform UNET.
 -  **Speech-to-Text**, End-to-End Speech to Text for Malay, Singlish and Mixed (Malay and Singlish) using RNN-Transducer.
--  **Super Resolution**, Super Resolution 4x using Pretrained Super Resolution.
+-  **Super Resolution**, Super Resolution 4x using Super Resolution.
 -  **Text-to-Speech**, Text to Speech for Malay and Singlish using Tacotron2 and FastSpeech2.
--  **Vocoder**, convert Mel to Waveform using Pretrained MelGAN, Multiband MelGAN and Universal MelGAN Vocoder.
+-  **Vocoder**, convert Mel to Waveform using MelGAN, Multiband MelGAN and Universal MelGAN Vocoder.
 -  **Voice Activity Detection**, detect voice activities using Finetuned Speaker Vector.
 -  **Voice Conversion**, Many-to-One, One-to-Many, Many-to-Many, and Zero-shot Voice Conversion.
 -  **Hybrid 8-bit Quantization**, provide hybrid 8-bit quantization for all models to reduce inference time up to 2x and model size up to 4x.
