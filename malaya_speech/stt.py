@@ -36,14 +36,20 @@ _transducer_availability = {
     'small-conformer-mixed': {
         'Size (MB)': 49.2,
         'Quantized Size (MB)': 18.1,
-        'WER': 0.23582,
-        'CER': 0.08771,
+        'WER': 0.43149,
+        'CER': 0.29467,
     },
     'conformer-mixed': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 37.1,
-        'WER': 0.21718,
-        'CER': 0.07562,
+        'WER': 0.35191,
+        'CER': 0.23667,
+    },
+    'large-conformer-mixed': {
+        'Size (MB)': 404,
+        'Quantized Size (MB)': 107,
+        'WER': 0.35191,
+        'CER': 0.23667,
     },
 }
 

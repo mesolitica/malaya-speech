@@ -1,5 +1,4 @@
 from herpetologist import check_type
-from malaya_speech.path import PATH_VOICE_CONVERSION, S3_PATH_VOICE_CONVERSION
 from malaya_speech.supervised import voice_conversion
 from herpetologist import check_type
 

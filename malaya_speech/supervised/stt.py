@@ -16,17 +16,16 @@ def get_vocab(language):
 
 
 def transducer_load(model, module, quantized = False, **kwargs):
+
     path = check_file(
         file = model,
         module = module,
-        keys = {'model': 'model.pb', 'vocab': TRANSDUCER_VOCAB},
+        keys = {'model': 'model.pb', 'vocab': get_vocab(model.split('-')[-1])},
         quantized = quantized,
         **kwargs,
     )
     g = load_graph(path['model'], **kwargs)
-    vocab = subword_load(
-        get_vocab(path['vocab'].split('-')[-1].replace('.subwords', ''))
-    )
+    vocab = subword_load(path['vocab'].replace('.subwords', ''))
     featurizer = STTFeaturizer(normalize_per_feature = True)
 
     time_reduction_factor = {

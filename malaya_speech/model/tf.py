@@ -486,6 +486,7 @@ class Transducer(Abstract):
     ):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
+        self._pad_len = 6000
 
         self._featurizer = featurizer
         self._vocab = vocab
@@ -509,6 +510,9 @@ class Transducer(Abstract):
         ]
 
         padded, lens = sequence_1d(inputs, return_len = True)
+        zeros = np.zeros(shape = (len(inputs), self._pad_len))
+        padded = np.concatenate([padded, zeros], axis = -1)
+        lens = [l + self._pad_len for l in lens]
         return padded, lens
 
     def predict_timestamp(self, input):

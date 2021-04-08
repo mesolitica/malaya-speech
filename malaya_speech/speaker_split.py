@@ -1,13 +1,13 @@
 from herpetologist import check_type
 
 _availability = {
+    'fastsep-2': {'Size (MB)': 97.8, 'SISNR PIT': 0},
     'fastsep-4': {'Size (MB)': 97.8, 'SISNR PIT': 0},
-    'fastsep-6': {'Size (MB)': 97.8, 'SISNR PIT': 0},
 }
 
 _availability_mel = {
+    'fastsep-2': {'Size (MB)': 97.8, 'MAE PIT': 0},
     'fastsep-4': {'Size (MB)': 97.8, 'MAE PIT': 0},
-    'fastsep-6': {'Size (MB)': 97.8, 'MAE PIT': 0},
 }
 
 

@@ -1,4 +1,3 @@
-from malaya_speech.path import PATH_SUPER_RESOLUTION, S3_PATH_SUPER_RESOLUTION
 from malaya_speech.supervised import unet
 from herpetologist import check_type
 
@@ -58,10 +57,8 @@ def deep_model(model: str = 'srgan-256', quantized: bool = False, **kwargs):
             'model not supported, please check supported models from `malaya_speech.super_resolution.available_model()`.'
         )
     return unet.load_1d(
-        path = PATH_SUPER_RESOLUTION,
-        s3_path = S3_PATH_SUPER_RESOLUTION,
         model = model,
-        name = 'super-resolution',
+        module = 'super-resolution',
         quantized = quantized,
         **kwargs
     )

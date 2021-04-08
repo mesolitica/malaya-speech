@@ -25,21 +25,23 @@ We recommend to use **virtualenv** for development. All examples tested on Tenso
 Features
 --------
 
--  **Age Detection**, detect age in speech using Finetuned Speaker Vector Malaya-Speech models.
--  **Speaker Diarization**, diarizing speakers using Pretrained Speaker Vector Malaya-Speech models.
--  **Emotion Detection**, detect emotions in speech using Finetuned Speaker Vector Malaya-Speech models.
--  **Gender Detection**, detect genders in speech using Finetuned Speaker Vector Malaya-Speech models.
--  **Language Detection**, detect hyperlocal languages in speech using Finetuned Speaker Vector Malaya-Speech models.
--  **Noise Reduction**, reduce multilevel noises using Pretrained STFT UNET Malaya-Speech models.
--  **Speaker Change**, detect changing speakers using Finetuned Speaker Vector Malaya-Speech models.
--  **Speaker overlap**, detect overlap speakers using Finetuned Speaker Vector Malaya-Speech models.
--  **Speaker Vector**, calculate similarity between speakers using Pretrained Malaya-Speech models.
--  **Speech Enhancement**, enhance voice activities using Pretrained Waveform UNET Malaya-Speech models.
--  **Speech-to-Text**, End-to-End Speech to Text using RNN-Transducer Malaya-Speech models.
--  **Super Resolution**, Super Resolution 4x using Pretrained Super Resolution Malaya-Speech models.
--  **Text-to-Speech**, using Pretrained Tacotron2 and FastSpeech2 Malaya-Speech models.
--  **Vocoder**, convert Mel to Waveform using Pretrained MelGAN, Multiband MelGAN and Universal MelGAN Vocoder Malaya-Speech models.
--  **Voice Activity Detection**, detect voice activities using Finetuned Speaker Vector Malaya-Speech models.
+-  **Age Detection**, detect age in speech using Finetuned Speaker Vector.
+-  **Speaker Diarization**, diarizing speakers using Pretrained Speaker Vector.
+-  **Emotion Detection**, detect emotions in speech using Finetuned Speaker Vector.
+-  **Gender Detection**, detect genders in speech using Finetuned Speaker Vector.
+-  **Language Detection**, detect hyperlocal languages in speech using Finetuned Speaker Vector.
+-  **Noise Reduction**, reduce multilevel noises using Pretrained STFT UNET.
+-  **Speaker Change**, detect changing speakers using Finetuned Speaker Vector.
+-  **Speaker Count**, detect unique speakers using Finetuned Speaker Vector.
+-  **Speaker overlap**, detect overlap speakers using Finetuned Speaker Vector.
+-  **Speaker Split**, Multispeaker separation using Pretrained FastSep.
+-  **Speaker Vector**, calculate similarity between speakers using Pretrained Speaker Vector.
+-  **Speech Enhancement**, enhance voice activities using Pretrained Waveform UNET.
+-  **Speech-to-Text**, End-to-End Speech to Text for Malay, Singlish and Mixed (Malay and Singlish) using RNN-Transducer.
+-  **Super Resolution**, Super Resolution 4x using Pretrained Super Resolution.
+-  **Text-to-Speech**, Text to Speech for Malay and Singlish using Tacotron2 and FastSpeech2.
+-  **Vocoder**, convert Mel to Waveform using Pretrained MelGAN, Multiband MelGAN and Universal MelGAN Vocoder.
+-  **Voice Activity Detection**, detect voice activities using Finetuned Speaker Vector.
 -  **Voice Conversion**, Many-to-One, One-to-Many, Many-to-Many, and Zero-shot Voice Conversion.
 -  **Hybrid 8-bit Quantization**, provide hybrid 8-bit quantization for all models to reduce inference time up to 2x and model size up to 4x.
 
@@ -50,6 +52,7 @@ Malaya-Speech also released pretrained models, simply check at `malaya-speech/pr
 
 -  **Wave UNET**,  Multi-Scale Neural Network for End-to-End Audio Source Separation, https://arxiv.org/abs/1806.03185
 -  **Wave ResNet UNET**, added ResNet style into Wave UNET, no paper produced.
+-  **Wave ResNext UNET**, added ResNext style into Wave UNET, no paper produced.
 -  **Deep Speaker**, An End-to-End Neural Speaker Embedding System, https://arxiv.org/pdf/1705.02304.pdf
 -  **SpeakerNet**, 1D Depth-wise Separable Convolutional Network for Text-Independent Speaker Recognition and Verification, https://arxiv.org/abs/2010.12653
 -  **VGGVox**, a large-scale speaker identification dataset, https://arxiv.org/pdf/1706.08612.pdf
@@ -63,8 +66,11 @@ Malaya-Speech also released pretrained models, simply check at `malaya-speech/pr
 -  **Multi-band MelGAN**, Faster Waveform Generation for High-Quality Text-to-Speech, https://arxiv.org/abs/2005.05106
 -  **SRGAN**, Modified version of SRGAN to do 1D Convolution, Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network, https://arxiv.org/abs/1609.04802
 -  **Speech Enhancement UNET**, https://github.com/haoxiangsnr/Wave-U-Net-for-Speech-Enhancement
+-  **Speech Enhancement ResNet UNET**, Added ResNet style into Speech Enhancement UNET.
+-  **Speech Enhancement ResNext UNET**, Added ResNext style into Speech Enhancement UNET.
 -  **Universal MelGAN**, Universal MelGAN: A Robust Neural Vocoder for High-Fidelity Waveform Generation in Multiple Domains, https://arxiv.org/abs/2011.09631
 -  **FastVC**, Faster and Accurate Voice Conversion using Transformer, no paper produced.
+-  **FastSep**, Faster and Accurate Speech Separation using Transformer, no paper produced.
 
 References
 -----------
@@ -85,4 +91,4 @@ If you use our software for research, please cite:
 Acknowledgement
 ----------------
 
-Thanks to `Mesolitica <https://mesolitica.com/>`_ and `KeyReply <https://www.keyreply.com/>`_ for sponsoring GCP and private cloud to train Malaya models.
+Thanks to `KeyReply <https://www.keyreply.com/>`_ for sponsoring private cloud to train Malaya-Speech models, without it, this library will collapse entirely.  

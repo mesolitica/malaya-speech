@@ -89,12 +89,6 @@ _fastspeech2_availability = {
         'Combined loss': 0.5663,
         'understand punctuations': True,
     },
-    'female-singlish': {
-        'Size (MB)': 125,
-        'Quantized Size (MB)': 31.7,
-        'Combined loss': 0.5663,
-        'understand punctuations': True,
-    },
 }
 
 _pad = 'pad'
@@ -182,6 +176,7 @@ class TextIDS:
         string = re.sub(r'[ ]+', ' ', string).strip()
         string = string.lower()
         ids = tts_encode(string, MALAYA_SPEECH_SYMBOLS, add_eos = False)
+        ids = ids + [2, 0, 0, 0]
         text_input = np.array(ids)
         num_pad = self.pad_to - ((len(text_input) + 2) % self.pad_to)
         text_input = np.pad(
@@ -267,6 +262,7 @@ def tacotron2(
         * ``'male'`` - Tacotron2 trained on male voice.
         * ``'husein'`` - Tacotron2 trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
         * ``'haqkiem'`` - Tacotron2 trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
+        * ``'female-singlish'`` - Tacotron2 trained on female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 
@@ -337,6 +333,7 @@ def fastspeech2(
         * ``'husein'`` - Fastspeech2 trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
         * ``'husein'`` - Fastspeech2 V2 trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
         * ``'haqkiem'`` - Fastspeech2 trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
+        * ``'female-singlish'`` - Fastspeech2 trained on female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 

@@ -11,29 +11,6 @@ TRANSDUCER_VOCABS = {
     'singlish': TRANSDUCER_SINGLISH_VOCAB,
 }
 
-PATH_SUPER_RESOLUTION = {
-    'srgan-128': {
-        'model': home + '/super-resolution/srgan-128/model.pb',
-        'quantized': home + '/super-resolution/srgan-128/quantized/model.pb',
-        'version': 'v1',
-    },
-    'srgan-256': {
-        'model': home + '/super-resolution/srgan-256/model.pb',
-        'quantized': home + '/super-resolution/srgan-256/quantized/model.pb',
-        'version': 'v1',
-    },
-}
-S3_PATH_SUPER_RESOLUTION = {
-    'srgan-128': {
-        'model': 'v1/super-resolution/srgan-128.pb',
-        'quantized': 'v1/super-resolution/srgan-128.pb.quantized',
-    },
-    'srgan-256': {
-        'model': 'v1/super-resolution/srgan-256.pb',
-        'quantized': 'v1/super-resolution/srgan-256.pb.quantized',
-    },
-}
-
 PATH_TTS_TACOTRON2 = {
     'female': {
         'model': home + '/tts/tacotron2-female/model.pb',
@@ -76,6 +53,11 @@ S3_PATH_TTS_TACOTRON2 = {
         'model': 'v1/tts/tacotron2-husein.pb',
         'quantized': 'v1/tts/tacotron2-husein.pb.quantized',
         'stats': 'v1/vocoder-stats/husein.npy',
+    },
+    'haqkiem': {
+        'model': 'v2/tts/tacotron2-haqkiem.pb',
+        'quantized': 'v2/tts/tacotron2-haqkiem.pb.quantized',
+        'stats': 'v1/vocoder-stats/haqkiem.npy',
     },
     'haqkiem': {
         'model': 'v2/tts/tacotron2-haqkiem.pb',
@@ -164,29 +146,5 @@ S3_PATH_TTS_FASTSPEECH2 = {
         'model': 'v1/tts/fastspeech2-husein-v2.pb',
         'quantized': 'v1/tts/fastspeech2-husein-v2.pb.quantized',
         'stats': 'v1/vocoder-stats/husein.npy',
-    },
-}
-
-PATH_VOICE_CONVERSION = {
-    'fastvc-32': {
-        'model': home + '/vc/fastvc-32/model.pb',
-        'quantized': home + '/vc/fastvc-32/quantized/model.pb',
-        'version': 'v1',
-    },
-    'fastvc-64': {
-        'model': home + '/vc/fastvc-64/model.pb',
-        'quantized': home + '/vc/fastvc-64/quantized/model.pb',
-        'version': 'v1',
-    },
-}
-
-S3_PATH_VOICE_CONVERSION = {
-    'fastvc-32': {
-        'model': 'v1/vc/fastvc-32.pb',
-        'quantized': 'v1/vc/fastvc-32.pb.quantized',
-    },
-    'fastvc-64': {
-        'model': 'v1/vc/fastvc-64.pb',
-        'quantized': 'v1/vc/fastvc-64.pb.quantized',
     },
 }
