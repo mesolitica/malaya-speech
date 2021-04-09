@@ -42,7 +42,7 @@ _tacotron2_availability = {
     'female-singlish': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
-        'Combined loss': 0.1375,
+        'Combined loss': 0.0923,
         'understand punctuations': True,
     },
 }
@@ -281,7 +281,7 @@ def tacotron2(
 
     Returns
     -------
-    result : malaya_speech.supervised.tts.tacotron_load function
+    result : malaya_speech.model.tf.Tacotron class
     """
     model = model.lower()
 
@@ -327,11 +327,11 @@ def fastspeech2(
         Model architecture supported. Allowed values:
 
         * ``'female'`` - Fastspeech2 trained on female voice.
-        * ``'female'`` - Fastspeech2 V2 trained on female voice.
+        * ``'female-v2'`` - Fastspeech2 V2 trained on female voice.
         * ``'male'`` - Fastspeech2 trained on male voice.
-        * ``'male'`` - Fastspeech2 V2 trained on male voice.
+        * ``'male-v2'`` - Fastspeech2 V2 trained on male voice.
         * ``'husein'`` - Fastspeech2 trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
-        * ``'husein'`` - Fastspeech2 V2 trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
+        * ``'husein-v2'`` - Fastspeech2 V2 trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
         * ``'haqkiem'`` - Fastspeech2 trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
         * ``'female-singlish'`` - Fastspeech2 trained on female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
         
