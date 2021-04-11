@@ -8,7 +8,7 @@ This directory to finetune pretrained model on specific tasks.
   * [Emotion detection](emotion)
   * [Gender detection](gender-detection)
   * [Language detection](language-detection)
+  * [multispeaker-count](multispeaker-count)
   * [Speaker Change detection](speaker-change)
-  * [Speaker Count](speaker-count)
   * [Speaker overlap detection](speaker-overlap)
   * [Voice activity detection](vad)

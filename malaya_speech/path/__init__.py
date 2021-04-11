@@ -97,6 +97,13 @@ PATH_TTS_FASTSPEECH2 = {
         'stats': home + '/tts/stats/haqkiem.npy',
         'version': 'v2',
     },
+    'female-singlish': {
+        'model': home + '/tts/fastspeech2-female-singlish/model.pb',
+        'quantized': home
+        + '/tts/fastspeech2-female-singlish/quantized/model.pb',
+        'stats': home + '/tts/stats/female-singlish.npy',
+        'version': 'v2',
+    },
     'female-v2': {
         'model': home + '/tts/fastspeech2-female-v2/model.pb',
         'quantized': home + '/tts/fastspeech2-female-v2/quantized/model.pb',
@@ -137,6 +144,11 @@ S3_PATH_TTS_FASTSPEECH2 = {
         'model': 'v2/tts/fastspeech2-haqkiem.pb',
         'quantized': 'v2/tts/fastspeech2-haqkiem.pb.quantized',
         'stats': 'v1/vocoder-stats/haqkiem.npy',
+    },
+    'female-singlish': {
+        'model': 'v2/tts/fastspeech2-female-singlish.pb',
+        'quantized': 'v2/tts/fastspeech2-female-singlish.pb.quantized',
+        'stats': 'v1/vocoder-stats/female-singlish.npy',
     },
     'female-v2': {
         'model': 'v1/tts/fastspeech2-female-v2.pb',

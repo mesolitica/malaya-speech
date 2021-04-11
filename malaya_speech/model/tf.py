@@ -932,3 +932,38 @@ class FastVC(Abstract):
 
     def __call__(self, original_audio, target_audio):
         return self.predict(original_audio, target_audio)
+
+
+class Split(Abstract):
+    def __init__(self, input_nodes, output_nodes, sess, model, name):
+        self._input_nodes = input_nodes
+        self._output_nodes = output_nodes
+        self._sess = sess
+        self.__model__ = model
+        self.__name__ = name
+
+    def predict(self, input):
+        """
+        Split an audio into 4 different speakers.
+
+        Parameters
+        ----------
+        input: np.array or malaya_speech.model.frame.Frame
+
+        Returns
+        -------
+        result: np.array
+        """
+        if isinstance(input, Frame):
+            input = input.array
+
+        r = self._execute(
+            inputs = [input],
+            input_labels = ['Placeholder'],
+            output_labels = ['logits'],
+        )
+        r = r['logits']
+        return r[:, 0]
+
+    def __call__(self, input):
+        return self.predict(input)

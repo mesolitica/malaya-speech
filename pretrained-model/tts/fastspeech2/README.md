@@ -76,5 +76,4 @@ python3 fastspeech2-husein-v2.py
 
 8. Female Singlish speaker, last update 9th April 2021, [fastspeech2-female-singlish-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeech2-female-singlish-output.tar.gz)
 
-  - Tensorboard, https://tensorboard.dev/experiment/skMZrZnLQpyOiG35bO0Mmw/
   - Lower case, understand `.,?!` punctuations.

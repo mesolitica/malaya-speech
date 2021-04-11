@@ -4,6 +4,7 @@ This directory to save pretrained checkpoints and steps to reproduce.
 
 ## Directory
 
+  * [multispeaker separation](multispeaker-separation)
   * [Noise reduction](noise-reduction)
   * [speaker-embedding](speaker-embedding)
     * [deep-speaker](speaker-embedding/deep-speaker)

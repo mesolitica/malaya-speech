@@ -89,6 +89,12 @@ _fastspeech2_availability = {
         'Combined loss': 0.5663,
         'understand punctuations': True,
     },
+    'female-singlish': {
+        'Size (MB)': 125,
+        'Quantized Size (MB)': 31.7,
+        'Combined loss': 0.5112,
+        'understand punctuations': True,
+    },
 }
 
 _pad = 'pad'
@@ -352,7 +358,7 @@ def fastspeech2(
 
     Returns
     -------
-    result : malaya_speech.supervised.tts.fastspeech_load function
+    result : malaya_speech.model.tf.Fastspeech class
     """
 
     model = model.lower()
