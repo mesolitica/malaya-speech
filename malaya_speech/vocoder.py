@@ -22,6 +22,11 @@ _melgan_availability = {
         'Quantized Size (MB)': 4.53,
         'Mel loss': 0.4819,
     },
+    'female-singlish': {
+        'Size (MB)': 17.3,
+        'Quantized Size (MB)': 4.53,
+        'Mel loss': 0.4123,
+    },
     'universal': {
         'Size (MB)': 309,
         'Quantized Size (MB)': 77.5,
@@ -89,6 +94,7 @@ def melgan(model: str = 'female', quantized: bool = False, **kwargs):
         * ``'male'`` - MelGAN trained on male voice.
         * ``'husein'`` - MelGAN trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
         * ``'haqkiem'`` - MelGAN trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
+        * ``'female-singlish'`` - MelGAN trained on Female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
         * ``'universal'`` - Universal MelGAN trained on multiple speakers.
         * ``'universal-1024'`` - Universal MelGAN with 1024 filters trained on multiple speakers.
         

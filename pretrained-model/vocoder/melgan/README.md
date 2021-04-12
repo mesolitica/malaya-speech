@@ -38,6 +38,8 @@ Tensorboard, https://tensorboard.dev/experiment/9HLyNplyT1avkpatdV3hog/
 
 Tensorboard, https://tensorboard.dev/experiment/pngbnpN5QMSoiRnYZJ5qlQ/
 
-4. Haqkim speaker, last update 13th January 2021, [melgan-haqkiem-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/melgan-haqkiem-output.tar.gz)
+4. Haqkiem speaker, last update 13th January 2021, [melgan-haqkiem-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/melgan-haqkiem-output.tar.gz)
 
 Tensorboard, https://tensorboard.dev/experiment/IY8aWnsbSKOFPlUoUKLVMw/
+
+5. Female Singlish speaker, last update 13th January 2021, [melgan-female-singlish-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/melgan-female-singlish-output.tar.gz)

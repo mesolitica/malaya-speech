@@ -10,7 +10,8 @@ import numpy as np
 import IPython.display as ipd
 import matplotlib.pyplot as plt
 import malaya_speech.augmentation.waveform as augmentation
-from malaya_speech.train.model import fastsplit, fastspeech, sepformer, fastvc
+from malaya_speech.train.model import fastsplit, fastspeech, fastvc
+from malaya_speech.train.model import sepformer_old as sepformer
 from malaya_speech.utils import tf_featurization
 import malaya_speech.train as train
 import random
@@ -111,7 +112,7 @@ def model_fn(features, labels, mode, params):
             beta_1 = 0.9,
             beta_2 = 0.98,
             epsilon = 1e-6,
-            clip_norm = 5.0,
+            clip_norm = 1.0,
         )
         estimator_spec = tf.estimator.EstimatorSpec(
             mode = mode, loss = loss, train_op = train_op

@@ -58,6 +58,7 @@ Contents:
    tts-tacotron2-model
    tts-fastspeech2-model
    more-tts-fastspeech2
+   tts-singlish
    tts-long-text
 
 .. toctree::
