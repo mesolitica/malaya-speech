@@ -2,7 +2,7 @@
 
     <p align="center">
         <a href="#readme">
-            <img alt="logo" width="50%" src="https://malaya-dataset.s3-ap-southeast-1.amazonaws.com/malaya-speech.png">
+            <img alt="logo" width="40%" src="https://f000.backblazeb2.com/file/huseinhouse-public/malaya-speech.png">
         </a>
     </p>
     <p align="center">
@@ -56,7 +56,6 @@ Features
 -  **Super Resolution**, Super Resolution 4x using Super Resolution.
 -  **Text-to-Speech**, Text to Speech for Malay and Singlish using Tacotron2 and FastSpeech2.
 -  **Vocoder**, convert Mel to Waveform using MelGAN, Multiband MelGAN and Universal MelGAN Vocoder.
--  **Voice Activity Detection**, detect voice activities using Finetuned Speaker Vector.
 -  **Voice Conversion**, Many-to-One, One-to-Many, Many-to-Many, and Zero-shot Voice Conversion.
 -  **Hybrid 8-bit Quantization**, provide hybrid 8-bit quantization for all models to reduce inference time up to 2x and model size up to 4x.
 
