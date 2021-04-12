@@ -189,7 +189,7 @@ from . import emotion
 from . import gender
 from . import language_detection
 from . import multispeaker_count
-from . import multispeaker_split
+from . import multispeaker_separation
 from . import noise_reduction
 from . import speaker_change
 from . import speaker_overlap
