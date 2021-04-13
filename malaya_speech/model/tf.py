@@ -10,6 +10,7 @@ from malaya_speech.utils.padding import (
 from malaya_speech.utils.subword import decode as subword_decode
 from malaya_speech.utils.execute import execute_graph
 from malaya_speech.utils.activation import softmax
+from malaya_speech.utils.featurization import universal_mel
 from malaya_speech.utils.constant import MEL_MEAN, MEL_STD
 
 BeamHypothesis = collections.namedtuple(
@@ -868,7 +869,6 @@ class FastVC(Abstract):
         self,
         input_nodes,
         output_nodes,
-        waveform_to_mel,
         speaker_vector,
         magnitude,
         sess,
@@ -877,7 +877,6 @@ class FastVC(Abstract):
     ):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
-        self._waveform_to_mel = waveform_to_mel
         self._speaker_vector = speaker_vector
         self._magnitude = magnitude
         self._sess = sess
@@ -904,8 +903,8 @@ class FastVC(Abstract):
             input.array if isinstance(target_audio, Frame) else target_audio
         )
 
-        original_mel = self._waveform_to_mel(original_audio)
-        target_mel = self._waveform_to_mel(target_audio)
+        original_mel = universal_mel(original_audio)
+        target_mel = universal_mel(target_audio)
 
         original_v = self._magnitude(self._speaker_vector([original_audio])[0])
         target_v = self._magnitude(self._speaker_vector([target_audio])[0])
@@ -934,7 +933,7 @@ class FastVC(Abstract):
         return self.predict(original_audio, target_audio)
 
 
-class Split(Abstract):
+class Split_Wav(Abstract):
     def __init__(self, input_nodes, output_nodes, sess, model, name):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
@@ -960,6 +959,48 @@ class Split(Abstract):
         r = self._execute(
             inputs = [input],
             input_labels = ['Placeholder'],
+            output_labels = ['logits'],
+        )
+        r = r['logits']
+        return r[:, 0]
+
+    def __call__(self, input):
+        return self.predict(input)
+
+
+class Split_Mel(Abstract):
+    def __init__(self, input_nodes, output_nodes, sess, model, name):
+        self._input_nodes = input_nodes
+        self._output_nodes = output_nodes
+        self._sess = sess
+        self.__model__ = model
+        self.__name__ = name
+
+    def _to_mel(self, y):
+        mel = universal_mel(y)
+        mel[mel <= np.log(1e-2)] = np.log(1e-2)
+        return mel
+
+    def predict(self, input):
+        """
+        Split an audio into 4 different speakers.
+
+        Parameters
+        ----------
+        input: np.array or malaya_speech.model.frame.Frame
+
+        Returns
+        -------
+        result: np.array
+        """
+        if isinstance(input, Frame):
+            input = input.array
+
+        input = self._to_mel(input)
+
+        r = self._execute(
+            inputs = [input],
+            input_labels = ['Placeholder', 'Placeholder_1'],
             output_labels = ['logits'],
         )
         r = r['logits']

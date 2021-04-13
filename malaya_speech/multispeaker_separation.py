@@ -1,4 +1,4 @@
-from malaya_speech.supervised import split
+from malaya_speech.supervised import separation
 from herpetologist import check_type
 
 _availability = {
@@ -6,7 +6,7 @@ _availability = {
     'fastsep-4': {
         'Size (MB)': 155,
         'Quantized Size (MB)': 40.2,
-        'SISNR PIT': 18.645731,
+        'SISNR PIT': 19.6825,
     },
 }
 
@@ -63,7 +63,10 @@ def deep_wav(model: str = 'fastsep-4', quantized: bool = False, **kwargs):
             'model not supported, please check supported models from `malaya_speech.multispeaker_separation.available_deep_wav()`.'
         )
     return split.load(
-        model = model, module = 'speaker-split', quantized = quantized, **kwargs
+        model = model,
+        module = 'multispeaker-separation-wav',
+        quantized = quantized,
+        **kwargs
     )
 
 
@@ -95,7 +98,7 @@ def deep_mel(model: str = 'fastsep-4', quantized: bool = False, **kwargs):
         )
     return split.load(
         model = model,
-        module = 'speaker-split-mel',
+        module = 'multispeaker-separation-mel',
         quantized = quantized,
         **kwargs
     )

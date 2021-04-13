@@ -5,7 +5,6 @@ from malaya_speech.utils import (
     nodes_session,
 )
 from malaya_speech.model.tf import FastVC
-from malaya_speech.utils.featurization import universal_mel
 from malaya_speech import speaker_vector
 
 
@@ -34,7 +33,6 @@ def load(model, module, quantized = False, **kwargs):
     return FastVC(
         input_nodes = input_nodes,
         output_nodes = output_nodes,
-        waveform_to_mel = universal_mel,
         speaker_vector = speaker_model,
         magnitude = magnitude[speaker_vector_model],
         sess = generate_session(graph = g, **kwargs),

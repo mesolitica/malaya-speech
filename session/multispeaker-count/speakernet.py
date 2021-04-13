@@ -38,7 +38,6 @@ def multiprocessing(strings, function, cores = 6, returned = True):
 
 
 librispeech = glob('../speech-bahasa/LibriSpeech/*/*/*/*.flac')
-len(librispeech)
 
 
 def get_speaker_librispeech(file):
@@ -63,18 +62,50 @@ len(speakers_mandarin)
 
 speakers_malay = {}
 speakers_malay['salina'] = glob(
-    '../youtube/malay2/salina/output-wav-salina/*.wav'
+    '/home/husein/speech-bahasa/salina/output-wav-salina/*.wav'
 )
-speakers_malay['turki'] = glob('../youtube/malay2/turki/output-wav-turki/*.wav')
-speakers_malay['dari-pasentran-ke-istana'] = glob(
-    '../youtube/malay/dari-pasentran-ke-istana/output-wav-dari-pasentran-ke-istana/*.wav'
+male = glob('/home/husein/speech-bahasa/turki/output-wav-turki/*.wav')
+male.extend(
+    glob('/home/husein/speech-bahasa/output-wav-dari-pasentran-ke-istana/*.wav')
 )
+speakers_malay['male'] = male
+speakers_malay['haqkiem'] = glob('/home/husein/speech-bahasa/haqkiem/*.wav')
+speakers_malay['khalil'] = glob('/home/husein/speech-bahasa/tolong-sebut/*.wav')
+speakers_malay['mas'] = glob(
+    '/home/husein/speech-bahasa/sebut-perkataan-woman/*.wav'
+)
+husein = glob('/home/husein/speech-bahasa/audio-wattpad/*.wav')
+husein.extend(glob('/home/husein/speech-bahasa/audio-iium/*.wav'))
+husein.extend(glob('/home/husein/speech-bahasa/audio/*.wav'))
+husein.extend(glob('/home/husein/speech-bahasa/sebut-perkataan-man/*.wav'))
+speakers_malay['husein'] = husein
 
-noises = glob('/home/husein/youtube/noise-22k/*.wav')
-random.shuffle(noises)
+df_nepali = pd.read_csv(
+    '/home/husein/speech-bahasa/nepali_0/asr_nepali/utt_spk_text.tsv',
+    sep = '\t',
+    header = None,
+)
+asr_nepali = glob('/home/husein/speech-bahasa/*/asr_nepali/data/*/*.flac')
+asr_nepali_replaced = {
+    f.split('/')[-1].replace('.flac', ''): f for f in asr_nepali
+}
+df_nepali = df_nepali[df_nepali[0].isin(asr_nepali_replaced.keys())]
+
+speakers_nepali = defaultdict(list)
+for i in range(len(df_nepali)):
+    speakers_nepali[df_nepali.iloc[i, 1]].append(
+        asr_nepali_replaced[df_nepali.iloc[i, 0]]
+    )
+
 sr = 16000
 
-s = {**speakers, **vctk_speakers, **speakers_mandarin, **speakers_malay}
+s = {
+    **speakers,
+    **vctk_speakers,
+    **speakers_malay,
+    **speakers_mandarin,
+    **speakers_nepali,
+}
 
 keys = list(s.keys())
 
@@ -153,7 +184,7 @@ def parallel(f):
         except Exception as e:
             print(e)
             pass
-    if count > (len(labels) - 1):
+    if count >= (len(labels) - 1):
         print(count)
         count = len(labels) - 1
 
@@ -164,11 +195,12 @@ def loop(files):
     files = files[0]
     results = []
     for f in files:
-        results.append(parallel(f))
+        for _ in range(3):
+            results.append(parallel(f))
     return results
 
 
-def generate(batch_size = 10, repeat = 100):
+def generate(batch_size = 10, repeat = 6):
     fs = [i for i in range(batch_size)]
     while True:
         results = multiprocessing(fs, loop, cores = len(fs))
@@ -215,8 +247,10 @@ def get_dataset(batch_size = 32, shuffle_size = 256, thread_count = 6):
                 'targets': tf.TensorShape([None]),
             },
         )
-        dataset = dataset.map(preprocess_inputs)
-        dataset = dataset.shuffle(shuffle_size)
+        dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
+        dataset = dataset.map(
+            preprocess_inputs, num_parallel_calls = thread_count
+        )
         dataset = dataset.padded_batch(
             batch_size,
             padded_shapes = {
@@ -243,7 +277,7 @@ def model_fn(features, labels, mode, params):
     model = speakernet.Model(
         features['inputs'],
         features['inputs_length'][:, 0],
-        num_class = 12,
+        num_class = len(labels),
         mode = 'train',
     )
     logits = model.logits

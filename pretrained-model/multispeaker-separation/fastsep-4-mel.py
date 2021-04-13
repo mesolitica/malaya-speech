@@ -15,6 +15,7 @@ from malaya_speech.train.model import sepformer_old as sepformer
 from malaya_speech.utils import tf_featurization
 import malaya_speech.train as train
 import random
+import pickle
 from glob import glob
 from sklearn.utils import shuffle
 
@@ -23,12 +24,12 @@ speakers_size = 4
 
 
 def get_data(combined_path, speakers_size = 4, sr = 22050):
-    combined, _ = malaya_speech.load(combined_path, sr = sr, scale = False)
+    with open(combined_path, 'rb') as fopen:
+        combined = pickle.load(fopen)
     y = []
     for i in range(speakers_size):
-        y_, _ = malaya_speech.load(
-            combined_path.replace('combined', str(i)), sr = sr, scale = False
-        )
+        with open(combined_path.replace('combined', str(i)), 'rb') as fopen:
+            y_ = pickle.load(fopen)
         y.append(y_)
     return combined, y
 
@@ -40,13 +41,11 @@ def to_mel(y):
 
 
 def generate():
-    combined = glob('split-speaker-22k-train/combined/*.wav')
+    combined = glob('split-speaker-22k-train/combined/*.pkl')
     while True:
         combined = shuffle(combined)
         for i in range(len(combined)):
             x, y = get_data(combined[i])
-            x = to_mel(x)
-            y = [to_mel(i) for i in y]
             yield {'combined': x, 'y': y, 'length': [len(x)]}
 
 
