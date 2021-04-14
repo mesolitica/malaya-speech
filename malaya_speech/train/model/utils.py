@@ -13,6 +13,14 @@
 # limitations under the License.
 
 import tensorflow as tf
+from tensorflow.python.keras import backend
+from tensorflow.python.framework import dtypes
+
+
+def _get_dtype(dtype):
+    if dtype is None:
+        dtype = backend.floatx()
+    return dtypes.as_dtype(dtype)
 
 
 def shape_list(x):

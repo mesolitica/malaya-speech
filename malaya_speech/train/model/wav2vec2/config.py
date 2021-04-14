@@ -1,12 +1,12 @@
 from ..abstract import Dataclass
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 from .layer import gelu
 from dataclasses import dataclass, field
 
 
 @dataclass
 class Wav2Vec2Config(Dataclass):
-    extractor_mode = field(
+    extractor_mode: str = field(
         default = 'default',
         metadata = {
             'help': 'mode for feature extractor. default has a single group norm with d '
@@ -28,7 +28,7 @@ class Wav2Vec2Config(Dataclass):
     encoder_attention_heads: int = field(
         default = 12, metadata = {'help': 'num encoder attention heads'}
     )
-    activation_fn = field(
+    activation_fn: Callable = field(
         default = gelu, metadata = {'help': 'activation function to use'}
     )
     dropout: float = field(
@@ -70,10 +70,7 @@ class Wav2Vec2Config(Dataclass):
         metadata = {'help': 'apply layernorm first in the transformer'},
     )
     conv_feature_layers: str = field(
-        default = [(512, 10, 5)]
-        + [(512, 3, 2)] * 4
-        + [(512, 2, 2)]
-        + [(512, 2, 2)],
+        default = '[(512, 10, 5)] + [(512, 3, 2)] * 4 + [(512,2,2)] + [(512,2,2)]',
         metadata = {
             'help': 'string describing convolutional feature extraction layers in form of a python list that contains '
             '[(dim, kernel_size, stride), ...]'
@@ -127,7 +124,7 @@ class Wav2Vec2Config(Dataclass):
         default = 0.65,
         metadata = {'help': 'probability of replacing a token with mask'},
     )
-    mask_selection = field(
+    mask_selection: str = field(
         default = 'static', metadata = {'help': 'how to choose mask length'}
     )
     mask_other: float = field(
@@ -156,7 +153,7 @@ class Wav2Vec2Config(Dataclass):
         default = 0.0,
         metadata = {'help': 'probability of replacing a feature with 0'},
     )
-    mask_channel_selection = field(
+    mask_channel_selection: str = field(
         default = 'static',
         metadata = {'help': 'how to choose mask length for channel masking'},
     )
