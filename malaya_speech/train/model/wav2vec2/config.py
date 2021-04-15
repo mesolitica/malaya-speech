@@ -44,22 +44,22 @@ class Wav2Vec2Config(Dataclass):
         metadata = {'help': 'dropout probability after activation in FFN'},
     )
     encoder_layerdrop: float = field(
-        default = 0.0,
+        default = 0.05,
         metadata = {'help': 'probability of dropping a tarnsformer layer'},
     )
     dropout_input: float = field(
-        default = 0.0,
+        default = 0.1,
         metadata = {'help': 'dropout to apply to the input (after feat extr)'},
     )
     dropout_features: float = field(
-        default = 0.0,
+        default = 0.1,
         metadata = {
             'help': 'dropout to apply to the features (after feat extr)'
         },
     )
 
     final_dim: int = field(
-        default = 0,
+        default = 256,
         metadata = {
             'help': 'project final representations and targets to this many dimensions.'
             'set to encoder_embed_dim is <= 0'
@@ -83,7 +83,7 @@ class Wav2Vec2Config(Dataclass):
         default = 0.1, metadata = {'help': 'temperature to divide logits by'}
     )
     quantize_targets: bool = field(
-        default = False, metadata = {'help': 'use quantized targets'}
+        default = True, metadata = {'help': 'use quantized targets'}
     )
     quantize_input: bool = field(
         default = False, metadata = {'help': 'use quantized inputs'}

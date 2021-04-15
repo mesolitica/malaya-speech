@@ -4,11 +4,13 @@ from tensorflow.python.ops import init_ops_v2
 from typing import List, Tuple
 from ..utils import GroupNormalization, shape_list, _get_dtype
 
+EPSILON = 1e-20
+
 
 def gumbel_distribution(input_shape):
     uniform_dist = tf.random.uniform(input_shape, 0, 1)
     gumbel_dist = -1 * tf.math.log(
-        -1 * tf.math.log(uniform_dist + c.EPSILON) + c.EPSILON
+        -1 * tf.math.log(uniform_dist + EPSILON) + EPSILON
     )
 
     return gumbel_dist
@@ -156,6 +158,7 @@ class GumbelVectorQuantizer(tf.keras.layers.Layer):
             vq_dim % groups == 0
         ), f'dim {vq_dim} must be divisible by groups {groups} for concatenation'
 
+        self.vq_dim = vq_dim
         var_dim = vq_dim // groups
         num_groups = groups if not combine_groups else 1
 
@@ -245,6 +248,8 @@ class GumbelVectorQuantizer(tf.keras.layers.Layer):
         x = tf.reshape(x, (bsz * tsz, self.groups, self.num_vars, -1))
         x = tf.reduce_sum(x, axis = -2)
         x = tf.reshape(x, (bsz, tsz, -1))
+
+        x.set_shape((None, None, self.vq_dim))
 
         if not self.time_first:
             x = tf.transpose(x, (0, 2, 1))

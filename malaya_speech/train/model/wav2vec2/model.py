@@ -252,7 +252,7 @@ class Model(tf.keras.Model):
         training = True,
     ):
         features = self.feature_extractor(source, training = training)
-        if self.feature_grad_mult < 0:
+        if self.feature_grad_mult <= 0:
             features = tf.stop_gradient(features)
 
         features_pen = tf.reduce_mean(tf.math.pow(features, 2))
@@ -350,7 +350,5 @@ class Model(tf.keras.Model):
         if prob_ppl is not None:
             result['prob_perplexity'] = prob_ppl
             result['code_perplexity'] = code_ppl
-            result['num_vars'] = num_vars
-            result['temp'] = curr_temp
 
-        return result
+        return result, float(num_vars), curr_temp
