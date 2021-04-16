@@ -19,6 +19,15 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+import numpy as np
+
+
+def gelu_new(x):
+    """Smoother gaussian Error Linear Unit."""
+    cdf = 0.5 * (
+        1.0 + tf.tanh((np.sqrt(2 / np.pi) * (x + 0.044715 * tf.pow(x, 3))))
+    )
+    return x * cdf
 
 
 class FeedFowardNetwork(tf.layers.Layer):
@@ -37,7 +46,7 @@ class FeedFowardNetwork(tf.layers.Layer):
         self.filter_dense_layer = tf.layers.Dense(
             filter_size,
             use_bias = True,
-            activation = tf.nn.relu,
+            activation = gelu_new,
             name = 'filter_layer',
         )
         self.output_dense_layer = tf.layers.Dense(

@@ -25,8 +25,6 @@ from __future__ import print_function
 import tensorflow as tf  # pylint: disable=g-bad-import-order
 
 from . import attention_layer
-from . import beam_search
-from . import embedding_layer
 from . import ffn_layer
 from . import model_utils
 
@@ -46,25 +44,12 @@ class Transformer(object):
   """
 
     def __init__(self, params, train):
-        """Initialize layers to build Transformer model.
-
-    Args:
-      params: hyperparameter object defining layer sizes, dropout values, etc.
-      train: boolean indicating whether the model is in training mode. Used to
-        determine if dropout layers should be added.
-    """
         self.train = train
         self.params = params
-
-        self.embedding_softmax_layer = embedding_layer.EmbeddingSharedWeights(
-            params['vocab_size'],
-            params['hidden_size'],
-            method = 'matmul' if params['tpu'] else 'gather',
-        )
         self.encoder_stack = EncoderStack(params, train)
         self.decoder_stack = DecoderStack(params, train)
 
-    def __call__(self, inputs, targets = None):
+    def __call__(self, inputs, inputs_padding = None, targets = None):
         """Calculate target logits or inferred target sequences.
 
     Args:
@@ -86,38 +71,22 @@ class Transformer(object):
             mode = 'fan_avg',
             distribution = 'uniform',
         )
+        if inputs_padding is None:
+            inputs_padding = tf.fill(
+                (tf.shape(inputs)[0], tf.shape(inputs)[1]), 0.0
+            )
         with tf.variable_scope('Transformer', initializer = initializer):
-            # Calculate attention bias for encoder self-attention and decoder
-            # multi-headed attention layers.
             attention_bias = model_utils.get_padding_bias(inputs)
-
-            # Run the inputs through the encoder layer to map the symbol
-            # representations to continuous representations.
-            encoder_outputs = self.encode(inputs, attention_bias)
-
-            # Generate output sequence if targets is None, or return logits if target
-            # sequence is known.
+            encoder_outputs = self.encode(
+                inputs, inputs_padding, attention_bias
+            )
             if targets is None:
-                return self.predict(encoder_outputs, attention_bias)
-            else:
-                logits = self.decode(targets, encoder_outputs, attention_bias)
-                return logits
+                targets = encoder_outputs
+            logits = self.decode(targets, encoder_outputs, attention_bias)
+            return logits
 
-    def encode(self, inputs, attention_bias):
-        """Generate continuous representation for inputs.
-
-    Args:
-      inputs: int tensor with shape [batch_size, input_length].
-      attention_bias: float tensor with shape [batch_size, 1, 1, input_length]
-
-    Returns:
-      float tensor with shape [batch_size, input_length, hidden_size]
-    """
+    def encode(self, inputs, inputs_padding, attention_bias):
         with tf.name_scope('encode'):
-            # Prepare inputs to the layer stack by adding positional encodings and
-            # applying dropout.
-            embedded_inputs = self.embedding_softmax_layer(inputs)
-            inputs_padding = model_utils.get_padding(inputs)
 
             with tf.name_scope('add_pos_encoding'):
                 length = tf.shape(embedded_inputs)[1]
@@ -136,27 +105,8 @@ class Transformer(object):
             )
 
     def decode(self, targets, encoder_outputs, attention_bias):
-        """Generate logits for each value in the target sequence.
-
-    Args:
-      targets: target values for the output sequence.
-        int tensor with shape [batch_size, target_length]
-      encoder_outputs: continuous representation of input sequence.
-        float tensor with shape [batch_size, input_length, hidden_size]
-      attention_bias: float tensor with shape [batch_size, 1, 1, input_length]
-
-    Returns:
-      float32 tensor with shape [batch_size, target_length, vocab_size]
-    """
         with tf.name_scope('decode'):
-            # Prepare inputs to decoder layers by shifting targets, adding positional
-            # encoding and applying dropout.
-            decoder_inputs = self.embedding_softmax_layer(targets)
-            with tf.name_scope('shift_targets'):
-                # Shift targets to the right, and remove the last element
-                decoder_inputs = tf.pad(
-                    decoder_inputs, [[0, 0], [1, 0], [0, 0]]
-                )[:, :-1, :]
+            decoder_inputs = targets
             with tf.name_scope('add_pos_encoding'):
                 length = tf.shape(decoder_inputs)[1]
                 decoder_inputs += model_utils.get_position_encoding(
@@ -166,8 +116,6 @@ class Transformer(object):
                 decoder_inputs = tf.nn.dropout(
                     decoder_inputs, 1 - self.params['layer_postprocess_dropout']
                 )
-
-            # Run values
             decoder_self_attention_bias = model_utils.get_decoder_self_attention_bias(
                 length
             )
@@ -177,99 +125,7 @@ class Transformer(object):
                 decoder_self_attention_bias,
                 attention_bias,
             )
-            logits = self.embedding_softmax_layer.linear(outputs)
-            return logits
-
-    def _get_symbols_to_logits_fn(self, max_decode_length):
-        """Returns a decoding function that calculates logits of the next tokens."""
-
-        timing_signal = model_utils.get_position_encoding(
-            max_decode_length + 1, self.params['hidden_size']
-        )
-        decoder_self_attention_bias = model_utils.get_decoder_self_attention_bias(
-            max_decode_length
-        )
-
-        def symbols_to_logits_fn(ids, i, cache):
-            """Generate logits for next potential IDs.
-
-      Args:
-        ids: Current decoded sequences.
-          int tensor with shape [batch_size * beam_size, i + 1]
-        i: Loop index
-        cache: dictionary of values storing the encoder output, encoder-decoder
-          attention bias, and previous decoder attention values.
-
-      Returns:
-        Tuple of
-          (logits with shape [batch_size * beam_size, vocab_size],
-           updated cache values)
-      """
-            # Set decoder input to the last generated IDs
-            decoder_input = ids[:, -1:]
-
-            # Preprocess decoder input by getting embeddings and adding timing signal.
-            decoder_input = self.embedding_softmax_layer(decoder_input)
-            decoder_input += timing_signal[i : i + 1]
-
-            self_attention_bias = decoder_self_attention_bias[
-                :, :, i : i + 1, : i + 1
-            ]
-            decoder_outputs = self.decoder_stack(
-                decoder_input,
-                cache.get('encoder_outputs'),
-                self_attention_bias,
-                cache.get('encoder_decoder_attention_bias'),
-                cache,
-            )
-            logits = self.embedding_softmax_layer.linear(decoder_outputs)
-            logits = tf.squeeze(logits, axis = [1])
-            return logits, cache
-
-        return symbols_to_logits_fn
-
-    def predict(self, encoder_outputs, encoder_decoder_attention_bias):
-        """Return predicted sequence."""
-        batch_size = tf.shape(encoder_outputs)[0]
-        input_length = tf.shape(encoder_outputs)[1]
-        max_decode_length = input_length + self.params['extra_decode_length']
-
-        symbols_to_logits_fn = self._get_symbols_to_logits_fn(max_decode_length)
-
-        # Create initial set of IDs that will be passed into symbols_to_logits_fn.
-        initial_ids = tf.zeros([batch_size], dtype = tf.int32)
-
-        # Create cache storing decoder attention values for each layer.
-        cache = {
-            'layer_%d'
-            % layer: {
-                'k': tf.zeros([batch_size, 0, self.params['hidden_size']]),
-                'v': tf.zeros([batch_size, 0, self.params['hidden_size']]),
-            }
-            for layer in range(self.params['num_hidden_layers'])
-        }
-
-        # Add encoder output and attention bias to the cache.
-        cache['encoder_outputs'] = encoder_outputs
-        cache['encoder_decoder_attention_bias'] = encoder_decoder_attention_bias
-
-        # Use beam search to find the top beam_size sequences and scores.
-        decoded_ids, scores = beam_search.sequence_beam_search(
-            symbols_to_logits_fn = symbols_to_logits_fn,
-            initial_ids = initial_ids,
-            initial_cache = cache,
-            vocab_size = self.params['vocab_size'],
-            beam_size = self.params['beam_size'],
-            alpha = self.params['alpha'],
-            max_decode_length = max_decode_length,
-            eos_id = EOS_ID,
-        )
-
-        # Get the top sequence for each batch element
-        top_decoded_ids = decoded_ids[:, 0, 1:]
-        top_scores = scores[:, 0]
-
-        return {'outputs': top_decoded_ids, 'scores': top_scores}
+            return outputs
 
 
 class LayerNormalization(tf.layers.Layer):

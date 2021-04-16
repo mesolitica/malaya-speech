@@ -7,7 +7,7 @@ from glob import glob
 import random
 import tensorflow as tf
 import pandas as pd
-from malaya_speech.train.model import fastspeech, fastvc
+from malaya_speech.train.model import fastspeech, transformervc
 from math import ceil
 from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 import malaya_speech.train as train
@@ -143,14 +143,21 @@ def model_fn(features, labels, mode, params):
     mels = features['mel']
     mels_len = features['mel_length'][:, 0]
     dim_neck = 32
-    bottleneck = 512
-    config = malaya_speech.config.fastspeech_config
-    config['encoder_hidden_size'] = bottleneck + 80
-    config['decoder_hidden_size'] = bottleneck + dim_neck
+    dim_speaker = 512
+    encoder_config = malaya_speech.config.transformer_config.copy()
+    decoder_config = malaya_speech.config.transformer_config.copy()
+    encoder_config['hidden_size'] = dim_speaker + 80
+    decoder_config['hidden_size'] = dim_speaker + dim_neck
     config = fastspeech.Config(vocab_size = 1, **config)
-    model = fastvc.model.Model(dim_neck, config)
+    model = transformervc.Model(
+        dim_neck,
+        encoder_config,
+        decoder_config,
+        config,
+        dim_speaker = dim_speaker,
+    )
     encoder_outputs, mel_before, mel_after, codes = model(
-        mels, vectors, vectors, mels_len
+        mel, ori_vector, target_vector, mel_lengths
     )
     codes_ = model.call_second(mel_after, vectors, mels_len)
     loss_f = tf.losses.absolute_difference
@@ -187,7 +194,7 @@ def model_fn(features, labels, mode, params):
             init_lr = 0.001,
             num_train_steps = total_steps,
             num_warmup_steps = int(0.1 * total_steps),
-            end_learning_rate = 0.00005,
+            end_learning_rate = 0.00001,
             weight_decay_rate = 0.001,
             beta_1 = 0.9,
             beta_2 = 0.98,

@@ -1,6 +1,5 @@
 import tensorflow as tf
 from ..fastspeech.model import TFFastSpeechEncoder, TFTacotronPostnet
-from ..fastspeech.decoder import TFFastSpeechDecoder
 import numpy as np
 
 
@@ -52,11 +51,9 @@ class Encoder(tf.keras.layers.Layer):
         ]
         inputs = tf.cast(position_ids, tf.int32)
         position_embeddings = tf.gather(self.position_embeddings, inputs)
-        f = self.encoder(
-            [x + tf.cast(position_embeddings, x.dtype), attention_mask],
-            training = training,
-        )
-        return self.encoder_dense(f[0]), f[1], x
+        x = x + tf.cast(position_embeddings, x.dtype)
+        f = self.encoder([x, attention_mask], training = training)[0]
+        return self.encoder_dense(f)
 
     def _sincos_embedding(self):
         position_enc = np.array(
@@ -83,12 +80,12 @@ class Decoder(tf.keras.layers.Layer):
     def __init__(self, config, **kwargs):
         super(Decoder, self).__init__(name = 'Decoder', **kwargs)
         self.config = config
-        self.encoder = TFFastSpeechDecoder(config, name = 'encoder')
+        self.encoder = TFFastSpeechEncoder(config, name = 'encoder')
         self.position_embeddings = tf.convert_to_tensor(
             self._sincos_embedding()
         )
 
-    def call(self, x, attention_mask, encoder, training = True):
+    def call(self, x, attention_mask, training = True):
         input_shape = tf.shape(x)
         seq_length = input_shape[1]
 
@@ -98,9 +95,7 @@ class Decoder(tf.keras.layers.Layer):
         inputs = tf.cast(position_ids, tf.int32)
         position_embeddings = tf.gather(self.position_embeddings, inputs)
         x = x + tf.cast(position_embeddings, x.dtype)
-        return self.encoder([x, attention_mask], encoder, training = training)[
-            0
-        ]
+        return self.encoder([x, attention_mask], training = training)[0]
 
     def _sincos_embedding(self):
         position_enc = np.array(
@@ -134,6 +129,20 @@ class Model(tf.keras.Model):
         self.postnet = TFTacotronPostnet(
             config = config, dtype = tf.float32, name = 'postnet'
         )
+        self.f0_embeddings = tf.keras.layers.Conv1D(
+            filters = config.decoder_self_attention_params.hidden_size,
+            kernel_size = 9,
+            padding = 'same',
+            name = 'f0_embeddings',
+        )
+        self.f0_dropout = tf.keras.layers.Dropout(0.5)
+        self.energy_embeddings = tf.keras.layers.Conv1D(
+            filters = config.decoder_self_attention_params.hidden_size,
+            kernel_size = 9,
+            padding = 'same',
+            name = 'energy_embeddings',
+        )
+        self.energy_dropout = tf.keras.layers.Dropout(0.5)
         self.config = config
         if dim_speaker > 0:
             self.dim_speaker = tf.keras.layers.Dense(
@@ -150,12 +159,19 @@ class Model(tf.keras.Model):
         attention_mask.set_shape((None, None))
         if self.dim_speaker:
             c_org = self.dim_speaker(c_org)
-        code_exp, attention, encoder_concat = self.encoder(
-            x, c_org, attention_mask, training = training
-        )
-        return code_exp, attention
+        return self.encoder(x, c_org, attention_mask, training = training)
 
-    def call(self, x, c_org, c_trg, mel_lengths, training = True, **kwargs):
+    def call(
+        self,
+        x,
+        f0_gts,
+        energy_gts,
+        c_org,
+        c_trg,
+        mel_lengths,
+        training = True,
+        **kwargs,
+    ):
 
         if self.dim_speaker:
             c_org = self.dim_speaker(c_org)
@@ -166,13 +182,33 @@ class Model(tf.keras.Model):
             lengths = mel_lengths, maxlen = max_length, dtype = tf.float32
         )
         attention_mask.set_shape((None, None))
-        code_exp, attention, encoder_concat = self.encoder(
-            x, c_org, attention_mask, training = training
-        )
+        code_exp = self.encoder(x, c_org, attention_mask, training = training)
         c_trg = tf.tile(tf.expand_dims(c_trg, 1), (1, tf.shape(x)[1], 1))
         encoder_outputs = tf.concat([code_exp, c_trg], axis = -1)
+
+        f0_gts = tf.expand_dims(f0_gts, 2)
+        f0_gts = tf.image.resize(
+            f0_gts, [tf.shape(f0_gts)[0], tf.shape(x)[1]], method = 'nearest'
+        )
+        energy_gts = tf.expand_dims(energy_gts, 2)
+        energy_gts = tf.image.resize(
+            energy_gts,
+            [tf.shape(energy_gts)[0], tf.shape(x)[1]],
+            method = 'nearest',
+        )
+
+        f0_embedding = self.f0_embeddings(f0_gts)
+        energy_embedding = self.energy_embeddings(energy_gts)
+
+        f0_embedding = self.f0_dropout(f0_embedding, training = training)
+        energy_embedding = self.energy_dropout(
+            energy_embedding, training = training
+        )
+
+        encoder_outputs += f0_embedding + energy_embedding
+
         decoder_output = self.decoder(
-            encoder_outputs, attention_mask, code_exp, training = training
+            encoder_outputs, attention_mask, training = training
         )
         mel_before = self.mel_dense(decoder_output)
         mel_after = (
@@ -180,4 +216,4 @@ class Model(tf.keras.Model):
             + mel_before
         )
 
-        return encoder_outputs, mel_before, mel_after, code_exp, attention
+        return encoder_outputs, mel_before, mel_after, code_exp

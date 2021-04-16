@@ -16,6 +16,6 @@ from .melgan import config as melgan_config
 from .speakernet_featurizer import config as speakernet_featurizer_config
 from .tacotron2 import config as tacotron2_config
 from .transducer_featurizer import config as transducer_featurizer_config
-
+from .transformer import config as transformer_config
 from .universal_melgan import config as universal_melgan_config
 from .universal_mb_melgan import config as universal_mb_melgan_config
