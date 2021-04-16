@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import numpy as np
 from glob import glob
@@ -148,6 +148,7 @@ def model_fn(features, labels, mode, params):
     decoder_config = malaya_speech.config.transformer_config.copy()
     encoder_config['hidden_size'] = dim_speaker + 80
     decoder_config['hidden_size'] = dim_speaker + dim_neck
+    config = malaya_speech.config.fastspeech_config
     config = fastspeech.Config(vocab_size = 1, **config)
     model = transformervc.Model(
         dim_neck,
@@ -157,7 +158,7 @@ def model_fn(features, labels, mode, params):
         dim_speaker = dim_speaker,
     )
     encoder_outputs, mel_before, mel_after, codes = model(
-        mel, ori_vector, target_vector, mel_lengths
+        mels, vectors, vectors, mels_len
     )
     codes_ = model.call_second(mel_after, vectors, mels_len)
     loss_f = tf.losses.absolute_difference
@@ -222,7 +223,7 @@ train_hooks = [
 ]
 train_dataset = get_dataset()
 
-save_directory = 'fastvc-32-vggvox-v2'
+save_directory = 'transformervc-32-vggvox-v2'
 
 train.run_training(
     train_fn = train_dataset,

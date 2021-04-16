@@ -55,6 +55,7 @@ Features
 -  **Super Resolution**, Super Resolution 4x using Super Resolution.
 -  **Text-to-Speech**, Text to Speech for Malay and Singlish using Tacotron2 and FastSpeech2.
 -  **Vocoder**, convert Mel to Waveform using MelGAN, Multiband MelGAN and Universal MelGAN Vocoder.
+-  **Voice Activity Detection**, detect voice activities using Finetuned Speaker Vector.
 -  **Voice Conversion**, Many-to-One, One-to-Many, Many-to-Many, and Zero-shot Voice Conversion.
 -  **Hybrid 8-bit Quantization**, provide hybrid 8-bit quantization for all models to reduce inference time up to 2x and model size up to 4x.
 
@@ -79,11 +80,12 @@ Malaya-Speech also released pretrained models, simply check at `malaya-speech/pr
 -  **Multi-band MelGAN**, Faster Waveform Generation for High-Quality Text-to-Speech, https://arxiv.org/abs/2005.05106
 -  **SRGAN**, Modified version of SRGAN to do 1D Convolution, Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network, https://arxiv.org/abs/1609.04802
 -  **Speech Enhancement UNET**, https://github.com/haoxiangsnr/Wave-U-Net-for-Speech-Enhancement
--  **Speech Enhancement ResNet UNET**, Added ResNet style into Speech Enhancement UNET.
--  **Speech Enhancement ResNext UNET**, Added ResNext style into Speech Enhancement UNET.
+-  **Speech Enhancement ResNet UNET**, Added ResNet style into Speech Enhancement UNET, no paper produced.
+-  **Speech Enhancement ResNext UNET**, Added ResNext style into Speech Enhancement UNET, no paper produced.
 -  **Universal MelGAN**, Universal MelGAN: A Robust Neural Vocoder for High-Fidelity Waveform Generation in Multiple Domains, https://arxiv.org/abs/2011.09631
 -  **FastVC**, Faster and Accurate Voice Conversion using Transformer, no paper produced.
 -  **FastSep**, Faster and Accurate Speech Separation using Transformer, no paper produced.
+-  **wav2vec 2.0**, A Framework for Self-Supervised Learning of Speech Representations, https://arxiv.org/abs/2006.11477
 
 References
 -----------
