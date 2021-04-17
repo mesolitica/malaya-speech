@@ -99,6 +99,12 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+   :caption: Multispeaker Module
+
+   multispeaker-separation-wav
+
+.. toctree::
+   :maxdepth: 2
    :caption: Speaker Vector Module
 
    load-speaker-vector

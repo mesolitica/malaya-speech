@@ -85,19 +85,6 @@ def generate(file):
                 print(e)
 
 
-def preprocess_inputs(example):
-    s = featurizer.vectorize(example['waveforms'])
-    s = tf.reshape(s, (-1, n_mels))
-    s = tf.compat.v1.numpy_function(mel_augmentation, [s], tf.float32)
-    mel_fbanks = tf.reshape(s, (-1, n_mels))
-    length = tf.cast(tf.shape(mel_fbanks)[0], tf.int32)
-    length = tf.expand_dims(length, 0)
-    example['inputs'] = mel_fbanks
-    example['inputs_length'] = length
-    example.pop('waveforms', None)
-    return example
-
-
 def get_dataset(
     file,
     batch_size = 16,

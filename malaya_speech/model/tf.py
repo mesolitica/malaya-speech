@@ -957,12 +957,12 @@ class Split_Wav(Abstract):
             input = input.array
 
         r = self._execute(
-            inputs = [input],
+            inputs = [np.expand_dims([input], axis = -1)],
             input_labels = ['Placeholder'],
             output_labels = ['logits'],
         )
         r = r['logits']
-        return r[:, 0]
+        return r[:, 0, :, 0]
 
     def __call__(self, input):
         return self.predict(input)

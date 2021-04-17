@@ -100,6 +100,18 @@ malaya_speech.model.tf.FastVC
 .. autoclass:: malaya_speech.model.tf.FastVC()
     :members:
 
+malaya_speech.model.tf.Split_Wav
+----------------------------------
+
+.. autoclass:: malaya_speech.model.tf.Split_Wav()
+    :members:
+
+malaya_speech.model.tf.Split_Mel
+----------------------------------
+
+.. autoclass:: malaya_speech.model.tf.Split_Mel()
+    :members:
+
 malaya_speech.model.webrtc.WebRTC
 ----------------------------------
 
@@ -254,6 +266,12 @@ malaya_speech.language_detection
 -----------------------------------
 
 .. automodule:: malaya_speech.language_detection
+    :members:
+
+malaya_speech.multispeaker_separation
+--------------------------------------
+
+.. automodule:: malaya_speech.multispeaker_separation
     :members:
 
 malaya_speech.noise_reduction

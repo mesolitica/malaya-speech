@@ -47,10 +47,7 @@ class Encoder(tf.keras.layers.Layer):
             with tf.name_scope('encode'):
                 with tf.name_scope('add_pos_encoding'):
                     length = tf.shape(x)[1]
-                    pos_encoding = get_position_encoding(
-                        length, self.params['hidden_size']
-                    )
-                    encoder_inputs = x + pos_encoding
+                    encoder_inputs = x
 
                 if training:
                     encoder_inputs = tf.nn.dropout(
@@ -92,9 +89,6 @@ class Decoder(tf.keras.layers.Layer):
                 decoder_inputs = x
                 with tf.name_scope('add_pos_encoding'):
                     length = tf.shape(decoder_inputs)[1]
-                    decoder_inputs += get_position_encoding(
-                        length, self.params['hidden_size']
-                    )
                 if training:
                     decoder_inputs = tf.nn.dropout(
                         decoder_inputs,

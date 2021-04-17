@@ -4,7 +4,7 @@ from tensorflow.python.ops import init_ops_v2
 from typing import List, Tuple
 from ..utils import GroupNormalization, shape_list, _get_dtype
 
-EPSILON = 1e-20
+EPSILON = 1e-7
 
 
 def gumbel_distribution(input_shape):
@@ -162,8 +162,10 @@ class GumbelVectorQuantizer(tf.keras.layers.Layer):
         var_dim = vq_dim // groups
         num_groups = groups if not combine_groups else 1
 
-        self.vars = tf.Variable(
-            tf.random.uniform((1, num_groups * num_vars, var_dim))
+        self.vars = tf.get_variable(
+            name = 'vars',
+            shape = [1, num_groups * num_vars, var_dim],
+            initializer = tf.truncated_normal_initializer(),
         )
         if weight_proj_depth > 1:
 

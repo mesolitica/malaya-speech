@@ -90,7 +90,11 @@ class Model(tf.keras.Model):
                     vq_dim = vq_dim,
                 )
 
-        self.mask_emb = tf.Variable(tf.random.uniform((cfg.encoder_embed_dim,)))
+        self.mask_emb = tf.get_variable(
+            name = 'mask_emb',
+            shape = [cfg.encoder_embed_dim],
+            initializer = tf.truncated_normal_initializer(),
+        )
         self.encoder = encoder
         self.layer_norm = tf.keras.layers.LayerNormalization()
         self.target_glu = None
