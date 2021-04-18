@@ -45,7 +45,7 @@ Features
 -  **Emotion Detection**, detect emotions in speech using Finetuned Speaker Vector.
 -  **Gender Detection**, detect genders in speech using Finetuned Speaker Vector.
 -  **Language Detection**, detect hyperlocal languages in speech using Finetuned Speaker Vector.
--  **Multispeaker Separation**, Multispeaker separation using FastSep on 8k Wav and 22k Melspectrogram.
+-  **Multispeaker Separation**, Multispeaker separation using FastSep on 8k Wav.
 -  **Noise Reduction**, reduce multilevel noises using STFT UNET.
 -  **Speaker Change**, detect changing speakers using Finetuned Speaker Vector.
 -  **Speaker overlap**, detect overlap speakers using Finetuned Speaker Vector.
