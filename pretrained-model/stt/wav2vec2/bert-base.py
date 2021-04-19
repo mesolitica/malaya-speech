@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 import tensorflow as tf
 import malaya_speech
@@ -16,10 +16,8 @@ from pydub import AudioSegment
 import numpy as np
 import pyroomacoustics as pra
 
-subwords = malaya_speech.subword.load('transducer.subword')
-config = malaya_speech.config.conformer_base_encoder_config
 sr = 16000
-maxlen = 18
+maxlen = 12
 minlen_text = 1
 
 
@@ -66,20 +64,19 @@ def generate(file):
                 else:
                     wav_data, _ = malaya_speech.load(audios[i], sr = sr)
 
-                if (len(wav_data) / sr) > maxlen:
-                    # print(f'skipped audio too long {audios[i]}')
-                    continue
-
                 if len(cleaned_texts[i]) < minlen_text:
                     # print(f'skipped text too short {audios[i]}')
                     continue
+
+                if (len(wav_data) / sr) > maxlen:
+                    wav_data = wav_data[: sr * maxlen]
 
                 if random.random() > 0.9:
                     wav_data = augment_room(wav_data)
 
                 yield {
                     'waveforms': wav_data,
-                    'waveforms_length': [len(waveforms)],
+                    'waveforms_length': [len(wav_data)],
                 }
             except Exception as e:
                 print(e)
@@ -87,7 +84,7 @@ def generate(file):
 
 def get_dataset(
     file,
-    batch_size = 16,
+    batch_size = 8,
     shuffle_size = 20,
     thread_count = 24,
     maxlen_feature = 1800,
@@ -136,6 +133,9 @@ class Encoder:
         return self.model.sequence_output
 
 
+total_steps = 500000
+
+
 def model_fn(features, labels, mode, params):
     encoder = Encoder(config = bert.BertConfig())
     cfg = wav2vec2.Wav2Vec2Config()
@@ -152,6 +152,7 @@ def model_fn(features, labels, mode, params):
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
         labels = target, logits = logits
     )
+    loss = tf.reduce_sum(loss)
 
     extra_losses = []
     if 'prob_perplexity' in r:
@@ -198,7 +199,6 @@ def model_fn(features, labels, mode, params):
 
 train_hooks = [tf.train.LoggingTensorHook(['train_loss'], every_n_iter = 1)]
 train_dataset = get_dataset('bahasa-asr-train.json')
-dev_dataset = get_dataset('bahasa-asr-test.json')
 
 train.run_training(
     train_fn = train_dataset,
@@ -207,7 +207,6 @@ train.run_training(
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 5000,
-    max_steps = 500_000,
-    eval_fn = dev_dataset,
+    max_steps = total_steps,
     train_hooks = train_hooks,
 )
