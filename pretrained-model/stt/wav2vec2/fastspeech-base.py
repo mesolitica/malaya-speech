@@ -8,7 +8,6 @@ import malaya_speech.augmentation.waveform as augmentation
 import malaya_speech.config
 import malaya_speech.train as train
 from malaya_speech.train.model import wav2vec2, bert, fastspeech
-from malaya_speech.train.model.fastvc.model import Decoder
 import json
 import random
 from glob import glob
@@ -17,10 +16,8 @@ from pydub import AudioSegment
 import numpy as np
 import pyroomacoustics as pra
 
-subwords = malaya_speech.subword.load('transducer.subword')
-config = malaya_speech.config.conformer_base_encoder_config
 sr = 16000
-maxlen = 18
+maxlen = 12
 minlen_text = 1
 
 
@@ -67,20 +64,19 @@ def generate(file):
                 else:
                     wav_data, _ = malaya_speech.load(audios[i], sr = sr)
 
-                if (len(wav_data) / sr) > maxlen:
-                    # print(f'skipped audio too long {audios[i]}')
-                    continue
-
                 if len(cleaned_texts[i]) < minlen_text:
                     # print(f'skipped text too short {audios[i]}')
                     continue
+
+                if (len(wav_data) / sr) > maxlen:
+                    wav_data = wav_data[: sr * maxlen]
 
                 if random.random() > 0.9:
                     wav_data = augment_room(wav_data)
 
                 yield {
                     'waveforms': wav_data,
-                    'waveforms_length': [len(waveforms)],
+                    'waveforms_length': [len(wav_data)],
                 }
             except Exception as e:
                 print(e)
@@ -88,7 +84,7 @@ def generate(file):
 
 def get_dataset(
     file,
-    batch_size = 16,
+    batch_size = 8,
     shuffle_size = 20,
     thread_count = 24,
     maxlen_feature = 1800,
@@ -120,7 +116,12 @@ def get_dataset(
     return get
 
 
+total_steps = 500000
+
+
 def model_fn(features, labels, mode, params):
+    from malaya_speech.train.model.fastvc.model import Decoder
+
     config = malaya_speech.config.fastspeech_config
     dim = 768
     config['encoder_hidden_size'] = dim
@@ -145,6 +146,8 @@ def model_fn(features, labels, mode, params):
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
         labels = target, logits = logits
     )
+    loss = tf.reduce_sum(loss)
+    tf.summary.scalar('entropy', loss)
 
     extra_losses = []
     if 'prob_perplexity' in r:
@@ -156,20 +159,25 @@ def model_fn(features, labels, mode, params):
     sample_size = tf.cast(tf.shape(target)[0], tf.float32)
 
     loss_weights = [0.1, 10]
+    labels = ['prob_perplexity', 'features_pen']
+    index = 0
     for p, coef in zip(extra_losses, loss_weights):
         if coef != 0 and p is not None:
             p = coef * p * sample_size
+            tf.identity(p, labels[index])
+            tf.summary.scalar(labels[index], p)
             loss += p
+            index += 1
 
     tf.identity(loss, 'train_loss')
 
     if mode == tf.estimator.ModeKeys.TRAIN:
         train_op = train.optimizer.adamw.create_optimizer(
             loss,
-            init_lr = 5e-4,
+            init_lr = 1e-4,
             num_train_steps = total_steps,
-            num_warmup_steps = 10000,
-            end_learning_rate = 5e-6,
+            num_warmup_steps = 50000,
+            end_learning_rate = 0.0,
             weight_decay_rate = 0.01,
             beta_1 = 0.9,
             beta_2 = 0.98,
@@ -191,16 +199,14 @@ def model_fn(features, labels, mode, params):
 
 train_hooks = [tf.train.LoggingTensorHook(['train_loss'], every_n_iter = 1)]
 train_dataset = get_dataset('bahasa-asr-train.json')
-dev_dataset = get_dataset('bahasa-asr-test.json')
 
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'wav2vec2-bert-base',
+    model_dir = 'wav2vec2-fastspeech-base',
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 5000,
-    max_steps = 500_000,
-    eval_fn = dev_dataset,
+    max_steps = total_steps,
     train_hooks = train_hooks,
 )

@@ -213,7 +213,9 @@ class GumbelVectorQuantizer(tf.keras.layers.Layer):
 
         result['code_perplexity'] = tf.reduce_sum(
             tf.exp(
-                tf.reduce_sum(hard_probs * tf.log(hard_probs + 1e-7), axis = -1)
+                -tf.reduce_sum(
+                    hard_probs * tf.log(hard_probs + 1e-7), axis = -1
+                )
             )
         )
         avg_probs = tf.reduce_mean(

@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import tensorflow as tf
 import malaya_speech
@@ -84,7 +84,7 @@ def generate(file):
 
 def get_dataset(
     file,
-    batch_size = 8,
+    batch_size = 12,
     shuffle_size = 20,
     thread_count = 24,
     maxlen_feature = 1800,
@@ -137,8 +137,14 @@ total_steps = 1000000
 
 
 def model_fn(features, labels, mode, params):
-    encoder = Encoder(config = bert.BertConfig())
-    cfg = wav2vec2.Wav2Vec2Config()
+    config = bert.BertConfig(
+        hidden_size = 768,
+        num_hidden_layers = 6,
+        num_attention_heads = 8,
+        intermediate_size = 3072,
+    )
+    encoder = Encoder(config = config)
+    cfg = wav2vec2.Wav2Vec2Config(encoder_embed_dim = 768)
     model = wav2vec2.Model(cfg, encoder)
     X = features['waveforms']
     X_len = features['waveforms_length'][:, 0]
@@ -209,7 +215,7 @@ train_dataset = get_dataset('bahasa-asr-train.json')
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'wav2vec2-bert-base',
+    model_dir = 'wav2vec2-bert-small',
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 5000,
