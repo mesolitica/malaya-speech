@@ -25,6 +25,11 @@ sr = 16000
 maxlen = 18
 minlen_text = 1
 
+featurizer = malaya_speech.tf_featurization.STTFeaturizer(
+    normalize_per_feature = True
+)
+n_mels = featurizer.num_feature_bins
+
 
 def augment_room(y, scale = 1.0):
     corners = np.array(
@@ -138,6 +143,9 @@ def get_dataset(
     return get
 
 
+total_steps = 500000
+
+
 def model_fn(features, labels, mode, params):
     conformer_model = conformer.Model(
         kernel_regularizer = None, bias_regularizer = None, **config
@@ -216,7 +224,7 @@ train.run_training(
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 5000,
-    max_steps = 500_000,
+    max_steps = total_steps,
     eval_fn = dev_dataset,
     train_hooks = train_hooks,
 )

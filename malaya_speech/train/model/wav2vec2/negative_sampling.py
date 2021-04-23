@@ -1,6 +1,7 @@
 import tensorflow as tf
 from dataclasses import dataclass, field
 from .layer import gelu, glu, GumbelVectorQuantizer
+from .masking import index_put, index_put_constant
 from ..utils import shape_list
 
 
@@ -103,6 +104,8 @@ class Model(tf.keras.Model):
         return negs, neg_idxs
 
     def compute_preds(self, x, y, negatives):
+        tiled = tf.tile(tf.expand_dims(y, 0), (tf.shape(negatives)[0], 1, 1, 1))
+        neg_is_pos = tf.reduce_all(tf.equal(tiled, negatives), axis = -1)
         y = tf.expand_dims(y, 0)
         targets = tf.concat([y, negatives], axis = 0)
         x = tf.tile(tf.expand_dims(x, 0), (tf.shape(targets)[0], 1, 1, 1))
@@ -117,6 +120,13 @@ class Model(tf.keras.Model):
         )
         logits = logits[:, :, :, 0]
         logits = logits / self.logit_temp
+        left, right = logits[:1], logits[1:]
+        right = tf.cond(
+            tf.reduce_any(neg_is_pos),
+            lambda: index_put_constant(right, neg_is_pos, -1e9),
+            lambda: right,
+        )
+        logits = tf.concat([left, right], axis = 0)
         return logits
 
     def call(self, x, y, training = True):
