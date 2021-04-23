@@ -79,7 +79,7 @@ def generate(file):
             try:
                 if audios[i].endswith('.mp3'):
                     # print('found mp3', audios[i])
-                    wav_data, _ = mp3_to_wav(audios[i])
+                    continue
                 else:
                     wav_data, _ = malaya_speech.load(audios[i], sr = sr)
 

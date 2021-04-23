@@ -16,10 +16,35 @@ def gumbel_distribution(input_shape):
     return gumbel_dist
 
 
-def gumbel_softmax(x, tau, axis = -1):
-    x = x + gumbel_distribution(tf.shape(x))
-    x = tf.nn.softmax(x / tau, axis = -1)
-    return x
+# https://gist.github.com/ericjang/1001afd374c2c3b7752545ce6d9ed349
+def sample_gumbel(shape, eps = 1e-20):
+    """Sample from Gumbel(0, 1)"""
+    U = tf.random_uniform(shape, minval = 0, maxval = 1)
+    return -tf.log(-tf.log(U + eps) + eps)
+
+
+def gumbel_softmax_sample(logits, tau, axis = -1):
+    """ Draw a sample from the Gumbel-Softmax distribution"""
+    y = logits + sample_gumbel(tf.shape(logits))
+    return tf.nn.softmax(y / tau, axis = -1)
+
+
+def gumbel_softmax(logits, tau, hard = False, axis = -1):
+    y = gumbel_softmax_sample(logits, tau, axis = -1)
+    if hard:
+        k = tf.shape(logits)[-1]
+        # y_hard = tf.cast(tf.one_hot(tf.argmax(y,1),k), y.dtype)
+        y_hard = tf.cast(
+            tf.equal(y, tf.reduce_max(y, 1, keep_dims = True)), y.dtype
+        )
+        y = tf.stop_gradient(y_hard - y) + y
+    return y
+
+
+# def gumbel_softmax(x, tau, axis = -1):
+#     x = x + gumbel_distribution(tf.shape(x))
+#     x = tf.nn.softmax(x / tau, axis = -1)
+#     return x
 
 
 def gelu(x):
@@ -231,7 +256,7 @@ class GumbelVectorQuantizer(tf.keras.layers.Layer):
         )
         result['temp'] = self.curr_temp
         if training:
-            x = gumbel_softmax(x, tau = self.curr_temp)
+            x = gumbel_softmax(x, tau = self.curr_temp, hard = True)
         else:
             x = hard_x
 
