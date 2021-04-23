@@ -17,6 +17,8 @@ This directory to save pretrained checkpoints and steps to reproduce.
     * [Conformer](stt/conformer)
     * [Jasper](stt/jasper)
     * [QuartzNet](stt/quartznet)
+    * [Transducer-RNN LM](stt/transducer-rnn-lm)
+    * [wav2vec2](stt/wav2vec2)
   * [Text-to-Speech](tts)
     * [Fastspeech2](tts/fastspeech2)
     * [Tacotron2](tts/tacotron2)
