@@ -270,7 +270,7 @@ class Model(tf.keras.Model):
 
         features_pen = tf.reduce_mean(tf.math.pow(features, 2))
         features = self.layer_norm(features, training = training)
-        unmasked_features = features
+        unmasked_features = tf.identity(features, name = 'unmasked_features')
         if padding_mask is not None:
             input_lengths = padding_mask
             output_lengths = self._get_feat_extract_output_lengths(
@@ -301,7 +301,9 @@ class Model(tf.keras.Model):
         curr_temp = None
 
         if self.input_quantizer:
-            q = self.input_quantizer(features, produce_targets = False)
+            q = self.input_quantizer(
+                features, produce_targets = False, training = training
+            )
             features = q['x']
             num_vars = q['num_vars']
             code_ppl = q['code_perplexity']
@@ -316,12 +318,14 @@ class Model(tf.keras.Model):
                 mask_indices = mask_indices,
                 mask_channel_indices = mask_channel_indices,
             )
-            self.x = x
             y = unmasked_features
         else:
             x = features
             y = unmasked_features
             mask_indices = None
+
+        self.x = x
+        self.y = y
 
         x = self.encoder(x, padding_mask, training = training)
 
@@ -329,7 +333,7 @@ class Model(tf.keras.Model):
             return {'x': x, 'padding_mask': padding_mask}
 
         if self.quantizer:
-            q = self.quantizer(y, produce_targets = False)
+            q = self.quantizer(y, produce_targets = False, training = training)
             y = q['x']
             num_vars = q['num_vars']
             code_ppl = q['code_perplexity']

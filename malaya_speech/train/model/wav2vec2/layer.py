@@ -30,7 +30,7 @@ def gumbel_softmax_sample(logits, tau, axis = -1):
 
 
 def gumbel_softmax(logits, tau, hard = False, axis = -1):
-    y = gumbel_softmax_sample(logits, tau, axis = -1)
+    y = gumbel_softmax_sample(logits, tau, axis = axis)
     if hard:
         k = tf.shape(logits)[-1]
         # y_hard = tf.cast(tf.one_hot(tf.argmax(y,1),k), y.dtype)

@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import tensorflow as tf
 import malaya_speech
@@ -175,7 +175,7 @@ def model_fn(features, labels, mode, params):
             loss,
             init_lr = 5e-4,
             num_train_steps = total_steps,
-            num_warmup_steps = 50000,
+            num_warmup_steps = 100000,
             end_learning_rate = 0.0,
             weight_decay_rate = 0.01,
             beta_1 = 0.9,

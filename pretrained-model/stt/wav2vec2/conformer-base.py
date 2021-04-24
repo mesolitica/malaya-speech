@@ -55,9 +55,13 @@ def augment_room(y, scale = 1.0):
 
 def mel_augmentation(features):
 
-    features = mask_augmentation.mask_frequency(features, width_freq_mask = 16)
+    features = mask_augmentation.mask_frequency(
+        features, width_freq_mask = 16, n_freq_mask = 3
+    )
     features = mask_augmentation.mask_time(
-        features, width_time_mask = int(features.shape[0] * 0.1)
+        features,
+        width_time_mask = int(features.shape[0] * 0.1),
+        n_time_mask = 3,
     )
     return features
 
