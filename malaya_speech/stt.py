@@ -48,8 +48,8 @@ _transducer_availability = {
     'large-conformer-mixed': {
         'Size (MB)': 404,
         'Quantized Size (MB)': 107,
-        'WER': 0.35191,
-        'CER': 0.23667,
+        'WER': 0.3359,
+        'CER': 0.1989,
     },
 }
 
@@ -83,9 +83,6 @@ def deep_transducer(
         * ``'small-conformer-mixed'`` - SMALL size Google Conformer with Pretrained LM Mixed (Malay + Singlish) languages.
         * ``'conformer-mixed'`` - BASE size Google Conformer with Pretrained LM Mixed (Malay + Singlish) languages.
         * ``'large-conformer-mixed'`` - LARGE size Google Conformer with Pretrained LM Mixed (Malay + Singlish) languages.
-        * ``'small-conformer-singlish'`` - SMALL size Google Conformer with Pretrained LM Singlish language.
-        * ``'conformer-singlish'`` - BASE size Google Conformer with Pretrained LM Singlish language.
-        * ``'large-conformer-singlish'`` - LARGE size Google Conformer with Pretrained LM Singlish language.
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 
