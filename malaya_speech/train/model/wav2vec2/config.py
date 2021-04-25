@@ -14,22 +14,8 @@ class Wav2Vec2Config(Dataclass):
             'every block (meant to use with normalize=True)'
         },
     )
-    encoder_layers: int = field(
-        default = 12,
-        metadata = {'help': 'num encoder layers in the transformer'},
-    )
     encoder_embed_dim: int = field(
         default = 768, metadata = {'help': 'encoder embedding dimension'}
-    )
-    encoder_ffn_embed_dim: int = field(
-        default = 3072,
-        metadata = {'help': 'encoder embedding dimension for FFN'},
-    )
-    encoder_attention_heads: int = field(
-        default = 12, metadata = {'help': 'num encoder attention heads'}
-    )
-    activation_fn: Callable = field(
-        default = gelu, metadata = {'help': 'activation function to use'}
     )
     dropout: float = field(
         default = 0.1,
@@ -57,17 +43,12 @@ class Wav2Vec2Config(Dataclass):
             'help': 'dropout to apply to the features (after feat extr)'
         },
     )
-
     final_dim: int = field(
         default = 256,
         metadata = {
             'help': 'project final representations and targets to this many dimensions.'
             'set to encoder_embed_dim is <= 0'
         },
-    )
-    layer_norm_first: bool = field(
-        default = False,
-        metadata = {'help': 'apply layernorm first in the transformer'},
     )
     conv_feature_layers: str = field(
         default = '[(512, 10, 5)] + [(512, 3, 2)] * 4 + [(512,2,2)] + [(512,2,2)]',

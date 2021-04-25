@@ -1,13 +1,13 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import tensorflow as tf
 import malaya_speech
 import malaya_speech.augmentation.waveform as augmentation
 import malaya_speech.config
 import malaya_speech.train as train
-from malaya_speech.train.model import wav2vec2, bert, fastspeech, ctc
+from malaya_speech.train.model import wav2vec2, bert, fastspeech
 import json
 import random
 from glob import glob
@@ -19,8 +19,6 @@ import pyroomacoustics as pra
 sr = 16000
 maxlen = 18
 minlen_text = 1
-with open('malaya-speech-sst-vocab.json') as fopen:
-    unique_vocab = json.load(fopen) + ['{', '}', '[']
 
 
 def augment_room(y, scale = 1.0):
@@ -62,7 +60,7 @@ def generate(file):
             try:
                 if audios[i].endswith('.mp3'):
                     # print('found mp3', audios[i])
-                    wav_data, _ = mp3_to_wav(audios[i])
+                    continue
                 else:
                     wav_data, _ = malaya_speech.load(audios[i], sr = sr)
 
@@ -71,18 +69,11 @@ def generate(file):
                     continue
 
                 if (len(wav_data) / sr) > maxlen:
-                    continue
-
-                if random.random() > 0.9:
-                    wav_data = augment_room(wav_data)
-
-                t = [unique_vocab.index(c) for c in cleaned_texts[i]]
+                    wav_data = wav_data[: sr * maxlen]
 
                 yield {
                     'waveforms': wav_data,
                     'waveforms_length': [len(wav_data)],
-                    'targets': t,
-                    'targets_length': [len(t)],
                 }
             except Exception as e:
                 print(e)
@@ -90,7 +81,7 @@ def generate(file):
 
 def get_dataset(
     file,
-    batch_size = 8,
+    batch_size = 2,
     shuffle_size = 20,
     thread_count = 24,
     maxlen_feature = 1800,
@@ -98,17 +89,10 @@ def get_dataset(
     def get():
         dataset = tf.data.Dataset.from_generator(
             generate,
-            {
-                'waveforms': tf.float32,
-                'waveforms_length': tf.int32,
-                'targets': tf.int32,
-                'targets_length': tf.int32,
-            },
+            {'waveforms': tf.float32, 'waveforms_length': tf.int32},
             output_shapes = {
                 'waveforms': tf.TensorShape([None]),
                 'waveforms_length': tf.TensorShape([None]),
-                'targets': tf.TensorShape([None]),
-                'targets_length': tf.TensorShape([None]),
             },
             args = (file,),
         )
@@ -118,14 +102,10 @@ def get_dataset(
             padded_shapes = {
                 'waveforms': tf.TensorShape([None]),
                 'waveforms_length': tf.TensorShape([None]),
-                'targets': tf.TensorShape([None]),
-                'targets_length': tf.TensorShape([None]),
             },
             padding_values = {
                 'waveforms': tf.constant(0, dtype = tf.float32),
                 'waveforms_length': tf.constant(0, dtype = tf.int32),
-                'targets': tf.constant(0, dtype = tf.int32),
-                'targets_length': tf.constant(0, dtype = tf.int32),
             },
         )
         return dataset
@@ -150,52 +130,60 @@ class Encoder:
         return self.model.sequence_output
 
 
-total_steps = 500000
+total_steps = 1000000
 
 
 def model_fn(features, labels, mode, params):
     encoder = Encoder(config = bert.BertConfig())
     cfg = wav2vec2.Wav2Vec2Config(
-        mask_prob = 0.1,
-        mask_channel_prob = 0.1,
-        mask_channel_length = 64,
-        feature_grad_mult = 0.0,
+        extractor_mode = 'layer_norm',
+        dropout = 0.0,
+        attention_dropout = 0.0,
+        encoder_layerdrop = 0.0,
+        dropout_input = 0.0,
+        dropout_features = 0.0,
+        final_dim = 256,
     )
     model = wav2vec2.Model(cfg, encoder)
     X = features['waveforms']
     X_len = features['waveforms_length'][:, 0]
-    r = model(X, padding_mask = X_len, features_only = True)
-    logits = tf.layers.dense(r['x'], len(unique_vocab) + 1)
-    seq_lens = tf.reduce_sum(
-        tf.cast(tf.logical_not(r['padding_mask']), tf.int32), axis = 1
+    r, num_vars, curr_temp = model(X, padding_mask = X_len)
+    logits = r['x']
+    logits = tf.transpose(logits, [2, 1, 0])
+    logits = tf.reshape(logits, (-1, tf.shape(logits)[-1]))
+    target = tf.zeros(
+        shape = (tf.shape(r['x'])[1] * tf.shape(r['x'])[2]), dtype = tf.int32
     )
-    targets_int32 = tf.cast(features['targets'], tf.int32)
-    mean_error, sum_error, sum_weight = ctc.loss.ctc_loss(
-        logits, targets_int32, seq_lens
+    entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
+        labels = target, logits = logits
     )
-    loss = mean_error
-    accuracy = ctc.metrics.ctc_sequence_accuracy(
-        logits, targets_int32, seq_lens
-    )
+    entropy = tf.reduce_sum(entropy)
+
+    tf.identity(entropy, 'entropy')
+    tf.summary.scalar('entropy', entropy)
+
+    sample_size = tf.cast(tf.shape(target)[0], tf.float32)
+
+    perplexity = (
+        0.1 * (num_vars - r['prob_perplexity']) / num_vars
+    ) * sample_size
+    tf.identity(perplexity, 'perplexity')
+    tf.summary.scalar('perplexity', perplexity)
+
+    features_pen = (1.0 * r['features_pen']) * sample_size
+    tf.identity(features_pen, 'features_pen')
+    tf.summary.scalar('features_pen', features_pen)
+
+    loss = entropy + perplexity + features_pen
 
     tf.identity(loss, 'train_loss')
-    tf.identity(accuracy, name = 'train_accuracy')
-
-    tf.summary.scalar('train_accuracy', accuracy)
-
-    variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-    init_checkpoint = 'wav2vec2-bert-base/model.ckpt-1000000'
-
-    assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
-        variables, init_checkpoint
-    )
 
     if mode == tf.estimator.ModeKeys.TRAIN:
         train_op = train.optimizer.adamw.create_optimizer(
             loss,
             init_lr = 5e-5,
             num_train_steps = total_steps,
-            num_warmup_steps = 50000,
+            num_warmup_steps = 100000,
             end_learning_rate = 0.0,
             weight_decay_rate = 0.01,
             beta_1 = 0.9,
@@ -210,13 +198,7 @@ def model_fn(features, labels, mode, params):
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = tf.estimator.ModeKeys.EVAL,
-            loss = loss,
-            eval_metric_ops = {
-                'accuracy': ctc.metrics.ctc_sequence_accuracy_estimator(
-                    logits, targets_int32, seq_lens
-                )
-            },
+            mode = tf.estimator.ModeKeys.EVAL, loss = loss
         )
 
     return estimator_spec
@@ -224,7 +206,8 @@ def model_fn(features, labels, mode, params):
 
 train_hooks = [
     tf.train.LoggingTensorHook(
-        ['train_accuracy', 'train_loss'], every_n_iter = 1
+        ['entropy', 'perplexity', 'features_pen', 'train_loss'],
+        every_n_iter = 1,
     )
 ]
 train_dataset = get_dataset('bahasa-asr-train.json')
@@ -233,7 +216,7 @@ dev_dataset = get_dataset('bahasa-asr-test.json')
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'wav2vec2-bert-base-ctc',
+    model_dir = 'wav2vec2-bert-base-v2',
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 5000,

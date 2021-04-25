@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import tensorflow as tf
 import malaya_speech
@@ -17,7 +17,7 @@ import numpy as np
 import pyroomacoustics as pra
 
 sr = 16000
-maxlen = 12
+maxlen = 18
 minlen_text = 1
 
 
@@ -60,7 +60,7 @@ def generate(file):
             try:
                 if audios[i].endswith('.mp3'):
                     # print('found mp3', audios[i])
-                    wav_data, _ = mp3_to_wav(audios[i])
+                    continue
                 else:
                     wav_data, _ = malaya_speech.load(audios[i], sr = sr)
 
@@ -70,9 +70,6 @@ def generate(file):
 
                 if (len(wav_data) / sr) > maxlen:
                     wav_data = wav_data[: sr * maxlen]
-
-                if random.random() > 0.9:
-                    wav_data = augment_room(wav_data)
 
                 yield {
                     'waveforms': wav_data,
@@ -84,7 +81,7 @@ def generate(file):
 
 def get_dataset(
     file,
-    batch_size = 12,
+    batch_size = 10,
     shuffle_size = 20,
     thread_count = 24,
     maxlen_feature = 1800,
@@ -144,7 +141,7 @@ def model_fn(features, labels, mode, params):
         intermediate_size = 3072,
     )
     encoder = Encoder(config = config)
-    cfg = wav2vec2.Wav2Vec2Config(encoder_embed_dim = 768)
+    cfg = wav2vec2.Wav2Vec2Config()
     model = wav2vec2.Model(cfg, encoder)
     X = features['waveforms']
     X_len = features['waveforms_length'][:, 0]
@@ -155,40 +152,36 @@ def model_fn(features, labels, mode, params):
     target = tf.zeros(
         shape = (tf.shape(r['x'])[1] * tf.shape(r['x'])[2]), dtype = tf.int32
     )
-    loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
+    entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
         labels = target, logits = logits
     )
-    loss = tf.reduce_sum(loss)
-    tf.summary.scalar('entropy', loss)
+    entropy = tf.reduce_sum(entropy)
 
-    extra_losses = []
-    if 'prob_perplexity' in r:
-        extra_losses.append((num_vars - r['prob_perplexity']) / num_vars)
-
-    if 'features_pen' in r:
-        extra_losses.append(r['features_pen'])
+    tf.identity(entropy, 'entropy')
+    tf.summary.scalar('entropy', entropy)
 
     sample_size = tf.cast(tf.shape(target)[0], tf.float32)
 
-    loss_weights = [0.1, 10]
-    labels = ['prob_perplexity', 'features_pen']
-    index = 0
-    for p, coef in zip(extra_losses, loss_weights):
-        if coef != 0 and p is not None:
-            p = coef * p * sample_size
-            tf.identity(p, labels[index])
-            tf.summary.scalar(labels[index], p)
-            loss += p
-            index += 1
+    perplexity = (
+        0.1 * (num_vars - r['prob_perplexity']) / num_vars
+    ) * sample_size
+    tf.identity(perplexity, 'perplexity')
+    tf.summary.scalar('perplexity', perplexity)
+
+    features_pen = (1.0 * r['features_pen']) * sample_size
+    tf.identity(features_pen, 'features_pen')
+    tf.summary.scalar('features_pen', features_pen)
+
+    loss = entropy + perplexity + features_pen
 
     tf.identity(loss, 'train_loss')
 
     if mode == tf.estimator.ModeKeys.TRAIN:
         train_op = train.optimizer.adamw.create_optimizer(
             loss,
-            init_lr = 1e-5,
+            init_lr = 5e-5,
             num_train_steps = total_steps,
-            num_warmup_steps = 50000,
+            num_warmup_steps = 100000,
             end_learning_rate = 0.0,
             weight_decay_rate = 0.01,
             beta_1 = 0.9,
@@ -209,8 +202,14 @@ def model_fn(features, labels, mode, params):
     return estimator_spec
 
 
-train_hooks = [tf.train.LoggingTensorHook(['train_loss'], every_n_iter = 1)]
+train_hooks = [
+    tf.train.LoggingTensorHook(
+        ['entropy', 'perplexity', 'features_pen', 'train_loss'],
+        every_n_iter = 1,
+    )
+]
 train_dataset = get_dataset('bahasa-asr-train.json')
+dev_dataset = get_dataset('bahasa-asr-test.json')
 
 train.run_training(
     train_fn = train_dataset,
@@ -220,5 +219,6 @@ train.run_training(
     log_step = 1,
     save_checkpoint_step = 5000,
     max_steps = total_steps,
+    eval_fn = dev_dataset,
     train_hooks = train_hooks,
 )

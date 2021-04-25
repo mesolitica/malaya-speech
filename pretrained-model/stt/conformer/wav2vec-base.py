@@ -1,14 +1,17 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import tensorflow as tf
 import malaya_speech
 import malaya_speech.augmentation.waveform as augmentation
+import malaya_speech.augmentation.spectrogram as mask_augmentation
+import malaya_speech.train.model.conformer as conformer
+import malaya_speech.train.model.transducer as transducer
 import malaya_speech.config
 import malaya_speech.train as train
-from malaya_speech.train.model import wav2vec2, bert, fastspeech, ctc
 import json
+import numpy as np
 import random
 from glob import glob
 from sklearn.utils import shuffle
@@ -16,11 +19,16 @@ from pydub import AudioSegment
 import numpy as np
 import pyroomacoustics as pra
 
+subwords = malaya_speech.subword.load('transducer.subword')
+config = malaya_speech.config.conformer_base_encoder_config
 sr = 16000
 maxlen = 18
 minlen_text = 1
-with open('malaya-speech-sst-vocab.json') as fopen:
-    unique_vocab = json.load(fopen) + ['{', '}', '[']
+
+featurizer = malaya_speech.tf_featurization.STTFeaturizer(
+    normalize_per_feature = True
+)
+n_mels = featurizer.num_feature_bins
 
 
 def augment_room(y, scale = 1.0):
@@ -45,6 +53,16 @@ def augment_room(y, scale = 1.0):
     return room.mic_array.signals[0]
 
 
+def mel_augmentation(features):
+
+    features = mask_augmentation.warp_time_pil(features)
+    features = mask_augmentation.mask_frequency(features, width_freq_mask = 12)
+    features = mask_augmentation.mask_time(
+        features, width_time_mask = int(features.shape[0] * 0.05)
+    )
+    return features
+
+
 def mp3_to_wav(file, sr = sr):
     audio = AudioSegment.from_file(file)
     audio = audio.set_frame_rate(sr).set_channels(1)
@@ -66,21 +84,23 @@ def generate(file):
                 else:
                     wav_data, _ = malaya_speech.load(audios[i], sr = sr)
 
+                if (len(wav_data) / sr) > maxlen:
+                    # print(f'skipped audio too long {audios[i]}')
+                    continue
+
                 if len(cleaned_texts[i]) < minlen_text:
                     # print(f'skipped text too short {audios[i]}')
                     continue
 
-                if (len(wav_data) / sr) > maxlen:
-                    continue
+                t = malaya_speech.subword.encode(
+                    subwords, cleaned_texts[i], add_blank = False
+                )
 
                 if random.random() > 0.9:
                     wav_data = augment_room(wav_data)
 
-                t = [unique_vocab.index(c) for c in cleaned_texts[i]]
-
                 yield {
                     'waveforms': wav_data,
-                    'waveforms_length': [len(wav_data)],
                     'targets': t,
                     'targets_length': [len(t)],
                 }
@@ -88,9 +108,22 @@ def generate(file):
                 print(e)
 
 
+def preprocess_inputs(example):
+    s = featurizer.vectorize(example['waveforms'])
+    s = tf.reshape(s, (-1, n_mels))
+    s = tf.compat.v1.numpy_function(mel_augmentation, [s], tf.float32)
+    mel_fbanks = tf.reshape(s, (-1, n_mels))
+    length = tf.cast(tf.shape(mel_fbanks)[0], tf.int32)
+    length = tf.expand_dims(length, 0)
+    example['inputs'] = mel_fbanks
+    example['inputs_length'] = length
+    example.pop('waveforms', None)
+    return example
+
+
 def get_dataset(
     file,
-    batch_size = 8,
+    batch_size = 16,
     shuffle_size = 20,
     thread_count = 24,
     maxlen_feature = 1800,
@@ -100,30 +133,31 @@ def get_dataset(
             generate,
             {
                 'waveforms': tf.float32,
-                'waveforms_length': tf.int32,
                 'targets': tf.int32,
                 'targets_length': tf.int32,
             },
             output_shapes = {
                 'waveforms': tf.TensorShape([None]),
-                'waveforms_length': tf.TensorShape([None]),
                 'targets': tf.TensorShape([None]),
                 'targets_length': tf.TensorShape([None]),
             },
             args = (file,),
         )
         dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
+        dataset = dataset.map(
+            preprocess_inputs, num_parallel_calls = thread_count
+        )
         dataset = dataset.padded_batch(
             batch_size,
             padded_shapes = {
-                'waveforms': tf.TensorShape([None]),
-                'waveforms_length': tf.TensorShape([None]),
+                'inputs': tf.TensorShape([None, n_mels]),
+                'inputs_length': tf.TensorShape([None]),
                 'targets': tf.TensorShape([None]),
                 'targets_length': tf.TensorShape([None]),
             },
             padding_values = {
-                'waveforms': tf.constant(0, dtype = tf.float32),
-                'waveforms_length': tf.constant(0, dtype = tf.int32),
+                'inputs': tf.constant(0, dtype = tf.float32),
+                'inputs_length': tf.constant(0, dtype = tf.int32),
                 'targets': tf.constant(0, dtype = tf.int32),
                 'targets_length': tf.constant(0, dtype = tf.int32),
             },
@@ -133,62 +167,56 @@ def get_dataset(
     return get
 
 
-class Encoder:
-    def __init__(self, config):
-        self.config = config
-        self.model = None
-
-    def __call__(self, x, input_mask, training = True):
-        if self.model is None:
-            input_mask = tf.logical_not(input_mask)
-            self.model = bert.BertModel(
-                config = self.config,
-                is_training = training,
-                input_ids = x,
-                input_mask = input_mask,
-            )
-        return self.model.sequence_output
-
-
-total_steps = 500000
+total_steps = 500_000
 
 
 def model_fn(features, labels, mode, params):
-    encoder = Encoder(config = bert.BertConfig())
-    cfg = wav2vec2.Wav2Vec2Config(
-        mask_prob = 0.1,
-        mask_channel_prob = 0.1,
-        mask_channel_length = 64,
-        feature_grad_mult = 0.0,
+    conformer_model = conformer.Model(
+        kernel_regularizer = None, bias_regularizer = None, **config
     )
-    model = wav2vec2.Model(cfg, encoder)
-    X = features['waveforms']
-    X_len = features['waveforms_length'][:, 0]
-    r = model(X, padding_mask = X_len, features_only = True)
-    logits = tf.layers.dense(r['x'], len(unique_vocab) + 1)
-    seq_lens = tf.reduce_sum(
-        tf.cast(tf.logical_not(r['padding_mask']), tf.int32), axis = 1
+    decoder_config = malaya_speech.config.conformer_base_decoder_config
+    transducer_model = transducer.rnn.Model(
+        conformer_model, vocabulary_size = subwords.vocab_size, **decoder_config
     )
-    targets_int32 = tf.cast(features['targets'], tf.int32)
-    mean_error, sum_error, sum_weight = ctc.loss.ctc_loss(
-        logits, targets_int32, seq_lens
+    targets_length = features['targets_length'][:, 0]
+    v = tf.expand_dims(features['inputs'], -1)
+    z = tf.zeros((tf.shape(features['targets'])[0], 1), dtype = tf.int32)
+    c = tf.concat([z, features['targets']], axis = 1)
+
+    logits = transducer_model([v, c, targets_length + 1], training = True)
+
+    cost = transducer.loss.rnnt_loss(
+        logits = logits,
+        labels = features['targets'],
+        label_length = targets_length,
+        logit_length = features['inputs_length'][:, 0]
+        // conformer_model.conv_subsampling.time_reduction_factor,
     )
+    mean_error = tf.reduce_mean(cost)
+
     loss = mean_error
-    accuracy = ctc.metrics.ctc_sequence_accuracy(
-        logits, targets_int32, seq_lens
-    )
 
     tf.identity(loss, 'train_loss')
-    tf.identity(accuracy, name = 'train_accuracy')
 
-    tf.summary.scalar('train_accuracy', accuracy)
-
-    variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-    init_checkpoint = 'wav2vec2-bert-base/model.ckpt-1000000'
+    variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+    variables = [v for v in variables if 'transducer_prediction' in v.name]
+    init_checkpoint = 'transducer-rnn-base/model-rename.ckpt'
 
     assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
         variables, init_checkpoint
     )
+
+    tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
+
+    variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+    variables = [v for v in variables if 'conformer' in v.name]
+    init_checkpoint = 'wav2vec2-base-conformer/model-rename.ckpt'
+
+    assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
+        variables, init_checkpoint
+    )
+
+    tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
         train_op = train.optimizer.adamw.create_optimizer(
@@ -210,30 +238,20 @@ def model_fn(features, labels, mode, params):
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = tf.estimator.ModeKeys.EVAL,
-            loss = loss,
-            eval_metric_ops = {
-                'accuracy': ctc.metrics.ctc_sequence_accuracy_estimator(
-                    logits, targets_int32, seq_lens
-                )
-            },
+            mode = tf.estimator.ModeKeys.EVAL, loss = loss
         )
 
     return estimator_spec
 
 
-train_hooks = [
-    tf.train.LoggingTensorHook(
-        ['train_accuracy', 'train_loss'], every_n_iter = 1
-    )
-]
+train_hooks = [tf.train.LoggingTensorHook(['train_loss'], every_n_iter = 1)]
 train_dataset = get_dataset('bahasa-asr-train.json')
 dev_dataset = get_dataset('bahasa-asr-test.json')
 
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'wav2vec2-bert-base-ctc',
+    model_dir = 'wav2vec2-conformer-base-transducer',
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 5000,

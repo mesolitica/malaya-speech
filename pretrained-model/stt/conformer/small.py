@@ -226,13 +226,15 @@ def model_fn(features, labels, mode, params):
 
     tf.identity(loss, 'train_loss')
 
-    variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+    variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
     variables = [v for v in variables if 'transducer_prediction' in v.name]
     init_checkpoint = 'transducer-rnn-small/model-rename.ckpt'
 
     assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
         variables, init_checkpoint
     )
+
+    tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
         train_op = train.optimizer.optimize_loss(

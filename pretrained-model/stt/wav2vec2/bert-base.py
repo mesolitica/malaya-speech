@@ -130,7 +130,7 @@ class Encoder:
         return self.model.sequence_output
 
 
-total_steps = 500000
+total_steps = 1000000
 
 
 def model_fn(features, labels, mode, params):
@@ -173,7 +173,7 @@ def model_fn(features, labels, mode, params):
     if mode == tf.estimator.ModeKeys.TRAIN:
         train_op = train.optimizer.adamw.create_optimizer(
             loss,
-            init_lr = 5e-4,
+            init_lr = 5e-5,
             num_train_steps = total_steps,
             num_warmup_steps = 100000,
             end_learning_rate = 0.0,

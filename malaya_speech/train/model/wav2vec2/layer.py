@@ -124,7 +124,7 @@ class ConvFeatureExtractionModel(tf.keras.layers.Layer):
             seq.add(make_conv())
             seq.add(tf.keras.layers.Dropout(dropout))
             if is_layer_norm:
-                seq.add(tf.keras.layers.LayerNormalization)
+                seq.add(tf.keras.layers.LayerNormalization())
             elif is_group_norm:
                 seq.add(GroupNormalization(groups = dim))
             return seq
