@@ -314,13 +314,23 @@ class Model(tf.keras.Model):
         encoded_length,
         parallel_iterations = 10,
         swap_memory = False,
+        from_wav2vec2 = False,
         training = False,
     ):
-        encoded = self.encoder(features, training = training)
-        encoded_length = (
-            encoded_length
-            // self.encoder.conv_subsampling.time_reduction_factor
-        )
+        if from_wav2vec2:
+            encoded = self.encoder(
+                (features, encoded_length), training = training
+            )
+            input_mask = tf.cast(
+                tf.logical_not(self.encoder.padding_mask), tf.int32
+            )
+            encoded_length = tf.reduce_sum(input_mask, axis = 1)
+        else:
+            encoded = self.encoder(features, training = training)
+            encoded_length = (
+                encoded_length
+                // self.encoder.conv_subsampling.time_reduction_factor
+            )
         total = tf.shape(features)[0]
         batch = tf.constant(0, dtype = tf.int32)
         decoded = tf.zeros(shape = (0, tf.shape(features)[1]), dtype = tf.int32)
@@ -419,69 +429,29 @@ class Model(tf.keras.Model):
             states = hypothesis.states,
         )
 
-    def greedy_decoder(
-        self,
-        features,
-        encoded_length,
-        parallel_iterations = 10,
-        swap_memory = False,
-        training = False,
-    ):
-        encoded = self.encoder(features, training = training)
-        encoded_length = (
-            encoded_length
-            // self.encoder.conv_subsampling.time_reduction_factor
-        )
-        total = tf.shape(features)[0]
-        batch = tf.constant(0, dtype = tf.int32)
-        decoded = tf.zeros(shape = (0, tf.shape(features)[1]), dtype = tf.int32)
-
-        def condition(batch, decoded):
-            return tf.less(batch, total)
-
-        def body(batch, decoded):
-            hypothesis = self._perform_greedy(
-                encoded = encoded[batch],
-                encoded_length = encoded_length[batch],
-                predicted = tf.constant(BLANK, dtype = tf.int32),
-                states = self.predict_net.get_initial_state(),
-                parallel_iterations = parallel_iterations,
-                swap_memory = swap_memory,
-            )
-            yseq = tf.expand_dims(hypothesis.prediction, axis = 0)
-            padding = [[0, 0], [0, tf.shape(features)[1] - tf.shape(yseq)[1]]]
-            yseq = tf.pad(yseq, padding, 'CONSTANT')
-            decoded = tf.concat([decoded, yseq], axis = 0)
-            return batch + 1, decoded
-
-        batch, decoded = tf.while_loop(
-            condition,
-            body,
-            loop_vars = (batch, decoded),
-            parallel_iterations = parallel_iterations,
-            swap_memory = True,
-            shape_invariants = (
-                batch.get_shape(),
-                tf.TensorShape([None, None]),
-            ),
-            back_prop = False,
-        )
-
-        return decoded
-
     def greedy_decoder_alignment(
         self,
         features,
         encoded_length,
         parallel_iterations = 10,
         swap_memory = False,
+        from_wav2vec2 = False,
         training = False,
     ):
-        encoded = self.encoder(features, training = training)
-        encoded_length = (
-            encoded_length
-            // self.encoder.conv_subsampling.time_reduction_factor
-        )
+        if from_wav2vec2:
+            encoded = self.encoder(
+                (features, encoded_length), training = training
+            )
+            input_mask = tf.cast(
+                tf.logical_not(self.encoder.padding_mask), tf.int32
+            )
+            encoded_length = tf.reduce_sum(input_mask, axis = 1)
+        else:
+            encoded = self.encoder(features, training = training)
+            encoded_length = (
+                encoded_length
+                // self.encoder.conv_subsampling.time_reduction_factor
+            )
         total = tf.shape(features)[0]
         batch = tf.constant(0, dtype = tf.int32)
         decoded = tf.zeros(shape = (0, tf.shape(features)[1]), dtype = tf.int32)
