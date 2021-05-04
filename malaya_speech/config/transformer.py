@@ -8,4 +8,5 @@ config = {
     'attention_dropout': 0.1,
     'relu_dropout': 0.1,
     'allow_ffn_pad': True,
+    'norm_before': False,
 }

@@ -193,6 +193,13 @@ class EncoderStack(tf.layers.Layer):
     def __init__(self, params, train):
         super(EncoderStack, self).__init__()
         self.layers = []
+        self.norm_before = params['norm_before']
+
+        if self.norm_before:
+            self.output_normalization = LayerNormalization(
+                params['hidden_size']
+            )
+
         for _ in range(params['num_hidden_layers']):
             # Create sublayers for each layer.
             self_attention_layer = attention_layer.SelfAttention(
@@ -220,8 +227,10 @@ class EncoderStack(tf.layers.Layer):
                 ]
             )
 
-        # Create final layer normalization layer.
-        self.output_normalization = LayerNormalization(params['hidden_size'])
+        if not self.norm_before:
+            self.output_normalization = LayerNormalization(
+                params['hidden_size']
+            )
 
     def call(self, encoder_inputs, attention_bias, inputs_padding):
         """Return the output of the encoder layer stacks.
@@ -236,6 +245,8 @@ class EncoderStack(tf.layers.Layer):
       Output of encoder layer stack.
       float32 tensor with shape [batch_size, input_length, hidden_size]
     """
+        if self.norm_before:
+            encoder_inputs = self.output_normalization(encoder_inputs)
         for n, layer in enumerate(self.layers):
             # Run inputs through the sublayers.
             self_attention_layer = layer[0]
@@ -251,7 +262,10 @@ class EncoderStack(tf.layers.Layer):
                         encoder_inputs, inputs_padding
                     )
 
-        return self.output_normalization(encoder_inputs)
+        if self.norm_before:
+            return encoder_inputs
+        else:
+            return self.output_normalization(encoder_inputs)
 
 
 class DecoderStack(tf.layers.Layer):

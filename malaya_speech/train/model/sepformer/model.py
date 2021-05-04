@@ -56,7 +56,8 @@ class Dual_Computation_Block(tf.keras.layers.Layer):
     def call(self, x, training = True):
         B, N, K, S = shape_list(x)
         intra = tf.reshape(tf.transpose(x, (0, 3, 2, 1)), (B * S, K, N))
-        intra = self.intra_mdl(intra, training = training)
+        with tf.variable_scope('intra'):
+            intra = self.intra_mdl(intra, training = training)
         if self.linear_layer_after_inter_intra:
             intra = self.intra_linear(intra)
 
@@ -69,7 +70,8 @@ class Dual_Computation_Block(tf.keras.layers.Layer):
             intra = intra + x
 
         inter = tf.reshape(tf.transpose(x, (0, 2, 3, 1)), (B * K, S, N))
-        inter = self.inter_mdl(inter, training = training)
+        with tf.variable_scope('inter'):
+            inter = self.inter_mdl(inter, training = training)
         if self.linear_layer_after_inter_intra:
             inter = self.inter_linear(inter)
 
@@ -152,7 +154,8 @@ class Dual_Path_Model(tf.keras.layers.Layer):
         x, gap = self._Segmentation(x, self.K)
         # B, N, K, S
         for i in range(self.num_layers):
-            x = self.dual_mdl[i](x, training = training)
+            with tf.variable_scope(f'dual_{i}'):
+                x = self.dual_mdl[i](x, training = training)
         x = self.prelu(x)
 
         # B, K, S, N
