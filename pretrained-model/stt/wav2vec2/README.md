@@ -8,12 +8,16 @@ Wav2vec2 with different encoder models.
 
 1. Run training script, 
 
-Wav2vec2 + BERT Base,
+Wav2vec2 + Conformer BASE,
 
 ```bash
-python3 bert-base.py
+python3 conformer-base.py
 ```
 
 ## download
 
-1. Wav2vec2 + BERT Base, last update 23th April 2021, [wav2vec2-bert-base.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/wav2vec2-bert-base.tar.gz).
+1. Wav2vec2 + Conformer BASE, last update 23th April 2021, [wav2vec2-conformer-base.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/wav2vec2-conformer-base.tar.gz).
+
+2. Wav2vec2 + Conformer BASE without `features_pen` loss, last update 23th April 2021, [wav2vec2-conformer-base-without.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/wav2vec2-conformer-base-without.tar.gz).
+
+3. Wav2vec2 + Conformer BASE + CTC, last update 4th May 2021, [output-wav2vec2-conformer-base-ctc.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-wav2vec2-conformer-base-ctc.tar.gz).

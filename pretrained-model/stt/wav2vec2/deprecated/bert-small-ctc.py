@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import tensorflow as tf
 import malaya_speech
@@ -78,6 +78,8 @@ def generate(file):
 
                 t = [unique_vocab.index(c) for c in cleaned_texts[i]]
 
+                # while True:
+
                 yield {
                     'waveforms': wav_data,
                     'waveforms_length': [len(wav_data)],
@@ -90,7 +92,7 @@ def generate(file):
 
 def get_dataset(
     file,
-    batch_size = 8,
+    batch_size = 12,
     shuffle_size = 20,
     thread_count = 24,
     maxlen_feature = 1800,
@@ -154,17 +156,28 @@ total_steps = 500000
 
 
 def model_fn(features, labels, mode, params):
-    encoder = Encoder(config = bert.BertConfig())
+    config = bert.BertConfig(
+        hidden_size = 768,
+        num_hidden_layers = 6,
+        num_attention_heads = 8,
+        intermediate_size = 3072,
+        hidden_dropout_prob = 0.0,
+        attention_probs_dropout_prob = 0.0,
+    )
+    encoder = Encoder(config = config)
     cfg = wav2vec2.Wav2Vec2Config(
-        mask_prob = 0.1,
-        mask_channel_prob = 0.1,
-        mask_channel_length = 64,
-        feature_grad_mult = 0.0,
+        extractor_mode = 'layer_norm',
+        dropout = 0.0,
+        attention_dropout = 0.0,
+        encoder_layerdrop = 0.0,
+        dropout_input = 0.0,
+        dropout_features = 0.0,
+        final_dim = 256,
     )
     model = wav2vec2.Model(cfg, encoder)
     X = features['waveforms']
     X_len = features['waveforms_length'][:, 0]
-    r = model(X, padding_mask = X_len, features_only = True)
+    r = model(X, padding_mask = X_len, features_only = True, mask = False)
     logits = tf.layers.dense(r['x'], len(unique_vocab) + 1)
     seq_lens = tf.reduce_sum(
         tf.cast(tf.logical_not(r['padding_mask']), tf.int32), axis = 1
@@ -183,25 +196,27 @@ def model_fn(features, labels, mode, params):
 
     tf.summary.scalar('train_accuracy', accuracy)
 
-    variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-    init_checkpoint = 'wav2vec2-bert-base/model.ckpt-1000000'
+    variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+    init_checkpoint = 'wav2vec2-bert-small/model.ckpt-835002'
 
     assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
         variables, init_checkpoint
     )
+
+    tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
         train_op = train.optimizer.adamw.create_optimizer(
             loss,
             init_lr = 5e-5,
             num_train_steps = total_steps,
-            num_warmup_steps = 50000,
+            num_warmup_steps = 100000,
             end_learning_rate = 0.0,
             weight_decay_rate = 0.01,
             beta_1 = 0.9,
-            beta_2 = 0.98,
+            beta_2 = 0.999,
             epsilon = 1e-6,
-            clip_norm = 1.0,
+            clip_norm = 50.0,
         )
         estimator_spec = tf.estimator.EstimatorSpec(
             mode = mode, loss = loss, train_op = train_op
@@ -233,7 +248,7 @@ dev_dataset = get_dataset('bahasa-asr-test.json')
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'wav2vec2-bert-base-ctc',
+    model_dir = 'wav2vec2-bert-small-ctc',
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 5000,

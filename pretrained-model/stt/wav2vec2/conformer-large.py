@@ -127,7 +127,7 @@ total_steps = 1000000
 
 
 def model_fn(features, labels, mode, params):
-    config_conformer = malaya_speech.config.conformer_base_encoder_config
+    config_conformer = malaya_speech.config.conformer_large_encoder_config
     config_conformer['subsampling']['type'] = 'none'
     config_conformer['dropout'] = 0.0
     encoder = Encoder(config_conformer)
@@ -138,7 +138,7 @@ def model_fn(features, labels, mode, params):
         encoder_layerdrop = 0.0,
         dropout_input = 0.0,
         dropout_features = 0.0,
-        final_dim = 256,
+        final_dim = 768,
     )
     model = wav2vec2.Model(cfg, encoder)
     X = features['waveforms']
@@ -209,7 +209,7 @@ dev_dataset = get_dataset('bahasa-asr-test.json')
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'wav2vec2-conformer-base',
+    model_dir = 'wav2vec2-conformer-large',
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 5000,

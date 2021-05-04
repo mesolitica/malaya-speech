@@ -1,13 +1,12 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 import tensorflow as tf
 import malaya_speech
 import malaya_speech.augmentation.waveform as augmentation
-import malaya_speech.augmentation.spectrogram as mask_augmentation
-import malaya_speech.train.model.conformer as conformer
-import malaya_speech.train.model.transducer as transducer
+from malaya_speech.train.model import wav2vec2, transducer
+from malaya_speech.train.model.conformer.model import Model as ConformerModel
 import malaya_speech.config
 import malaya_speech.train as train
 import json
@@ -22,13 +21,8 @@ import pyroomacoustics as pra
 subwords = malaya_speech.subword.load('transducer.subword')
 config = malaya_speech.config.conformer_base_encoder_config
 sr = 16000
-maxlen = 18
+maxlen = 16
 minlen_text = 1
-
-featurizer = malaya_speech.tf_featurization.STTFeaturizer(
-    normalize_per_feature = True
-)
-n_mels = featurizer.num_feature_bins
 
 
 def augment_room(y, scale = 1.0):
@@ -100,7 +94,8 @@ def generate(file):
                     wav_data = augment_room(wav_data)
 
                 yield {
-                    'waveforms': wav_data,
+                    'inputs': wav_data,
+                    'inputs_length': [len(wav_data)],
                     'targets': t,
                     'targets_length': [len(t)],
                 }
@@ -108,22 +103,9 @@ def generate(file):
                 print(e)
 
 
-def preprocess_inputs(example):
-    s = featurizer.vectorize(example['waveforms'])
-    s = tf.reshape(s, (-1, n_mels))
-    s = tf.compat.v1.numpy_function(mel_augmentation, [s], tf.float32)
-    mel_fbanks = tf.reshape(s, (-1, n_mels))
-    length = tf.cast(tf.shape(mel_fbanks)[0], tf.int32)
-    length = tf.expand_dims(length, 0)
-    example['inputs'] = mel_fbanks
-    example['inputs_length'] = length
-    example.pop('waveforms', None)
-    return example
-
-
 def get_dataset(
     file,
-    batch_size = 16,
+    batch_size = 4,
     shuffle_size = 20,
     thread_count = 24,
     maxlen_feature = 1800,
@@ -132,25 +114,24 @@ def get_dataset(
         dataset = tf.data.Dataset.from_generator(
             generate,
             {
-                'waveforms': tf.float32,
+                'inputs': tf.float32,
+                'inputs_length': tf.int32,
                 'targets': tf.int32,
                 'targets_length': tf.int32,
             },
             output_shapes = {
-                'waveforms': tf.TensorShape([None]),
+                'inputs': tf.TensorShape([None]),
+                'inputs_length': tf.TensorShape([None]),
                 'targets': tf.TensorShape([None]),
                 'targets_length': tf.TensorShape([None]),
             },
             args = (file,),
         )
         dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
-        dataset = dataset.map(
-            preprocess_inputs, num_parallel_calls = thread_count
-        )
         dataset = dataset.padded_batch(
             batch_size,
             padded_shapes = {
-                'inputs': tf.TensorShape([None, n_mels]),
+                'inputs': tf.TensorShape([None]),
                 'inputs_length': tf.TensorShape([None]),
                 'targets': tf.TensorShape([None]),
                 'targets_length': tf.TensorShape([None]),
@@ -167,30 +148,64 @@ def get_dataset(
     return get
 
 
-total_steps = 500_000
+total_steps = 1_000_000
+
+
+class Encoder:
+    def __init__(self, config):
+        self.config = config
+        self.encoder = ConformerModel(**self.config)
+
+    def __call__(self, x, input_mask, training = True):
+        return self.encoder(x, training = training)
+
+
+class Model:
+    def __init__(self, cfg, encoder):
+        self.model = wav2vec2.Model(cfg, encoder)
+
+    def __call__(self, inputs, training = True):
+        X, X_len = inputs
+        r = self.model(
+            X,
+            padding_mask = X_len,
+            features_only = True,
+            mask = False,
+            training = training,
+        )
+        self.padding_mask = r['padding_mask']
+        return r['x']
 
 
 def model_fn(features, labels, mode, params):
-    conformer_model = conformer.Model(
-        kernel_regularizer = None, bias_regularizer = None, **config
-    )
+    config_conformer = malaya_speech.config.conformer_base_encoder_config
+    config_conformer['subsampling']['type'] = 'none'
+    config_conformer['dropout'] = 0.0
+    encoder = Encoder(config_conformer)
+    cfg = wav2vec2.Wav2Vec2Config()
+    model = Model(cfg, encoder)
     decoder_config = malaya_speech.config.conformer_base_decoder_config
     transducer_model = transducer.rnn.Model(
-        conformer_model, vocabulary_size = subwords.vocab_size, **decoder_config
+        model, vocabulary_size = subwords.vocab_size, **decoder_config
     )
     targets_length = features['targets_length'][:, 0]
-    v = tf.expand_dims(features['inputs'], -1)
+    X = features['inputs']
+    X_len = features['inputs_length'][:, 0]
     z = tf.zeros((tf.shape(features['targets'])[0], 1), dtype = tf.int32)
     c = tf.concat([z, features['targets']], axis = 1)
 
-    logits = transducer_model([v, c, targets_length + 1], training = True)
+    logits = transducer_model(
+        [(X, X_len), c, targets_length + 1], training = True
+    )
+
+    input_mask = tf.cast(tf.logical_not(model.padding_mask), tf.int32)
+    logit_length = tf.reduce_sum(input_mask, axis = 1)
 
     cost = transducer.loss.rnnt_loss(
         logits = logits,
         labels = features['targets'],
         label_length = targets_length,
-        logit_length = features['inputs_length'][:, 0]
-        // conformer_model.conv_subsampling.time_reduction_factor,
+        logit_length = logit_length,
     )
     mean_error = tf.reduce_mean(cost)
 
@@ -210,7 +225,7 @@ def model_fn(features, labels, mode, params):
 
     variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
     variables = [v for v in variables if 'conformer' in v.name]
-    init_checkpoint = 'wav2vec2-base-conformer/model-rename.ckpt'
+    init_checkpoint = 'wav2vec2-conformer-base/model-rename.ckpt'
 
     assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
         variables, init_checkpoint
@@ -223,11 +238,11 @@ def model_fn(features, labels, mode, params):
             loss,
             init_lr = 5e-5,
             num_train_steps = total_steps,
-            num_warmup_steps = 50000,
+            num_warmup_steps = 100_000,
             end_learning_rate = 0.0,
             weight_decay_rate = 0.01,
             beta_1 = 0.9,
-            beta_2 = 0.98,
+            beta_2 = 0.999,
             epsilon = 1e-6,
             clip_norm = 1.0,
         )

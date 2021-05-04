@@ -1,14 +1,13 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 import tensorflow as tf
 import malaya_speech
 import malaya_speech.augmentation.waveform as augmentation
 import malaya_speech.config
 import malaya_speech.train as train
-from malaya_speech.train.model import wav2vec2
-from malaya_speech.train.model.conformer.model import Model as ConformerModel
+from malaya_speech.train.model import wav2vec2, bert, fastspeech
 import json
 import random
 from glob import glob
@@ -117,20 +116,28 @@ def get_dataset(
 class Encoder:
     def __init__(self, config):
         self.config = config
-        self.encoder = ConformerModel(**self.config)
+        self.model = None
 
     def __call__(self, x, input_mask, training = True):
-        return self.encoder(x, training = training)
+        if self.model is None:
+            input_mask = tf.logical_not(input_mask)
+            self.model = bert.BertModel(
+                config = self.config,
+                is_training = training,
+                input_ids = x,
+                input_mask = input_mask,
+            )
+        return self.model.sequence_output
 
 
 total_steps = 1000000
 
 
 def model_fn(features, labels, mode, params):
-    config_conformer = malaya_speech.config.conformer_base_encoder_config
-    config_conformer['subsampling']['type'] = 'none'
-    config_conformer['dropout'] = 0.0
-    encoder = Encoder(config_conformer)
+    config = bert.BertConfig(
+        hidden_dropout_prob = 0.0, attention_probs_dropout_prob = 0.0
+    )
+    encoder = Encoder(config = config)
     cfg = wav2vec2.Wav2Vec2Config(
         extractor_mode = 'layer_norm',
         dropout = 0.0,
@@ -167,7 +174,7 @@ def model_fn(features, labels, mode, params):
     tf.identity(features_pen, 'features_pen')
     tf.summary.scalar('features_pen', features_pen)
 
-    loss = entropy + perplexity
+    loss = entropy + perplexity + features_pen
 
     tf.identity(loss, 'train_loss')
 
@@ -209,7 +216,7 @@ dev_dataset = get_dataset('bahasa-asr-test.json')
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'wav2vec2-conformer-base',
+    model_dir = 'wav2vec2-bert-base-v2',
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 5000,

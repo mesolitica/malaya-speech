@@ -21,3 +21,5 @@ python3 fastsep-4.py
 1. FastSep-4 8k, last update 10th April 2021, [sepformer-4.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/sepformer-4.tar.gz)
 
 2. FastSep-2 8k, last update 17th April 2021, [sepformer-2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/sepformer-2.tar.gz)
+
+2. FastSep-6 8k, last update 2nd May 2021, [sepformer-6.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/sepformer-6.tar.gz)

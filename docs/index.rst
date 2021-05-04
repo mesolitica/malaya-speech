@@ -36,6 +36,8 @@ Contents:
    load-stt-transducer-model
    load-stt-transducer-model-mixed
    transcribe-long-audio
+   ctc-language-model
+   load-stt-ctc-model
    realtime-asr
 
 .. toctree::

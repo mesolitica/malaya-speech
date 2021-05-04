@@ -12,6 +12,11 @@ _availability = {
         'Quantized Size (MB)': 40.2,
         'SISNR PIT': 19.6825,
     },
+    'fastsep-6': {
+        'Size (MB)': 231,
+        'Quantized Size (MB)': 60,
+        'SISNR PIT': 15.0647,
+    },
 }
 
 
@@ -34,8 +39,9 @@ def deep_wav(model: str = 'fastsep-4', quantized: bool = False, **kwargs):
     model : str, optional (default='fastsep-4')
         Model architecture supported. Allowed values:
 
-        * ``'fastsep-4'`` - FastSep 4 layers trained on raw 8k wav.
         * ``'fastsep-2'`` - FastSep 2 layers trained on raw 8k wav.
+        * ``'fastsep-4'`` - FastSep 4 layers trained on raw 8k wav.
+        * ``'fastsep-6'`` - FastSep 6 layers trained on raw 8k wav.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 
         Quantized model not necessary faster, totally depends on the machine.
