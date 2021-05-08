@@ -6,11 +6,9 @@ Pretrained Malaya Speech STT models.
 
 ## how-to
 
-1. Download and prepare training dataset, [prepare-stt/download-and-prepare-malaya-speech-train-dataset.ipynb](prepare-stt/download-and-prepare-malaya-speech-train-dataset.ipynb).
+1. Prepare dataset, follow [../prepare-stt](../prepare-stt).
 
-2. Download and prepare test dataset, [prepare-stt/download-and-prepare-malaya-speech-test-dataset.ipynb](prepare-stt/download-and-prepare-malaya-speech-test-dataset.ipynb).
-
-3. Follow README inside model directory, example, [conformer](conformer).
+2. Follow README inside model directory, example, [conformer](conformer).
 
 
 

@@ -1,15 +1,16 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import tensorflow as tf
 import malaya_speech
 import malaya_speech.augmentation.waveform as augmentation
+import malaya_speech.augmentation.spectrogram as mask_augmentation
+from malaya_speech.train.model import conformer, ctc, leaf
 import malaya_speech.config
 import malaya_speech.train as train
-from malaya_speech.train.model import wav2vec2, ctc
-from malaya_speech.train.model.conformer.model import Model as ConformerModel
 import json
+import numpy as np
 import random
 from glob import glob
 from sklearn.utils import shuffle
@@ -18,10 +19,48 @@ import numpy as np
 import pyroomacoustics as pra
 
 sr = 16000
-maxlen = 18
+maxlen = 16
 minlen_text = 1
+config = malaya_speech.config.conformer_base_encoder_config
+
 with open('malaya-speech-sst-vocab.json') as fopen:
     unique_vocab = json.load(fopen) + ['{', '}', '[']
+
+parameters = {
+    'optimizer_params': {'beta1': 0.9, 'beta2': 0.98, 'epsilon': 10e-9},
+    'lr_policy_params': {
+        'warmup_steps': 40000,
+        'max_lr': (0.05 / config['dmodel']),
+    },
+}
+
+featurizer = malaya_speech.tf_featurization.STTFeaturizer(
+    normalize_per_feature = True
+)
+n_mels = featurizer.num_feature_bins
+
+
+def transformer_schedule(step, d_model, warmup_steps = 4000, max_lr = None):
+    arg1 = tf.math.rsqrt(tf.cast(step, tf.float32))
+    arg2 = step * (warmup_steps ** -1.5)
+    arg1 = tf.cast(arg1, tf.float32)
+    arg2 = tf.cast(arg2, tf.float32)
+    lr = tf.math.rsqrt(tf.cast(d_model, tf.float32)) * tf.math.minimum(
+        arg1, arg2
+    )
+    if max_lr is not None:
+        max_lr = tf.cast(max_lr, tf.float32)
+        return tf.math.minimum(max_lr, lr)
+    return lr
+
+
+def learning_rate_scheduler(global_step):
+
+    return transformer_schedule(
+        tf.cast(global_step, tf.float32),
+        config['dmodel'],
+        **parameters['lr_policy_params'],
+    )
 
 
 def augment_room(y, scale = 1.0):
@@ -44,6 +83,16 @@ def augment_room(y, scale = 1.0):
     room.add_microphone(R)
     room.simulate()
     return room.mic_array.signals[0]
+
+
+def mel_augmentation(features):
+
+    features = mask_augmentation.warp_time_pil(features)
+    features = mask_augmentation.mask_frequency(features, width_freq_mask = 12)
+    features = mask_augmentation.mask_time(
+        features, width_time_mask = int(features.shape[0] * 0.05)
+    )
+    return features
 
 
 def mp3_to_wav(file, sr = sr):
@@ -136,40 +185,32 @@ def get_dataset(
     return get
 
 
-class Encoder:
-    def __init__(self, config):
-        self.config = config
-        self.encoder = ConformerModel(**self.config)
-
-    def __call__(self, x, input_mask, training = True):
-        return self.encoder(x, training = training)
-
-
-total_steps = 1000000
-
-
 def model_fn(features, labels, mode, params):
-    config_conformer = malaya_speech.config.conformer_base_encoder_config
-    config_conformer['subsampling']['type'] = 'none'
-    config_conformer['dropout'] = 0.0
-    encoder = Encoder(config_conformer)
-    cfg = wav2vec2.Wav2Vec2Config(
-        extractor_mode = 'layer_norm',
-        dropout = 0.0,
-        attention_dropout = 0.0,
-        encoder_layerdrop = 0.0,
-        dropout_input = 0.0,
-        dropout_features = 0.0,
-        final_dim = 256,
-    )
-    model = wav2vec2.Model(cfg, encoder)
     X = features['waveforms']
     X_len = features['waveforms_length'][:, 0]
-    r = model(X, padding_mask = X_len, features_only = True, mask = False)
-    logits = tf.layers.dense(r['x'], len(unique_vocab) + 1)
-    seq_lens = tf.reduce_sum(
-        tf.cast(tf.logical_not(r['padding_mask']), tf.int32), axis = 1
+    training = True
+    batch_size = tf.shape(X)[0]
+    leaf_featurizer = leaf.Model(
+        n_filters = 40, preemp = False, mean_var_norm = False
     )
+    leaf_f = leaf_featurizer(X, training = training)
+    # pretty hacky
+    padded_lens = tf.cast(
+        tf.cast(X_len, tf.float32) // 159.734_042_553_191_5, tf.int32
+    )
+    conformer_model = conformer.Model(
+        kernel_regularizer = None, bias_regularizer = None, **config
+    )
+    targets_length = features['targets_length'][:, 0]
+    v = tf.expand_dims(leaf_f, -1)
+
+    logits = tf.layers.dense(
+        conformer_model(v, training = training), len(unique_vocab) + 1
+    )
+    seq_lens = (
+        padded_lens // conformer_model.conv_subsampling.time_reduction_factor
+    )
+
     targets_int32 = tf.cast(features['targets'], tf.int32)
     mean_error, sum_error, sum_weight = ctc.loss.ctc_loss(
         logits, targets_int32, seq_lens
@@ -184,27 +225,16 @@ def model_fn(features, labels, mode, params):
 
     tf.summary.scalar('train_accuracy', accuracy)
 
-    variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-    init_checkpoint = 'wav2vec2-conformer-base/model.ckpt-950000'
-
-    assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
-        variables, init_checkpoint
-    )
-
-    tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
-
     if mode == tf.estimator.ModeKeys.TRAIN:
-        train_op = train.optimizer.adamw.create_optimizer(
+        train_op = train.optimizer.optimize_loss(
             loss,
-            init_lr = 5e-5,
-            num_train_steps = total_steps,
-            num_warmup_steps = 100000,
-            end_learning_rate = 0.0,
-            weight_decay_rate = 0.01,
-            beta_1 = 0.9,
-            beta_2 = 0.999,
-            epsilon = 1e-6,
-            clip_norm = 1.0,
+            tf.train.AdamOptimizer,
+            parameters['optimizer_params'],
+            learning_rate_scheduler,
+            summaries = ['learning_rate', 'loss_scale'],
+            larc_params = parameters.get('larc_params', None),
+            loss_scaling = parameters.get('loss_scaling', 1.0),
+            loss_scaling_params = parameters.get('loss_scaling_params', None),
         )
         estimator_spec = tf.estimator.EstimatorSpec(
             mode = mode, loss = loss, train_op = train_op
@@ -213,13 +243,7 @@ def model_fn(features, labels, mode, params):
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = tf.estimator.ModeKeys.EVAL,
-            loss = loss,
-            eval_metric_ops = {
-                'accuracy': ctc.metrics.ctc_sequence_accuracy_estimator(
-                    logits, targets_int32, seq_lens
-                )
-            },
+            mode = tf.estimator.ModeKeys.EVAL, loss = loss
         )
 
     return estimator_spec
@@ -231,16 +255,14 @@ train_hooks = [
     )
 ]
 train_dataset = get_dataset('bahasa-asr-train.json')
-dev_dataset = get_dataset('bahasa-asr-test.json')
 
 train.run_training(
     train_fn = train_dataset,
     model_fn = model_fn,
-    model_dir = 'wav2vec2-conformer-base-ctc',
+    model_dir = 'asr-leaf-base-conformer-ctc',
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 5000,
-    max_steps = total_steps,
-    eval_fn = dev_dataset,
+    max_steps = 500_000,
     train_hooks = train_hooks,
 )

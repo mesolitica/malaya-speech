@@ -67,10 +67,10 @@ _ctc_availability = {
         'CER': 0.07633,
     },
     'wav2vec2-conformer-large': {
-        'Size (MB)': 336,
-        'Quantized Size (MB)': 84.9,
-        'WER': 0.3383,
-        'CER': 0.0922,
+        'Size (MB)': 392,
+        'Quantized Size (MB)': 100,
+        'WER': 0.2765,
+        'CER': 0.0705,
     },
 }
 
