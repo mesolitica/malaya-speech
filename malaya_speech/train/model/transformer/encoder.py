@@ -1,5 +1,5 @@
 import tensorflow as tf
-from .transformer import EncoderStack, DecoderStack
+from .transformer import EncoderStack
 from .model_utils import (
     get_position_encoding,
     get_padding_bias,
