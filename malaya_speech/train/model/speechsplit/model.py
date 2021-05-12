@@ -4,6 +4,10 @@ from ..autovc.model import Postnet
 from ..utils import GroupNormalization
 
 
+def mish(x):
+    return x * tf.math.tanh(tf.math.softplus(x))
+
+
 def quantize_f0_numpy(x, num_bins = 256):
     # x is logf0
     assert x.ndim == 1
@@ -207,7 +211,7 @@ class Encoder_t(tf.keras.layers.Layer):
     def call(self, x, mask, training = True):
 
         for conv in self.convolutions:
-            x = tf.nn.relu(conv(x))
+            x = mish(conv(x))
 
         outputs = self.lstm(x)
         print(outputs.shape)
@@ -270,7 +274,7 @@ class Encoder_6(tf.keras.layers.Layer):
 
     def call(self, x, training = True):
         for conv in self.convolutions_1:
-            x = tf.nn.relu(conv(x))
+            x = mish(conv(x))
             x = self.interp(
                 x,
                 tf.tile([tf.shape(x)[1]], [tf.shape(x)[0]]),
@@ -338,8 +342,8 @@ class Encoder_7(tf.keras.layers.Layer):
         f0 = x_f0[:, :, self.dim_freq :]
         for conv_1, conv_2 in zip(self.convolutions_1, self.convolutions_2):
             print(x, f0)
-            x = tf.nn.relu(conv_1(x))
-            f0 = tf.nn.relu(conv_2(f0))
+            x = mish(conv_1(x))
+            f0 = mish(conv_2(f0))
             x_f0 = tf.concat((x, f0), axis = 2)
             x_f0 = self.interp(
                 x_f0,
