@@ -1,20 +1,34 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
-import random
 import numpy as np
+import random
 import tensorflow as tf
-from glob import glob
 from math import ceil
+from glob import glob
+from pysptk import sptk
 from collections import defaultdict
-from malaya_speech.train.model import fastspeech, fastvc
+from malaya_speech.train.model import speechsplit
 from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 from malaya_speech import train
+from scipy.signal import get_window
+from scipy import signal
 import pandas as pd
 import malaya_speech
 import sklearn
 
+
+def butter_highpass(cutoff, fs, order = 5):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = signal.butter(order, normal_cutoff, btype = 'high', analog = False)
+    return b, a
+
+
+b, a = butter_highpass(30, sr, order = 5)
+
+vggvox_v2 = malaya_speech.gender.deep_model(model = 'vggvox-v2')
 speaker_model = malaya_speech.speaker_vector.deep_model('vggvox-v2')
 
 vctk = glob('vtck/**/*.flac', recursive = True)
@@ -83,14 +97,51 @@ files = salina + male + haqkiem + khalil + mas + husein + speakers
 sr = 22050
 
 
+def speaker_normalization(f0, index_nonzero, mean_f0, std_f0):
+    f0 = f0.astype(float).copy()
+    f0[index_nonzero] = (f0[index_nonzero] - mean_f0) / std_f0
+    f0[index_nonzero] = np.clip(f0[index_nonzero], -3, 4)
+    return f0
+
+
+def preprocess_wav(x):
+    if x.shape[0] % 256 == 0:
+        x = np.concatenate((x, np.array([1e-06])), axis = 0)
+    y = signal.filtfilt(b, a, x)
+    wav = y * 0.96 + (np.random.uniform(size = y.shape[0]) - 0.5) * 1e-06
+    return wav
+
+
+def get_f0(wav, lo, hi):
+    f0_rapt = sptk.rapt(
+        wav.astype(np.float32) * 32768, sr, 256, min = lo, max = hi, otype = 2
+    )
+    index_nonzero = f0_rapt != -1e10
+    mean_f0, std_f0 = (
+        np.mean(f0_rapt[index_nonzero]),
+        np.std(f0_rapt[index_nonzero]),
+    )
+    return speaker_normalization(f0_rapt, index_nonzero, mean_f0, std_f0)
+
+
+def pad_seq(x, base = 8):
+    len_out = int(base * ceil(float(x.shape[0]) / base))
+    len_pad = len_out - x.shape[0]
+    assert len_pad >= 0
+    return np.pad(x, ((0, len_pad), (0, 0)), 'constant'), x.shape[0]
+
+
 def generate(hop_size = 256):
     while True:
         shuffled = sklearn.utils.shuffle(files)
         for f in shuffled:
-            audio, _ = malaya_speech.load(f, sr = sr)
-            mel = malaya_speech.featurization.universal_mel(audio)
+            x, fs = malaya_speech.load(f, sr = sr)
+            wav = preprocess_wav(x)
+            lo, hi = freqs.get(vggvox_v2(x), [50, 250])
+            f0 = np.expand_dims(get_f0(wav, lo, hi), -1)
+            mel = malaya_speech.featurization.universal_mel(wav)
 
-            batch_max_steps = random.randint(16384, 110250)
+            batch_max_steps = random.randint(16384, 77175)
             batch_max_frames = batch_max_steps // hop_size
 
             if len(mel) > batch_max_frames:
@@ -98,32 +149,44 @@ def generate(hop_size = 256):
                 interval_end = len(mel) - batch_max_frames
                 start_frame = random.randint(interval_start, interval_end)
                 start_step = start_frame * hop_size
+                wav = wav[start_step : start_step + batch_max_steps]
                 mel = mel[start_frame : start_frame + batch_max_frames, :]
-                audio = audio[start_step : start_step + batch_max_steps]
+                f0 = f0[start_frame : start_frame + batch_max_frames, :]
+                wav = wav[start_step : start_step + batch_max_steps]
 
-            v = speaker_model([audio])
+            mel, _ = pad_seq(mel)
+            f0, _ = pad_seq(f0)
+
+            v = speaker_model([wav])[0]
+            v = v / v.max()
 
             yield {
                 'mel': mel,
                 'mel_length': [len(mel)],
-                'audio': audio,
+                'f0': f0,
+                'f0_length': [len(f0)],
+                'audio': wav,
                 'v': v[0],
             }
 
 
-def get_dataset(batch_size = 8):
+def get_dataset(batch_size = 4):
     def get():
         dataset = tf.data.Dataset.from_generator(
             generate,
             {
                 'mel': tf.float32,
                 'mel_length': tf.int32,
+                'f0': tf.float32,
+                'f0_length': tf.int32,
                 'audio': tf.float32,
                 'v': tf.float32,
             },
             output_shapes = {
                 'mel': tf.TensorShape([None, 80]),
                 'mel_length': tf.TensorShape([None]),
+                'f0': tf.TensorShape([None, 1]),
+                'f0_length': tf.TensorShape([None]),
                 'audio': tf.TensorShape([None]),
                 'v': tf.TensorShape([512]),
             },
@@ -135,12 +198,16 @@ def get_dataset(batch_size = 8):
                 'audio': tf.TensorShape([None]),
                 'mel': tf.TensorShape([None, 80]),
                 'mel_length': tf.TensorShape([None]),
+                'f0': tf.TensorShape([None, 1]),
+                'f0_length': tf.TensorShape([None]),
                 'v': tf.TensorShape([512]),
             },
             padding_values = {
                 'audio': tf.constant(0, dtype = tf.float32),
                 'mel': tf.constant(0, dtype = tf.float32),
                 'mel_length': tf.constant(0, dtype = tf.int32),
+                'f0': tf.constant(0, dtype = tf.float32),
+                'f0_length': tf.constant(0, dtype = tf.int32),
                 'v': tf.constant(0, dtype = tf.float32),
             },
         )
@@ -153,61 +220,62 @@ total_steps = 500000
 
 
 def model_fn(features, labels, mode, params):
-    vectors = features['v'] * 30 - 3.5
-    mels = features['mel']
-    mels_len = features['mel_length'][:, 0]
-    dim_neck = 32
-    bottleneck = 512
-    config = malaya_speech.config.fastspeech_config
-    config['encoder_hidden_size'] = bottleneck + 80
-    config['decoder_hidden_size'] = bottleneck + dim_neck
-    config = fastspeech.Config(vocab_size = 1, **config)
-    model = fastvc.model.Model(dim_neck, config)
-    encoder_outputs, mel_before, mel_after, codes = model(
-        mels, vectors, vectors, mels_len
-    )
-    codes_ = model.call_second(mel_after, vectors, mels_len)
+    vectors = features['v']
+    X = features['mel']
+    len_X = features['mel_length'][:, 0]
+    X_f0 = features['f0']
+    len_X_f0 = features['f0_length'][:, 0]
+    hparams = speechsplit.hparams
+    interplnr = speechsplit.InterpLnr(hparams)
+    model = speechsplit.Model(hparams)
+    model_F0 = speechsplit.Model_F0(hparams)
+
+    bottleneck_speaker = tf.keras.layers.Dense(hparams.dim_spk_emb)
+    speaker_dim = bottleneck_speaker(vectors)
+
+    x_f0_intrp = interplnr(tf.concat([X, X_f0], axis = -1), len_X)
+    f0_org_intrp = speechsplit.quantize_f0_tf(x_f0_intrp[:, :, -1])
+    x_f0_intrp_org = tf.concat((x_f0_intrp[:, :, :-1], f0_org_intrp), axis = -1)
+    f0_org = speechsplit.quantize_f0_tf(X_f0[:, :, 0])
+
+    _, _, _, _, mel_outputs = model(x_f0_intrp_org, X, speaker_dim)
+    _, _, _, f0_outputs = model_F0(X, f0_org)
+
     loss_f = tf.losses.absolute_difference
-    max_length = tf.cast(tf.reduce_max(mels_len), tf.int32)
+    max_length = tf.cast(tf.reduce_max(len_X), tf.int32)
     mask = tf.sequence_mask(
-        lengths = mels_len, maxlen = max_length, dtype = tf.float32
+        lengths = len_X, maxlen = max_length, dtype = tf.float32
     )
     mask = tf.expand_dims(mask, axis = -1)
-    mel_loss_before = loss_f(
-        labels = mels, predictions = mel_before, weights = mask
-    )
-    mel_loss_after = loss_f(
-        labels = mels, predictions = mel_after, weights = mask
-    )
-    g_loss_cd = tf.losses.absolute_difference(codes, codes_)
-    loss = mel_loss_before + mel_loss_after + g_loss_cd
+    mel_loss = loss_f(labels = X, predictions = mel_outputs, weights = mask)
+    f0_loss = loss_f(labels = f0_org, predictions = f0_outputs, weights = mask)
+
+    loss = mel_loss + f0_loss
 
     tf.identity(loss, 'total_loss')
-    tf.identity(mel_loss_before, 'mel_loss_before')
-    tf.identity(mel_loss_after, 'mel_loss_after')
-    tf.identity(g_loss_cd, 'g_loss_cd')
+    tf.identity(mel_loss, 'mel_loss')
+    tf.identity(f0_loss, 'f0_loss')
 
     tf.summary.scalar('total_loss', loss)
-    tf.summary.scalar('mel_loss_before', mel_loss_before)
-    tf.summary.scalar('mel_loss_after', mel_loss_after)
-    tf.summary.scalar('g_loss_cd', g_loss_cd)
+    tf.summary.scalar('mel_loss', mel_loss)
+    tf.summary.scalar('f0_loss', f0_loss)
 
     global_step = tf.train.get_or_create_global_step()
+    learning_rate = tf.constant(value = 1e-4, shape = [], dtype = tf.float32)
+    learning_rate = tf.train.polynomial_decay(
+        learning_rate,
+        global_step,
+        total_steps,
+        end_learning_rate = 1e-6,
+        power = 1.0,
+        cycle = False,
+    )
+    tf.summary.scalar('learning_rate', learning_rate)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
 
-        train_op = train.optimizer.adamw.create_optimizer(
-            loss,
-            init_lr = 0.0001,
-            num_train_steps = total_steps,
-            num_warmup_steps = 100000,
-            end_learning_rate = 0.00005,
-            weight_decay_rate = 0.001,
-            beta_1 = 0.9,
-            beta_2 = 0.98,
-            epsilon = 1e-6,
-            clip_norm = 1.0,
-        )
+        optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
+        train_op = optimizer.minimize(loss, global_step = global_step)
         estimator_spec = tf.estimator.EstimatorSpec(
             mode = mode, loss = loss, train_op = train_op
         )
@@ -223,13 +291,12 @@ def model_fn(features, labels, mode, params):
 
 train_hooks = [
     tf.train.LoggingTensorHook(
-        ['total_loss', 'mel_loss_before', 'mel_loss_after', 'g_loss_cd'],
-        every_n_iter = 1,
+        ['total_loss', 'mel_loss', 'f0_loss'], every_n_iter = 1
     )
 ]
 train_dataset = get_dataset()
 
-save_directory = 'fastvc-32-vggvox'
+save_directory = 'speechsplit-vggvox-v2'
 
 train.run_training(
     train_fn = train_dataset,

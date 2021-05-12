@@ -98,21 +98,21 @@ def model_fn(features, labels, mode, params):
     tf.summary.scalar('total_loss', loss)
 
     global_step = tf.train.get_or_create_global_step()
+    learning_rate = tf.constant(value = 1e-4, shape = [], dtype = tf.float32)
+    learning_rate = tf.train.polynomial_decay(
+        learning_rate,
+        global_step,
+        total_steps,
+        end_learning_rate = 0.0,
+        power = 1.0,
+        cycle = False,
+    )
+    tf.summary.scalar('learning_rate', learning_rate)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
 
-        train_op = train.optimizer.adamw.create_optimizer(
-            loss,
-            init_lr = 1e-5,
-            num_train_steps = total_steps,
-            num_warmup_steps = 200000,
-            end_learning_rate = 0.0,
-            weight_decay_rate = 0.001,
-            beta_1 = 0.9,
-            beta_2 = 0.98,
-            epsilon = 1e-6,
-            clip_norm = 5.0,
-        )
+        optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
+        train_op = optimizer.minimize(loss, global_step = global_step)
         estimator_spec = tf.estimator.EstimatorSpec(
             mode = mode, loss = loss, train_op = train_op
         )
