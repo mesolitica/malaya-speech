@@ -207,7 +207,7 @@ class Encoder_t(tf.keras.layers.Layer):
     def call(self, x, mask, training = True):
 
         for conv in self.convolutions:
-            x = tf.nn.tanh(conv(x))
+            x = tf.nn.relu(conv(x))
 
         outputs = self.lstm(x)
         print(outputs.shape)
@@ -338,8 +338,8 @@ class Encoder_7(tf.keras.layers.Layer):
         f0 = x_f0[:, :, self.dim_freq :]
         for conv_1, conv_2 in zip(self.convolutions_1, self.convolutions_2):
             print(x, f0)
-            x = tf.nn.tanh(conv_1(x))
-            f0 = tf.nn.tanh(conv_2(f0))
+            x = tf.nn.relu(conv_1(x))
+            f0 = tf.nn.relu(conv_2(f0))
             x_f0 = tf.concat((x, f0), axis = 2)
             x_f0 = self.interp(
                 x_f0,
