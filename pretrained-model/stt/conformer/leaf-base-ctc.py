@@ -34,11 +34,6 @@ parameters = {
     },
 }
 
-featurizer = malaya_speech.tf_featurization.STTFeaturizer(
-    normalize_per_feature = True
-)
-n_mels = featurizer.num_feature_bins
-
 
 def transformer_schedule(step, d_model, warmup_steps = 4000, max_lr = None):
     arg1 = tf.math.rsqrt(tf.cast(step, tf.float32))
@@ -263,6 +258,6 @@ train.run_training(
     num_gpus = 1,
     log_step = 1,
     save_checkpoint_step = 5000,
-    max_steps = 500_000,
+    max_steps = 1_000_000,
     train_hooks = train_hooks,
 )

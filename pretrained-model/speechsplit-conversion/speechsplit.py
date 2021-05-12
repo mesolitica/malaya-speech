@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import numpy as np
 import random
@@ -10,7 +10,6 @@ from glob import glob
 from pysptk import sptk
 from collections import defaultdict
 from malaya_speech.train.model import speechsplit
-from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 from malaya_speech import train
 from scipy.signal import get_window
 from scipy import signal
@@ -25,8 +24,6 @@ def butter_highpass(cutoff, fs, order = 5):
     b, a = signal.butter(order, normal_cutoff, btype = 'high', analog = False)
     return b, a
 
-
-b, a = butter_highpass(30, sr, order = 5)
 
 vggvox_v2 = malaya_speech.gender.deep_model(model = 'vggvox-v2')
 speaker_model = malaya_speech.speaker_vector.deep_model('vggvox-v2')
@@ -95,6 +92,8 @@ husein.extend(glob('/home/husein/speech-bahasa/sebut-perkataan-man/*.wav'))
 
 files = salina + male + haqkiem + khalil + mas + husein + speakers
 sr = 22050
+freqs = {'female': [100, 600], 'male': [50, 250]}
+b, a = butter_highpass(30, sr, order = 5)
 
 
 def speaker_normalization(f0, index_nonzero, mean_f0, std_f0):
@@ -137,11 +136,12 @@ def generate(hop_size = 256):
         for f in shuffled:
             x, fs = malaya_speech.load(f, sr = sr)
             wav = preprocess_wav(x)
-            lo, hi = freqs.get(vggvox_v2(x), [50, 250])
+            x_16k = malaya_speech.resample(x, sr, 16000)
+            lo, hi = freqs.get(vggvox_v2(x_16k), [50, 250])
             f0 = np.expand_dims(get_f0(wav, lo, hi), -1)
             mel = malaya_speech.featurization.universal_mel(wav)
 
-            batch_max_steps = random.randint(16384, 77175)
+            batch_max_steps = random.randint(16384, 55125)
             batch_max_frames = batch_max_steps // hop_size
 
             if len(mel) > batch_max_frames:
@@ -149,7 +149,6 @@ def generate(hop_size = 256):
                 interval_end = len(mel) - batch_max_frames
                 start_frame = random.randint(interval_start, interval_end)
                 start_step = start_frame * hop_size
-                wav = wav[start_step : start_step + batch_max_steps]
                 mel = mel[start_frame : start_frame + batch_max_frames, :]
                 f0 = f0[start_frame : start_frame + batch_max_frames, :]
                 wav = wav[start_step : start_step + batch_max_steps]
@@ -157,7 +156,8 @@ def generate(hop_size = 256):
             mel, _ = pad_seq(mel)
             f0, _ = pad_seq(f0)
 
-            v = speaker_model([wav])[0]
+            wav_16k = malaya_speech.resample(wav, sr, 16000)
+            v = speaker_model([wav_16k])[0]
             v = v / v.max()
 
             yield {
@@ -166,7 +166,7 @@ def generate(hop_size = 256):
                 'f0': f0,
                 'f0_length': [len(f0)],
                 'audio': wav,
-                'v': v[0],
+                'v': v,
             }
 
 

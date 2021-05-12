@@ -89,7 +89,6 @@ def generate(hop_size = 256):
         for f in shuffled:
             audio, _ = malaya_speech.load(f, sr = sr)
             mel = malaya_speech.featurization.universal_mel(audio)
-
             batch_max_steps = random.randint(16384, 110250)
             batch_max_frames = batch_max_steps // hop_size
 
@@ -101,7 +100,8 @@ def generate(hop_size = 256):
                 mel = mel[start_frame : start_frame + batch_max_frames, :]
                 audio = audio[start_step : start_step + batch_max_steps]
 
-            v = speaker_model([audio])
+            audio_16k = malaya_speech.resample(audio, sr, 16000)
+            v = speaker_model([audio_16k])
 
             yield {
                 'mel': mel,
@@ -229,7 +229,7 @@ train_hooks = [
 ]
 train_dataset = get_dataset()
 
-save_directory = 'fastvc-32-vggvox'
+save_directory = 'fastvc-32-vggvox-v2'
 
 train.run_training(
     train_fn = train_dataset,
