@@ -9,4 +9,5 @@ config = {
     'relu_dropout': 0.1,
     'allow_ffn_pad': True,
     'norm_before': False,
+    'activation': 'relu',
 }

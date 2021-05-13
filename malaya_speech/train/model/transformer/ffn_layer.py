@@ -30,11 +30,24 @@ def gelu_new(x):
     return x * cdf
 
 
+def mish(x):
+    return x * tf.math.tanh(tf.math.softplus(x))
+
+
+activations = {'relu': tf.nn.relu, 'gelu': gelu_new, 'mish': mish}
+
+
 class FeedFowardNetwork(tf.layers.Layer):
     """Fully connected feedforward network."""
 
     def __init__(
-        self, hidden_size, filter_size, relu_dropout, train, allow_pad
+        self,
+        hidden_size,
+        filter_size,
+        relu_dropout,
+        train,
+        allow_pad,
+        activation = 'relu',
     ):
         super(FeedFowardNetwork, self).__init__()
         self.hidden_size = hidden_size
@@ -46,7 +59,7 @@ class FeedFowardNetwork(tf.layers.Layer):
         self.filter_dense_layer = tf.layers.Dense(
             filter_size,
             use_bias = True,
-            activation = gelu_new,
+            activation = activations[activation],
             name = 'filter_layer',
         )
         self.output_dense_layer = tf.layers.Dense(

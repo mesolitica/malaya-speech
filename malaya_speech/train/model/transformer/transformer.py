@@ -208,6 +208,7 @@ class EncoderStack(tf.layers.Layer):
                 params['relu_dropout'],
                 train,
                 params['allow_ffn_pad'],
+                activation = params.get('activation', 'relu'),
             )
 
             self.layers.append(
@@ -287,6 +288,7 @@ class DecoderStack(tf.layers.Layer):
                 params['relu_dropout'],
                 train,
                 params['allow_ffn_pad'],
+                activation = params.get('activation', 'relu'),
             )
 
             self.layers.append(
