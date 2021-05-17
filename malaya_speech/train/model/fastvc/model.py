@@ -3,42 +3,22 @@ from ..fastspeech.model import TFFastSpeechEncoder, TFTacotronPostnet
 import numpy as np
 
 
-class ConvNorm(tf.keras.layers.Layer):
-    def __init__(
-        self,
-        out_channels,
-        kernel_size = 1,
-        stride = 1,
-        padding = 'SAME',
-        dilation = 1,
-        bias = True,
-        **kwargs,
-    ):
-        super(ConvNorm, self).__init__(name = 'ConvNorm', **kwargs)
-        self.conv = tf.keras.layers.Conv1D(
-            out_channels,
-            kernel_size = kernel_size,
-            strides = stride,
-            padding = padding,
-            dilation_rate = dilation,
-            use_bias = bias,
-        )
-
-    def call(self, x):
-        return self.conv(x)
-
-
 class Encoder(tf.keras.layers.Layer):
-    def __init__(self, dim_neck, config, **kwargs):
+    def __init__(
+        self, dim_neck, config, use_position_embedding = True, **kwargs
+    ):
         super(Encoder, self).__init__(name = 'Encoder', **kwargs)
         self.config = config
         self.encoder = TFFastSpeechEncoder(config, name = 'encoder')
-        self.position_embeddings = tf.convert_to_tensor(
-            self._sincos_embedding()
-        )
+
         self.encoder_dense = tf.keras.layers.Dense(
             units = dim_neck, dtype = tf.float32, name = 'encoder_dense'
         )
+        self.use_position_embedding = use_position_embedding
+        if self.use_position_embedding:
+            self.position_embeddings = tf.convert_to_tensor(
+                self._sincos_embedding()
+            )
 
     def call(self, x, c_org, attention_mask, training = True):
         c_org = tf.tile(tf.expand_dims(c_org, 1), (1, tf.shape(x)[1], 1))
@@ -46,12 +26,14 @@ class Encoder(tf.keras.layers.Layer):
         input_shape = tf.shape(x)
         seq_length = input_shape[1]
 
-        position_ids = tf.range(1, seq_length + 1, dtype = tf.int32)[
-            tf.newaxis, :
-        ]
-        inputs = tf.cast(position_ids, tf.int32)
-        position_embeddings = tf.gather(self.position_embeddings, inputs)
-        x = x + tf.cast(position_embeddings, x.dtype)
+        if self.use_position_embedding:
+            position_ids = tf.range(1, seq_length + 1, dtype = tf.int32)[
+                tf.newaxis, :
+            ]
+            inputs = tf.cast(position_ids, tf.int32)
+            position_embeddings = tf.gather(self.position_embeddings, inputs)
+            x = x + tf.cast(position_embeddings, x.dtype)
+
         f = self.encoder([x, attention_mask], training = training)[0]
         return self.encoder_dense(f)
 
@@ -70,31 +52,34 @@ class Encoder(tf.keras.layers.Layer):
         position_enc[:, 0::2] = np.sin(position_enc[:, 0::2])
         position_enc[:, 1::2] = np.cos(position_enc[:, 1::2])
 
-        # pad embedding.
         position_enc[0] = 0.0
 
         return position_enc
 
 
 class Decoder(tf.keras.layers.Layer):
-    def __init__(self, config, **kwargs):
+    def __init__(self, config, use_position_embedding = True, **kwargs):
         super(Decoder, self).__init__(name = 'Decoder', **kwargs)
         self.config = config
         self.encoder = TFFastSpeechEncoder(config, name = 'encoder')
-        self.position_embeddings = tf.convert_to_tensor(
-            self._sincos_embedding()
-        )
+        self.use_position_embedding = use_position_embedding
+        if self.use_position_embedding:
+            self.position_embeddings = tf.convert_to_tensor(
+                self._sincos_embedding()
+            )
 
     def call(self, x, attention_mask, training = True):
         input_shape = tf.shape(x)
         seq_length = input_shape[1]
 
-        position_ids = tf.range(1, seq_length + 1, dtype = tf.int32)[
-            tf.newaxis, :
-        ]
-        inputs = tf.cast(position_ids, tf.int32)
-        position_embeddings = tf.gather(self.position_embeddings, inputs)
-        x = x + tf.cast(position_embeddings, x.dtype)
+        if self.use_position_embedding:
+            position_ids = tf.range(1, seq_length + 1, dtype = tf.int32)[
+                tf.newaxis, :
+            ]
+            inputs = tf.cast(position_ids, tf.int32)
+            position_embeddings = tf.gather(self.position_embeddings, inputs)
+            x = x + tf.cast(position_embeddings, x.dtype)
+
         return self.encoder([x, attention_mask], training = training)[0]
 
     def _sincos_embedding(self):
@@ -119,10 +104,24 @@ class Decoder(tf.keras.layers.Layer):
 
 
 class Model(tf.keras.Model):
-    def __init__(self, dim_neck, config, dim_speaker = 0, **kwargs):
+    def __init__(
+        self,
+        dim_neck,
+        config,
+        dim_speaker = 0,
+        use_position_embedding = True,
+        **kwargs
+    ):
         super(Model, self).__init__(name = 'fastvc', **kwargs)
-        self.encoder = Encoder(dim_neck, config.encoder_self_attention_params)
-        self.decoder = Decoder(config.decoder_self_attention_params)
+        self.encoder = Encoder(
+            dim_neck,
+            config.encoder_self_attention_params,
+            use_position_embedding = use_position_embedding,
+        )
+        self.decoder = Decoder(
+            config.decoder_self_attention_params,
+            use_position_embedding = use_position_embedding,
+        )
         self.mel_dense = tf.keras.layers.Dense(
             units = config.num_mels, dtype = tf.float32, name = 'mel_before'
         )
