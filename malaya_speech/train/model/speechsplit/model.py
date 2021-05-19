@@ -14,8 +14,7 @@ def quantize_f0_numpy(x, num_bins = 256):
     x = x.astype(float).copy()
     uv = x <= 0
     x[uv] = 0.0
-    assert (x >= 0).all() and (x <= 1).all()
-    x = np.round(x * (num_bins - 1))
+    x = np.round((x / np.max(x)) * (num_bins - 1))
     x = x + 1
     x[uv] = 0.0
     enc = np.zeros((len(x), num_bins + 1), dtype = np.float32)

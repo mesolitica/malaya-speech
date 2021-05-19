@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import random
 import numpy as np
@@ -162,7 +162,7 @@ def model_fn(features, labels, mode, params):
     config['encoder_hidden_size'] = bottleneck + 80
     config['decoder_hidden_size'] = bottleneck + dim_neck
     config = fastspeech.Config(vocab_size = 1, **config)
-    model = fastvc.model.Model(dim_neck, config)
+    model = fastvc.model.Model(dim_neck, config, use_position_embedding = False)
     encoder_outputs, mel_before, mel_after, codes = model(
         mels, vectors, vectors, mels_len
     )
@@ -229,7 +229,7 @@ train_hooks = [
 ]
 train_dataset = get_dataset()
 
-save_directory = 'fastvc-32-vggvox-v2'
+save_directory = 'fastvc-32-vggvox-v2-v2'
 
 train.run_training(
     train_fn = train_dataset,

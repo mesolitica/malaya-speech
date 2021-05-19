@@ -7,120 +7,16 @@ import random
 import tensorflow as tf
 from math import ceil
 from glob import glob
-from pysptk import sptk
 from collections import defaultdict
 from malaya_speech.train.model import speechsplit
 from malaya_speech import train
-from scipy.signal import get_window
-from scipy import signal
-import pandas as pd
 import malaya_speech
 import sklearn
+import pickle
 
-
-def butter_highpass(cutoff, fs, order = 5):
-    nyq = 0.5 * fs
-    normal_cutoff = cutoff / nyq
-    b, a = signal.butter(order, normal_cutoff, btype = 'high', analog = False)
-    return b, a
-
-
-vggvox_v2 = malaya_speech.gender.deep_model(model = 'vggvox-v2')
 speaker_model = malaya_speech.speaker_vector.deep_model('vggvox-v2')
-
-vctk = glob('vtck/**/*.flac', recursive = True)
-
-vctk_speakers = defaultdict(list)
-for f in vctk:
-    s = f.split('/')[-1].split('_')[0]
-    vctk_speakers[s].append(f)
-
-files = glob('/home/husein/speech-bahasa/ST-CMDS-20170001_1-OS/*.wav')
-speakers_mandarin = defaultdict(list)
-for f in files:
-    speakers_mandarin[f[:-9]].append(f)
-
-df_nepali = pd.read_csv(
-    '/home/husein/speech-bahasa/nepali_0/asr_nepali/utt_spk_text.tsv',
-    sep = '\t',
-    header = None,
-)
-asr_nepali = glob('/home/husein/speech-bahasa/*/asr_nepali/data/*/*.flac')
-asr_nepali_replaced = {
-    f.split('/')[-1].replace('.flac', ''): f for f in asr_nepali
-}
-df_nepali = df_nepali[df_nepali[0].isin(asr_nepali_replaced.keys())]
-
-speakers_nepali = defaultdict(list)
-for i in range(len(df_nepali)):
-    speakers_nepali[df_nepali.iloc[i, 1]].append(
-        asr_nepali_replaced[df_nepali.iloc[i, 0]]
-    )
-
-speakers = []
-for s in vctk_speakers.keys():
-    speakers.extend(
-        random.sample(vctk_speakers[s], min(500, len(vctk_speakers[s])))
-    )
-
-for s in speakers_mandarin.keys():
-    speakers.extend(
-        random.sample(speakers_mandarin[s], min(200, len(speakers_mandarin[s])))
-    )
-
-for s in speakers_nepali.keys():
-    speakers.extend(
-        random.sample(speakers_nepali[s], min(200, len(speakers_nepali[s])))
-    )
-
-salina = glob('/home/husein/speech-bahasa/salina/output-wav-salina/*.wav')
-salina = random.sample(salina, 5000)
-male = glob('/home/husein/speech-bahasa/turki/output-wav-turki/*.wav')
-male.extend(
-    glob(
-        '/home/husein/speech-bahasa/dari-pasentran-ke-istana/output-wav-dari-pasentran-ke-istana/*.wav'
-    )
-)
-male = random.sample(male, 5000)
-haqkiem = glob('/home/husein/speech-bahasa/haqkiem/*.wav')
-khalil = glob('/home/husein/speech-bahasa/tolong-sebut/*.wav')
-mas = glob('/home/husein/speech-bahasa/sebut-perkataan-woman/*.wav')
-husein = glob('/home/husein/speech-bahasa/audio-wattpad/*.wav')
-husein.extend(glob('/home/husein/speech-bahasa/audio-iium/*.wav'))
-husein.extend(glob('/home/husein/speech-bahasa/audio/*.wav'))
-husein.extend(glob('/home/husein/speech-bahasa/sebut-perkataan-man/*.wav'))
-
-files = salina + male + haqkiem + khalil + mas + husein + speakers
+files = glob('speechsplit-dataset/*.pkl')
 sr = 22050
-freqs = {'female': [100, 600], 'male': [50, 250]}
-b, a = butter_highpass(30, sr, order = 5)
-
-
-def speaker_normalization(f0, index_nonzero, mean_f0, std_f0):
-    f0 = f0.astype(float).copy()
-    f0[index_nonzero] = (f0[index_nonzero] - mean_f0) / std_f0
-    f0[index_nonzero] = np.clip(f0[index_nonzero], -3, 4)
-    return f0
-
-
-def preprocess_wav(x):
-    if x.shape[0] % 256 == 0:
-        x = np.concatenate((x, np.array([1e-06])), axis = 0)
-    y = signal.filtfilt(b, a, x)
-    wav = y * 0.96 + (np.random.uniform(size = y.shape[0]) - 0.5) * 1e-06
-    return wav
-
-
-def get_f0(wav, lo, hi):
-    f0_rapt = sptk.rapt(
-        wav.astype(np.float32) * 32768, sr, 256, min = lo, max = hi, otype = 2
-    )
-    index_nonzero = f0_rapt != -1e10
-    mean_f0, std_f0 = (
-        np.mean(f0_rapt[index_nonzero]),
-        np.std(f0_rapt[index_nonzero]),
-    )
-    return speaker_normalization(f0_rapt, index_nonzero, mean_f0, std_f0)
 
 
 def pad_seq(x, base = 8):
@@ -134,12 +30,8 @@ def generate(hop_size = 256):
     while True:
         shuffled = sklearn.utils.shuffle(files)
         for f in shuffled:
-            x, fs = malaya_speech.load(f, sr = sr)
-            wav = preprocess_wav(x)
-            x_16k = malaya_speech.resample(x, sr, 16000)
-            lo, hi = freqs.get(vggvox_v2(x_16k), [50, 250])
-            f0 = np.expand_dims(get_f0(wav, lo, hi), -1)
-            mel = malaya_speech.featurization.universal_mel(wav)
+            with open(f, 'rb') as fopen:
+                wav, f0, mel = pickle.load(fopen)
 
             batch_max_steps = random.randint(16384, 55125)
             batch_max_frames = batch_max_steps // hop_size

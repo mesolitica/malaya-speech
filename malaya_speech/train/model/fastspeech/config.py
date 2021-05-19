@@ -14,28 +14,41 @@
 # limitations under the License.
 """FastSpeech Config object."""
 
-import collections
 
-SelfAttentionParams = collections.namedtuple(
-    'SelfAttentionParams',
-    [
-        'n_speakers',
-        'hidden_size',
-        'num_hidden_layers',
-        'num_attention_heads',
-        'attention_head_size',
-        'intermediate_size',
-        'intermediate_kernel_size',
-        'hidden_act',
-        'output_attentions',
-        'output_hidden_states',
-        'initializer_range',
-        'hidden_dropout_prob',
-        'attention_probs_dropout_prob',
-        'layer_norm_eps',
-        'max_position_embeddings',
-    ],
-)
+class SelfAttentionParams:
+    def __init__(
+        self,
+        n_speakers,
+        hidden_size,
+        num_hidden_layers,
+        num_attention_heads,
+        attention_head_size,
+        intermediate_size,
+        intermediate_kernel_size,
+        hidden_act,
+        output_attentions,
+        output_hidden_states,
+        initializer_range,
+        hidden_dropout_prob,
+        attention_probs_dropout_prob,
+        layer_norm_eps,
+        max_position_embeddings,
+    ):
+        self.n_speakers = n_speakers
+        self.hidden_size = hidden_size
+        self.num_hidden_layers = num_hidden_layers
+        self.num_attention_heads = num_attention_heads
+        self.attention_head_size = attention_head_size
+        self.intermediate_size = intermediate_size
+        self.intermediate_kernel_size = intermediate_kernel_size
+        self.hidden_act = hidden_act
+        self.output_attentions = output_attentions
+        self.output_hidden_states = output_hidden_states
+        self.initializer_range = initializer_range
+        self.hidden_dropout_prob = hidden_dropout_prob
+        self.attention_probs_dropout_prob = attention_probs_dropout_prob
+        self.layer_norm_eps = layer_norm_eps
+        self.max_position_embeddings = max_position_embeddings
 
 
 class Config(object):

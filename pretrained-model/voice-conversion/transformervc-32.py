@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 import numpy as np
 from glob import glob
@@ -17,18 +17,6 @@ import sklearn
 
 speaker_model = malaya_speech.speaker_vector.deep_model('vggvox-v2')
 
-salina = glob('/home/husein/speech-bahasa/salina/output-wav-salina/*.wav')
-male = glob('/home/husein/speech-bahasa/turki/output-wav-turki/*.wav')
-male.extend(
-    glob('/home/husein/speech-bahasa/output-wav-dari-pasentran-ke-istana/*.wav')
-)
-haqkiem = glob('/home/husein/speech-bahasa/haqkiem/*.wav')
-khalil = glob('/home/husein/speech-bahasa/tolong-sebut/*.wav')
-mas = glob('/home/husein/speech-bahasa/sebut-perkataan-woman/*.wav')
-husein = glob('/home/husein/speech-bahasa/audio-wattpad/*.wav')
-husein.extend(glob('/home/husein/speech-bahasa/audio-iium/*.wav'))
-husein.extend(glob('/home/husein/speech-bahasa/audio/*.wav'))
-husein.extend(glob('/home/husein/speech-bahasa/sebut-perkataan-man/*.wav'))
 vctk = glob('vtck/**/*.flac', recursive = True)
 
 vctk_speakers = defaultdict(list)
@@ -36,12 +24,10 @@ for f in vctk:
     s = f.split('/')[-1].split('_')[0]
     vctk_speakers[s].append(f)
 
-speakers = []
-
-for s in vctk_speakers.keys():
-    speakers.extend(
-        random.sample(vctk_speakers[s], min(1000, len(vctk_speakers[s])))
-    )
+files = glob('/home/husein/speech-bahasa/ST-CMDS-20170001_1-OS/*.wav')
+speakers_mandarin = defaultdict(list)
+for f in files:
+    speakers_mandarin[f[:-9]].append(f)
 
 df_nepali = pd.read_csv(
     '/home/husein/speech-bahasa/nepali_0/asr_nepali/utt_spk_text.tsv',
@@ -60,10 +46,38 @@ for i in range(len(df_nepali)):
         asr_nepali_replaced[df_nepali.iloc[i, 0]]
     )
 
+speakers = []
+for s in vctk_speakers.keys():
+    speakers.extend(
+        random.sample(vctk_speakers[s], min(500, len(vctk_speakers[s])))
+    )
+
+for s in speakers_mandarin.keys():
+    speakers.extend(
+        random.sample(speakers_mandarin[s], min(200, len(speakers_mandarin[s])))
+    )
+
 for s in speakers_nepali.keys():
     speakers.extend(
-        random.sample(speakers_nepali[s], min(1000, len(speakers_nepali[s])))
+        random.sample(speakers_nepali[s], min(200, len(speakers_nepali[s])))
     )
+
+salina = glob('/home/husein/speech-bahasa/salina/output-wav-salina/*.wav')
+salina = random.sample(salina, 5000)
+male = glob('/home/husein/speech-bahasa/turki/output-wav-turki/*.wav')
+male.extend(
+    glob(
+        '/home/husein/speech-bahasa/dari-pasentran-ke-istana/output-wav-dari-pasentran-ke-istana/*.wav'
+    )
+)
+male = random.sample(male, 5000)
+haqkiem = glob('/home/husein/speech-bahasa/haqkiem/*.wav')
+khalil = glob('/home/husein/speech-bahasa/tolong-sebut/*.wav')
+mas = glob('/home/husein/speech-bahasa/sebut-perkataan-woman/*.wav')
+husein = glob('/home/husein/speech-bahasa/audio-wattpad/*.wav')
+husein.extend(glob('/home/husein/speech-bahasa/audio-iium/*.wav'))
+husein.extend(glob('/home/husein/speech-bahasa/audio/*.wav'))
+husein.extend(glob('/home/husein/speech-bahasa/sebut-perkataan-man/*.wav'))
 
 files = salina + male + haqkiem + khalil + mas + husein + speakers
 sr = 22050
@@ -75,7 +89,6 @@ def generate(hop_size = 256):
         for f in shuffled:
             audio, _ = malaya_speech.load(f, sr = sr)
             mel = malaya_speech.featurization.universal_mel(audio)
-
             batch_max_steps = random.randint(16384, 110250)
             batch_max_frames = batch_max_steps // hop_size
 
@@ -84,10 +97,11 @@ def generate(hop_size = 256):
                 interval_end = len(mel) - batch_max_frames
                 start_frame = random.randint(interval_start, interval_end)
                 start_step = start_frame * hop_size
-                audio = audio[start_step : start_step + batch_max_steps]
                 mel = mel[start_frame : start_frame + batch_max_frames, :]
+                audio = audio[start_step : start_step + batch_max_steps]
 
-            v = speaker_model([audio])
+            audio_16k = malaya_speech.resample(audio, sr, 16000)
+            v = speaker_model([audio_16k])
 
             yield {
                 'mel': mel,
@@ -135,7 +149,7 @@ def get_dataset(batch_size = 8):
     return get
 
 
-total_steps = 300000
+total_steps = 500000
 
 
 def model_fn(features, labels, mode, params):
@@ -148,6 +162,8 @@ def model_fn(features, labels, mode, params):
     decoder_config = malaya_speech.config.transformer_config.copy()
     encoder_config['hidden_size'] = dim_speaker + 80
     decoder_config['hidden_size'] = dim_speaker + dim_neck
+    encoder_config['activation'] = 'mish'
+    decoder_config['activation'] = 'mish'
     config = malaya_speech.config.fastspeech_config
     config = fastspeech.Config(vocab_size = 1, **config)
     model = transformervc.Model(
@@ -192,7 +208,7 @@ def model_fn(features, labels, mode, params):
 
         train_op = train.optimizer.adamw.create_optimizer(
             loss,
-            init_lr = 0.001,
+            init_lr = 0.0001,
             num_train_steps = total_steps,
             num_warmup_steps = int(0.1 * total_steps),
             end_learning_rate = 0.00001,
