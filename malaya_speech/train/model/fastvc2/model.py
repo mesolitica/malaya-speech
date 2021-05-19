@@ -9,7 +9,6 @@ class Encoder(tf.keras.layers.Layer):
         dim_neck,
         dim_speaker,
         dim_input,
-        input_dropout,
         skip,
         config,
         use_position_embedding = True,
@@ -22,7 +21,6 @@ class Encoder(tf.keras.layers.Layer):
         self.encoder_dense = tf.keras.layers.Dense(
             units = dim_neck, dtype = tf.float32, name = 'encoder_dense'
         )
-        self.dropout = tf.keras.layers.Dropout(input_dropout)
         self.use_position_embedding = use_position_embedding
         if self.use_position_embedding:
             self.position_embeddings = tf.convert_to_tensor(
@@ -53,8 +51,6 @@ class Encoder(tf.keras.layers.Layer):
             inputs = tf.cast(position_ids, tf.int32)
             position_embeddings = tf.gather(self.position_embeddings, inputs)
             x = x + tf.cast(position_embeddings, x.dtype)
-
-        x = self.dropout(x, training = training)
 
         f = self.encoder([x, attention_mask], training = training)[0]
         return self.encoder_dense(f)
@@ -132,8 +128,6 @@ class Model(tf.keras.Model):
         config,
         dim_input = 80,
         dim_speaker = 512,
-        input_dropout = 0.1,
-        dim_neck_dropout = 0.1,
         skip = 4,
         use_position_embedding = False,
         **kwargs
@@ -143,7 +137,6 @@ class Model(tf.keras.Model):
             dim_neck = dim_neck,
             dim_speaker = dim_speaker,
             dim_input = dim_input,
-            input_dropout = input_dropout,
             skip = skip,
             config = config.encoder_self_attention_params,
             use_position_embedding = use_position_embedding,
@@ -159,8 +152,6 @@ class Model(tf.keras.Model):
             config = config, dtype = tf.float32, name = 'postnet'
         )
         self.config = config
-        self.dim_neck_dropout = dim_neck_dropout
-        self.dropout = tf.keras.layers.Dropout(self.dim_neck_dropout)
 
         a = []
         index = 0
@@ -191,7 +182,6 @@ class Model(tf.keras.Model):
         c_trg = tf.tile(tf.expand_dims(c_trg, 1), (1, tf.shape(x)[1], 1))
         encoder_outputs = tf.concat([code_exp, c_trg], axis = -1)
         encoder_outputs = tf.gather(encoder_outputs, self.indices, axis = -1)
-        encoder_outputs = self.dropout(encoder_outputs, training = training)
         decoder_output = self.decoder(
             encoder_outputs, attention_mask, training = training
         )
