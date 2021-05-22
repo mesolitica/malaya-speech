@@ -8,7 +8,7 @@ import tensorflow as tf
 from glob import glob
 from math import ceil
 from collections import defaultdict
-from malaya_speech.train.model import fastspeech, fastvc
+from malaya_speech.train.model import fastspeech, fastvc2 as fastvc
 from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 from malaya_speech import train
 import pandas as pd
@@ -157,12 +157,20 @@ def model_fn(features, labels, mode, params):
     mels = features['mel']
     mels_len = features['mel_length'][:, 0]
     dim_neck = 32
-    bottleneck = 512
+    dim_speaker = 512
+    dim_input = 80
     config = malaya_speech.config.fastspeech_config
-    config['encoder_hidden_size'] = bottleneck + 80
-    config['decoder_hidden_size'] = bottleneck + dim_neck
+    config['encoder_hidden_size'] = dim_speaker + dim_input
+    config['decoder_hidden_size'] = dim_speaker + dim_neck
     config = fastspeech.Config(vocab_size = 1, **config)
-    model = fastvc.model.Model(dim_neck, config, use_position_embedding = False)
+    model = fastvc.model.Model(
+        dim_neck,
+        config,
+        dim_input,
+        dim_speaker,
+        dim_neck_dropout = 0.05,
+        skip = 6,
+    )
     encoder_outputs, mel_before, mel_after, codes = model(
         mels, vectors, vectors, mels_len
     )
@@ -229,7 +237,7 @@ train_hooks = [
 ]
 train_dataset = get_dataset()
 
-save_directory = 'fastvc-32-vggvox-v2-v2'
+save_directory = 'fastvc-v2-32-vggvox-v2'
 
 train.run_training(
     train_fn = train_dataset,

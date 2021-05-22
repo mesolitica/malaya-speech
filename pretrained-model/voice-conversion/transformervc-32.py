@@ -158,9 +158,10 @@ def model_fn(features, labels, mode, params):
     mels_len = features['mel_length'][:, 0]
     dim_neck = 32
     dim_speaker = 512
+    dim_input = 80
     encoder_config = malaya_speech.config.transformer_config.copy()
     decoder_config = malaya_speech.config.transformer_config.copy()
-    encoder_config['hidden_size'] = dim_speaker + 80
+    encoder_config['hidden_size'] = dim_speaker + dim_input
     decoder_config['hidden_size'] = dim_speaker + dim_neck
     encoder_config['activation'] = 'mish'
     decoder_config['activation'] = 'mish'
@@ -171,7 +172,9 @@ def model_fn(features, labels, mode, params):
         encoder_config,
         decoder_config,
         config,
+        dim_input = dim_input,
         dim_speaker = dim_speaker,
+        skip = 6,
     )
     encoder_outputs, mel_before, mel_after, codes = model(
         mels, vectors, vectors, mels_len
