@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import numpy as np
 import random
@@ -8,7 +8,7 @@ import tensorflow as tf
 from math import ceil
 from glob import glob
 from collections import defaultdict
-from malaya_speech.train.model import speechsplit, fastspeechsplit, fastspeech
+from malaya_speech.train.model import speechsplit, speechsplitformer
 from malaya_speech import train
 import malaya_speech
 import sklearn
@@ -119,11 +119,15 @@ def model_fn(features, labels, mode, params):
     len_X_f0 = features['f0_length'][:, 0]
 
     hparams = speechsplit.hparams
-    config = malaya_speech.config.fastspeech_config
-    config = fastspeech.Config(vocab_size = 1, **config)
+    encoder_config = malaya_speech.config.transformer_config.copy()
+    decoder_config = malaya_speech.config.transformer_config.copy()
+    encoder_config['activation'] = 'mish'
+    decoder_config['activation'] = 'mish'
     interplnr = speechsplit.InterpLnr(hparams)
-    model = fastspeechsplit.Model(config, hparams)
-    model_F0 = fastspeechsplit.Model_F0(config, hparams)
+    model = speechsplitformer.Model(encoder_config, decoder_config, hparams)
+    model_F0 = speechsplitformer.Model_F0(
+        encoder_config, decoder_config, hparams
+    )
 
     bottleneck_speaker = tf.keras.layers.Dense(hparams.dim_spk_emb)
     speaker_dim = bottleneck_speaker(vectors)
@@ -163,8 +167,8 @@ def model_fn(features, labels, mode, params):
             loss,
             init_lr = 0.0001,
             num_train_steps = total_steps,
-            num_warmup_steps = 100000,
-            end_learning_rate = 0.00005,
+            num_warmup_steps = int(0.1 * total_steps),
+            end_learning_rate = 0.00001,
             weight_decay_rate = 0.001,
             beta_1 = 0.9,
             beta_2 = 0.98,
@@ -191,7 +195,7 @@ train_hooks = [
 ]
 train_dataset = get_dataset()
 
-save_directory = 'fastspeechsplit-vggvox-v2'
+save_directory = 'speechsplitformer-vggvox-v2'
 
 train.run_training(
     train_fn = train_dataset,

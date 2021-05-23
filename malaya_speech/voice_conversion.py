@@ -1,6 +1,5 @@
 from herpetologist import check_type
 from malaya_speech.supervised import voice_conversion
-from herpetologist import check_type
 
 _availability = {
     'fastvc-32-vggvox-v2': {
