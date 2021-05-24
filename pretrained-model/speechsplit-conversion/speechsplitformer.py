@@ -167,7 +167,7 @@ def model_fn(features, labels, mode, params):
             loss,
             init_lr = 0.0001,
             num_train_steps = total_steps,
-            num_warmup_steps = int(0.1 * total_steps),
+            num_warmup_steps = 150000,
             end_learning_rate = 0.00001,
             weight_decay_rate = 0.001,
             beta_1 = 0.9,
