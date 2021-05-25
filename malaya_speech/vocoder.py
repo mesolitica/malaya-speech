@@ -108,7 +108,7 @@ def melgan(model: str = 'female', quantized: bool = False, **kwargs):
     """
     model = model.lower()
     if model not in _melgan_availability:
-        raise Exception(
+        raise ValueError(
             'model not supported, please check supported models from `malaya_speech.vocoder.available_melgan()`.'
         )
 
@@ -145,7 +145,7 @@ def mbmelgan(model: str = 'female', quantized: bool = False, **kwargs):
     """
     model = model.lower()
     if model not in _mbmelgan_availability:
-        raise Exception(
+        raise ValueError(
             'model not supported, please check supported models from `malaya_speech.vocoder.available_mbmelgan()`.'
         )
     return vocoder.load(

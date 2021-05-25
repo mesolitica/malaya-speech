@@ -1400,3 +1400,25 @@ class CTC(Abstract):
         self._sess = sess
         self.__model__ = model
         self.__name__ = name
+
+
+class FastSpeechSplit(Abstract):
+    def __init__(
+        self,
+        input_nodes,
+        output_nodes,
+        speaker_vector,
+        gender_model,
+        magnitude,
+        sess,
+        model,
+        name,
+    ):
+        self._input_nodes = input_nodes
+        self._output_nodes = output_nodes
+        self._speaker_vector = speaker_vector
+        self._gender_model = gender_model
+        self._magnitude = magnitude
+        self._sess = sess
+        self.__model__ = model
+        self.__name__ = name

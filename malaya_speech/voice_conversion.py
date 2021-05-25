@@ -48,7 +48,7 @@ def deep_conversion(
     """
     model = model.lower()
     if model not in _availability:
-        raise Exception(
+        raise ValueError(
             'model not supported, please check supported models from `malaya_speech.voice_conversion.available_deep_conversion()`.'
         )
 

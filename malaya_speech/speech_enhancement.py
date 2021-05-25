@@ -99,7 +99,7 @@ def deep_masking(model: str = 'resnet-unet', quantized: bool = False, **kwargs):
 
     model = model.lower()
     if model not in _masking_availability:
-        raise Exception(
+        raise ValueError(
             'model not supported, please check supported models from `malaya_speech.speech_enhancement.available_deep_masking()`.'
         )
 
@@ -136,7 +136,7 @@ def deep_enhance(model: str = 'unet', quantized: bool = False, **kwargs):
 
     model = model.lower()
     if model not in _sampling_availability:
-        raise Exception(
+        raise ValueError(
             'model not supported, please check supported models from `malaya_speech.speech_enhancement.available_deep_enhance()`.'
         )
 

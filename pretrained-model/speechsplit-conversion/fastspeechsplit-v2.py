@@ -31,9 +31,9 @@ def generate(hop_size = 256):
         shuffled = sklearn.utils.shuffle(files)
         for f in shuffled:
             with open(f, 'rb') as fopen:
-                wav, f0, mel = pickle.load(fopen)
+                wav, f0, _, mel = pickle.load(fopen)
 
-            batch_max_steps = random.randint(16384, 110250)
+            batch_max_steps = random.randint(22050, 154350)
             batch_max_frames = batch_max_steps // hop_size
 
             if len(mel) > batch_max_frames:
@@ -44,9 +44,6 @@ def generate(hop_size = 256):
                 mel = mel[start_frame : start_frame + batch_max_frames, :]
                 f0 = f0[start_frame : start_frame + batch_max_frames, :]
                 wav = wav[start_step : start_step + batch_max_steps]
-
-            mel, _ = pad_seq(mel)
-            f0, _ = pad_seq(f0)
 
             wav_16k = malaya_speech.resample(wav, sr, 16000)
             v = speaker_model([wav_16k])[0]
@@ -108,29 +105,7 @@ def get_dataset(batch_size = 4):
     return get
 
 
-total_steps = 1000000
-hparams = speechsplit.HParams(
-    freq = 8,
-    dim_neck = 64,
-    freq_2 = 8,
-    dim_neck_2 = 8,
-    freq_3 = 8,
-    dim_neck_3 = 32,
-    dim_enc = 512,
-    dim_enc_2 = 256,
-    dim_enc_3 = 512,
-    dim_freq = 80,
-    dim_spk_emb = 256,
-    dim_f0 = 257,
-    dim_dec = 512,
-    len_raw = 128,
-    chs_grp = 16,
-    min_len_seg = 8,
-    max_len_seg = 64,
-    min_len_seq = 64,
-    max_len_seq = 128,
-    max_len_pad = 192,
-)
+total_steps = 2000000
 
 
 def model_fn(features, labels, mode, params):
@@ -140,7 +115,13 @@ def model_fn(features, labels, mode, params):
     X_f0 = features['f0']
     len_X_f0 = features['f0_length'][:, 0]
 
+    hparams = speechsplit.hparams
     config = malaya_speech.config.fastspeech_config
+    config['encoder_num_hidden_layers'] = 6
+    config['encoder_num_attention_heads'] = 4
+    config['decoder_num_hidden_layers'] = 6
+    config['decoder_num_attention_heads'] = 4
+
     config = fastspeech.Config(vocab_size = 1, **config)
     interplnr = speechsplit.InterpLnr(hparams)
     model = fastspeechsplit.Model(config, hparams)

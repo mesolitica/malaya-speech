@@ -77,7 +77,7 @@ def deep_model(model: str = 'resnet-unet', quantized: bool = False, **kwargs):
 
     model = model.lower()
     if model not in _availability:
-        raise Exception(
+        raise ValueError(
             'model not supported, please check supported models from `malaya_speech.noise_reduction.available_model()`.'
         )
 

@@ -14,7 +14,7 @@ def quantize_f0_numpy(x, num_bins = 256):
     x = x.astype(float).copy()
     uv = x <= 0
     x[uv] = 0.0
-    x = np.round((x / np.max(x)) * (num_bins - 1))
+    x = np.round(x * (num_bins - 1))
     x = x + 1
     x[uv] = 0.0
     enc = np.zeros((len(x), num_bins + 1), dtype = np.float32)
@@ -27,7 +27,7 @@ def quantize_f0_tf(x, num_bins = 256):
     x = tf.reshape(x, (-1,))
     uv = x <= 0
     x = tf.where(uv, tf.zeros_like(x), x)
-    x = tf.cast(tf.round((x / tf.reduce_max(x)) * (num_bins - 1)), tf.int32)
+    x = tf.cast(tf.round(x * (num_bins - 1)), tf.int32)
     x = x + 1
     x = tf.where(uv, tf.zeros_like(x), x)
     enc = tf.one_hot(x, num_bins + 1)

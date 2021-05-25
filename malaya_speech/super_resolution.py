@@ -53,7 +53,7 @@ def deep_model(model: str = 'srgan-256', quantized: bool = False, **kwargs):
     """
     model = model.lower()
     if model not in _availability:
-        raise Exception(
+        raise ValueError(
             'model not supported, please check supported models from `malaya_speech.super_resolution.available_model()`.'
         )
     return unet.load_1d(

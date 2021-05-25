@@ -159,7 +159,7 @@ def language_model(
     """
     model = model.lower()
     if model not in _language_model_availability:
-        raise Exception(
+        raise ValueError(
             'model not supported, please check supported models from `malaya_speech.stt.available_language_model()`.'
         )
 
@@ -198,7 +198,7 @@ def deep_ctc(
     """
     model = model.lower()
     if model not in _transducer_availability:
-        raise Exception(
+        raise ValueError(
             'model not supported, please check supported models from `malaya_speech.stt.available_ctc()`.'
         )
 
@@ -242,7 +242,7 @@ def deep_transducer(
     """
     model = model.lower()
     if model not in _transducer_availability:
-        raise Exception(
+        raise ValueError(
             'model not supported, please check supported models from `malaya_speech.stt.available_transducer()`.'
         )
 

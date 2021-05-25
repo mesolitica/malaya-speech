@@ -292,7 +292,7 @@ def tacotron2(
     model = model.lower()
 
     if model not in _tacotron2_availability:
-        raise Exception(
+        raise ValueError(
             'model not supported, please check supported models from `malaya_speech.tts.available_tacotron2()`.'
         )
 
@@ -364,7 +364,7 @@ def fastspeech2(
     model = model.lower()
 
     if model not in _fastspeech2_availability:
-        raise Exception(
+        raise ValueError(
             'model not supported, please check supported models from `malaya_speech.tts.available_fastspeech2()`.'
         )
 

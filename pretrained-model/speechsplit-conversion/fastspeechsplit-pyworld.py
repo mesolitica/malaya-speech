@@ -31,7 +31,7 @@ def generate(hop_size = 256):
         shuffled = sklearn.utils.shuffle(files)
         for f in shuffled:
             with open(f, 'rb') as fopen:
-                wav, f0, _, mel = pickle.load(fopen)
+                wav, _, f0, mel = pickle.load(fopen)
 
             batch_max_steps = random.randint(22050, 154350)
             batch_max_frames = batch_max_steps // hop_size
@@ -188,7 +188,7 @@ train_hooks = [
 ]
 train_dataset = get_dataset()
 
-save_directory = 'fastspeechsplit-vggvox-v2'
+save_directory = 'fastspeechsplit-vggvox-v2-pyworld'
 
 train.run_training(
     train_fn = train_dataset,

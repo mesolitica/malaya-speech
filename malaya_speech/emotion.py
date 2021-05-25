@@ -61,7 +61,7 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
 
     model = model.lower()
     if model not in _availability:
-        raise Exception(
+        raise ValueError(
             'model not supported, please check supported models from `malaya_speech.emotion.available_model()`.'
         )
 
