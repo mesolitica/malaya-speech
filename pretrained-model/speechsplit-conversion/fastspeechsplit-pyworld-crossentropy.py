@@ -116,6 +116,8 @@ def model_fn(features, labels, mode, params):
     len_X_f0 = features['f0_length'][:, 0]
 
     hparams = speechsplit.hparams
+    hparams.min_len_seg = 8
+    hparams.max_len_seg = 256
     config = malaya_speech.config.fastspeech_config
     config = fastspeech.Config(vocab_size = 1, **config)
     interplnr = speechsplit.InterpLnr(hparams)
@@ -140,7 +142,11 @@ def model_fn(features, labels, mode, params):
     )
     mask = tf.expand_dims(mask, axis = -1)
     mel_loss = loss_f(labels = X, predictions = mel_outputs, weights = mask)
-    f0_loss = loss_f(labels = f0_org, predictions = f0_outputs, weights = mask)
+    f0_loss = tf.contrib.seq2seq.sequence_loss(
+        logits = f0_outputs,
+        targets = tf.argmax(f0_org, axis = -1),
+        weights = mask[:, :, 0],
+    )
 
     loss = mel_loss + f0_loss
 
@@ -188,7 +194,7 @@ train_hooks = [
 ]
 train_dataset = get_dataset()
 
-save_directory = 'fastspeechsplit-vggvox-v2-pyworld'
+save_directory = 'fastspeechsplit-vggvox-v2-pyworld-crossentropy'
 
 train.run_training(
     train_fn = train_dataset,

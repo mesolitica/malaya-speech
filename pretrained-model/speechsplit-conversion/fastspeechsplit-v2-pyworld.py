@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import numpy as np
 import random
@@ -117,6 +117,11 @@ def model_fn(features, labels, mode, params):
 
     hparams = speechsplit.hparams
     config = malaya_speech.config.fastspeech_config
+    config['encoder_num_hidden_layers'] = 6
+    config['encoder_num_attention_heads'] = 4
+    config['decoder_num_hidden_layers'] = 6
+    config['decoder_num_attention_heads'] = 4
+
     config = fastspeech.Config(vocab_size = 1, **config)
     interplnr = speechsplit.InterpLnr(hparams)
     model = fastspeechsplit.Model(config, hparams)
@@ -188,7 +193,7 @@ train_hooks = [
 ]
 train_dataset = get_dataset()
 
-save_directory = 'fastspeechsplit-vggvox-v2-pyworld'
+save_directory = 'fastspeechsplit-v2-vggvox-v2-pyworld'
 
 train.run_training(
     train_fn = train_dataset,

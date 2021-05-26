@@ -103,7 +103,7 @@ class FeedFowardNetwork(tf.layers.Layer):
 
         output = self.filter_dense_layer(x)
         if self.train:
-            output = tf.nn.dropout(output, 1.0 - self.relu_dropout)
+            output = tf.nn.dropout(output, rate = self.relu_dropout)
         output = self.output_dense_layer(output)
 
         if padding is not None:

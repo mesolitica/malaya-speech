@@ -57,7 +57,7 @@ class Encoder(tf.keras.layers.Layer):
                 if training:
                     encoder_inputs = tf.nn.dropout(
                         encoder_inputs,
-                        1 - self.params['layer_postprocess_dropout'],
+                        rate = self.params['layer_postprocess_dropout'],
                     )
 
                 return self.encoder_stack(

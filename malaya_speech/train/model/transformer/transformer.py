@@ -97,7 +97,8 @@ class Transformer(object):
 
             if self.train:
                 encoder_inputs = tf.nn.dropout(
-                    encoder_inputs, 1 - self.params['layer_postprocess_dropout']
+                    encoder_inputs,
+                    rate = self.params['layer_postprocess_dropout'],
                 )
 
             return self.encoder_stack(
@@ -114,7 +115,8 @@ class Transformer(object):
                 )
             if self.train:
                 decoder_inputs = tf.nn.dropout(
-                    decoder_inputs, 1 - self.params['layer_postprocess_dropout']
+                    decoder_inputs,
+                    rate = self.params['layer_postprocess_dropout'],
                 )
             decoder_self_attention_bias = model_utils.get_decoder_self_attention_bias(
                 length
@@ -177,7 +179,7 @@ class PrePostProcessingWrapper(object):
 
         # Postprocessing: apply dropout and residual connection
         if self.train:
-            y = tf.nn.dropout(y, 1 - self.postprocess_dropout)
+            y = tf.nn.dropout(y, rate = self.postprocess_dropout)
         return x + y
 
 

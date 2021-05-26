@@ -101,12 +101,14 @@ class InterpLnr(tf.keras.layers.Layer):
             return x
 
         max_len_seq = tf.reduce_max(len_seq)
-        max_num_seg = (max_len_seq) // self.min_len_seg + 1
+        min_len_seg = max_len_seq // 10
+        max_len_seg = max_len_seq // 6
+        max_num_seg = max_len_seq // min_len_seg + 1
 
         batch_size = tf.shape(x)[0]
         dim = x.shape[2]
         indices = tf.tile(
-            tf.expand_dims(tf.range(self.max_len_seg * 2), 0),
+            tf.expand_dims(tf.range(max_len_seg * 2), 0),
             (batch_size * max_num_seg, 1),
         )
         scales = tf.random.uniform(shape = (batch_size * max_num_seg,)) + 0.5
@@ -115,8 +117,8 @@ class InterpLnr(tf.keras.layers.Layer):
         lambda_ = idx_scaled - idx_scaled_fl
         len_seg = tf.random.uniform(
             (batch_size * max_num_seg, 1),
-            minval = self.min_len_seg,
-            maxval = self.max_len_seg,
+            minval = min_len_seg,
+            maxval = max_len_seg,
             dtype = tf.int32,
         )
         idx_mask = idx_scaled_fl < (tf.cast(len_seg, tf.float32) - 1)

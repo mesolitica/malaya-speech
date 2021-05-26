@@ -12,6 +12,12 @@ from malaya_speech.utils.subword import decode as subword_decode
 from malaya_speech.utils.execute import execute_graph
 from malaya_speech.utils.activation import softmax
 from malaya_speech.utils.featurization import universal_mel
+from malaya_speech.utils.read import resample
+from malaya_speech.utils.speechsplit import (
+    quantize_f0_numpy,
+    get_f0_sptk,
+    get_fo_pyworld,
+)
 from malaya_speech.utils.constant import MEL_MEAN, MEL_STD
 
 BeamHypothesis = collections.namedtuple(
@@ -1422,3 +1428,120 @@ class FastSpeechSplit(Abstract):
         self._sess = sess
         self.__model__ = model
         self.__name__ = name
+        self._modes = {'R', 'F', 'U', 'RF', 'RU', 'FU', 'RFU'}
+        self._freqs = {'female': [100, 600], 'male': [50, 250]}
+
+    def _get_data(x, sr = 22050, target_sr = 16000):
+        x_16k = resample(x, sr, target_sr)
+        if self._gender_model is not None:
+            gender = self._gender_model(x_16k)
+            lo, hi = self._freqs.get(gender, [50, 250])
+            f0 = get_f0_sptk(x, lo, hi)
+        else:
+            f0 = get_fo_pyworld(x)
+        f0 = np.expand_dims(f0, -1)
+        mel = universal_mel(x)
+        v = self._speaker_vector([x_16k])[0]
+        v = v / v.max()
+        return x, mel, f0, v
+
+    def predict(
+        self,
+        original_audio,
+        target_audio,
+        modes = ['R', 'F', 'U', 'RF', 'RU', 'FU', 'RFU'],
+    ):
+        """
+        Change original voice audio to follow targeted voice.
+
+        Parameters
+        ----------
+        original_audio: np.array or malaya_speech.model.frame.Frame
+        target_audio: np.array or malaya_speech.model.frame.Frame
+
+        Returns
+        -------
+        result: Dict[modes]
+        """
+        s = set(modes) - self._modes
+        if len(s):
+            raise ValueError(
+                f"{list(s)} not an element of ['R', 'F', 'U', 'RF', 'RU', 'FU', 'RFU']"
+            )
+
+        original_audio = (
+            input.array if isinstance(original_audio, Frame) else original_audio
+        )
+        target_audio = (
+            input.array if isinstance(target_audio, Frame) else target_audio
+        )
+        wav, mel, f0, v = get_speech(original_audio)
+        wav_1, mel_1, f0_1, v_1 = get_speech(target_audio)
+        mels, mel_lens = padding_sequence_nd(
+            [mel, mel_1], dim = 0, return_len = True
+        )
+        f0s, f0_lens = padding_sequence_nd(
+            [f0, f0_1], dim = 0, return_len = True
+        )
+
+        f0_org_quantized = quantize_f0_numpy(f0s[0, :, 0])[0]
+        f0_org_onehot = f0_org_quantized[np.newaxis, :, :]
+        uttr_f0_org = np.concatenate([mels[:1], f0_org_onehot], axis = -1)
+        f0_trg_quantized = quantize_f0_numpy(f0s[1, :, 0])[0]
+        f0_trg_onehot = f0_trg_quantized[np.newaxis, :, :]
+
+        r = self._execute(
+            inputs = [mels[:1], f0_trg_onehot, [len(f0s[0])]],
+            input_labels = ['X', 'f0_onehot', 'len_X'],
+            output_labels = ['f0_target'],
+        )
+        f0_pred = r['f0_target']
+        f0_pred_quantized = f0_pred.argmax(axis = -1).squeeze(0)
+        f0_con_onehot = np.zeros_like(f0_pred)
+        f0_con_onehot[0, np.arange(f0_pred.shape[1]), f0_pred_quantized] = 1
+        uttr_f0_trg = np.concatenate([mels[:1], f0_con_onehot], axis = -1)
+        results = {}
+        for condition in modes:
+            if condition == 'R':
+                uttr_f0_ = uttr_f0_org
+                v_ = v
+                x_ = mels[1:]
+            if condition == 'F':
+                uttr_f0_ = uttr_f0_trg
+                v_ = v
+                x_ = mels[:1]
+            if condition == 'U':
+                uttr_f0_ = uttr_f0_org
+                v_ = v_1
+                x_ = mels[:1]
+            if condition == 'RF':
+                uttr_f0_ = uttr_f0_trg
+                v_ = v
+                x_ = mels[1:]
+            if condition == 'RU':
+                uttr_f0_ = uttr_f0_org
+                v_ = v_1
+                x_ = mels[:1]
+            if condition == 'FU':
+                uttr_f0_ = uttr_f0_trg
+                v_ = v_1
+                x_ = mels[:1]
+            if condition == 'RFU':
+                uttr_f0_ = uttr_f0_trg
+                v_ = v_1
+                x_ = mels[:1]
+
+            r = self._execute(
+                inputs = [uttr_f0_, x_, v_, len(f0s[0])],
+                input_labels = ['uttr_f0', 'X', 'V', 'len_X'],
+                output_labels = ['f0_target'],
+            )
+            mel_outputs = r['mel_outputs'][0]
+            if 'R' in condition:
+                length = mel_lens[1]
+            else:
+                length = mel_lens[0]
+            mel_outputs = mel_outputs[:length]
+            results[condition] = mel_outputs
+
+        return results

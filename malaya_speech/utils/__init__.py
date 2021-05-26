@@ -20,6 +20,7 @@ from . import metrics
 from . import outlier
 from . import padding
 from . import read
+from . import speechsplit
 from . import split
 from . import text
 from . import subword

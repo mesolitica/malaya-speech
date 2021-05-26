@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import numpy as np
 import random
@@ -116,7 +116,14 @@ def model_fn(features, labels, mode, params):
     len_X_f0 = features['f0_length'][:, 0]
 
     hparams = speechsplit.hparams
+    hparams.min_len_seg = 8
+    hparams.max_len_seg = 256
     config = malaya_speech.config.fastspeech_config
+    config['encoder_num_hidden_layers'] = 6
+    config['encoder_num_attention_heads'] = 4
+    config['decoder_num_hidden_layers'] = 6
+    config['decoder_num_attention_heads'] = 4
+
     config = fastspeech.Config(vocab_size = 1, **config)
     interplnr = speechsplit.InterpLnr(hparams)
     model = fastspeechsplit.Model(config, hparams)
@@ -140,7 +147,11 @@ def model_fn(features, labels, mode, params):
     )
     mask = tf.expand_dims(mask, axis = -1)
     mel_loss = loss_f(labels = X, predictions = mel_outputs, weights = mask)
-    f0_loss = loss_f(labels = f0_org, predictions = f0_outputs, weights = mask)
+    f0_loss = tf.contrib.seq2seq.sequence_loss(
+        logits = f0_outputs,
+        targets = tf.argmax(f0_org, axis = -1),
+        weights = mask[:, :, 0],
+    )
 
     loss = mel_loss + f0_loss
 
@@ -188,7 +199,7 @@ train_hooks = [
 ]
 train_dataset = get_dataset()
 
-save_directory = 'fastspeechsplit-vggvox-v2-pyworld'
+save_directory = 'fastspeechsplit-v2-vggvox-v2-pyworld-crossentropy'
 
 train.run_training(
     train_fn = train_dataset,
