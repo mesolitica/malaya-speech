@@ -5,7 +5,18 @@ from malaya_boilerplate.frozen_graph import (
     get_device,
     load_graph,
 )
-from malaya_boilerplate.utils import describe_availability
+from malaya_boilerplate.utils import (
+    available_device,
+    available_gpu,
+    gpu_available,
+    is_gpu_version,
+    print_cache,
+    delete_cache,
+    delete_all_cache,
+    close_session,
+    describe_availability,
+)
+
 
 from . import astype
 from . import char

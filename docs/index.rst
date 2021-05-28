@@ -16,11 +16,19 @@ Contents:
    :maxdepth: 2
    :caption: Getting Started
 
-   load-cache
-   gpu-environment
-   Api
    Dataset
+   load-cache
+   Api
    Contributing
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Optimization
+
+   gpu-environment
+   devices
+   precision-mode
+   quantization
 
 .. toctree::
    :maxdepth: 2

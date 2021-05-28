@@ -14,7 +14,7 @@ _availability = {
     },
 }
 
-labels = ['male', 'female', 'not a gender']
+labels = ['female', 'male', 'not a gender']
 
 
 def available_model():

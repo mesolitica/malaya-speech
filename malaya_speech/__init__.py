@@ -7,7 +7,7 @@
 # For license information, see https://github.com/huseinzol05/Malaya/blob/master/LICENSE
 
 version = '1.0'
-bump_version = '1.0.2'
+bump_version = '1.0.3'
 __version__ = bump_version
 
 import malaya_boilerplate
@@ -44,6 +44,7 @@ from . import tts
 from . import vad
 from . import vocoder
 from . import voice_conversion
+from . import utils
 
 from .pipeline import Pipeline
 from .streaming import *
