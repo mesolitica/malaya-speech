@@ -14,29 +14,42 @@ class CoreRNN(tf.keras.layers.Layer):
         **kwargs,
     ):
         super(CoreRNN, self).__init__(name = 'CoreRNN', **kwargs)
-        self.lstm = tf.keras.Sequential()
-        for i in range(rnn_depth):
-            self.lstm.add(
-                tf.keras.layers.LSTM(
-                    rnn_hidden_size,
-                    return_sequences = True,
-                    return_state = True,
-                )
-            )
+        # self.lstm = tf.keras.Sequential()
+        # for i in range(rnn_depth):
+        #     self.lstm.add(
+        #         tf.keras.layers.LSTM(
+        #             rnn_hidden_size,
+        #             return_sequences = True,
+        #             return_state = True,
+        #             kernel_regularizer = tf.keras.regularizers.l2(1e-5),
+        #             recurrent_regularizer = tf.keras.regularizers.l2(1e-5),
+        #         )
+        #     )
+
+        self.lstm = tf.keras.layers.LSTM(
+            rnn_hidden_size,
+            return_sequences = True,
+            return_state = True,
+            kernel_regularizer = tf.keras.regularizers.l2(1e-5),
+            recurrent_regularizer = tf.keras.regularizers.l2(1e-5),
+        )
         self.linear_mean1 = tf.keras.layers.Dense(
-            units = hidden_size, dtype = tf.float32, activation = tf.nn.relu
+            units = rnn_hidden_size,
+            dtype = tf.float32,
+            activation = tf.nn.relu,
+            kernel_regularizer = tf.keras.regularizers.l2(1e-5),
         )
         self.linear_mean2 = tf.keras.layers.Dense(
-            units = observation_dim, dtype = tf.float32
+            units = observation_dim,
+            dtype = tf.float32,
+            kernel_regularizer = tf.keras.regularizers.l2(1e-5),
         )
 
     def call(self, x, hidden = None, training = True):
-        output_seq, hidden = self.lstm(
-            x, training = training, initial_state = hidden
-        )
-        mean = self.linear_mean2(self.linear_mean1(output_seq))
+        output_seq = self.lstm(x, initial_state = hidden, training = training)
+        mean = self.linear_mean2(self.linear_mean1(output_seq[0]))
 
-        return mean, hidden
+        return mean, output_seq[1:]
 
 
 class BeamState:
@@ -92,26 +105,5 @@ class Model(tf.keras.Model):
         self.transition_bias_denominator = 0.0
         self.crp_alpha = crp_alpha
 
-    def call(
-        self,
-        train_sequences,
-        train_cluster_ids,
-        transition_bias,
-        transition_bias_denominator,
-        concatenated_train_sequence,
-        concatenated_train_cluster_id,
-    ):
-
-        if self.estimate_transition_bias:
-            if self.transition_bias is None:
-                self.transition_bias = transition_bias
-                self.transition_bias_denominator = transition_bias_denominator
-            else:
-                self.transition_bias = (
-                    self.transition_bias * self.transition_bias_denominator
-                    + transition_bias * transition_bias_denominator
-                ) / (
-                    self.transition_bias_denominator
-                    + transition_bias_denominator
-                )
-                self.transition_bias_denominator += transition_bias_denominator
+    def call(self, x, hidden = None, training = True):
+        return self.rnn_model(x, hidden = hidden, training = training)

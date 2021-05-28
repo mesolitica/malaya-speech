@@ -232,9 +232,7 @@ def resize_sequence(sequence, cluster_id, num_permutations = None):
     return sub_sequences, seq_lengths
 
 
-def pack_sequence(
-    sub_sequences, seq_lengths, batch_size, observation_dim, device
-):
+def pack_sequence(sub_sequences, seq_lengths, batch_size, observation_dim):
     """Pack sequences for training.
   Args:
     sub_sequences: A list of numpy array, with obsevation vector from the same
@@ -243,7 +241,6 @@ def pack_sequence(
     batch_size: int or None - Run batch learning if batch_size is None. Else,
       run online learning with specified batch size.
     observation_dim: int - dimension for observation vectors
-    device: str - Your device. E.g., `cuda:0` or `cpu`.
   Returns:
     packed_rnn_input: (PackedSequence object) packed rnn input
     rnn_truth: ground truth
@@ -260,12 +257,7 @@ def pack_sequence(
             rnn_input[1 : sorted_seq_lengths[i], i, :] = sub_sequences[
                 permute_index[i]
             ]
-        rnn_input = autograd.Variable(torch.from_numpy(rnn_input).float()).to(
-            device
-        )
-        packed_rnn_input = torch.nn.utils.rnn.pack_padded_sequence(
-            rnn_input, sorted_seq_lengths, batch_first = False
-        )
+        packed_rnn_input = rnn_input
     else:
         mini_batch = np.sort(np.random.choice(num_clusters, batch_size))
         rnn_input = np.zeros(
@@ -275,12 +267,7 @@ def pack_sequence(
             rnn_input[
                 1 : sorted_seq_lengths[mini_batch[i]], i, :
             ] = sub_sequences[permute_index[mini_batch[i]]]
-        rnn_input = autograd.Variable(torch.from_numpy(rnn_input).float()).to(
-            device
-        )
-        packed_rnn_input = torch.nn.utils.rnn.pack_padded_sequence(
-            rnn_input, sorted_seq_lengths[mini_batch], batch_first = False
-        )
+        packed_rnn_input = rnn_input
     # ground truth is the shifted input
     rnn_truth = rnn_input[1:, :, :]
     return packed_rnn_input, rnn_truth
