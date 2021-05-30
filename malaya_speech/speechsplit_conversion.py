@@ -1,4 +1,5 @@
 from herpetologist import check_type
+from malaya_speech.supervised import speechsplit_conversion
 
 _availability = {
     'pysptk': {
@@ -27,7 +28,7 @@ _availability = {
 f0_modes = ['pysptk', 'pyworld']
 
 
-def check_f0_mode(f0_mode = 'pyworld'):
+def check_f0_mode(f0_mode = 'pysptk'):
     f0_mode = f0_mode.lower()
     if f0_mode not in f0_modes:
         raise ValueError("`f0_mode` only support one of ['pysptk', 'pyworld']")
@@ -46,7 +47,7 @@ def available_deep_conversion(f0_mode = 'pysptk'):
 
 def deep_conversion(
     model: str = 'fastspeechsplit-v2-vggvox-v2',
-    f0_mode = 'pyworld',
+    f0_mode = 'pysptk',
     quantized: bool = False,
     **kwargs,
 ):
@@ -60,6 +61,12 @@ def deep_conversion(
 
         * ``'fastspeechsplit-vggvox-v2'`` - FastSpeechSplit with VGGVox-v2 Speaker Vector.
         * ``'fastspeechsplit-v2-vggvox-v2'`` - FastSpeechSplit V2 with VGGVox-v2 Speaker Vector.
+
+    f0_mode : str, optional (default='pysptk)
+        F0 conversion supported. Allowed values:
+
+        * ``'pysptk'`` - https://github.com/r9y9/pysptk, sensitive towards gender.
+        * ``'pyworld'`` - https://pypi.org/project/pyworld/
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 
@@ -69,6 +76,7 @@ def deep_conversion(
     -------
     result : malaya_speech.supervised.speechsplit_conversion.load function
     """
+
     model = model.lower()
     f0_mode = check_f0_mode(f0_mode = f0_mode)
     if model not in _availability[f0_mode]:
@@ -94,7 +102,7 @@ def deep_conversion(
                 'pyworld not installed. Please install it by `pip install pyworld` and try again.'
             )
 
-    return voice_conversion.load(
+    return speechsplit_conversion.load(
         model = model,
         module = f'speechsplit-conversion-{f0_mode}',
         f0_mode = f0_mode,

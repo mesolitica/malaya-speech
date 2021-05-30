@@ -1415,7 +1415,6 @@ class FastSpeechSplit(Abstract):
         output_nodes,
         speaker_vector,
         gender_model,
-        magnitude,
         sess,
         model,
         name,
@@ -1424,14 +1423,13 @@ class FastSpeechSplit(Abstract):
         self._output_nodes = output_nodes
         self._speaker_vector = speaker_vector
         self._gender_model = gender_model
-        self._magnitude = magnitude
         self._sess = sess
         self.__model__ = model
         self.__name__ = name
         self._modes = {'R', 'F', 'U', 'RF', 'RU', 'FU', 'RFU'}
         self._freqs = {'female': [100, 600], 'male': [50, 250]}
 
-    def _get_data(x, sr = 22050, target_sr = 16000):
+    def _get_data(self, x, sr = 22050, target_sr = 16000):
         x_16k = resample(x, sr, target_sr)
         if self._gender_model is not None:
             gender = self._gender_model(x_16k)
@@ -1458,6 +1456,16 @@ class FastSpeechSplit(Abstract):
         ----------
         original_audio: np.array or malaya_speech.model.frame.Frame
         target_audio: np.array or malaya_speech.model.frame.Frame
+        modes: List[str], optional (default = ['R', 'F', 'U', 'RF', 'RU', 'FU', 'RFU'])
+            R denotes rhythm, F denotes pitch target, U denotes speaker target (vector).
+
+            * ``'R'`` - maintain `original_audio` F and U on `target_audio` R.
+            * ``'F'`` - maintain `original_audio` R and U on `target_audio` F.
+            * ``'U'`` - maintain `original_audio` R and F on `target_audio` U.
+            * ``'RF'`` - maintain `original_audio` U on `target_audio` R and F.
+            * ``'RU'`` - maintain `original_audio` F on `target_audio` R and U.
+            * ``'FU'`` - maintain `original_audio` R on `target_audio` F and U.
+            * ``'RFU'`` - no conversion happened, just do encoder-decoder on `target_audio`
 
         Returns
         -------
@@ -1475,8 +1483,8 @@ class FastSpeechSplit(Abstract):
         target_audio = (
             input.array if isinstance(target_audio, Frame) else target_audio
         )
-        wav, mel, f0, v = get_speech(original_audio)
-        wav_1, mel_1, f0_1, v_1 = get_speech(target_audio)
+        wav, mel, f0, v = self._get_data(original_audio)
+        wav_1, mel_1, f0_1, v_1 = self._get_data(target_audio)
         mels, mel_lens = padding_sequence_nd(
             [mel, mel_1], dim = 0, return_len = True
         )
@@ -1532,9 +1540,9 @@ class FastSpeechSplit(Abstract):
                 x_ = mels[:1]
 
             r = self._execute(
-                inputs = [uttr_f0_, x_, v_, len(f0s[0])],
+                inputs = [uttr_f0_, x_, [v_], [len(f0s[0])]],
                 input_labels = ['uttr_f0', 'X', 'V', 'len_X'],
-                output_labels = ['f0_target'],
+                output_labels = ['mel_outputs'],
             )
             mel_outputs = r['mel_outputs'][0]
             if 'R' in condition:

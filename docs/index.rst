@@ -60,6 +60,7 @@ Contents:
    :caption: Conversion Module
 
    load-voice-conversion
+   speechsplit-conversion-pyworld
    
 .. toctree::
    :maxdepth: 2

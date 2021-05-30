@@ -21,7 +21,7 @@ def load(model, module, f0_mode = 'pyworld', quantized = False, **kwargs):
     outputs = ['mel_outputs', 'f0_target']
     input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
-    speaker_vector_model = '-'.join(model.split('-')[2:])
+    speaker_vector_model = '-'.join(model.split('-')[-2:])
 
     speaker_model = speaker_vector.deep_model(speaker_vector_model, **kwargs)
     if f0_mode == 'pysptk':

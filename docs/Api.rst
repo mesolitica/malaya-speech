@@ -112,6 +112,18 @@ malaya_speech.model.tf.Split_Mel
 .. autoclass:: malaya_speech.model.tf.Split_Mel()
     :members:
 
+malaya_speech.model.tf.Wav2Vec2_CTC
+-------------------------------------
+
+.. autoclass:: malaya_speech.model.tf.Wav2Vec2_CTC()
+    :members:
+
+malaya_speech.model.tf.FastSpeechSplit
+---------------------------------------
+
+.. autoclass:: malaya_speech.model.tf.FastSpeechSplit()
+    :members:
+
 malaya_speech.model.webrtc.WebRTC
 ----------------------------------
 
@@ -302,6 +314,12 @@ malaya_speech.speech_enhancement
 -----------------------------------
 
 .. automodule:: malaya_speech.speech_enhancement
+    :members:
+
+malaya_speech.speechsplit_conversion
+--------------------------------------
+
+.. automodule:: malaya_speech.speechsplit_conversion
     :members:
 
 malaya_speech.stack
