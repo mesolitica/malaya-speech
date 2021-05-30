@@ -3,26 +3,22 @@ from herpetologist import check_type
 _availability = {
     'pysptk': {
         'fastspeechsplit-vggvox-v2': {
-            'Size (MB)': 190,
-            'Quantized Size (MB)': 54.1,
-            'Total loss': 0.2851,
+            'Size (MB)': 232,
+            'Quantized Size (MB)': 59.2,
         },
         'fastspeechsplit-v2-vggvox-v2': {
-            'Size (MB)': 194,
-            'Quantized Size (MB)': 55.7,
-            'Total loss': 0.2764,
+            'Size (MB)': 105,
+            'Quantized Size (MB)': 411,
         },
     },
     'pyworld': {
         'fastspeechsplit-vggvox-v2': {
-            'Size (MB)': 190,
-            'Quantized Size (MB)': 54.1,
-            'Total loss': 0.2851,
+            'Size (MB)': 232,
+            'Quantized Size (MB)': 59.2,
         },
         'fastspeechsplit-v2-vggvox-v2': {
-            'Size (MB)': 194,
-            'Quantized Size (MB)': 55.7,
-            'Total loss': 0.2764,
+            'Size (MB)': 105,
+            'Quantized Size (MB)': 411,
         },
     },
 }
@@ -52,7 +48,7 @@ def deep_conversion(
     model: str = 'fastspeechsplit-v2-vggvox-v2',
     f0_mode = 'pyworld',
     quantized: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Load Voice Conversion model.
@@ -100,8 +96,8 @@ def deep_conversion(
 
     return voice_conversion.load(
         model = model,
-        module = 'speechsplit-conversion',
+        module = f'speechsplit-conversion-{f0_mode}',
         f0_mode = f0_mode,
         quantized = quantized,
-        **kwargs
+        **kwargs,
     )

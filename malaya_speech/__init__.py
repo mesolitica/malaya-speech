@@ -37,6 +37,7 @@ from . import speaker_change
 from . import speaker_overlap
 from . import speaker_vector
 from . import speech_enhancement
+from . import speechsplit_conversion
 from . import stack
 from . import stt
 from . import super_resolution

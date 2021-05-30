@@ -32,6 +32,40 @@ Simple ambients gathered from Youtube.
 
 Gather Youtube urls for indonesian, english and low quality english audiobooks only.
 
+`IIUM <https://github.com/huseinzol05/malaya-speech/tree/master/data/iium>`_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Read random sentences from IIUM Confession.
+
+
+* voice by `Husein Zolkepli <https://www.linkedin.com/in/husein-zolkepli/>`_ and `Shafiqah Idayu <https://www.facebook.com/shafiqah.ayu>`_.
+* Heavily speaking in Selangor dialect.
+* Recorded using low-end tech microphone.
+* 44100 sample rate, split by end of sentences.
+* approximate 2.4 hours.
+* Still on going recording.
+
+`IIUM-Clear <https://github.com/huseinzol05/malaya-speech/tree/master/data/iium-clear>`_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Read random sentences from IIUM Confession, cleaner version.
+
+
+* voice by `Husein Zolkepli <https://www.linkedin.com/in/husein-zolkepli/>`_.
+* Heavily speaking in Selangor dialect.
+* Recorded using mid-end tech microphone.
+* 44100 sample rate, random 7 - 11 words window.
+* approximate 0.1 hours.
+
+`IMDA <https://github.com/huseinzol05/malaya-speech/tree/master/data/imda>`_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Mirror link for IMDA dataset, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus, only downloaded PART 3 and SST dataset.
+
+
+* 16000 sample rate.
+* supervised approximate 2024 hours.
+
 `language <https://github.com/huseinzol05/malaya-speech/tree/master/data/language>`_
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -56,11 +90,6 @@ Read random sentences from bahasa news.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Simple noises gathered from Youtube.
-
-`podcast <https://github.com/huseinzol05/malaya-speech/tree/master/data/podcast>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Gathered Jeorogan, malay, malaysian, the thirsty sisters, richroll podcasts.
 
 `Sebut perkataan <https://github.com/huseinzol05/malaya-speech/tree/master/data/sebut-perkataan>`_
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -90,7 +119,7 @@ Semisupervised malay youtube videos using Google Speech to Text, after that corr
 
 
 * 16000 sample rate.
-* semisupervised approximate 222 hours.
+* semisupervised approximate 1804 hours.
 * random length between 2 - 20 seconds, windowed using google VAD.
 * supervised 768 samples, approximate 1.3 hours.
 
@@ -103,19 +132,6 @@ Semisupervised manglish youtube videos using Google Speech to Text.
 * 16000 sample rate.
 * semisupervised approximate 107 hours.
 * random length between 2 - 20 seconds, windowed using google VAD.
-
-`IIUM <https://github.com/huseinzol05/malaya-speech/tree/master/data/iium>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Read random sentences from IIUM Confession.
-
-
-* voice by `Husein Zolkepli <https://www.linkedin.com/in/husein-zolkepli/>`_ and `Shafiqah Idayu <https://www.facebook.com/shafiqah.ayu>`_.
-* Heavily speaking in Selangor dialect.
-* Recorded using low-end tech microphone.
-* 44100 sample rate, split by end of sentences.
-* approximate 2.4 hours.
-* Still on going recording.
 
 `wattpad <https://github.com/huseinzol05/malaya-speech/tree/master/data/wattpad>`_
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -116,8 +116,6 @@ def model_fn(features, labels, mode, params):
     len_X_f0 = features['f0_length'][:, 0]
 
     hparams = speechsplit.hparams
-    hparams.min_len_seg = 8
-    hparams.max_len_seg = 256
     config = malaya_speech.config.fastspeech_config
     config['encoder_num_hidden_layers'] = 6
     config['encoder_num_attention_heads'] = 4

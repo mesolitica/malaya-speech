@@ -17,8 +17,8 @@ def load(model, module, f0_mode = 'pyworld', quantized = False, **kwargs):
         **kwargs,
     )
     g = load_graph(path['model'], **kwargs)
-    inputs = ['mel', 'ori_vector', 'target_vector', 'mel_lengths']
-    outputs = ['mel_before', 'mel_after']
+    inputs = ['X', 'len_X', 'V', 'f0_onehot', 'uttr_f0']
+    outputs = ['mel_outputs', 'f0_target']
     input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
     speaker_vector_model = '-'.join(model.split('-')[2:])

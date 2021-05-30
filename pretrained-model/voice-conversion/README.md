@@ -10,7 +10,7 @@ Pretrained Malaya Speech Voice Conversion.
 
 We use universal Vocoder data preparation, [../prepare-vocoder/prepare-universal.ipynb](../prepare-vocoder/prepare-universal.ipynb).
 
-2. Train both generator and discriminator,
+2. Train any models,
 
 **FastVC 32**,
 
