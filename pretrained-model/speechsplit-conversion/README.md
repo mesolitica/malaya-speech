@@ -20,6 +20,10 @@ python3 fastspeechsplit-pyworld-crossentropy.py
 
 ## Download
 
-1. FastSpeechSplit Pyworld, last update 30st May 2021, [fastspeechsplit-pyworld.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeechsplit-pyworld.tar.gz)
+1. FastSpeechSplit Pyworld, last update 30th May 2021, [fastspeechsplit-pyworld.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeechsplit-pyworld.tar.gz)
 
-2. FastSpeechSplit V2 Pyworld, last update 30st May 2021, [fastspeechsplit-v2-pyworld.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeechsplit-v2-pyworld.tar.gz)
+2. FastSpeechSplit V2 Pyworld, last update 30th May 2021, [fastspeechsplit-v2-pyworld.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeechsplit-v2-pyworld.tar.gz)
+
+3. FastSpeechSplit PySPTK, last update 1st June 2021, [fastspeechsplit-pysptk.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeechsplit-pysptk.tar.gz)
+
+4. FastSpeechSplit V2 PySPTK, last update 1st June 2021, [fastspeechsplit-v2-pysptk.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeechsplit-v2-pysptk.tar.gz)

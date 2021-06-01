@@ -83,43 +83,52 @@ class SubwordTextEncoder(text_encoder.TextEncoder):
             ids.extend(self._token_to_ids(token))
         return text_encoder.pad_incr(ids)
 
-    def decode(self, ids):
+    def decode(self, ids, get_index = False):
         """Decodes a list of integers into text."""
         ids = text_encoder.pad_decr(ids)
         subword_ids = ids
-        del ids
 
         subwords = []
+        ids = []
 
         # Some ids correspond to bytes. Because unicode characters are composed of
         # possibly multiple bytes, we attempt to decode contiguous lists of bytes
         # all together. Invalid byte sequences are replaced with the unicode
         # replacement (i.e. unknown) character U+FFFD.
         prev_bytes = []
+        prev_ids = []
 
         def consume_prev_bytes():
             if prev_bytes:
-                bytestr = b''.join(prev_bytes)
-                bytes_text = bytestr.decode('utf-8', 'replace')
-                subwords.append(bytes_text)
-            return []
+                subwords.extend(prev_bytes)
+                ids.extend(prev_ids)
+            return [], []
 
-        for subword_id in subword_ids:
+        for no, subword_id in enumerate(subword_ids):
             subword = self._id_to_subword(subword_id)
             if isinstance(subword, six.binary_type):
                 # Byte-encoded
-                prev_bytes.append(subword)
+                prev_bytes.append(subword.decode('utf-8', 'replace'))
+                if subword == b' ':
+                    prev_ids.append(None)
+                else:
+                    prev_ids.append(no)
             else:
                 # If there were bytes previously, convert to unicode.
-                prev_bytes = consume_prev_bytes()
+                prev_bytes, prev_ids = consume_prev_bytes()
                 trimmed, add_space = _trim_underscore_and_tell(subword)
+                ids.append(no)
                 subwords.append(trimmed)
                 if add_space:
                     subwords.append(' ')
+                    ids.append(None)
         # If there were trailing bytes, convert to unicode.
         prev_bytes = consume_prev_bytes()
 
-        return tf.compat.as_text(''.join(subwords))
+        if get_index:
+            return subwords, ids
+        else:
+            return tf.compat.as_text(''.join(subwords))
 
     @property
     def vocab_size(self):

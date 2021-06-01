@@ -6,8 +6,8 @@
 # URL: <https://malaya.readthedocs.io/>
 # For license information, see https://github.com/huseinzol05/Malaya/blob/master/LICENSE
 
-version = '1.0'
-bump_version = '1.0.3'
+version = '1.1'
+bump_version = '1.1'
 __version__ = bump_version
 
 import malaya_boilerplate

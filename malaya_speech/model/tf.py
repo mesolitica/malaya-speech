@@ -523,7 +523,36 @@ class Transducer(Abstract):
         lens = [l + self._pad_len for l in lens]
         return padded, lens
 
-    def predict_timestamp(self, input):
+    def _combined_indices(
+        self, subwords, ids, l, reduction_factor = 160, sample_rate = 16000
+    ):
+        result, temp_l, temp_r = [], [], []
+        for i in range(len(subwords)):
+            if ids[i] is None and len(temp_r):
+                data = {
+                    'text': ''.join(temp_l),
+                    'start': round(temp_r[0], 4),
+                    'end': round(
+                        temp_r[-1] + (reduction_factor / sample_rate), 4
+                    ),
+                }
+                result.append(data)
+                temp_l, temp_r = [], []
+            else:
+                temp_l.append(subwords[i])
+                temp_r.append(l[ids[i]])
+
+        if len(temp_l):
+            data = {
+                'text': ''.join(temp_l),
+                'start': round(temp_r[0], 4),
+                'end': round(temp_r[-1] + (reduction_factor / sample_rate), 4),
+            }
+            result.append(data)
+
+        return result
+
+    def predict_alignment(self, input, combined = True):
         """
         Transcribe input and get timestamp, only support greedy decoder.
 
@@ -531,10 +560,12 @@ class Transducer(Abstract):
         ----------
         input: np.array
             np.array or malaya_speech.model.frame.Frame.
+        combined: bool, optional (default=True)
+            If True, will combined subwords to become a word.
 
         Returns
         -------
-        result: List[Tuple[str, float]]
+        result: List[Dict[text, start, end]]
         """
         padded, lens = self._get_inputs([input])
         r = self._execute(
@@ -544,15 +575,20 @@ class Transducer(Abstract):
         )
         non_blank_transcript = r['non_blank_transcript']
         non_blank_stime = r['non_blank_stime']
-        return list(
-            zip(
-                [
-                    self._vocab._id_to_subword(row - 1)
-                    for row in non_blank_transcript
-                ],
-                non_blank_stime,
+        if combined:
+            words, indices = self._vocab.decode(
+                non_blank_transcript, get_index = True
             )
-        )
+        else:
+            words, indices = [], []
+            for no, ids in enumerate(non_blank_transcript):
+                w = self._vocab._id_to_subword(ids - 1)
+                if type(w) == bytes:
+                    w = w.decode()
+                words.extend([w, None])
+                indices.extend([no, None])
+
+        return self._combined_indices(words, indices, non_blank_stime)
 
     def greedy_decoder(self, inputs):
         """
@@ -1441,6 +1477,9 @@ class FastSpeechSplit(Abstract):
         mel = universal_mel(x)
         v = self._speaker_vector([x_16k])[0]
         v = v / v.max()
+
+        if len(mel) > len(f0):
+            mel = mel[: len(f0)]
         return x, mel, f0, v
 
     def predict(

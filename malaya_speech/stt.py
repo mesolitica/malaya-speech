@@ -51,12 +51,6 @@ _transducer_availability = {
         'WER': 0.3359,
         'CER': 0.1989,
     },
-    'wav2vec2-conformer': {
-        'Size (MB)': 138,
-        'Quantized Size (MB)': 39,
-        'WER': 0.34592,
-        'CER': 0.15714,
-    },
 }
 
 _ctc_availability = {
@@ -230,7 +224,6 @@ def deep_transducer(
         * ``'small-conformer-mixed'`` - SMALL size Google Conformer with Pretrained LM Mixed (Malay + Singlish) languages.
         * ``'conformer-mixed'`` - BASE size Google Conformer with Pretrained LM Mixed (Malay + Singlish) languages.
         * ``'large-conformer-mixed'`` - LARGE size Google Conformer with Pretrained LM Mixed (Malay + Singlish) languages.
-        * ``'wav2vec2-conformer'`` - BASE size Wav2Vec2 Google Conformer with Pretrained LM Malay language.
         
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model. 

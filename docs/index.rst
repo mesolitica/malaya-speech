@@ -61,6 +61,7 @@ Contents:
 
    load-voice-conversion
    speechsplit-conversion-pyworld
+   speechsplit-conversion-pysptk
    
 .. toctree::
    :maxdepth: 2
