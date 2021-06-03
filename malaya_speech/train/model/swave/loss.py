@@ -16,9 +16,9 @@ def cal_si_snr_with_pit(source, estimate_source, source_lengths, C):
     estimate_source *= mask
 
     num_samples = tf.cast(tf.reshape(source_lengths, (-1, 1, 1)), tf.float32)
-    mean_target = tf.reduce_sum(source, axis = 2, keepdims = True) / num_samples
+    mean_target = tf.reduce_sum(source, axis=2, keepdims=True) / num_samples
     mean_estimate = (
-        tf.reduce_sum(estimate_source, axis = 2, keepdims = True) / num_samples
+        tf.reduce_sum(estimate_source, axis=2, keepdims=True) / num_samples
     )
     zero_mean_target = source - mean_target
     zero_mean_estimate = estimate_source - mean_estimate
@@ -29,25 +29,25 @@ def cal_si_snr_with_pit(source, estimate_source, source_lengths, C):
     s_target = tf.expand_dims(zero_mean_target, 1)
     s_estimate = tf.expand_dims(zero_mean_estimate, 2)
     pair_wise_dot = tf.reduce_sum(
-        s_estimate * s_target, axis = 3, keepdims = True
+        s_estimate * s_target, axis=3, keepdims=True
     )
     s_target_energy = (
-        tf.reduce_sum(s_target ** 2, axis = 3, keepdims = True) + EPS
+        tf.reduce_sum(s_target ** 2, axis=3, keepdims=True) + EPS
     )
     pair_wise_proj = pair_wise_dot * s_target / s_target_energy
     e_noise = s_estimate - pair_wise_proj
-    pair_wise_si_snr = tf.reduce_sum(pair_wise_proj ** 2, axis = 3) / (
-        tf.reduce_sum(e_noise ** 2, axis = 3) + EPS
+    pair_wise_si_snr = tf.reduce_sum(pair_wise_proj ** 2, axis=3) / (
+        tf.reduce_sum(e_noise ** 2, axis=3) + EPS
     )
     pair_wise_si_snr = 10.0 * log10(pair_wise_si_snr + EPS)
-    pair_wise_si_snr = tf.transpose(pair_wise_si_snr, perm = [0, 2, 1])
+    pair_wise_si_snr = tf.transpose(pair_wise_si_snr, perm=[0, 2, 1])
 
     v_perms = tf.constant(list(permutations(range(C))))
     perms_one_hot = tf.one_hot(v_perms, C)
 
     snr_set = tf.einsum('bij,pij->bp', pair_wise_si_snr, perms_one_hot)
-    max_snr_idx = tf.argmax(snr_set, axis = 1)
-    max_snr = tf.reduce_max(snr_set, axis = 1, keepdims = True)
+    max_snr_idx = tf.argmax(snr_set, axis=1)
+    max_snr = tf.reduce_max(snr_set, axis=1, keepdims=True)
     max_snr /= C
 
     return max_snr, max_snr_idx, snr_set / C

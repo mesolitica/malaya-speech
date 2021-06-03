@@ -49,7 +49,7 @@ class Transformer(object):
         self.encoder_stack = EncoderStack(params, train)
         self.decoder_stack = DecoderStack(params, train)
 
-    def __call__(self, inputs, inputs_padding = None, targets = None):
+    def __call__(self, inputs, inputs_padding=None, targets=None):
         """Calculate target logits or inferred target sequences.
 
     Args:
@@ -68,14 +68,14 @@ class Transformer(object):
         # Other reasonable initializers may also work just as well.
         initializer = tf.variance_scaling_initializer(
             self.params['initializer_gain'],
-            mode = 'fan_avg',
-            distribution = 'uniform',
+            mode='fan_avg',
+            distribution='uniform',
         )
         if inputs_padding is None:
             inputs_padding = tf.fill(
                 (tf.shape(inputs)[0], tf.shape(inputs)[1]), 0.0
             )
-        with tf.variable_scope('Transformer', initializer = initializer):
+        with tf.variable_scope('Transformer', initializer=initializer):
             attention_bias = model_utils.get_padding_bias(inputs)
             encoder_outputs = self.encode(
                 inputs, inputs_padding, attention_bias
@@ -98,7 +98,7 @@ class Transformer(object):
             if self.train:
                 encoder_inputs = tf.nn.dropout(
                     encoder_inputs,
-                    rate = self.params['layer_postprocess_dropout'],
+                    rate=self.params['layer_postprocess_dropout'],
                 )
 
             return self.encoder_stack(
@@ -116,7 +116,7 @@ class Transformer(object):
             if self.train:
                 decoder_inputs = tf.nn.dropout(
                     decoder_inputs,
-                    rate = self.params['layer_postprocess_dropout'],
+                    rate=self.params['layer_postprocess_dropout'],
                 )
             decoder_self_attention_bias = model_utils.get_decoder_self_attention_bias(
                 length
@@ -141,19 +141,19 @@ class LayerNormalization(tf.layers.Layer):
         self.scale = tf.get_variable(
             'layer_norm_scale',
             [self.hidden_size],
-            initializer = tf.ones_initializer(),
+            initializer=tf.ones_initializer(),
         )
         self.bias = tf.get_variable(
             'layer_norm_bias',
             [self.hidden_size],
-            initializer = tf.zeros_initializer(),
+            initializer=tf.zeros_initializer(),
         )
         self.built = True
 
-    def call(self, x, epsilon = 1e-6):
-        mean = tf.reduce_mean(x, axis = [-1], keepdims = True)
+    def call(self, x, epsilon=1e-6):
+        mean = tf.reduce_mean(x, axis=[-1], keepdims=True)
         variance = tf.reduce_mean(
-            tf.square(x - mean), axis = [-1], keepdims = True
+            tf.square(x - mean), axis=[-1], keepdims=True
         )
         norm_x = (x - mean) * tf.rsqrt(variance + epsilon)
         return norm_x * self.scale + self.bias
@@ -179,7 +179,7 @@ class PrePostProcessingWrapper(object):
 
         # Postprocessing: apply dropout and residual connection
         if self.train:
-            y = tf.nn.dropout(y, rate = self.postprocess_dropout)
+            y = tf.nn.dropout(y, rate=self.postprocess_dropout)
         return x + y
 
 
@@ -210,7 +210,7 @@ class EncoderStack(tf.layers.Layer):
                 params['relu_dropout'],
                 train,
                 params['allow_ffn_pad'],
-                activation = params.get('activation', 'relu'),
+                activation=params.get('activation', 'relu'),
             )
 
             self.layers.append(
@@ -290,7 +290,7 @@ class DecoderStack(tf.layers.Layer):
                 params['relu_dropout'],
                 train,
                 params['allow_ffn_pad'],
-                activation = params.get('activation', 'relu'),
+                activation=params.get('activation', 'relu'),
             )
 
             self.layers.append(
@@ -315,7 +315,7 @@ class DecoderStack(tf.layers.Layer):
         encoder_outputs,
         decoder_self_attention_bias,
         attention_bias,
-        cache = None,
+        cache=None,
     ):
         """Return the output of the decoder layer stacks.
 
@@ -349,7 +349,7 @@ class DecoderStack(tf.layers.Layer):
                     decoder_inputs = self_attention_layer(
                         decoder_inputs,
                         decoder_self_attention_bias,
-                        cache = layer_cache,
+                        cache=layer_cache,
                     )
                 with tf.variable_scope('encdec_attention'):
                     decoder_inputs = enc_dec_attention_layer(

@@ -3,7 +3,7 @@ import tensorflow as tf
 
 
 def sequence_1d(
-    seq, maxlen = None, padding: str = 'post', pad_int = 0, return_len = False
+    seq, maxlen=None, padding: str = 'post', pad_int=0, return_len=False
 ):
     """
     padding sequence of 1d to become 2d array.
@@ -44,11 +44,11 @@ def sequence_1d(
 
 def sequence_nd(
     seq,
-    maxlen = None,
+    maxlen=None,
     padding: str = 'post',
-    pad_val = 0.0,
+    pad_val=0.0,
     dim: int = 1,
-    return_len = False,
+    return_len=False,
 ):
     """
     padding sequence of nd to become (n+1)d array.
@@ -85,9 +85,9 @@ def sequence_nd(
         padded_seqs.append(
             np.pad(
                 s,
-                pad_width = npad,
-                mode = 'constant',
-                constant_values = pad_val,
+                pad_width=npad,
+                mode='constant',
+                constant_values=pad_val,
             )
         )
         length.append(s.shape[dim])
@@ -99,11 +99,11 @@ def sequence_nd(
 
 def tf_sequence_nd(
     seq,
-    maxlen = None,
+    maxlen=None,
     padding: str = 'post',
-    pad_val = 0.0,
+    pad_val=0.0,
     dim: int = 1,
-    return_len = False,
+    return_len=False,
 ):
     """
     padding sequence of nd to become (n+1)d array.
@@ -138,7 +138,7 @@ def tf_sequence_nd(
         npad[dim][padding] = maxlen - tf.shape(s)[dim]
         padded_seqs.append(
             tf.pad(
-                s, paddings = npad, mode = 'CONSTANT', constant_values = pad_val
+                s, paddings=npad, mode='CONSTANT', constant_values=pad_val
             )
         )
         length.append(tf.shape(s)[dim])

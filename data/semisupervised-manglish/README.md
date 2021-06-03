@@ -15,3 +15,16 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
 ```
 
 3. Run [transcribe.ipynb](transcribe.ipynb) to correct output from googlespeech.
+
+## Citation
+
+```bibtex
+@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Semisupervised Speech Recognition from Manglish Youtube Videos,
+  author = {Husein, Zolkepli},
+  title = {Malay-Dataset},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-manglish}}
+}
+```

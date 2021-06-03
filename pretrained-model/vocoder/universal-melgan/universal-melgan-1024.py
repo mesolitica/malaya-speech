@@ -20,7 +20,7 @@ random.shuffle(mels)
 file_cycle = cycle(mels)
 
 
-def generate(batch_max_steps = 8192, hop_size = 256):
+def generate(batch_max_steps=8192, hop_size=256):
     while True:
         f = next(file_cycle)
         mel = np.load(f)
@@ -35,8 +35,8 @@ def generate(batch_max_steps = 8192, hop_size = 256):
             interval_end = len(mel) - batch_max_frames
             start_frame = random.randint(interval_start, interval_end)
             start_step = start_frame * hop_size
-            audio = audio[start_step : start_step + batch_max_steps]
-            mel = mel[start_frame : start_frame + batch_max_frames, :]
+            audio = audio[start_step: start_step + batch_max_steps]
+            mel = mel[start_frame: start_frame + batch_max_frames, :]
         else:
             audio = np.pad(audio, [[0, batch_max_steps - len(audio)]])
             mel = np.pad(mel, [[0, batch_max_frames - len(mel)], [0, 0]])
@@ -47,7 +47,7 @@ def generate(batch_max_steps = 8192, hop_size = 256):
 dataset = tf.data.Dataset.from_generator(
     generate,
     {'mel': tf.float32, 'audio': tf.float32},
-    output_shapes = {
+    output_shapes={
         'mel': tf.TensorShape([None, 80]),
         'audio': tf.TensorShape([None]),
     },
@@ -55,13 +55,13 @@ dataset = tf.data.Dataset.from_generator(
 dataset = dataset.shuffle(32)
 dataset = dataset.padded_batch(
     32,
-    padded_shapes = {
+    padded_shapes={
         'audio': tf.TensorShape([None]),
         'mel': tf.TensorShape([None, 80]),
     },
-    padding_values = {
-        'audio': tf.constant(0, dtype = tf.float32),
-        'mel': tf.constant(0, dtype = tf.float32),
+    padding_values={
+        'audio': tf.constant(0, dtype=tf.float32),
+        'mel': tf.constant(0, dtype=tf.float32),
     },
 )
 
@@ -71,7 +71,7 @@ melgan_config = malaya_speech.config.universal_melgan_config
 melgan_config['melgan_generator_params']['filters'] = 1024
 generator = melgan.Generator(
     melgan.GeneratorConfig(**melgan_config['melgan_generator_params']),
-    name = 'universalmelgan-generator',
+    name='universalmelgan-generator',
 )
 discriminator = melgan.MultiScaleDiscriminator(
     melgan.WaveFormDiscriminatorConfig(
@@ -80,7 +80,7 @@ discriminator = melgan.MultiScaleDiscriminator(
     melgan.STFTDiscriminatorConfig(
         **melgan_config['melgan_stft_discriminator_params']
     ),
-    name = 'universalmelgan-discriminator',
+    name='universalmelgan-discriminator',
 )
 
 mels_loss = melgan_loss.loss.TFMelSpectrogram()
@@ -108,7 +108,7 @@ def compute_per_example_generator_losses(audios, outputs):
 
     per_example_losses = adv_loss
 
-    a = calculate_2d_loss(audios, tf.squeeze(y_hat, -1), loss_fn = mels_loss)
+    a = calculate_2d_loss(audios, tf.squeeze(y_hat, -1), loss_fn=mels_loss)
 
     dict_metrics_losses = {
         'adversarial_loss': adv_loss,
@@ -147,14 +147,14 @@ def compute_per_example_discriminator_losses(audios, gen_outputs):
     return per_example_losses, dict_metrics_losses
 
 
-y_hat = generator(features['mel'], training = True)
+y_hat = generator(features['mel'], training=True)
 audios = features['audio']
 per_example_losses, generator_losses = compute_per_example_generator_losses(
     audios, y_hat
 )
 generator_loss = tf.reduce_mean(per_example_losses)
 
-y_hat = generator(features['mel'], training = True)
+y_hat = generator(features['mel'], training=True)
 audios = features['audio']
 per_example_losses, discriminator_losses = compute_per_example_discriminator_losses(
     audios, y_hat
@@ -179,11 +179,11 @@ g_vars = [
     var for var in t_vars if var.name.startswith('universalmelgan-generator')
 ]
 
-d_optimizer = tf.train.AdamOptimizer(0.0001, beta1 = 0.5, beta2 = 0.9).minimize(
-    discriminator_loss, var_list = d_vars
+d_optimizer = tf.train.AdamOptimizer(0.0001, beta1=0.5, beta2=0.9).minimize(
+    discriminator_loss, var_list=d_vars
 )
-g_optimizer = tf.train.AdamOptimizer(0.0001, beta1 = 0.5, beta2 = 0.9).minimize(
-    generator_loss, var_list = g_vars
+g_optimizer = tf.train.AdamOptimizer(0.0001, beta1=0.5, beta2=0.9).minimize(
+    generator_loss, var_list=g_vars
 )
 
 sess = tf.InteractiveSession()
@@ -208,7 +208,7 @@ for i in range(epoch):
     writer.add_summary(s, i)
 
     if i % checkpoint == 0:
-        saver.save(sess, f'{path}/model.ckpt', global_step = i)
+        saver.save(sess, f'{path}/model.ckpt', global_step=i)
 
     if i % write_tensorboard == 0:
         writer.add_summary(s, i)

@@ -13,7 +13,7 @@ DIMENSION = 64
 
 def calc(v):
 
-    r = malaya_speech.utils.featurization.read_mfcc(v, voice_only = False)
+    r = malaya_speech.utils.featurization.read_mfcc(v, voice_only=False)
     return r
 
 
@@ -33,7 +33,7 @@ def parse(serialized_example):
         'targets': tf.VarLenFeature(tf.int64),
     }
     features = tf.parse_single_example(
-        serialized_example, features = data_fields
+        serialized_example, features=data_fields
     )
     for k in features.keys():
         features[k] = features[k].values
@@ -48,20 +48,20 @@ def parse(serialized_example):
     return features
 
 
-def get_dataset(files, batch_size = 32, shuffle_size = 1024, thread_count = 24):
+def get_dataset(files, batch_size=32, shuffle_size=1024, thread_count=24):
     def get():
         dataset = tf.data.TFRecordDataset(files)
-        dataset = dataset.map(parse, num_parallel_calls = thread_count)
+        dataset = dataset.map(parse, num_parallel_calls=thread_count)
         dataset = dataset.shuffle(shuffle_size)
         dataset = dataset.padded_batch(
             batch_size,
-            padded_shapes = {
+            padded_shapes={
                 'inputs': tf.TensorShape([None, DIMENSION, 1]),
                 'targets': tf.TensorShape([None]),
             },
-            padding_values = {
-                'inputs': tf.constant(0, dtype = tf.float32),
-                'targets': tf.constant(0, dtype = tf.int64),
+            padding_values={
+                'inputs': tf.constant(0, dtype=tf.float32),
+                'targets': tf.constant(0, dtype=tf.int64),
             },
         )
         dataset = dataset.repeat()
@@ -76,23 +76,23 @@ def model_fn(features, labels, mode, params):
     Y = tf.cast(features['targets'][:, 0], tf.int32)
 
     model = deep_speaker.model.Model(
-        features['inputs'], num_class = 7, mode = 'train'
+        features['inputs'], num_class=7, mode='train'
     )
     logits = model.logits
 
     loss = tf.reduce_mean(
         tf.nn.sparse_softmax_cross_entropy_with_logits(
-            logits = logits, labels = Y
+            logits=logits, labels=Y
         )
     )
 
     tf.identity(loss, 'train_loss')
 
     accuracy = tf.metrics.accuracy(
-        labels = Y, predictions = tf.argmax(logits, axis = 1)
+        labels=Y, predictions=tf.argmax(logits, axis=1)
     )
 
-    tf.identity(accuracy[1], name = 'train_accuracy')
+    tf.identity(accuracy[1], name='train_accuracy')
 
     variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
     variables = [v for v in variables if 'prediction' not in v.name]
@@ -106,17 +106,17 @@ def model_fn(features, labels, mode, params):
     if mode == tf.estimator.ModeKeys.TRAIN:
         global_step = tf.train.get_or_create_global_step()
         optimizer = tf.train.AdamOptimizer(learning_rate)
-        train_op = optimizer.minimize(loss, global_step = global_step)
+        train_op = optimizer.minimize(loss, global_step=global_step)
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = mode, loss = loss, train_op = train_op
+            mode=mode, loss=loss, train_op=train_op
         )
 
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = tf.estimator.ModeKeys.EVAL,
-            loss = loss,
-            eval_metric_ops = {'accuracy': accuracy},
+            mode=tf.estimator.ModeKeys.EVAL,
+            loss=loss,
+            eval_metric_ops={'accuracy': accuracy},
         )
 
     return estimator_spec
@@ -124,7 +124,7 @@ def model_fn(features, labels, mode, params):
 
 train_hooks = [
     tf.train.LoggingTensorHook(
-        ['train_accuracy', 'train_loss'], every_n_iter = 1
+        ['train_accuracy', 'train_loss'], every_n_iter=1
     )
 ]
 
@@ -136,12 +136,12 @@ train_dataset = get_dataset(files)
 save_directory = 'output-deep-speaker-language-detection'
 
 train.run_training(
-    train_fn = train_dataset,
-    model_fn = model_fn,
-    model_dir = save_directory,
-    num_gpus = 1,
-    log_step = 1,
-    save_checkpoint_step = 25000,
-    max_steps = 300000,
-    train_hooks = train_hooks,
+    train_fn=train_dataset,
+    model_fn=model_fn,
+    model_dir=save_directory,
+    num_gpus=1,
+    log_step=1,
+    save_checkpoint_step=25000,
+    max_steps=300000,
+    train_hooks=train_hooks,
 )

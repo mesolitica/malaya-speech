@@ -7,7 +7,7 @@ class Annotation:
     def __init__(self, uri: str = None):
         try:
             from sortedcontainers import SortedDict
-        except:
+        except BaseException:
             raise ValueError(
                 'sortedcontainers not installed. Please install it by `pip install sortedcontainers` and try again.'
             )
@@ -35,10 +35,10 @@ class Annotation:
         l = list(set([i[2] for i in self.itertracks()]))
         return sorted(l)
 
-    def itertracks(self, yield_label = True):
+    def itertracks(self, yield_label=True):
         for segment, tracks in self._tracks.items():
             for track, lbl in sorted(
-                tracks.items(), key = lambda tl: (str(tl[0]), str(tl[1]))
+                tracks.items(), key=lambda tl: (str(tl[0]), str(tl[1]))
             ):
                 if yield_label:
                     yield segment, track, lbl
@@ -76,7 +76,6 @@ class Annotation:
         to_t: float = None,
         mode: str = 'intersection',
     ):
-
         """
         Crop sample by time.
 
@@ -140,12 +139,12 @@ class Annotation:
 
         return cropped
 
-    def plot(self, ax = None):
+    def plot(self, ax=None):
 
         try:
             import seaborn as sns
             import matplotlib.pyplot as plt
-        except:
+        except BaseException:
             raise ValueError(
                 'seaborn and matplotlib not installed. Please install it by `pip install matplotlib seaborn` and try again.'
             )
@@ -172,7 +171,7 @@ class Annotation:
             return y
 
         def draw_segment(
-            ax, segment, y, styles, label = None, boundaries = True
+            ax, segment, y, styles, label=None, boundaries=True
         ):
 
             if not segment:
@@ -184,9 +183,9 @@ class Annotation:
                 segment.start,
                 segment.end,
                 color,
-                linewidth = linewidth,
-                linestyle = linestyle,
-                label = label,
+                linewidth=linewidth,
+                linestyle=linestyle,
+                label=label,
             )
             if boundaries:
                 ax.vlines(
@@ -194,16 +193,16 @@ class Annotation:
                     y + 0.05,
                     y - 0.05,
                     color,
-                    linewidth = 1,
-                    linestyle = 'solid',
+                    linewidth=1,
+                    linestyle='solid',
                 )
                 ax.vlines(
                     segment.end,
                     y + 0.05,
                     y - 0.05,
                     color,
-                    linewidth = 1,
-                    linestyle = 'solid',
+                    linewidth=1,
+                    linestyle='solid',
                 )
 
             if label is None:
@@ -220,27 +219,27 @@ class Annotation:
 
         labels = self.labels
         xlim = (self.min, self.max)
-        segments = [s for s, _ in self.itertracks(yield_label = False)]
-        ax = get_ax(ax = ax, xlim = xlim, time = time)
+        segments = [s for s, _ in self.itertracks(yield_label=False)]
+        ax = get_ax(ax=ax, xlim=xlim, time=time)
         for (segment, track, label), y in zip(
             self.itertracks(), get_y(segments)
         ):
-            draw_segment(ax, segment, y, styles, label = label)
+            draw_segment(ax, segment, y, styles, label=label)
 
         H, L = ax.get_legend_handles_labels()
 
         HL = groupby(
-            sorted(zip(H, L), key = lambda h_l: h_l[1]),
-            key = lambda h_l: h_l[1],
+            sorted(zip(H, L), key=lambda h_l: h_l[1]),
+            key=lambda h_l: h_l[1],
         )
         H, L = zip(*list((next(h_l)[0], l) for l, h_l in HL))
         ax.legend(
             H,
             L,
-            bbox_to_anchor = (0, 1),
-            loc = 3,
-            ncol = 5,
-            borderaxespad = 0.0,
-            frameon = False,
+            bbox_to_anchor=(0, 1),
+            loc=3,
+            ncol=5,
+            borderaxespad=0.0,
+            frameon=False,
         )
         return ax

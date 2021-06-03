@@ -97,9 +97,9 @@ def melgan(model: str = 'female', quantized: bool = False, **kwargs):
         * ``'female-singlish'`` - MelGAN trained on Female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
         * ``'universal'`` - Universal MelGAN trained on multiple speakers.
         * ``'universal-1024'`` - Universal MelGAN with 1024 filters trained on multiple speakers.
-        
+
     quantized : bool, optional (default=False)
-        if True, will load 8-bit quantized model. 
+        if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
 
     Returns
@@ -113,9 +113,9 @@ def melgan(model: str = 'female', quantized: bool = False, **kwargs):
         )
 
     return vocoder.load(
-        model = model,
-        module = 'vocoder-melgan',
-        quantized = quantized,
+        model=model,
+        module='vocoder-melgan',
+        quantized=quantized,
         **kwargs
     )
 
@@ -134,9 +134,9 @@ def mbmelgan(model: str = 'female', quantized: bool = False, **kwargs):
         * ``'male'`` - MBMelGAN trained on male voice.
         * ``'husein'`` - MBMelGAN trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
         * ``'haqkiem'`` - MBMelGAN trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
-        
+
     quantized : bool, optional (default=False)
-        if True, will load 8-bit quantized model. 
+        if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
 
     Returns
@@ -149,8 +149,8 @@ def mbmelgan(model: str = 'female', quantized: bool = False, **kwargs):
             'model not supported, please check supported models from `malaya_speech.vocoder.available_mbmelgan()`.'
         )
     return vocoder.load(
-        model = model,
-        module = 'vocoder-mbmelgan',
-        quantized = quantized,
+        model=model,
+        module='vocoder-mbmelgan',
+        quantized=quantized,
         **kwargs
     )

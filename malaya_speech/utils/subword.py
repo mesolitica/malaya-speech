@@ -8,15 +8,15 @@ def generate_tokenizer(
     strings: List[str],
     target_vocab_size: int = 1024,
     max_subword_length: int = 4,
-    max_corpus_chars = None,
-    reserved_tokens = None,
+    max_corpus_chars=None,
+    reserved_tokens=None,
 ):
     return SubwordTextEncoder.build_from_corpus(
         strings,
-        target_vocab_size = target_vocab_size,
-        max_subword_length = max_subword_length,
-        max_corpus_chars = max_corpus_chars,
-        reserved_tokens = reserved_tokens,
+        target_vocab_size=target_vocab_size,
+        max_subword_length=max_subword_length,
+        max_corpus_chars=max_corpus_chars,
+        reserved_tokens=reserved_tokens,
     )
 
 

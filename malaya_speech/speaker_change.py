@@ -24,7 +24,7 @@ def available_model():
 
     return describe_availability(
         _availability,
-        text = 'last accuracy during training session before early stopping.',
+        text='last accuracy during training session before early stopping.',
     )
 
 
@@ -41,7 +41,7 @@ def deep_model(model: str = 'speakernet', quantized: bool = False, **kwargs):
         * ``'vggvox-v2'`` - finetuned VGGVox V2.
         * ``'speakernet'`` - finetuned SpeakerNet.
     quantized : bool, optional (default=False)
-        if True, will load 8-bit quantized model. 
+        if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
 
     Returns
@@ -60,11 +60,11 @@ def deep_model(model: str = 'speakernet', quantized: bool = False, **kwargs):
     }
 
     return classification.load(
-        model = model,
-        module = 'speaker-change',
-        extra = settings[model],
-        label = [False, True],
-        quantized = quantized,
+        model=model,
+        module='speaker-change',
+        extra=settings[model],
+        label=[False, True],
+        quantized=quantized,
         **kwargs
     )
 
@@ -74,7 +74,7 @@ def split_activities(
     speaker_change_results,
     speaker_change_threshold: float = 0.5,
     sr: int = 16000,
-    ignore_not_activity = True,
+    ignore_not_activity=True,
 ):
     """
     split VAD based on speaker change threshold, worse-case O(N^2).
@@ -129,7 +129,7 @@ def split_activities(
                     after = t - before_timestamp
                     f = Frame(
                         result[0].array[
-                            int(before * sr) : int((before + after) * sr)
+                            int(before * sr): int((before + after) * sr)
                         ],
                         before_timestamp,
                         after,
@@ -140,7 +140,7 @@ def split_activities(
 
                 if result[0].timestamp + result[0].duration > before_timestamp:
                     f = Frame(
-                        result[0].array[int(before * sr) :],
+                        result[0].array[int(before * sr):],
                         before_timestamp,
                         (result[0].timestamp + result[0].duration)
                         - before_timestamp,

@@ -8,7 +8,7 @@ import weakref
 
 
 class OrderedSet(collections.abc.MutableSet):
-    def __init__(self, values = ()):
+    def __init__(self, values=()):
         self._od = collections.OrderedDict().fromkeys(values)
 
     def __len__(self):
@@ -28,7 +28,7 @@ class OrderedSet(collections.abc.MutableSet):
 
 
 class OrderedWeakrefSet(weakref.WeakSet):
-    def __init__(self, values = ()):
+    def __init__(self, values=()):
         super(OrderedWeakrefSet, self).__init__()
         self.data = OrderedSet()
         for elem in values:

@@ -23,10 +23,10 @@ import itertools
 
 def chunks(l, n):
     for i in range(0, len(l), n):
-        yield (l[i : i + n], i // n)
+        yield (l[i: i + n], i // n)
 
 
-def multiprocessing(strings, function, cores = 6, returned = True):
+def multiprocessing(strings, function, cores=6, returned=True):
     df_split = chunks(strings, len(strings) // cores)
     pool = Pool(cores)
     print('initiate pool map')
@@ -51,7 +51,7 @@ speakers = defaultdict(list)
 for f in librispeech:
     speakers[get_speaker_librispeech(f)].append(f)
 
-voxceleb = glob('../voxceleb/wav/**/*/*/*.wav', recursive = True)
+voxceleb = glob('../voxceleb/wav/**/*/*/*.wav', recursive=True)
 
 
 def get_speaker_voxceleb(file):
@@ -67,9 +67,9 @@ s = {**voxceleb_speakers, **speakers}
 keys = list(s.keys())
 
 noises = glob('../noise-44k/noise/*.wav') + glob('../noise-44k/clean-wav/*.wav')
-basses = glob('HHDS/Sources/**/*bass.wav', recursive = True)
-drums = glob('HHDS/Sources/**/*drums.wav', recursive = True)
-others = glob('HHDS/Sources/**/*other.wav', recursive = True)
+basses = glob('HHDS/Sources/**/*bass.wav', recursive=True)
+drums = glob('HHDS/Sources/**/*drums.wav', recursive=True)
+others = glob('HHDS/Sources/**/*other.wav', recursive=True)
 noises = noises + basses + drums + others
 random.shuffle(noises)
 
@@ -86,19 +86,19 @@ def random_speakers(n):
 
 
 def read_wav(f):
-    return malaya_speech.load(f, sr = 44100)
+    return malaya_speech.load(f, sr=44100)
 
 
 def random_sampling(s, length):
-    return augmentation.random_sampling(s, sr = 44100, length = length)
+    return augmentation.random_sampling(s, sr=44100, length=length)
 
 
-def combine_speakers(files, n = 5, limit = 4):
+def combine_speakers(files, n=5, limit=4):
     w_samples = random.sample(files, n)
     w_samples = [
         random_sampling(
             read_wav(f)[0],
-            length = min(random.randint(10000 // n, 100_000 // n), 12000),
+            length=min(random.randint(10000 // n, 100_000 // n), 12000),
         )
         for f in w_samples
     ]
@@ -182,10 +182,10 @@ def loop(files):
     return results
 
 
-def generate(batch_size = 10, repeat = 20):
+def generate(batch_size=10, repeat=20):
     fs = [i for i in range(batch_size)]
     while True:
-        results = multiprocessing(fs, loop, cores = len(fs))
+        results = multiprocessing(fs, loop, cores=len(fs))
         for _ in range(repeat):
             random.shuffle(results)
             for r in results:
@@ -198,7 +198,7 @@ def get_dataset():
         dataset = tf.data.Dataset.from_generator(
             generate,
             {'combined': tf.float32, 'y': tf.float32},
-            output_shapes = {
+            output_shapes={
                 'combined': tf.TensorShape([None]),
                 'y': tf.TensorShape([speakers_size, None]),
             },
@@ -209,16 +209,16 @@ def get_dataset():
 
 
 class Model:
-    def __init__(self, X, Y, speakers, dropout = 0.5, training = True):
+    def __init__(self, X, Y, speakers, dropout=0.5, training=True):
         self.X = X
         self.Y = Y
         self.speakers = speakers
 
-        stft_X, D_X = tf_featurization.get_stft(self.X, T = 512 * 3)
+        stft_X, D_X = tf_featurization.get_stft(self.X, T=512 * 3)
 
         self.stft = []
         for i in range(speakers):
-            self.stft.append(tf_featurization.get_stft(self.Y[i], T = 512 * 3))
+            self.stft.append(tf_featurization.get_stft(self.Y[i], T=512 * 3))
 
         params = {'conv_n_filters': [22 * (2 ** i) for i in range(6)]}
 
@@ -228,9 +228,9 @@ class Model:
                 self.outputs.append(
                     unet.Model(
                         D_X,
-                        dropout = dropout,
-                        training = training,
-                        params = params,
+                        dropout=dropout,
+                        training=training,
+                        params=params,
                     ).logits
                 )
 
@@ -248,7 +248,7 @@ epochs = 500_000
 
 
 def model_fn(features, labels, mode, params):
-    model = Model(features['combined'], features['y'], speakers = speakers_size)
+    model = Model(features['combined'], features['y'], speakers=speakers_size)
     loss = model.cost
     tf.identity(loss, 'total_loss')
     tf.summary.scalar('total_loss', loss)
@@ -258,30 +258,30 @@ def model_fn(features, labels, mode, params):
         tf.summary.scalar(f'loss_{i}', l)
 
     global_step = tf.train.get_or_create_global_step()
-    learning_rate = tf.constant(value = init_lr, shape = [], dtype = tf.float32)
+    learning_rate = tf.constant(value=init_lr, shape=[], dtype=tf.float32)
     learning_rate = tf.train.polynomial_decay(
         learning_rate,
         global_step,
         epochs,
-        end_learning_rate = 1e-6,
-        power = 1.0,
-        cycle = False,
+        end_learning_rate=1e-6,
+        power=1.0,
+        cycle=False,
     )
     tf.summary.scalar('learning_rate', learning_rate)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
 
-        optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
+        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 
-        train_op = optimizer.minimize(loss, global_step = global_step)
+        train_op = optimizer.minimize(loss, global_step=global_step)
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = mode, loss = loss, train_op = train_op
+            mode=mode, loss=loss, train_op=train_op
         )
 
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = tf.estimator.ModeKeys.EVAL, loss = loss
+            mode=tf.estimator.ModeKeys.EVAL, loss=loss
         )
 
     return estimator_spec
@@ -289,7 +289,7 @@ def model_fn(features, labels, mode, params):
 
 train_hooks = [
     tf.train.LoggingTensorHook(
-        ['total_loss', 'loss_0', 'loss_1', 'loss_2', 'loss_3'], every_n_iter = 1
+        ['total_loss', 'loss_0', 'loss_1', 'loss_2', 'loss_3'], every_n_iter=1
     )
 ]
 train_dataset = get_dataset()
@@ -297,13 +297,13 @@ train_dataset = get_dataset()
 save_directory = 'speaker-split-unet'
 
 train.run_training(
-    train_fn = train_dataset,
-    model_fn = model_fn,
-    model_dir = save_directory,
-    num_gpus = 1,
-    log_step = 1,
-    save_checkpoint_step = 3000,
-    max_steps = epochs,
-    train_hooks = train_hooks,
-    eval_step = 0,
+    train_fn=train_dataset,
+    model_fn=model_fn,
+    model_dir=save_directory,
+    num_gpus=1,
+    log_step=1,
+    save_checkpoint_step=3000,
+    max_steps=epochs,
+    train_hooks=train_hooks,
+    eval_step=0,
 )

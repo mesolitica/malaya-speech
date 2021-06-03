@@ -35,30 +35,30 @@ def learning_rate_scheduler(global_step):
 
 
 featurizer = malaya_speech.tf_featurization.STTFeaturizer(
-    normalize_per_feature = True
+    normalize_per_feature=True
 )
 n_mels = featurizer.num_feature_bins
 
 
 noises = glob('../noise-44k/noise/*.wav') + glob('../noise-44k/clean-wav/*.wav')
-basses = glob('HHDS/Sources/**/*bass.wav', recursive = True)
-drums = glob('HHDS/Sources/**/*drums.wav', recursive = True)
-others = glob('HHDS/Sources/**/*other.wav', recursive = True)
+basses = glob('HHDS/Sources/**/*bass.wav', recursive=True)
+drums = glob('HHDS/Sources/**/*drums.wav', recursive=True)
+others = glob('HHDS/Sources/**/*other.wav', recursive=True)
 noises = noises + basses + drums + others
 random.shuffle(noises)
 
 
-def random_amplitude_threshold(sample, low = 1, high = 2, threshold = 0.4):
+def random_amplitude_threshold(sample, low=1, high=2, threshold=0.4):
     y_aug = sample.copy()
     y_aug = y_aug / (np.max(np.abs(y_aug)) + 1e-9)
-    dyn_change = np.random.uniform(low = low, high = high)
+    dyn_change = np.random.uniform(low=low, high=high)
     y_aug[np.abs(y_aug) >= threshold] = (
         y_aug[np.abs(y_aug) >= threshold] * dyn_change
     )
     return np.clip(y_aug, -1, 1)
 
 
-def calc(signal, seed, add_uniform = False):
+def calc(signal, seed, add_uniform=False):
     random.seed(seed)
 
     choice = random.randint(0, 9)
@@ -66,49 +66,49 @@ def calc(signal, seed, add_uniform = False):
 
         x = augmentation.sox_augment_high(
             signal,
-            min_bass_gain = random.randint(10, 30),
-            reverberance = random.randint(0, 30),
-            hf_damping = 10,
-            room_scale = random.randint(0, 30),
-            negate = 1,
+            min_bass_gain=random.randint(10, 30),
+            reverberance=random.randint(0, 30),
+            hf_damping=10,
+            room_scale=random.randint(0, 30),
+            negate=1,
         )
     if choice == 1:
         x = augmentation.sox_augment_high(
             signal,
-            min_bass_gain = random.randint(10, 40),
-            reverberance = random.randint(0, 30),
-            hf_damping = 10,
-            room_scale = random.randint(0, 30),
-            negate = 0,
+            min_bass_gain=random.randint(10, 40),
+            reverberance=random.randint(0, 30),
+            hf_damping=10,
+            room_scale=random.randint(0, 30),
+            negate=0,
         )
     if choice == 2:
         x = augmentation.sox_augment_low(
             signal,
-            min_bass_gain = random.randint(1, 20),
-            reverberance = random.randint(0, 30),
-            hf_damping = 10,
-            room_scale = random.randint(0, 30),
-            negate = random.randint(0, 1),
+            min_bass_gain=random.randint(1, 20),
+            reverberance=random.randint(0, 30),
+            hf_damping=10,
+            room_scale=random.randint(0, 30),
+            negate=random.randint(0, 1),
         )
     if choice == 3:
         x = augmentation.sox_augment_combine(
             signal,
-            min_bass_gain_high = random.randint(10, 40),
-            min_bass_gain_low = random.randint(1, 20),
-            reverberance = random.randint(0, 30),
-            hf_damping = 10,
-            room_scale = random.randint(0, 30),
+            min_bass_gain_high=random.randint(10, 40),
+            min_bass_gain_low=random.randint(1, 20),
+            reverberance=random.randint(0, 30),
+            hf_damping=10,
+            room_scale=random.randint(0, 30),
         )
     if choice == 4:
         x = augmentation.sox_reverb(
             signal,
-            reverberance = random.randint(1, 20),
-            hf_damping = 10,
-            room_scale = random.randint(10, 30),
+            reverberance=random.randint(1, 20),
+            hf_damping=10,
+            room_scale=random.randint(10, 30),
         )
     if choice == 5:
         x = random_amplitude_threshold(
-            signal, threshold = random.uniform(0.35, 0.8)
+            signal, threshold=random.uniform(0.35, 0.8)
         )
 
     if choice > 5:
@@ -116,12 +116,12 @@ def calc(signal, seed, add_uniform = False):
 
     if choice != 5 and random.gauss(0.5, 0.14) > 0.6:
         x = random_amplitude_threshold(
-            x, low = 1.0, high = 2.0, threshold = random.uniform(0.7, 0.9)
+            x, low=1.0, high=2.0, threshold=random.uniform(0.7, 0.9)
         )
 
     if random.gauss(0.5, 0.14) > 0.6 and add_uniform:
         x = augmentation.add_uniform_noise(
-            x, power = random.uniform(0.005, 0.015)
+            x, power=random.uniform(0.005, 0.015)
         )
 
     return x
@@ -131,10 +131,10 @@ def signal_augmentation(wav):
     seed = random.randint(0, 100_000_000)
     wav = calc(wav, seed)
     if random.gauss(0.5, 0.14) > 0.6:
-        n, _ = malaya_speech.load(random.choice(noises), sr = 16000)
+        n, _ = malaya_speech.load(random.choice(noises), sr=16000)
         n = calc(n, seed, True)
         combined = augmentation.add_noise(
-            wav, n, factor = random.uniform(0.05, 0.2)
+            wav, n, factor=random.uniform(0.05, 0.2)
         )
     else:
         combined = wav
@@ -143,10 +143,10 @@ def signal_augmentation(wav):
 
 def mel_augmentation(features):
 
-    features = mask_augmentation.mask_frequency(features, width_freq_mask = 10)
+    features = mask_augmentation.mask_frequency(features, width_freq_mask=10)
     if features.shape[0] > 50:
         features = mask_augmentation.mask_time(
-            features, width_time_mask = int(features.shape[0] * 0.05)
+            features, width_time_mask=int(features.shape[0] * 0.05)
         )
     return features
 
@@ -177,7 +177,7 @@ def parse(serialized_example):
         'targets': tf.VarLenFeature(tf.int64),
     }
     features = tf.parse_single_example(
-        serialized_example, features = data_fields
+        serialized_example, features=data_fields
     )
     for k in features.keys():
         features[k] = features[k].values
@@ -194,10 +194,10 @@ def parse(serialized_example):
 
 def get_dataset(
     path,
-    batch_size = 32,
-    shuffle_size = 32,
-    thread_count = 24,
-    maxlen_feature = 1800,
+    batch_size=32,
+    shuffle_size=32,
+    thread_count=24,
+    maxlen_feature=1800,
 ):
     def get():
         files = glob(path)
@@ -205,20 +205,20 @@ def get_dataset(
         dataset = dataset.shuffle(shuffle_size)
         dataset = dataset.repeat()
         dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
-        dataset = dataset.map(parse, num_parallel_calls = thread_count)
+        dataset = dataset.map(parse, num_parallel_calls=thread_count)
         dataset = dataset.padded_batch(
             batch_size,
-            padded_shapes = {
+            padded_shapes={
                 'waveforms': tf.TensorShape([None]),
                 'inputs': tf.TensorShape([None, n_mels]),
                 'inputs_length': tf.TensorShape([None]),
                 'targets': tf.TensorShape([None]),
             },
-            padding_values = {
-                'waveforms': tf.constant(0, dtype = tf.float32),
-                'inputs': tf.constant(0, dtype = tf.float32),
-                'inputs_length': tf.constant(0, dtype = tf.int32),
-                'targets': tf.constant(0, dtype = tf.int64),
+            padding_values={
+                'waveforms': tf.constant(0, dtype=tf.float32),
+                'inputs': tf.constant(0, dtype=tf.float32),
+                'inputs_length': tf.constant(0, dtype=tf.int32),
+                'targets': tf.constant(0, dtype=tf.int64),
             },
         )
         return dataset
@@ -229,7 +229,7 @@ def get_dataset(
 def model_fn(features, labels, mode, params):
 
     model = quartznet.Model(
-        features['inputs'], features['inputs_length'][:, 0], training = True
+        features['inputs'], features['inputs_length'][:, 0], training=True
     )
     logits = tf.layers.dense(model.logits['outputs'], 50)
     seq_lens = model.logits['src_length']
@@ -246,7 +246,7 @@ def model_fn(features, labels, mode, params):
     )
 
     tf.identity(loss, 'train_loss')
-    tf.identity(accuracy, name = 'train_accuracy')
+    tf.identity(accuracy, name='train_accuracy')
 
     tf.summary.scalar('train_accuracy', accuracy)
 
@@ -256,21 +256,21 @@ def model_fn(features, labels, mode, params):
             tf.train.AdamOptimizer,
             parameters['optimizer_params'],
             learning_rate_scheduler,
-            summaries = ['learning_rate', 'loss_scale'],
-            larc_params = parameters.get('larc_params', None),
-            loss_scaling = parameters.get('loss_scaling', 1.0),
-            loss_scaling_params = parameters.get('loss_scaling_params', None),
+            summaries=['learning_rate', 'loss_scale'],
+            larc_params=parameters.get('larc_params', None),
+            loss_scaling=parameters.get('loss_scaling', 1.0),
+            loss_scaling_params=parameters.get('loss_scaling_params', None),
         )
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = mode, loss = loss, train_op = train_op
+            mode=mode, loss=loss, train_op=train_op
         )
 
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = tf.estimator.ModeKeys.EVAL,
-            loss = loss,
-            eval_metric_ops = {
+            mode=tf.estimator.ModeKeys.EVAL,
+            loss=loss,
+            eval_metric_ops={
                 'accuracy': ctc.metrics.ctc_sequence_accuracy_estimator(
                     logits, targets_int32, seq_lens
                 )
@@ -282,7 +282,7 @@ def model_fn(features, labels, mode, params):
 
 train_hooks = [
     tf.train.LoggingTensorHook(
-        ['train_accuracy', 'train_loss'], every_n_iter = 1
+        ['train_accuracy', 'train_loss'], every_n_iter=1
     )
 ]
 train_dataset = get_dataset(
@@ -291,13 +291,13 @@ train_dataset = get_dataset(
 dev_dataset = get_dataset('../speech-bahasa/bahasa-asr/data/bahasa-asr-dev-*')
 
 train.run_training(
-    train_fn = train_dataset,
-    model_fn = model_fn,
-    model_dir = 'asr-quartznet-ctc-adam',
-    num_gpus = 2,
-    log_step = 1,
-    save_checkpoint_step = 5000,
-    max_steps = parameters['lr_policy_params']['decay_steps'],
-    eval_fn = dev_dataset,
-    train_hooks = train_hooks,
+    train_fn=train_dataset,
+    model_fn=model_fn,
+    model_dir='asr-quartznet-ctc-adam',
+    num_gpus=2,
+    log_step=1,
+    save_checkpoint_step=5000,
+    max_steps=parameters['lr_policy_params']['decay_steps'],
+    eval_fn=dev_dataset,
+    train_hooks=train_hooks,
 )

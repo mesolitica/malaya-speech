@@ -33,7 +33,7 @@ def frames(
     duration = float(n) / sample_rate
     results = []
     while offset + n <= len(audio):
-        results.append(Frame(audio[offset : offset + n], timestamp, duration))
+        results.append(Frame(audio[offset: offset + n], timestamp, duration))
         timestamp += duration
         offset += n
     if append_ending_trail and offset < len(audio):
@@ -46,7 +46,7 @@ def frames(
 
 
 def mel_sampling(
-    audio, frame_duration_ms = 1200, overlap_ms = 200, sample_rate = 16000
+    audio, frame_duration_ms=1200, overlap_ms=200, sample_rate=16000
 ):
     """
     Generates audio frames from audio. This is for melspectrogram generative model.
@@ -69,7 +69,7 @@ def mel_sampling(
     offset = 0
     results = []
     while offset + n <= len(audio):
-        results.append(audio[offset : offset + n])
+        results.append(audio[offset: offset + n])
         offset += n - n_overlap
     if offset < len(audio):
         results.append(audio[offset:])
@@ -78,7 +78,7 @@ def mel_sampling(
 
 
 def combine_mel_sampling(
-    samples, overlap_ms = 200, sample_rate = 16000, padded_ms = 50
+    samples, overlap_ms=200, sample_rate=16000, padded_ms=50
 ):
     """
     To combine results from `mel_sampling`, output from melspectrogram generative model.
@@ -98,6 +98,6 @@ def combine_mel_sampling(
     results = []
     for no, sample in enumerate(samples):
         if no:
-            sample = sample[n_overlap - n_padded :]
+            sample = sample[n_overlap - n_padded:]
         results.append(sample[:-n_padded])
     return results

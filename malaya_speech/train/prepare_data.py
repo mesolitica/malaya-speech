@@ -41,7 +41,7 @@ def write_records(records, out_filename):
     writer.close()
 
 
-def _shuffle_single(fname, extra_fn = None):
+def _shuffle_single(fname, extra_fn=None):
     """Shuffle a single file of records.
   Args:
     fname: a string
@@ -57,7 +57,7 @@ def _shuffle_single(fname, extra_fn = None):
     tf.gfile.Remove(fname)
 
 
-def shuffle_dataset(filenames, extra_fn = None):
+def shuffle_dataset(filenames, extra_fn=None):
     """Shuffles the dataset.
   Args:
     filenames: a list of strings
@@ -69,7 +69,7 @@ def shuffle_dataset(filenames, extra_fn = None):
         return
     tf.logging.info('Shuffling data...')
     for filename in filenames:
-        _shuffle_single(filename, extra_fn = extra_fn)
+        _shuffle_single(filename, extra_fn=extra_fn)
     tf.logging.info('Data shuffled.')
 
 
@@ -141,32 +141,32 @@ def to_example(dictionary):
             type(v[0]), np.integer
         ):
             features[k] = tf.train.Feature(
-                int64_list = tf.train.Int64List(value = v)
+                int64_list=tf.train.Int64List(value=v)
             )
         elif isinstance(v[0], float):
             features[k] = tf.train.Feature(
-                float_list = tf.train.FloatList(value = v)
+                float_list=tf.train.FloatList(value=v)
             )
         elif isinstance(v[0], six.string_types):
             if not six.PY2:  # Convert in python 3.
                 v = [bytes(x, 'utf-8') for x in v]
             features[k] = tf.train.Feature(
-                bytes_list = tf.train.BytesList(value = v)
+                bytes_list=tf.train.BytesList(value=v)
             )
         elif isinstance(v[0], bytes):
             features[k] = tf.train.Feature(
-                bytes_list = tf.train.BytesList(value = v)
+                bytes_list=tf.train.BytesList(value=v)
             )
         else:
             raise ValueError(
                 'Value for %s is not a recognized type; v: %s type: %s'
                 % (k, str(v[0]), str(type(v[0])))
             )
-    return tf.train.Example(features = tf.train.Features(feature = features))
+    return tf.train.Example(features=tf.train.Features(feature=features))
 
 
 def generate_files(
-    generator, output_filenames, max_cases = None, cycle_every_n = 1
+    generator, output_filenames, max_cases=None, cycle_every_n=1
 ):
     """Generate cases from a generator and save as TFRecord files.
   Generated cases are transformed to tf.Example protos and saved as TFRecords

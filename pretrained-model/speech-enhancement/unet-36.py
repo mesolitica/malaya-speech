@@ -23,10 +23,10 @@ import itertools
 
 def chunks(l, n):
     for i in range(0, len(l), n):
-        yield (l[i : i + n], i // n)
+        yield (l[i: i + n], i // n)
 
 
-def multiprocessing(strings, function, cores = 6, returned = True):
+def multiprocessing(strings, function, cores=6, returned=True):
     df_split = chunks(strings, len(strings) // cores)
     pool = Pool(cores)
     print('initiate pool map')
@@ -60,23 +60,23 @@ def get_pair(f):
 
 
 def read_wav(f):
-    return malaya_speech.load(f, sr = sr)
+    return malaya_speech.load(f, sr=sr)
 
 
 def random_sampling(s, length):
-    return augmentation.random_sampling(s, sr = sr, length = length)
+    return augmentation.random_sampling(s, sr=sr, length=length)
 
 
-def random_amplitude(sample, low = 3, high = 5):
+def random_amplitude(sample, low=3, high=5):
     y_aug = sample.copy()
-    dyn_change = np.random.uniform(low = low, high = high)
+    dyn_change = np.random.uniform(low=low, high=high)
     y_aug = y_aug * dyn_change
     return np.clip(y_aug, -1, 1)
 
 
-def random_amplitude_threshold(sample, low = 1, high = 2, threshold = 0.4):
+def random_amplitude_threshold(sample, low=1, high=2, threshold=0.4):
     y_aug = sample.copy()
-    dyn_change = np.random.uniform(low = low, high = high)
+    dyn_change = np.random.uniform(low=low, high=high)
     y_aug[np.abs(y_aug) >= threshold] = (
         y_aug[np.abs(y_aug) >= threshold] * dyn_change
     )
@@ -84,11 +84,11 @@ def random_amplitude_threshold(sample, low = 1, high = 2, threshold = 0.4):
 
 
 def add_uniform_noise(
-    sample, power = 0.01, return_noise = False, scale = False
+    sample, power=0.01, return_noise=False, scale=False
 ):
     y_noise = sample.copy()
     noise_amp = power * np.random.uniform() * np.amax(y_noise)
-    noise = noise_amp * np.random.normal(size = y_noise.shape[0])
+    noise = noise_amp * np.random.normal(size=y_noise.shape[0])
     y_noise = y_noise + noise
     if scale:
         y_noise = y_noise / (np.max(np.abs(y_noise)) + 1e-9)
@@ -100,7 +100,7 @@ def add_uniform_noise(
         return y_noise
 
 
-def calc(signal, seed, add_uniform = False):
+def calc(signal, seed, add_uniform=False):
     random.seed(seed)
     choice = random.randint(0, 9)
     print('choice', choice)
@@ -108,83 +108,83 @@ def calc(signal, seed, add_uniform = False):
 
         x = augmentation.sox_augment_high(
             signal,
-            min_bass_gain = random.randint(25, 50),
-            reverberance = random.randint(0, 80),
-            hf_damping = 10,
-            room_scale = random.randint(0, 50),
-            negate = 1,
+            min_bass_gain=random.randint(25, 50),
+            reverberance=random.randint(0, 80),
+            hf_damping=10,
+            room_scale=random.randint(0, 50),
+            negate=1,
         )
     if choice == 1:
         x = augmentation.sox_augment_high(
             signal,
-            min_bass_gain = random.randint(25, 70),
-            reverberance = random.randint(0, 80),
-            hf_damping = 10,
-            room_scale = random.randint(0, 50),
-            negate = 0,
+            min_bass_gain=random.randint(25, 70),
+            reverberance=random.randint(0, 80),
+            hf_damping=10,
+            room_scale=random.randint(0, 50),
+            negate=0,
         )
     if choice == 2:
         x = augmentation.sox_augment_low(
             signal,
-            min_bass_gain = random.randint(5, 30),
-            reverberance = random.randint(0, 80),
-            hf_damping = 10,
-            room_scale = random.randint(0, 50),
-            negate = random.randint(0, 1),
+            min_bass_gain=random.randint(5, 30),
+            reverberance=random.randint(0, 80),
+            hf_damping=10,
+            room_scale=random.randint(0, 50),
+            negate=random.randint(0, 1),
         )
     if choice == 3:
         x = augmentation.sox_augment_combine(
             signal,
-            min_bass_gain_high = random.randint(25, 70),
-            min_bass_gain_low = random.randint(5, 30),
-            reverberance = random.randint(0, 80),
-            hf_damping = 10,
-            room_scale = random.randint(0, 90),
+            min_bass_gain_high=random.randint(25, 70),
+            min_bass_gain_low=random.randint(5, 30),
+            reverberance=random.randint(0, 80),
+            hf_damping=10,
+            room_scale=random.randint(0, 90),
         )
     if choice == 4:
         x = augmentation.sox_reverb(
             signal,
-            reverberance = random.randint(10, 80),
-            hf_damping = 10,
-            room_scale = random.randint(10, 90),
+            reverberance=random.randint(10, 80),
+            hf_damping=10,
+            room_scale=random.randint(10, 90),
         )
     if choice == 5:
         x = random_amplitude_threshold(
-            signal, threshold = random.uniform(0.35, 0.8)
+            signal, threshold=random.uniform(0.35, 0.8)
         )
     if choice == 6:
         x = augmentation.lowpass_filter(
-            signal, sr = sr, cutoff = random.randint(200, 551)
+            signal, sr=sr, cutoff=random.randint(200, 551)
         )
     if choice == 7:
         x = augmentation.highpass_filter(
-            signal, sr = sr, cutoff = random.randint(551, 1653)
+            signal, sr=sr, cutoff=random.randint(551, 1653)
         )
     if choice == 8:
         x = augmentation.bandpass_filter(
             signal,
-            sr = sr,
-            cutoff_low = random.randint(200, 551),
-            cutoff_high = random.randint(551, 1653),
+            sr=sr,
+            cutoff_low=random.randint(200, 551),
+            cutoff_high=random.randint(551, 1653),
         )
     if choice == 9:
         x = signal
 
     if choice not in [5] and random.gauss(0.5, 0.14) > 0.6:
         x = random_amplitude_threshold(
-            x, low = 1.0, high = 2.0, threshold = random.uniform(0.6, 0.9)
+            x, low=1.0, high=2.0, threshold=random.uniform(0.6, 0.9)
         )
 
     if random.gauss(0.5, 0.14) > 0.6 and add_uniform:
-        x = add_uniform_noise(x, power = random.uniform(0.005, 0.015))
+        x = add_uniform_noise(x, power=random.uniform(0.005, 0.015))
 
     return x
 
 
-def combine_speakers(files, n = 5):
+def combine_speakers(files, n=5):
     w_samples = random.sample(files, n)
     w_samples = [
-        random_sampling(read_wav(f)[0], length = length // 10)
+        random_sampling(read_wav(f)[0], length=length // 10)
         for f in w_samples
     ]
     y = [w_samples[0]]
@@ -211,7 +211,7 @@ def combine_speakers(files, n = 5):
 
 
 def parallel(f):
-    y = random_sampling(read_wav(f)[0], length = length)
+    y = random_sampling(read_wav(f)[0], length=length)
     seed = random.randint(0, 100_000_000)
     x = calc(y, seed)
     if random.gauss(0.5, 0.14) > 0.6:
@@ -221,9 +221,9 @@ def parallel(f):
         combined, noise = augmentation.add_noise(
             x,
             n,
-            factor = random.uniform(0.01, 0.1),
-            return_noise = True,
-            rescale = False,
+            factor=random.uniform(0.01, 0.1),
+            return_noise=True,
+            rescale=False,
         )
     else:
         combined = x
@@ -242,8 +242,8 @@ def parallel_semisupervised(f):
         r = 0
     else:
         r = np.random.randint(0, up)
-    y = y[r : r + sr_ * length]
-    combined = combined[r : r + sr_ * length]
+    y = y[r: r + sr_ * length]
+    combined = combined[r: r + sr_ * length]
     noise = combined - y
     return combined, y, noise
 
@@ -264,13 +264,13 @@ def loop_semisupervised(files):
     return results
 
 
-def generate(batch_size = 10, repeat = 30):
+def generate(batch_size=10, repeat=30):
     while True:
         fs = [next(file_cycle) for _ in range(batch_size)]
-        results = multiprocessing(fs, loop, cores = len(fs))
+        results = multiprocessing(fs, loop, cores=len(fs))
         fs = [next(Y_files) for _ in range(batch_size)]
         results.extend(
-            multiprocessing(fs, loop_semisupervised, cores = len(fs))
+            multiprocessing(fs, loop_semisupervised, cores=len(fs))
         )
         for _ in range(repeat):
             random.shuffle(results)
@@ -288,7 +288,7 @@ def get_dataset():
         dataset = tf.data.Dataset.from_generator(
             generate,
             {'combined': tf.float32, 'y': tf.float32, 'noise': tf.float32},
-            output_shapes = {
+            output_shapes={
                 'combined': tf.TensorShape([None]),
                 'y': tf.TensorShape([None]),
                 'noise': tf.TensorShape([None]),
@@ -309,11 +309,11 @@ def model_fn(features, labels, mode, params):
     y = tf.expand_dims(features['y'], -1)
     partitioned_x = tf_featurization.pad_and_partition(x, partition_size)
     partitioned_y = tf_featurization.pad_and_partition(y, partition_size)
-    model = unet.Model(partitioned_x, channels_interval = 36)
+    model = unet.Model(partitioned_x, channels_interval=36)
     l2_loss, snr = enhancement.loss.snr(model.logits, partitioned_y)
     sdr = enhancement.loss.sdr(model.logits, partitioned_y)
     mae = tf.losses.absolute_difference
-    mae_loss = mae(labels = partitioned_y, predictions = model.logits)
+    mae_loss = mae(labels=partitioned_y, predictions=model.logits)
     loss = mae_loss
 
     tf.identity(loss, 'total_loss')
@@ -323,48 +323,48 @@ def model_fn(features, labels, mode, params):
     tf.summary.scalar('sdr', sdr)
 
     global_step = tf.train.get_or_create_global_step()
-    learning_rate = tf.constant(value = init_lr, shape = [], dtype = tf.float32)
+    learning_rate = tf.constant(value=init_lr, shape=[], dtype=tf.float32)
     learning_rate = tf.train.polynomial_decay(
         learning_rate,
         global_step,
         epochs,
-        end_learning_rate = 1e-6,
-        power = 1.0,
-        cycle = False,
+        end_learning_rate=1e-6,
+        power=1.0,
+        cycle=False,
     )
     tf.summary.scalar('learning_rate', learning_rate)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
 
-        optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
+        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 
-        train_op = optimizer.minimize(loss, global_step = global_step)
+        train_op = optimizer.minimize(loss, global_step=global_step)
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = mode, loss = loss, train_op = train_op
+            mode=mode, loss=loss, train_op=train_op
         )
 
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = tf.estimator.ModeKeys.EVAL, loss = loss
+            mode=tf.estimator.ModeKeys.EVAL, loss=loss
         )
 
     return estimator_spec
 
 
-train_hooks = [tf.train.LoggingTensorHook(['total_loss'], every_n_iter = 1)]
+train_hooks = [tf.train.LoggingTensorHook(['total_loss'], every_n_iter=1)]
 train_dataset = get_dataset()
 
 save_directory = 'speech-enhancement-unet-36'
 
 train.run_training(
-    train_fn = train_dataset,
-    model_fn = model_fn,
-    model_dir = save_directory,
-    num_gpus = 1,
-    log_step = 1,
-    save_checkpoint_step = 10000,
-    max_steps = epochs,
-    train_hooks = train_hooks,
-    eval_step = 0,
+    train_fn=train_dataset,
+    model_fn=model_fn,
+    model_dir=save_directory,
+    num_gpus=1,
+    log_step=1,
+    save_checkpoint_step=10000,
+    max_steps=epochs,
+    train_hooks=train_hooks,
+    eval_step=0,
 )

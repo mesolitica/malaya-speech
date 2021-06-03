@@ -8,12 +8,12 @@ from malaya_speech.model.tf import FastVC
 from malaya_speech import speaker_vector
 
 
-def load(model, module, quantized = False, **kwargs):
+def load(model, module, quantized=False, **kwargs):
     path = check_file(
-        file = model,
-        module = module,
-        keys = {'model': 'model.pb'},
-        quantized = quantized,
+        file=model,
+        module=module,
+        keys={'model': 'model.pb'},
+        quantized=quantized,
         **kwargs,
     )
     g = load_graph(path['model'], **kwargs)
@@ -31,11 +31,11 @@ def load(model, module, quantized = False, **kwargs):
     }
 
     return FastVC(
-        input_nodes = input_nodes,
-        output_nodes = output_nodes,
-        speaker_vector = speaker_model,
-        magnitude = magnitude[speaker_vector_model],
-        sess = generate_session(graph = g, **kwargs),
-        model = model,
-        name = module,
+        input_nodes=input_nodes,
+        output_nodes=output_nodes,
+        speaker_vector=speaker_model,
+        magnitude=magnitude[speaker_vector_model],
+        sess=generate_session(graph=g, **kwargs),
+        model=model,
+        name=module,
     )

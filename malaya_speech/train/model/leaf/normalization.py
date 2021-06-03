@@ -50,12 +50,12 @@ class GroupNormalization(tf.keras.layers.Layer):
         epsilon: float = 1e-3,
         center: bool = True,
         scale: bool = True,
-        beta_initializer = 'zeros',
-        gamma_initializer = 'ones',
-        beta_regularizer = None,
-        gamma_regularizer = None,
-        beta_constraint = None,
-        gamma_constraint = None,
+        beta_initializer='zeros',
+        gamma_initializer='ones',
+        beta_regularizer=None,
+        gamma_regularizer=None,
+        beta_constraint=None,
+        gamma_constraint=None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -163,17 +163,17 @@ class GroupNormalization(tf.keras.layers.Layer):
         group_reduction_axes.pop(axis)
 
         mean, variance = tf.nn.moments(
-            reshaped_inputs, group_reduction_axes, keepdims = True
+            reshaped_inputs, group_reduction_axes, keepdims=True
         )
 
         gamma, beta = self._get_reshaped_weights(input_shape)
         normalized_inputs = tf.nn.batch_normalization(
             reshaped_inputs,
-            mean = mean,
-            variance = variance,
-            scale = gamma,
-            offset = beta,
-            variance_epsilon = self.epsilon,
+            mean=mean,
+            variance=variance,
+            scale=gamma,
+            offset=beta,
+            variance_epsilon=self.epsilon,
         )
         return normalized_inputs
 
@@ -232,7 +232,7 @@ class GroupNormalization(tf.keras.layers.Layer):
 
         dim = input_shape[self.axis]
         self.input_spec = tf.keras.layers.InputSpec(
-            ndim = len(input_shape), axes = {self.axis: dim}
+            ndim=len(input_shape), axes={self.axis: dim}
         )
 
     def _add_gamma_weight(self, input_shape):
@@ -242,11 +242,11 @@ class GroupNormalization(tf.keras.layers.Layer):
 
         if self.scale:
             self.gamma = self.add_weight(
-                shape = shape,
-                name = 'gamma',
-                initializer = self.gamma_initializer,
-                regularizer = self.gamma_regularizer,
-                constraint = self.gamma_constraint,
+                shape=shape,
+                name='gamma',
+                initializer=self.gamma_initializer,
+                regularizer=self.gamma_regularizer,
+                constraint=self.gamma_constraint,
             )
         else:
             self.gamma = None
@@ -258,11 +258,11 @@ class GroupNormalization(tf.keras.layers.Layer):
 
         if self.center:
             self.beta = self.add_weight(
-                shape = shape,
-                name = 'beta',
-                initializer = self.beta_initializer,
-                regularizer = self.beta_regularizer,
-                constraint = self.beta_constraint,
+                shape=shape,
+                name='beta',
+                initializer=self.beta_initializer,
+                regularizer=self.beta_regularizer,
+                constraint=self.beta_constraint,
             )
         else:
             self.beta = None

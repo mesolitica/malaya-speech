@@ -16,7 +16,7 @@ def _prepend_batch(batch_size, shape):
     else:
         static_batch_size = batch_size
     if static_batch_size is None:
-        return tf.concat(([batch_size], shape), axis = 0)
+        return tf.concat(([batch_size], shape), axis=0)
     return [static_batch_size] + shape
 
 
@@ -24,11 +24,11 @@ def dynamic_decode(
     decoder,
     output_time_major: bool = False,
     impute_finished: bool = False,
-    maximum_iterations = None,
+    maximum_iterations=None,
     parallel_iterations: int = 32,
     swap_memory: bool = False,
-    training = None,
-    scope = None,
+    training=None,
+    scope=None,
     **kwargs
 ):
     """Perform dynamic decoding with `decoder`.
@@ -80,15 +80,15 @@ def dynamic_decode(
         if maximum_iterations is not None:
             maximum_iterations = tf.convert_to_tensor(
                 maximum_iterations,
-                dtype = tf.int32,
-                name = 'maximum_iterations',
+                dtype=tf.int32,
+                name='maximum_iterations',
             )
             if maximum_iterations.shape.ndims != 0:
                 raise ValueError('maximum_iterations must be a scalar')
             tf.debugging.assert_greater(
                 maximum_iterations,
                 0,
-                message = 'maximum_iterations should be greater than 0',
+                message='maximum_iterations should be greater than 0',
             )
         elif is_xla:
             raise ValueError(
@@ -109,7 +109,7 @@ def dynamic_decode(
 
         zero_outputs = tf.nest.map_structure(
             lambda shape, dtype: tf.zeros(
-                _prepend_batch(decoder.batch_size, shape), dtype = dtype
+                _prepend_batch(decoder.batch_size, shape), dtype=dtype
             ),
             decoder.output_size,
             decoder.output_dtype,
@@ -120,9 +120,9 @@ def dynamic_decode(
                 initial_finished, 0 >= maximum_iterations
             )
         initial_sequence_lengths = tf.zeros_like(
-            initial_finished, dtype = tf.int32
+            initial_finished, dtype=tf.int32
         )
-        initial_time = tf.constant(0, dtype = tf.int32)
+        initial_time = tf.constant(0, dtype=tf.int32)
 
         def _shape(batch_size, from_shape):
             if (
@@ -132,7 +132,7 @@ def dynamic_decode(
                 return None
             else:
                 batch_size = tf.get_static_value(
-                    tf.convert_to_tensor(batch_size, name = 'batch_size')
+                    tf.convert_to_tensor(batch_size, name='batch_size')
                 )
                 return tf.TensorShape([batch_size]).concatenate(from_shape)
 
@@ -142,10 +142,10 @@ def dynamic_decode(
 
         def _create_ta(s, d):
             return tf.TensorArray(
-                dtype = d,
-                size = 0 if dynamic_size else maximum_iterations,
-                dynamic_size = dynamic_size,
-                element_shape = _shape(decoder.batch_size, s),
+                dtype=d,
+                size=0 if dynamic_size else maximum_iterations,
+                dynamic_size=dynamic_size,
+                element_shape=_shape(decoder.batch_size, s),
             )
 
         initial_outputs_ta = tf.nest.map_structure(
@@ -215,7 +215,7 @@ def dynamic_decode(
                 def zero_out_finished(out, zero):
                     if finished.shape.rank < zero.shape.rank:
                         broadcast_finished = tf.broadcast_to(
-                            tf.expand_dims(finished, axis = -1), zero.shape
+                            tf.expand_dims(finished, axis=-1), zero.shape
                         )
                         return tf.where(broadcast_finished, zero, out)
                     else:
@@ -237,7 +237,7 @@ def dynamic_decode(
                     pass_through = new.shape.ndims == 0
                 if not pass_through:
                     broadcast_finished = tf.broadcast_to(
-                        tf.expand_dims(finished, axis = -1), new.shape
+                        tf.expand_dims(finished, axis=-1), new.shape
                     )
                     return tf.where(broadcast_finished, cur, new)
                 else:
@@ -265,7 +265,7 @@ def dynamic_decode(
         res = tf.while_loop(
             condition,
             body,
-            loop_vars = (
+            loop_vars=(
                 initial_time,
                 initial_outputs_ta,
                 initial_state,
@@ -273,9 +273,9 @@ def dynamic_decode(
                 initial_finished,
                 initial_sequence_lengths,
             ),
-            parallel_iterations = parallel_iterations,
-            maximum_iterations = maximum_iterations,
-            swap_memory = swap_memory,
+            parallel_iterations=parallel_iterations,
+            maximum_iterations=maximum_iterations,
+            swap_memory=swap_memory,
         )
 
         final_outputs_ta = res[1]

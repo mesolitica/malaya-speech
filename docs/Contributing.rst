@@ -4,6 +4,11 @@ Contributing
 Contributions are welcome and are greatly appreciated! Every little bit
 helps, and credit will always be given.
 
+Code Formatting
+----------------
+
+We use `AutoPEP8`_ for code formatting and standard. Checkout `pyproject.toml`_ at root directory.
+
 Report Bugs
 -----------
 

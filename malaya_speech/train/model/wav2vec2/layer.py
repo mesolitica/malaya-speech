@@ -17,25 +17,25 @@ def gumbel_distribution(input_shape):
 
 
 # https://gist.github.com/ericjang/1001afd374c2c3b7752545ce6d9ed349
-def sample_gumbel(shape, eps = 1e-20):
+def sample_gumbel(shape, eps=1e-20):
     """Sample from Gumbel(0, 1)"""
-    U = tf.random_uniform(shape, minval = 0, maxval = 1)
+    U = tf.random_uniform(shape, minval=0, maxval=1)
     return -tf.log(-tf.log(U + eps) + eps)
 
 
-def gumbel_softmax_sample(logits, tau, axis = -1):
+def gumbel_softmax_sample(logits, tau, axis=-1):
     """ Draw a sample from the Gumbel-Softmax distribution"""
     y = logits + sample_gumbel(tf.shape(logits))
-    return tf.nn.softmax(y / tau, axis = -1)
+    return tf.nn.softmax(y / tau, axis=-1)
 
 
-def gumbel_softmax(logits, tau, hard = False, axis = -1):
-    y = gumbel_softmax_sample(logits, tau, axis = axis)
+def gumbel_softmax(logits, tau, hard=False, axis=-1):
+    y = gumbel_softmax_sample(logits, tau, axis=axis)
     if hard:
         k = tf.shape(logits)[-1]
         # y_hard = tf.cast(tf.one_hot(tf.argmax(y,1),k), y.dtype)
         y_hard = tf.cast(
-            tf.equal(y, tf.reduce_max(y, 1, keep_dims = True)), y.dtype
+            tf.equal(y, tf.reduce_max(y, 1, keep_dims=True)), y.dtype
         )
         y = tf.stop_gradient(y_hard - y) + y
     return y
@@ -54,9 +54,9 @@ def gelu(x):
     return x * cdf
 
 
-def glu(x, dims = 2):
+def glu(x, dims=2):
     def conv(x):
-        return tf.layers.conv1d(x, x.shape[-1], 1, padding = 'same')
+        return tf.layers.conv1d(x, x.shape[-1], 1, padding='same')
 
     splitted = tf.split(x, 2, dims)
     return conv(splitted[0]) * tf.nn.sigmoid(conv(splitted[1]))
@@ -65,16 +65,16 @@ def glu(x, dims = 2):
 class VarianceScaling(
     init_ops_v2.VarianceScaling, tf.keras.initializers.Initializer
 ):
-    def __call__(self, shape, dtype = None, **kwargs):
+    def __call__(self, shape, dtype=None, **kwargs):
         return super(VarianceScaling, self).__call__(
-            shape, dtype = _get_dtype(dtype), **kwargs
+            shape, dtype=_get_dtype(dtype), **kwargs
         )
 
 
 class HeUniform(VarianceScaling):
-    def __init__(self, seed = None):
+    def __init__(self, seed=None):
         super(HeUniform, self).__init__(
-            scale = 2.0, mode = 'fan_in', distribution = 'uniform', seed = seed
+            scale=2.0, mode='fan_in', distribution='uniform', seed=seed
         )
 
     def get_config(self):
@@ -91,7 +91,7 @@ class ConvFeatureExtractionModel(tf.keras.layers.Layer):
         **kwargs,
     ):
         super(ConvFeatureExtractionModel, self).__init__(
-            name = 'ConvFeatureExtractionModel', **kwargs
+            name='ConvFeatureExtractionModel', **kwargs
         )
 
         assert mode in {'default', 'layer_norm'}
@@ -101,17 +101,17 @@ class ConvFeatureExtractionModel(tf.keras.layers.Layer):
             n_out,
             k,
             stride,
-            is_layer_norm = False,
-            is_group_norm = False,
-            conv_bias = False,
+            is_layer_norm=False,
+            is_group_norm=False,
+            conv_bias=False,
         ):
             def make_conv():
                 conv = tf.keras.layers.Conv1D(
                     n_out,
                     k,
-                    strides = stride,
-                    use_bias = conv_bias,
-                    kernel_initializer = HeUniform,
+                    strides=stride,
+                    use_bias=conv_bias,
+                    kernel_initializer=HeUniform,
                 )
 
                 return conv
@@ -126,7 +126,7 @@ class ConvFeatureExtractionModel(tf.keras.layers.Layer):
             if is_layer_norm:
                 seq.add(tf.keras.layers.LayerNormalization())
             elif is_group_norm:
-                seq.add(GroupNormalization(groups = dim))
+                seq.add(GroupNormalization(groups=dim))
             return seq
 
         in_d = 1
@@ -140,17 +140,17 @@ class ConvFeatureExtractionModel(tf.keras.layers.Layer):
                     dim,
                     k,
                     stride,
-                    is_layer_norm = mode == 'layer_norm',
-                    is_group_norm = mode == 'default' and i == 0,
-                    conv_bias = conv_bias,
+                    is_layer_norm=mode == 'layer_norm',
+                    is_group_norm=mode == 'default' and i == 0,
+                    conv_bias=conv_bias,
                 )
             )
             in_d = dim
 
-    def call(self, x, training = True):
+    def call(self, x, training=True):
         x = tf.expand_dims(x, -1)
         for conv in self.conv_layers:
-            x = conv(x, training = training)
+            x = conv(x, training=training)
             x = gelu(x)
         return x
 
@@ -164,14 +164,14 @@ class GumbelVectorQuantizer(tf.keras.layers.Layer):
         groups,
         combine_groups,
         vq_dim,
-        time_first = True,
-        activation = gelu,
-        weight_proj_depth = 1,
-        weight_proj_factor = 1,
+        time_first=True,
+        activation=gelu,
+        weight_proj_depth=1,
+        weight_proj_factor=1,
         **kwargs,
     ):
         super(GumbelVectorQuantizer, self).__init__(
-            name = 'GumbelVectorQuantizer', **kwargs
+            name='GumbelVectorQuantizer', **kwargs
         )
         self.groups = groups
         self.combine_groups = combine_groups
@@ -188,15 +188,15 @@ class GumbelVectorQuantizer(tf.keras.layers.Layer):
         num_groups = groups if not combine_groups else 1
 
         self.vars = tf.get_variable(
-            name = 'vars',
-            shape = [1, num_groups * num_vars, var_dim],
-            initializer = tf.truncated_normal_initializer(),
+            name='vars',
+            shape=[1, num_groups * num_vars, var_dim],
+            initializer=tf.truncated_normal_initializer(),
         )
         if weight_proj_depth > 1:
 
             def block(input_dim, output_dim):
                 return tf.keras.layers.Dense(
-                    output_dim, activation = activation
+                    output_dim, activation=activation
                 )
 
             inner_dim = self.input_dim * weight_proj_factor
@@ -219,7 +219,7 @@ class GumbelVectorQuantizer(tf.keras.layers.Layer):
         self.curr_temp = self.max_temp
         self.codebook_indices = None
 
-    def call(self, x, produce_targets = False, training = True):
+    def call(self, x, produce_targets=False, training=True):
         result = {'num_vars': self.num_vars * self.groups}
 
         if not self.time_first:
@@ -230,33 +230,33 @@ class GumbelVectorQuantizer(tf.keras.layers.Layer):
         x = self.weight_proj(x)
         x = tf.reshape(x, (bsz * tsz * self.groups, -1))
 
-        k = tf.argmax(x, axis = -1)
+        k = tf.argmax(x, axis=-1)
         hard_x = tf.one_hot(k, tf.shape(x)[-1])
         hard_x = tf.reshape(hard_x, (bsz * tsz, self.groups, -1))
 
-        hard_probs = tf.reduce_mean(hard_x, axis = 0)
+        hard_probs = tf.reduce_mean(hard_x, axis=0)
 
         result['code_perplexity'] = tf.reduce_sum(
             tf.exp(
                 -tf.reduce_sum(
-                    hard_probs * tf.log(hard_probs + 1e-7), axis = -1
+                    hard_probs * tf.log(hard_probs + 1e-7), axis=-1
                 )
             )
         )
         avg_probs = tf.reduce_mean(
             tf.nn.softmax(
-                tf.reshape(x, (bsz * tsz, self.groups, -1)), axis = -1
+                tf.reshape(x, (bsz * tsz, self.groups, -1)), axis=-1
             ),
-            axis = 0,
+            axis=0,
         )
         result['prob_perplexity'] = tf.reduce_sum(
             tf.exp(
-                -tf.reduce_sum(avg_probs * tf.log(avg_probs + 1e-7), axis = -1)
+                -tf.reduce_sum(avg_probs * tf.log(avg_probs + 1e-7), axis=-1)
             )
         )
         result['temp'] = self.curr_temp
         if training:
-            x = gumbel_softmax(x, tau = self.curr_temp, hard = True)
+            x = gumbel_softmax(x, tau=self.curr_temp, hard=True)
         else:
             x = hard_x
 
@@ -268,14 +268,14 @@ class GumbelVectorQuantizer(tf.keras.layers.Layer):
         if produce_targets:
             result['targets'] = tf.reshape(
                 tf.argmax(
-                    tf.reshape(x, (bsz * tsz * self.groups, -1)), axis = -1
+                    tf.reshape(x, (bsz * tsz * self.groups, -1)), axis=-1
                 ),
                 (bsz, tsz, self.groups),
             )
 
         x = tf.expand_dims(x, -1) * vars
         x = tf.reshape(x, (bsz * tsz, self.groups, self.num_vars, -1))
-        x = tf.reduce_sum(x, axis = -2)
+        x = tf.reduce_sum(x, axis=-2)
         x = tf.reshape(x, (bsz, tsz, -1))
 
         x.set_shape((None, None, self.vq_dim))

@@ -14,7 +14,7 @@ f = next(file_cycle)
 import random
 
 
-def generate(batch_max_steps = 8192, hop_size = 256):
+def generate(batch_max_steps=8192, hop_size=256):
     while True:
         f = next(file_cycle)
         mel = np.load(f)
@@ -29,8 +29,8 @@ def generate(batch_max_steps = 8192, hop_size = 256):
             interval_end = len(mel) - batch_max_frames
             start_frame = random.randint(interval_start, interval_end)
             start_step = start_frame * hop_size
-            audio = audio[start_step : start_step + batch_max_steps]
-            mel = mel[start_frame : start_frame + batch_max_frames, :]
+            audio = audio[start_step: start_step + batch_max_steps]
+            mel = mel[start_frame: start_frame + batch_max_frames, :]
         else:
             audio = np.pad(audio, [[0, batch_max_steps - len(audio)]])
             mel = np.pad(mel, [[0, batch_max_frames - len(mel)], [0, 0]])
@@ -41,7 +41,7 @@ def generate(batch_max_steps = 8192, hop_size = 256):
 dataset = tf.data.Dataset.from_generator(
     generate,
     {'mel': tf.float32, 'audio': tf.float32},
-    output_shapes = {
+    output_shapes={
         'mel': tf.TensorShape([None, 80]),
         'audio': tf.TensorShape([None]),
     },
@@ -49,13 +49,13 @@ dataset = tf.data.Dataset.from_generator(
 dataset = dataset.shuffle(32)
 dataset = dataset.padded_batch(
     32,
-    padded_shapes = {
+    padded_shapes={
         'audio': tf.TensorShape([None]),
         'mel': tf.TensorShape([None, 80]),
     },
-    padding_values = {
-        'audio': tf.constant(0, dtype = tf.float32),
-        'mel': tf.constant(0, dtype = tf.float32),
+    padding_values={
+        'audio': tf.constant(0, dtype=tf.float32),
+        'mel': tf.constant(0, dtype=tf.float32),
     },
 )
 
@@ -72,12 +72,12 @@ from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 hifigan_config = malaya_speech.config.hifigan_config
 generator = hifigan.Generator(
     hifigan.GeneratorConfig(**hifigan_config['hifigan_generator_params']),
-    name = 'hifigan_generator',
+    name='hifigan_generator',
 )
 
 stft_loss = stft.loss.MultiResolutionSTFT(**hifigan_config['stft_loss_params'])
 
-y_hat = generator(features['mel'], training = True)
+y_hat = generator(features['mel'], training=True)
 audios = features['audio']
 
 sc_loss, mag_loss = calculate_2d_loss(audios, tf.squeeze(y_hat, -1), stft_loss)
@@ -109,7 +109,7 @@ piece_wise = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
 )
 lr = piece_wise(global_step)
 g_optimizer = tf.train.AdamOptimizer(lr).minimize(
-    generator_loss, global_step = global_step
+    generator_loss, global_step=global_step
 )
 
 sess = tf.InteractiveSession()
@@ -129,8 +129,8 @@ for i in range(0, epoch):
     g_loss, _, step = sess.run([generator_loss, g_optimizer, global_step])
 
     if step % checkpoint == 0:
-        saver.save(sess, f'{path}/model.ckpt', global_step = step)
+        saver.save(sess, f'{path}/model.ckpt', global_step=step)
 
     print(step, g_loss)
 
-saver.save(sess, f'{path}/model.ckpt', global_step = step)
+saver.save(sess, f'{path}/model.ckpt', global_step=step)

@@ -49,7 +49,7 @@ def speaker_similarity(
                 a = np.array(embedding)
                 if norm_function:
                     a = norm_function(a)
-                s = 1 - cdist([vector], a, metric = 'cosine')[0]
+                s = 1 - cdist([vector], a, metric='cosine')[0]
                 where = np.where(s >= similarity_threshold)[0]
                 if len(where):
                     argsort = (np.argsort(s)[::-1]).tolist()
@@ -83,7 +83,7 @@ def affinity_propagation(
     log_distance_metric: str = 'cosine',
     damping: float = 0.8,
     preference: float = None,
-    return_embedding = False,
+    return_embedding=False,
 ):
     """
     Speaker diarization using sklearn Affinity Propagation.
@@ -105,7 +105,7 @@ def affinity_propagation(
     """
 
     affinity = ClusteringAP(
-        metric = log_distance_metric, damping = damping, preference = preference
+        metric=log_distance_metric, damping=damping, preference=preference
     )
     speakers, activities, mapping = [], [], {}
     for no, result in enumerate(vad_results):
@@ -143,10 +143,10 @@ def spectral_cluster(
     min_clusters: int = None,
     max_clusters: int = None,
     p_percentile: float = 0.95,
-    gaussian_blur_sigma = 1.0,
+    gaussian_blur_sigma=1.0,
     norm_function: Callable = l2_normalize,
     log_distance_metric: str = None,
-    return_embedding = False,
+    return_embedding=False,
     **kwargs,
 ):
     """
@@ -179,16 +179,16 @@ def spectral_cluster(
     try:
         from spectralcluster import SpectralClusterer
 
-    except:
+    except BaseException:
         raise ModuleNotFoundError(
             'spectralcluster not installed. Please install it by `pip install spectralcluster` and try again.'
         )
 
     clusterer = SpectralClusterer(
-        min_clusters = min_clusters,
-        max_clusters = max_clusters,
-        p_percentile = p_percentile,
-        gaussian_blur_sigma = gaussian_blur_sigma,
+        min_clusters=min_clusters,
+        max_clusters=max_clusters,
+        p_percentile=p_percentile,
+        gaussian_blur_sigma=gaussian_blur_sigma,
         **kwargs,
     )
 

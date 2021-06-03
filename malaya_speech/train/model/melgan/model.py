@@ -30,20 +30,20 @@ from tensorflow.python.ops import array_ops, nn, nn_ops
 from .layer import WeightNormalization, GroupConv1D
 
 
-def get_initializer(initializer_seed = 42):
+def get_initializer(initializer_seed=42):
     """Creates a `tf.initializers.glorot_normal` with the given seed.
     Args:
         initializer_seed: int, initializer seed.
     Returns:
         GlorotNormal initializer with seed = `initializer_seed`.
     """
-    return tf.keras.initializers.glorot_normal(seed = initializer_seed)
+    return tf.keras.initializers.glorot_normal(seed=initializer_seed)
 
 
 class TFReflectionPad1d(tf.keras.layers.Layer):
     """Tensorflow ReflectionPad1d module."""
 
-    def __init__(self, padding_size, padding_type = 'REFLECT', **kwargs):
+    def __init__(self, padding_size, padding_type='REFLECT', **kwargs):
         """Initialize TFReflectionPad1d module.
         Args:
             padding_size (int)
@@ -89,11 +89,11 @@ class TFConvTranspose1d(tf.keras.layers.Layer):
         """
         super().__init__(**kwargs)
         self.conv1d_transpose = tf.keras.layers.Conv2DTranspose(
-            filters = filters,
-            kernel_size = (kernel_size, 1),
-            strides = (strides, 1),
-            padding = 'same',
-            kernel_initializer = get_initializer(initializer_seed),
+            filters=filters,
+            kernel_size=(kernel_size, 1),
+            strides=(strides, 1),
+            padding='same',
+            kernel_initializer=get_initializer(initializer_seed),
         )
         if is_weight_norm:
             self.conv1d_transpose = WeightNormalization(self.conv1d_transpose)
@@ -142,28 +142,28 @@ class TFResidualStack(tf.keras.layers.Layer):
             ),
             TFReflectionPad1d((kernel_size - 1) // 2 * dilation_rate),
             tf.keras.layers.Conv1D(
-                filters = filters,
-                kernel_size = kernel_size,
-                dilation_rate = dilation_rate,
-                use_bias = use_bias,
-                kernel_initializer = get_initializer(initializer_seed),
+                filters=filters,
+                kernel_size=kernel_size,
+                dilation_rate=dilation_rate,
+                use_bias=use_bias,
+                kernel_initializer=get_initializer(initializer_seed),
             ),
             getattr(tf.keras.layers, nonlinear_activation)(
                 **nonlinear_activation_params
             ),
             tf.keras.layers.Conv1D(
-                filters = filters,
-                kernel_size = 1,
-                use_bias = use_bias,
-                kernel_initializer = get_initializer(initializer_seed),
+                filters=filters,
+                kernel_size=1,
+                use_bias=use_bias,
+                kernel_initializer=get_initializer(initializer_seed),
             ),
         ]
         self.shortcut = tf.keras.layers.Conv1D(
-            filters = filters,
-            kernel_size = 1,
-            use_bias = use_bias,
-            kernel_initializer = get_initializer(initializer_seed),
-            name = 'shortcut',
+            filters=filters,
+            kernel_size=1,
+            use_bias=use_bias,
+            kernel_initializer=get_initializer(initializer_seed),
+            name='shortcut',
         )
 
         # apply weightnorm
@@ -214,14 +214,14 @@ class Generator(tf.keras.Model):
         layers += [
             TFReflectionPad1d(
                 (config.kernel_size - 1) // 2,
-                padding_type = config.padding_type,
-                name = 'first_reflect_padding',
+                padding_type=config.padding_type,
+                name='first_reflect_padding',
             ),
             tf.keras.layers.Conv1D(
-                filters = config.filters,
-                kernel_size = config.kernel_size,
-                use_bias = config.use_bias,
-                kernel_initializer = get_initializer(config.initializer_seed),
+                filters=config.filters,
+                kernel_size=config.kernel_size,
+                use_bias=config.use_bias,
+                kernel_initializer=get_initializer(config.initializer_seed),
             ),
         ]
 
@@ -232,13 +232,13 @@ class Generator(tf.keras.Model):
                     **config.nonlinear_activation_params
                 ),
                 TFConvTranspose1d(
-                    filters = config.filters // (2 ** (i + 1)),
-                    kernel_size = upsample_scale * 2,
-                    strides = upsample_scale,
-                    padding = 'same',
-                    is_weight_norm = config.is_weight_norm,
-                    initializer_seed = config.initializer_seed,
-                    name = 'conv_transpose_._{}'.format(i),
+                    filters=config.filters // (2 ** (i + 1)),
+                    kernel_size=upsample_scale * 2,
+                    strides=upsample_scale,
+                    padding='same',
+                    is_weight_norm=config.is_weight_norm,
+                    initializer_seed=config.initializer_seed,
+                    name='conv_transpose_._{}'.format(i),
                 ),
             ]
 
@@ -246,15 +246,15 @@ class Generator(tf.keras.Model):
             for j in range(config.stacks):
                 layers += [
                     TFResidualStack(
-                        kernel_size = config.stack_kernel_size,
-                        filters = config.filters // (2 ** (i + 1)),
-                        dilation_rate = config.stack_kernel_size ** j,
-                        use_bias = config.use_bias,
-                        nonlinear_activation = config.nonlinear_activation,
-                        nonlinear_activation_params = config.nonlinear_activation_params,
-                        is_weight_norm = config.is_weight_norm,
-                        initializer_seed = config.initializer_seed,
-                        name = 'residual_stack_._{}._._{}'.format(i, j),
+                        kernel_size=config.stack_kernel_size,
+                        filters=config.filters // (2 ** (i + 1)),
+                        dilation_rate=config.stack_kernel_size ** j,
+                        use_bias=config.use_bias,
+                        nonlinear_activation=config.nonlinear_activation,
+                        nonlinear_activation_params=config.nonlinear_activation_params,
+                        is_weight_norm=config.is_weight_norm,
+                        initializer_seed=config.initializer_seed,
+                        name='residual_stack_._{}._._{}'.format(i, j),
                     )
                 ]
         # add final layer
@@ -264,14 +264,14 @@ class Generator(tf.keras.Model):
             ),
             TFReflectionPad1d(
                 (config.kernel_size - 1) // 2,
-                padding_type = config.padding_type,
-                name = 'last_reflect_padding',
+                padding_type=config.padding_type,
+                name='last_reflect_padding',
             ),
             tf.keras.layers.Conv1D(
-                filters = config.out_channels,
-                kernel_size = config.kernel_size,
-                use_bias = config.use_bias,
-                kernel_initializer = get_initializer(config.initializer_seed),
+                filters=config.out_channels,
+                kernel_size=config.kernel_size,
+                use_bias=config.use_bias,
+                kernel_initializer=get_initializer(config.initializer_seed),
             ),
         ]
         if config.use_final_nolinear_activation:
@@ -303,7 +303,7 @@ class Generator(tf.keras.Model):
 
     def _build(self):
         """Build model by passing fake input."""
-        fake_mels = tf.random.uniform(shape = [1, 100, 80], dtype = tf.float32)
+        fake_mels = tf.random.uniform(shape=[1, 100, 80], dtype=tf.float32)
         self(fake_mels)
 
 
@@ -312,17 +312,17 @@ class Discriminator(tf.keras.layers.Layer):
 
     def __init__(
         self,
-        out_channels = 1,
-        kernel_sizes = [5, 3],
-        filters = 16,
-        max_downsample_filters = 1024,
-        use_bias = True,
-        downsample_scales = [4, 4, 4, 4],
-        nonlinear_activation = 'LeakyReLU',
-        nonlinear_activation_params = {'alpha': 0.2},
-        padding_type = 'REFLECT',
-        is_weight_norm = True,
-        initializer_seed = 0.02,
+        out_channels=1,
+        kernel_sizes=[5, 3],
+        filters=16,
+        max_downsample_filters=1024,
+        use_bias=True,
+        downsample_scales=[4, 4, 4, 4],
+        nonlinear_activation='LeakyReLU',
+        nonlinear_activation_params={'alpha': 0.2},
+        padding_type='REFLECT',
+        is_weight_norm=True,
+        initializer_seed=0.02,
         **kwargs
     ):
         """Initilize MelGAN discriminator module.
@@ -351,13 +351,13 @@ class Discriminator(tf.keras.layers.Layer):
         # add first layer
         discriminator = [
             TFReflectionPad1d(
-                (np.prod(kernel_sizes) - 1) // 2, padding_type = padding_type
+                (np.prod(kernel_sizes) - 1) // 2, padding_type=padding_type
             ),
             tf.keras.layers.Conv1D(
-                filters = filters,
-                kernel_size = int(np.prod(kernel_sizes)),
-                use_bias = use_bias,
-                kernel_initializer = get_initializer(initializer_seed),
+                filters=filters,
+                kernel_size=int(np.prod(kernel_sizes)),
+                use_bias=use_bias,
+                kernel_initializer=get_initializer(initializer_seed),
             ),
             getattr(tf.keras.layers, nonlinear_activation)(
                 **nonlinear_activation_params
@@ -371,13 +371,13 @@ class Discriminator(tf.keras.layers.Layer):
                 out_chs = min(in_chs * downsample_scale, max_downsample_filters)
                 discriminator += [
                     GroupConv1D(
-                        filters = out_chs,
-                        kernel_size = downsample_scale * 10 + 1,
-                        strides = downsample_scale,
-                        padding = 'same',
-                        use_bias = use_bias,
-                        groups = in_chs // 4,
-                        kernel_initializer = get_initializer(initializer_seed),
+                        filters=out_chs,
+                        kernel_size=downsample_scale * 10 + 1,
+                        strides=downsample_scale,
+                        padding='same',
+                        use_bias=use_bias,
+                        groups=in_chs // 4,
+                        kernel_initializer=get_initializer(initializer_seed),
                     )
                 ]
                 discriminator += [
@@ -391,11 +391,11 @@ class Discriminator(tf.keras.layers.Layer):
         out_chs = min(in_chs * 2, max_downsample_filters)
         discriminator += [
             tf.keras.layers.Conv1D(
-                filters = out_chs,
-                kernel_size = kernel_sizes[0],
-                padding = 'same',
-                use_bias = use_bias,
-                kernel_initializer = get_initializer(initializer_seed),
+                filters=out_chs,
+                kernel_size=kernel_sizes[0],
+                padding='same',
+                use_bias=use_bias,
+                kernel_initializer=get_initializer(initializer_seed),
             )
         ]
         discriminator += [
@@ -405,11 +405,11 @@ class Discriminator(tf.keras.layers.Layer):
         ]
         discriminator += [
             tf.keras.layers.Conv1D(
-                filters = out_channels,
-                kernel_size = kernel_sizes[1],
-                padding = 'same',
-                use_bias = use_bias,
-                kernel_initializer = get_initializer(initializer_seed),
+                filters=out_channels,
+                kernel_size=kernel_sizes[1],
+                padding='same',
+                use_bias=use_bias,
+                kernel_initializer=get_initializer(initializer_seed),
             )
         ]
 
@@ -457,18 +457,18 @@ class MultiScaleDiscriminator(tf.keras.Model):
         for i in range(config.scales):
             self.discriminator += [
                 Discriminator(
-                    out_channels = config.out_channels,
-                    kernel_sizes = config.kernel_sizes,
-                    filters = config.filters,
-                    max_downsample_filters = config.max_downsample_filters,
-                    use_bias = config.use_bias,
-                    downsample_scales = config.downsample_scales,
-                    nonlinear_activation = config.nonlinear_activation,
-                    nonlinear_activation_params = config.nonlinear_activation_params,
-                    padding_type = config.padding_type,
-                    is_weight_norm = config.is_weight_norm,
-                    initializer_seed = config.initializer_seed,
-                    name = 'melgan_discriminator_scale_._{}'.format(i),
+                    out_channels=config.out_channels,
+                    kernel_sizes=config.kernel_sizes,
+                    filters=config.filters,
+                    max_downsample_filters=config.max_downsample_filters,
+                    use_bias=config.use_bias,
+                    downsample_scales=config.downsample_scales,
+                    nonlinear_activation=config.nonlinear_activation,
+                    nonlinear_activation_params=config.nonlinear_activation_params,
+                    padding_type=config.padding_type,
+                    is_weight_norm=config.is_weight_norm,
+                    initializer_seed=config.initializer_seed,
+                    name='melgan_discriminator_scale_._{}'.format(i),
                 )
             ]
             self.pooling = getattr(tf.keras.layers, config.downsample_pooling)(

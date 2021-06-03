@@ -20,7 +20,7 @@ import tensorflow as tf
 from scipy.signal import kaiser
 
 
-def design_prototype_filter(taps = 62, cutoff_ratio = 0.15, beta = 9.0):
+def design_prototype_filter(taps=62, cutoff_ratio=0.15, beta=9.0):
     """Design prototype filter for PQMF.
     This method is based on `A Kaiser window approach for the design of prototype
     filters of cosine modulated filterbanks`_.
@@ -39,7 +39,7 @@ def design_prototype_filter(taps = 62, cutoff_ratio = 0.15, beta = 9.0):
 
     # make initial filter
     omega_c = np.pi * cutoff_ratio
-    with np.errstate(invalid = 'ignore'):
+    with np.errstate(invalid='ignore'):
         h_i = np.sin(omega_c * (np.arange(taps + 1) - 0.5 * taps)) / (
             np.pi * (np.arange(taps + 1) - 0.5 * taps)
         )
@@ -102,7 +102,7 @@ class PQMF(tf.keras.layers.Layer):
 
         # filter for downsampling & upsampling
         updown_filter = np.zeros(
-            (subbands, subbands, subbands), dtype = np.float32
+            (subbands, subbands, subbands), dtype=np.float32
         )
         for k in range(subbands):
             updown_filter[0, k, k] = 1.0
@@ -127,9 +127,9 @@ class PQMF(tf.keras.layers.Layer):
             Tensor: Output tensor (B, T // subbands, subbands).
         """
         x = tf.pad(x, [[0, 0], [self.taps // 2, self.taps // 2], [0, 0]])
-        x = tf.nn.conv1d(x, self.analysis_filter, stride = 1, padding = 'VALID')
+        x = tf.nn.conv1d(x, self.analysis_filter, stride=1, padding='VALID')
         x = tf.nn.conv1d(
-            x, self.updown_filter, stride = self.subbands, padding = 'VALID'
+            x, self.updown_filter, stride=self.subbands, padding='VALID'
         )
         return x
 
@@ -143,8 +143,8 @@ class PQMF(tf.keras.layers.Layer):
         x = tf.nn.conv1d_transpose(
             x,
             self.updown_filter * self.subbands,
-            strides = self.subbands,
-            output_shape = (
+            strides=self.subbands,
+            output_shape=(
                 tf.shape(x)[0],
                 tf.shape(x)[1] * self.subbands,
                 self.subbands,
@@ -152,7 +152,7 @@ class PQMF(tf.keras.layers.Layer):
         )
         x = tf.pad(x, [[0, 0], [self.taps // 2, self.taps // 2], [0, 0]])
         return tf.nn.conv1d(
-            x, self.synthesis_filter, stride = 1, padding = 'VALID'
+            x, self.synthesis_filter, stride=1, padding='VALID'
         )
 
 
@@ -161,7 +161,7 @@ class Generator(generator):
 
     def __init__(self, config, **kwargs):
         super().__init__(config, **kwargs)
-        self.pqmf = PQMF(config = config, name = 'pqmf')
+        self.pqmf = PQMF(config=config, name='pqmf')
 
     def call(self, mels, **kwargs):
         """

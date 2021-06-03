@@ -27,7 +27,7 @@ def available_model():
 
     return describe_availability(
         _availability,
-        text = 'Only calculate SDR, ISR, SAR on voice sample. Higher is better.',
+        text='Only calculate SDR, ISR, SAR on voice sample. Higher is better.',
     )
 
 
@@ -44,7 +44,7 @@ def deep_model(model: str = 'srgan-256', quantized: bool = False, **kwargs):
         * ``'srgan-128'`` - srgan with 128 filter size and 16 residual blocks.
         * ``'srgan-256'`` - srgan with 256 filter size and 16 residual blocks.
     quantized : bool, optional (default=False)
-        if True, will load 8-bit quantized model. 
+        if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
 
     Returns
@@ -57,8 +57,8 @@ def deep_model(model: str = 'srgan-256', quantized: bool = False, **kwargs):
             'model not supported, please check supported models from `malaya_speech.super_resolution.available_model()`.'
         )
     return unet.load_1d(
-        model = model,
-        module = 'super-resolution',
-        quantized = quantized,
+        model=model,
+        module='super-resolution',
+        quantized=quantized,
         **kwargs
     )

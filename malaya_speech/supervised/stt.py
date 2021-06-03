@@ -19,18 +19,18 @@ def get_vocab_ctc(language):
     return CTC_VOCABS.get(language, CTC_VOCABS['malay'])
 
 
-def transducer_load(model, module, quantized = False, **kwargs):
+def transducer_load(model, module, quantized=False, **kwargs):
 
     path = check_file(
-        file = model,
-        module = module,
-        keys = {'model': 'model.pb', 'vocab': get_vocab(model.split('-')[-1])},
-        quantized = quantized,
+        file=model,
+        module=module,
+        keys={'model': 'model.pb', 'vocab': get_vocab(model.split('-')[-1])},
+        quantized=quantized,
         **kwargs,
     )
     g = load_graph(path['model'], **kwargs)
     vocab = subword_load(path['vocab'].replace('.subwords', ''))
-    featurizer = STTFeaturizer(normalize_per_feature = True)
+    featurizer = STTFeaturizer(normalize_per_feature=True)
 
     time_reduction_factor = {
         'small-conformer': 4,
@@ -60,24 +60,24 @@ def transducer_load(model, module, quantized = False, **kwargs):
     input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
     return Transducer(
-        input_nodes = input_nodes,
-        output_nodes = output_nodes,
-        featurizer = featurizer,
-        vocab = vocab,
-        time_reduction_factor = time_reduction_factor.get(model, 4),
-        sess = generate_session(graph = g, **kwargs),
-        model = model,
-        name = module,
+        input_nodes=input_nodes,
+        output_nodes=output_nodes,
+        featurizer=featurizer,
+        vocab=vocab,
+        time_reduction_factor=time_reduction_factor.get(model, 4),
+        sess=generate_session(graph=g, **kwargs),
+        model=model,
+        name=module,
     )
 
 
-def wav2vec_transducer_load(model, module, quantized = False, **kwargs):
+def wav2vec_transducer_load(model, module, quantized=False, **kwargs):
 
     path = check_file(
-        file = model,
-        module = module,
-        keys = {'model': 'model.pb', 'vocab': get_vocab(model.split('-')[-1])},
-        quantized = quantized,
+        file=model,
+        module=module,
+        keys={'model': 'model.pb', 'vocab': get_vocab(model.split('-')[-1])},
+        quantized=quantized,
         **kwargs,
     )
     g = load_graph(path['model'], **kwargs)
@@ -102,24 +102,24 @@ def wav2vec_transducer_load(model, module, quantized = False, **kwargs):
     input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
     return Wav2Vec2_Transducer(
-        input_nodes = input_nodes,
-        output_nodes = output_nodes,
-        vocab = vocab,
-        sess = generate_session(graph = g, **kwargs),
-        model = model,
-        name = module,
+        input_nodes=input_nodes,
+        output_nodes=output_nodes,
+        vocab=vocab,
+        sess=generate_session(graph=g, **kwargs),
+        model=model,
+        name=module,
     )
 
 
-def wav2vec2_ctc_load(model, module, quantized = False, **kwargs):
+def wav2vec2_ctc_load(model, module, quantized=False, **kwargs):
     path = check_file(
-        file = model,
-        module = module,
-        keys = {
+        file=model,
+        module=module,
+        keys={
             'model': 'model.pb',
             'vocab': get_vocab_ctc(model.split('-')[-1]),
         },
-        quantized = quantized,
+        quantized=quantized,
         **kwargs,
     )
     g = load_graph(path['model'], **kwargs)
@@ -132,10 +132,10 @@ def wav2vec2_ctc_load(model, module, quantized = False, **kwargs):
     input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
     return Wav2Vec2_CTC(
-        input_nodes = input_nodes,
-        output_nodes = output_nodes,
-        vocab = vocab,
-        sess = generate_session(graph = g, **kwargs),
-        model = model,
-        name = module,
+        input_nodes=input_nodes,
+        output_nodes=output_nodes,
+        vocab=vocab,
+        sess=generate_session(graph=g, **kwargs),
+        model=model,
+        name=module,
     )

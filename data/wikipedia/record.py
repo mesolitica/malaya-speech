@@ -16,7 +16,7 @@ len(combined_wiki)
 length = 4
 texts = []
 for i in range(0, len(combined_wiki), length):
-    texts.append(' '.join(combined_wiki[i : i + length]))
+    texts.append(' '.join(combined_wiki[i: i + length]))
 
 device_info = sd.query_devices(None, 'input')
 device = None
@@ -42,21 +42,21 @@ for no, text in enumerate(texts):
 
         def callback(indata, frames, time, status):
             if status:
-                print(status, file = sys.stderr)
+                print(status, file=sys.stderr)
             q.put(indata.copy())
 
         with sf.SoundFile(
             filename,
-            mode = 'x',
-            samplerate = samplerate,
-            channels = channels,
-            subtype = subtype,
+            mode='x',
+            samplerate=samplerate,
+            channels=channels,
+            subtype=subtype,
         ) as file:
             with sd.InputStream(
-                samplerate = samplerate,
-                device = device,
-                channels = channels,
-                callback = callback,
+                samplerate=samplerate,
+                device=device,
+                channels=channels,
+                callback=callback,
             ):
                 print('#' * 80)
                 print('press Ctrl+C to stop the recording')
@@ -70,5 +70,5 @@ for no, text in enumerate(texts):
             % (repr(filename), len(texts) - no)
         )
 
-    except:
+    except BaseException:
         pass

@@ -10,7 +10,7 @@ MAX_SEC = 10
 # Model
 WEIGHTS_FILE = "data/model/weights.h5"
 COST_METRIC = "cosine"  # euclidean or cosine
-INPUT_SHAPE=(NUM_FFT,None,1)
+INPUT_SHAPE = (NUM_FFT, None, 1)
 
 # IO
 ENROLL_LIST_FILE = "cfg/enroll_list.csv"

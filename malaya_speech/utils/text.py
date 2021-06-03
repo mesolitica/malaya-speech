@@ -19,14 +19,14 @@ def put_spacing_num(string):
 
 
 def compute_sparse_correlation_matrix(A):
-    scaler = StandardScaler(with_mean = False)
+    scaler = StandardScaler(with_mean=False)
     scaled_A = scaler.fit_transform(A)
     corr_matrix = (1 / scaled_A.shape[0]) * (scaled_A.T @ scaled_A)
     return corr_matrix
 
 
-def filter_splitted(s, t, threshold = 0.001):
-    bow = CountVectorizer(token_pattern = '[A-Za-z0-9]+').fit([s])
+def filter_splitted(s, t, threshold=0.001):
+    bow = CountVectorizer(token_pattern='[A-Za-z0-9]+').fit([s])
     s_bow = bow.transform([s] + t)
     score = np.array(compute_sparse_correlation_matrix(s_bow.T).todense())[
         0, 1:

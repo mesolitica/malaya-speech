@@ -44,19 +44,19 @@ class LayerNormalization(tf.layers.Layer):
         self.scale = tf.get_variable(
             'layer_norm_scale',
             [self.hidden_size],
-            initializer = tf.ones_initializer(),
+            initializer=tf.ones_initializer(),
         )
         self.bias = tf.get_variable(
             'layer_norm_bias',
             [self.hidden_size],
-            initializer = tf.zeros_initializer(),
+            initializer=tf.zeros_initializer(),
         )
         self.built = True
 
-    def call(self, x, epsilon = 1e-6):
-        mean = tf.reduce_mean(x, axis = [-1], keepdims = True)
+    def call(self, x, epsilon=1e-6):
+        mean = tf.reduce_mean(x, axis=[-1], keepdims=True)
         variance = tf.reduce_mean(
-            tf.square(x - mean), axis = [-1], keepdims = True
+            tf.square(x - mean), axis=[-1], keepdims=True
         )
         norm_x = (x - mean) * tf.rsqrt(variance + epsilon)
         return norm_x * self.scale + self.bias
@@ -105,7 +105,7 @@ class EncoderStack(tf.layers.Layer):
                 params['relu_dropout'],
                 train,
                 params['allow_ffn_pad'],
-                activation = params.get('activation', 'relu'),
+                activation=params.get('activation', 'relu'),
             )
 
             self.layers.append(

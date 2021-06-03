@@ -7,16 +7,16 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         self,
         num_heads,
         head_size,
-        output_size = None,
+        output_size=None,
         dropout: float = 0.0,
-        use_projection_bias = True,
-        return_attn_coef = False,
-        kernel_initializer = 'glorot_uniform',
-        kernel_regularizer = None,
-        kernel_constraint = None,
-        bias_initializer = 'zeros',
-        bias_regularizer = None,
-        bias_constraint = None,
+        use_projection_bias=True,
+        return_attn_coef=False,
+        kernel_initializer='glorot_uniform',
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        bias_initializer='zeros',
+        bias_regularizer=None,
+        bias_constraint=None,
         **kwargs
     ):
         super(MultiHeadAttention, self).__init__(**kwargs)
@@ -37,7 +37,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         self.use_projection_bias = use_projection_bias
         self.return_attn_coef = return_attn_coef
 
-        self.dropout = tf.keras.layers.Dropout(dropout, name = 'dropout')
+        self.dropout = tf.keras.layers.Dropout(dropout, name='dropout')
         self._droput_rate = dropout
 
     def build(self, input_shape):
@@ -52,45 +52,45 @@ class MultiHeadAttention(tf.keras.layers.Layer):
             else num_value_features
         )
         self.query_kernel = self.add_weight(
-            name = 'query_kernel',
-            shape = [self.num_heads, num_query_features, self.head_size],
-            initializer = self.kernel_initializer,
-            regularizer = self.kernel_regularizer,
-            constraint = self.kernel_constraint,
+            name='query_kernel',
+            shape=[self.num_heads, num_query_features, self.head_size],
+            initializer=self.kernel_initializer,
+            regularizer=self.kernel_regularizer,
+            constraint=self.kernel_constraint,
         )
         self.key_kernel = self.add_weight(
-            name = 'key_kernel',
-            shape = [self.num_heads, num_key_features, self.head_size],
-            initializer = self.kernel_initializer,
-            regularizer = self.kernel_regularizer,
-            constraint = self.kernel_constraint,
+            name='key_kernel',
+            shape=[self.num_heads, num_key_features, self.head_size],
+            initializer=self.kernel_initializer,
+            regularizer=self.kernel_regularizer,
+            constraint=self.kernel_constraint,
         )
         self.value_kernel = self.add_weight(
-            name = 'value_kernel',
-            shape = [self.num_heads, num_value_features, self.head_size],
-            initializer = self.kernel_initializer,
-            regularizer = self.kernel_regularizer,
-            constraint = self.kernel_constraint,
+            name='value_kernel',
+            shape=[self.num_heads, num_value_features, self.head_size],
+            initializer=self.kernel_initializer,
+            regularizer=self.kernel_regularizer,
+            constraint=self.kernel_constraint,
         )
         self.projection_kernel = self.add_weight(
-            name = 'projection_kernel',
-            shape = [self.num_heads, self.head_size, output_size],
-            initializer = self.kernel_initializer,
-            regularizer = self.kernel_regularizer,
-            constraint = self.kernel_constraint,
+            name='projection_kernel',
+            shape=[self.num_heads, self.head_size, output_size],
+            initializer=self.kernel_initializer,
+            regularizer=self.kernel_regularizer,
+            constraint=self.kernel_constraint,
         )
         if self.use_projection_bias:
             self.projection_bias = self.add_weight(
-                name = 'projection_bias',
-                shape = [output_size],
-                initializer = self.bias_initializer,
-                regularizer = self.bias_regularizer,
-                constraint = self.bias_constraint,
+                name='projection_bias',
+                shape=[output_size],
+                initializer=self.bias_initializer,
+                regularizer=self.bias_regularizer,
+                constraint=self.bias_constraint,
             )
         else:
             self.projection_bias = None
 
-    def call_qkv(self, query, key, value, training = False):
+    def call_qkv(self, query, key, value, training=False):
         if key.shape[-2] != value.shape[-2]:
             raise ValueError(
                 "the number of elements in 'key' must be equal to "
@@ -103,7 +103,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         return query, key, value
 
     def call_attention(
-        self, query, key, value, logits, training = False, mask = None
+        self, query, key, value, logits, training=False, mask=None
     ):
         if mask is not None:
             if len(mask.shape) < 2:
@@ -126,7 +126,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 
         attn_coef = tf.nn.softmax(logits)
 
-        attn_coef_dropout = self.dropout(attn_coef, training = training)
+        attn_coef_dropout = self.dropout(attn_coef, training=training)
 
         multihead_output = tf.einsum(
             '...HNM,...MHI->...NHI', attn_coef_dropout, value
@@ -141,18 +141,18 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 
         return output, attn_coef
 
-    def call(self, inputs, training = False, mask = None):
+    def call(self, inputs, training=False, mask=None):
         query, key, value = inputs
 
         query, key, value = self.call_qkv(
-            query, key, value, training = training
+            query, key, value, training=training
         )
-        depth = tf.constant(self.head_size, dtype = tf.float32)
+        depth = tf.constant(self.head_size, dtype=tf.float32)
         query /= tf.sqrt(depth)
         logits = tf.einsum('...NHO,...MHO->...HNM', query, key)
 
         output, attn_coef = self.call_attention(
-            query, key, value, logits, training = training, mask = mask
+            query, key, value, logits, training=training, mask=mask
         )
 
         if self.return_attn_coef:
@@ -189,28 +189,28 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         config = super().get_config()
 
         config.update(
-            head_size = self.head_size,
-            num_heads = self.num_heads,
-            output_size = self.output_size,
-            dropout = self._droput_rate,
-            use_projection_bias = self.use_projection_bias,
-            return_attn_coef = self.return_attn_coef,
-            kernel_initializer = tf.keras.initializers.serialize(
+            head_size=self.head_size,
+            num_heads=self.num_heads,
+            output_size=self.output_size,
+            dropout=self._droput_rate,
+            use_projection_bias=self.use_projection_bias,
+            return_attn_coef=self.return_attn_coef,
+            kernel_initializer=tf.keras.initializers.serialize(
                 self.kernel_initializer
             ),
-            kernel_regularizer = tf.keras.regularizers.serialize(
+            kernel_regularizer=tf.keras.regularizers.serialize(
                 self.kernel_regularizer
             ),
-            kernel_constraint = tf.keras.constraints.serialize(
+            kernel_constraint=tf.keras.constraints.serialize(
                 self.kernel_constraint
             ),
-            bias_initializer = tf.keras.initializers.serialize(
+            bias_initializer=tf.keras.initializers.serialize(
                 self.bias_initializer
             ),
-            bias_regularizer = tf.keras.regularizers.serialize(
+            bias_regularizer=tf.keras.regularizers.serialize(
                 self.bias_regularizer
             ),
-            bias_constraint = tf.keras.constraints.serialize(
+            bias_constraint=tf.keras.constraints.serialize(
                 self.bias_constraint
             ),
         )
@@ -222,25 +222,25 @@ class RelPositionMultiHeadAttention(MultiHeadAttention):
     def build(self, input_shape):
         num_pos_features = input_shape[-1][-1]
         self.pos_kernel = self.add_weight(
-            name = 'pos_kernel',
-            shape = [self.num_heads, num_pos_features, self.head_size],
-            initializer = self.kernel_initializer,
-            regularizer = self.kernel_regularizer,
-            constraint = self.kernel_constraint,
+            name='pos_kernel',
+            shape=[self.num_heads, num_pos_features, self.head_size],
+            initializer=self.kernel_initializer,
+            regularizer=self.kernel_regularizer,
+            constraint=self.kernel_constraint,
         )
         self.pos_bias_u = self.add_weight(
-            name = 'pos_bias_u',
-            shape = [self.num_heads, self.head_size],
-            regularizer = self.kernel_regularizer,
-            initializer = self.kernel_initializer,
-            constraint = self.kernel_constraint,
+            name='pos_bias_u',
+            shape=[self.num_heads, self.head_size],
+            regularizer=self.kernel_regularizer,
+            initializer=self.kernel_initializer,
+            constraint=self.kernel_constraint,
         )
         self.pos_bias_v = self.add_weight(
-            name = 'pos_bias_v',
-            shape = [self.num_heads, self.head_size],
-            regularizer = self.kernel_regularizer,
-            initializer = self.kernel_initializer,
-            constraint = self.kernel_constraint,
+            name='pos_bias_v',
+            shape=[self.num_heads, self.head_size],
+            regularizer=self.kernel_regularizer,
+            initializer=self.kernel_initializer,
+            constraint=self.kernel_constraint,
         )
         super(RelPositionMultiHeadAttention, self).build(input_shape[:-1])
 
@@ -252,11 +252,11 @@ class RelPositionMultiHeadAttention(MultiHeadAttention):
         x = tf.reshape(x[:, :, 1:, :], x_shape)
         return x
 
-    def call(self, inputs, training = False, mask = None):
+    def call(self, inputs, training=False, mask=None):
         query, key, value, pos = inputs
 
         query, key, value = self.call_qkv(
-            query, key, value, training = training
+            query, key, value, training=training
         )
 
         pos = tf.einsum('...MI,HIO->...MHO', pos, self.pos_kernel)
@@ -270,11 +270,11 @@ class RelPositionMultiHeadAttention(MultiHeadAttention):
 
         logits = logits_with_u + logits_with_v
 
-        depth = tf.constant(self.head_size, dtype = tf.float32)
+        depth = tf.constant(self.head_size, dtype=tf.float32)
         logits /= tf.sqrt(depth)
 
         output, attn_coef = self.call_attention(
-            query, key, value, logits, training = training, mask = mask
+            query, key, value, logits, training=training, mask=mask
         )
 
         if self.return_attn_coef:

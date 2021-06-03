@@ -12,21 +12,21 @@ EPSILON = 1e-10
 class ECAPA_TCNNFeaturizer:
     def __init__(
         self,
-        sample_rate = 16000,
-        win_length = 25,
-        hop_length = 10,
-        n_fft = 400,
-        n_mels = 80,
-        log_mel = True,
-        f_min = 0,
-        f_max = 8000,
-        power_spectrogram = 2,
-        amin = 1e-10,
-        ref_value = 1.0,
-        top_db = 80.0,
-        param_change_factor = 1.0,
-        param_rand_factor = 0.0,
-        window_length = 5,
+        sample_rate=16000,
+        win_length=25,
+        hop_length=10,
+        n_fft=400,
+        n_mels=80,
+        log_mel=True,
+        f_min=0,
+        f_max=8000,
+        power_spectrogram=2,
+        amin=1e-10,
+        ref_value=1.0,
+        top_db=80.0,
+        param_change_factor=1.0,
+        param_rand_factor=0.0,
+        window_length=5,
         **kwargs,
     ):
         self.sample_rate = sample_rate
@@ -64,7 +64,7 @@ class ECAPA_TCNNFeaturizer:
 
         self.n = (window_length - 1) // 2
         self.denom = self.n * (self.n + 1) * (2 * self.n + 1) / 3
-        a = np.arange(-self.n, self.n + 1, dtype = np.float32)
+        a = np.arange(-self.n, self.n + 1, dtype=np.float32)
         a = np.expand_dims(np.expand_dims(a, 0), 0)
         self.kernel = np.tile(a, (self.n_mels, 1, 1))
 
@@ -73,11 +73,11 @@ class ECAPA_TCNNFeaturizer:
                 self._X = tf.compat.v1.placeholder(tf.float32, (None, None, 1))
                 self._K = tf.compat.v1.placeholder(tf.float32, (None, 1, 1))
                 self._conv = tf.nn.conv1d(
-                    self._X, self._K, 1, padding = 'VALID'
+                    self._X, self._K, 1, padding='VALID'
                 )
             config = tf.compat.v1.ConfigProto()
             config.gpu_options.allow_growth = True
-            self._sess = tf.compat.v1.Session(config = config)
+            self._sess = tf.compat.v1.Session(config=config)
 
     def _to_hz(self, mel):
         return 700 * (10 ** (mel / 2595) - 1)
@@ -96,7 +96,7 @@ class ECAPA_TCNNFeaturizer:
 
     def _amplitude_to_DB(self, x):
         x_db = self.multiplier * np.log10(
-            np.clip(x, a_min = self.amin, a_max = None)
+            np.clip(x, a_min=self.amin, a_max=None)
         )
         x_db -= self.multiplier * self.db_multiplier
         new_x_db_max = x_db.max() - self.top_db
@@ -110,31 +110,31 @@ class ECAPA_TCNNFeaturizer:
         for i in range(self.n_mels):
             if tf.executing_eagerly():
                 c = tf.nn.conv1d(
-                    x[:, :, i : i + 1],
-                    kernel[:, :, i : i + 1],
+                    x[:, :, i: i + 1],
+                    kernel[:, :, i: i + 1],
                     1,
-                    padding = 'VALID',
+                    padding='VALID',
                 )
             else:
                 c = self._sess.run(
                     self._conv,
-                    feed_dict = {
-                        self._X: x[:, :, i : i + 1],
-                        self._K: kernel[:, :, i : i + 1],
+                    feed_dict={
+                        self._X: x[:, :, i: i + 1],
+                        self._K: kernel[:, :, i: i + 1],
                     },
                 )
             p.append(c)
 
-        return np.concatenate(p, axis = 2)
+        return np.concatenate(p, axis=2)
 
     def vectorize(self, signal):
         s = librosa.stft(
             y,
-            n_fft = self.n_fft,
-            hop_length = self.hop_length,
-            win_length = self.win_length,
-            window = ECAPA_TDNN_WINDOWS,
-            pad_mode = 'constant',
+            n_fft=self.n_fft,
+            hop_length=self.hop_length,
+            win_length=self.win_length,
+            window=ECAPA_TDNN_WINDOWS,
+            pad_mode='constant',
         )
         s = np.concatenate(
             [np.expand_dims(s.real, -1), np.expand_dims(s.imag, -1)], -1
@@ -162,7 +162,7 @@ class ECAPA_TCNNFeaturizer:
         or_shape = x.shape
         if len(or_shape) == 4:
             x = x.reshape(or_shape[0] * or_shape[2], or_shape[1], or_shape[3])
-        x = np.pad(x, ((0, 0), (0, 0), (self.n, self.n)), mode = 'edge')
+        x = np.pad(x, ((0, 0), (0, 0), (self.n, self.n)), mode='edge')
         x = np.transpose(x, (0, 2, 1))
         k = np.transpose(self.kernel, (2, 1, 0))
         conv = self._group_conv(x, k)
@@ -180,16 +180,16 @@ class ECAPA_TCNNFeaturizer:
 class STTFeaturizer:
     def __init__(
         self,
-        sample_rate = 16000,
-        frame_ms = 25,
-        stride_ms = 10,
-        num_feature_bins = 80,
-        feature_type = 'log_mel_spectrogram',
-        preemphasis = 0.97,
-        dither = 1e-5,
-        normalize_signal = True,
-        normalize_feature = True,
-        normalize_per_feature = False,
+        sample_rate=16000,
+        frame_ms=25,
+        stride_ms=10,
+        num_feature_bins=80,
+        feature_type='log_mel_spectrogram',
+        preemphasis=0.97,
+        dither=1e-5,
+        normalize_signal=True,
+        normalize_feature=True,
+        normalize_per_feature=False,
         **kwargs,
     ):
         self.sample_rate = sample_rate
@@ -214,7 +214,7 @@ class STTFeaturizer:
         if self.normalize_signal:
             signal = normalize_signal(signal)
         if self.dither > 0:
-            signal += self.dither * tf.random.normal(shape = tf.shape(signal))
+            signal += self.dither * tf.random.normal(shape=tf.shape(signal))
         signal = preemphasis(signal, self.preemphasis)
         if self.feature_type == 'mfcc':
             features = self.compute_mfcc(signal)
@@ -230,7 +230,7 @@ class STTFeaturizer:
 
         if self.normalize_feature:
             features = normalize_audio_features(
-                features, per_feature = self.normalize_per_feature
+                features, per_feature=self.normalize_per_feature
             )
         return features
 
@@ -239,14 +239,14 @@ class STTFeaturizer:
             tf.abs(
                 tf.signal.stft(
                     signal,
-                    frame_length = self.frame_length,
-                    frame_step = self.frame_step,
-                    fft_length = self.nfft,
+                    frame_length=self.frame_length,
+                    frame_step=self.frame_step,
+                    fft_length=self.nfft,
                 )
             )
         )
 
-    def power_to_db(self, S, ref = 1.0, amin = 1e-10, top_db = 80.0):
+    def power_to_db(self, S, ref=1.0, amin=1e-10, top_db=80.0):
         if amin <= 0:
             raise ValueError('amin must be strictly positive')
 
@@ -265,11 +265,11 @@ class STTFeaturizer:
     def compute_log_mel_spectrogram(self, signal):
         spectrogram = self.stft(signal)
         linear_to_weight_matrix = tf.signal.linear_to_mel_weight_matrix(
-            num_mel_bins = self.num_feature_bins,
-            num_spectrogram_bins = spectrogram.shape[-1],
-            sample_rate = self.sample_rate,
-            lower_edge_hertz = 0.0,
-            upper_edge_hertz = (self.sample_rate / 2),
+            num_mel_bins=self.num_feature_bins,
+            num_spectrogram_bins=spectrogram.shape[-1],
+            sample_rate=self.sample_rate,
+            lower_edge_hertz=0.0,
+            upper_edge_hertz=(self.sample_rate / 2),
         )
         mel = tf.tensordot(spectrogram, linear_to_weight_matrix, 1)
         return tf.math.log(mel + 1e-20)
@@ -286,28 +286,28 @@ class STTFeaturizer:
 
 def log10(x):
     numerator = tf.math.log(x)
-    denominator = tf.math.log(tf.constant(10, dtype = numerator.dtype))
+    denominator = tf.math.log(tf.constant(10, dtype=numerator.dtype))
     return numerator / denominator
 
 
-def normalize_audio_features(audio_feature, per_feature = False):
+def normalize_audio_features(audio_feature, per_feature=False):
     axis = 0 if per_feature else None
-    mean = tf.reduce_mean(audio_feature, axis = axis)
-    std_dev = tf.math.reduce_std(audio_feature, axis = axis) + 1e-9
+    mean = tf.reduce_mean(audio_feature, axis=axis)
+    std_dev = tf.math.reduce_std(audio_feature, axis=axis) + 1e-9
     return (audio_feature - mean) / std_dev
 
 
 def normalize_signal(signal):
-    gain = 1.0 / (tf.reduce_max(tf.abs(signal), axis = -1) + 1e-9)
+    gain = 1.0 / (tf.reduce_max(tf.abs(signal), axis=-1) + 1e-9)
     return signal * gain
 
 
-def preemphasis(signal, coeff = 0.97):
+def preemphasis(signal, coeff=0.97):
     if not coeff or coeff <= 0.0:
         return signal
-    s0 = tf.expand_dims(signal[0], axis = -1)
+    s0 = tf.expand_dims(signal[0], axis=-1)
     s1 = signal[1:] - coeff * signal[:-1]
-    return tf.concat([s0, s1], axis = -1)
+    return tf.concat([s0, s1], axis=-1)
 
 
 def pad_and_partition(tensor, segment_len):
@@ -319,21 +319,21 @@ def pad_and_partition(tensor, segment_len):
     split = (tf.shape(padded)[0] + segment_len - 1) // segment_len
     return tf.reshape(
         padded,
-        tf.concat([[split, segment_len], tf.shape(padded)[1:]], axis = 0),
+        tf.concat([[split, segment_len], tf.shape(padded)[1:]], axis=0),
     )
 
 
 def pad_and_reshape(
-    instr_spec, frame_length, frame_step = 1024, T = 512, F = 1024
+    instr_spec, frame_length, frame_step=1024, T=512, F=1024
 ):
     spec_shape = tf.shape(instr_spec)
     extension_row = tf.zeros((spec_shape[0], spec_shape[1], 1, spec_shape[-1]))
     n_extra_row = (frame_length) // 2 + 1 - F
     extension = tf.tile(extension_row, [1, 1, n_extra_row, 1])
-    extended_spec = tf.concat([instr_spec, extension], axis = 2)
+    extended_spec = tf.concat([instr_spec, extension], axis=2)
     old_shape = tf.shape(extended_spec)
     new_shape = tf.concat(
-        [[old_shape[0] * old_shape[1]], old_shape[2:]], axis = 0
+        [[old_shape[0] * old_shape[1]], old_shape[2:]], axis=0
     )
     processed_instr_spec = tf.reshape(extended_spec, new_shape)
     return processed_instr_spec
@@ -341,14 +341,14 @@ def pad_and_reshape(
 
 def extend_mask(
     mask,
-    extension = 'zeros',
-    frame_length = 4096,
-    frame_step = 1024,
-    T = 512,
-    F = 1024,
+    extension='zeros',
+    frame_length=4096,
+    frame_step=1024,
+    T=512,
+    F=1024,
 ):
     if extension == 'average':
-        extension_row = tf.reduce_mean(mask, axis = 2, keepdims = True)
+        extension_row = tf.reduce_mean(mask, axis=2, keepdims=True)
     elif extension == 'zeros':
         mask_shape = tf.shape(mask)
         extension_row = tf.zeros(
@@ -358,16 +358,16 @@ def extend_mask(
         raise ValueError(f'Invalid mask_extension parameter {extension}')
     n_extra_row = frame_length // 2 + 1 - F
     extension = tf.tile(extension_row, [1, 1, n_extra_row, 1])
-    return tf.concat([mask, extension], axis = 2)
+    return tf.concat([mask, extension], axis=2)
 
 
 def get_stft(
     y,
-    return_magnitude = True,
-    frame_length = 4096,
-    frame_step = 1024,
-    T = 512,
-    F = 1024,
+    return_magnitude=True,
+    frame_length=4096,
+    frame_step=1024,
+    T=512,
+    F=1024,
 ):
 
     waveform = tf.concat(
@@ -378,12 +378,12 @@ def get_stft(
             tf.transpose(waveform),
             frame_length,
             frame_step,
-            window_fn = lambda frame_length, dtype: (
-                hann_window(frame_length, periodic = True, dtype = dtype)
+            window_fn=lambda frame_length, dtype: (
+                hann_window(frame_length, periodic=True, dtype=dtype)
             ),
-            pad_end = True,
+            pad_end=True,
         ),
-        perm = [1, 2, 0],
+        perm=[1, 2, 0],
     )
     if return_magnitude:
         D = tf.abs(pad_and_partition(stft_feature, T))[:, :, :F, :]
@@ -395,21 +395,21 @@ def get_stft(
 def istft(
     stft_t,
     y,
-    time_crop = None,
-    factor = 2 / 3,
-    frame_length = 4096,
-    frame_step = 1024,
-    T = 512,
-    F = 1024,
+    time_crop=None,
+    factor=2 / 3,
+    frame_length=4096,
+    frame_step=1024,
+    T=512,
+    F=1024,
 ):
 
     inversed = (
         inverse_stft(
-            tf.transpose(stft_t, perm = [2, 0, 1]),
+            tf.transpose(stft_t, perm=[2, 0, 1]),
             frame_length,
             frame_step,
-            window_fn = lambda frame_length, dtype: (
-                hann_window(frame_length, periodic = True, dtype = dtype)
+            window_fn=lambda frame_length, dtype: (
+                hann_window(frame_length, periodic=True, dtype=dtype)
             ),
         )
         * factor
@@ -417,4 +417,4 @@ def istft(
     reshaped = tf.transpose(inversed)
     if time_crop is None:
         time_crop = tf.shape(y)[0]
-    return reshaped[frame_length : frame_length + time_crop, :]
+    return reshaped[frame_length: frame_length + time_crop, :]

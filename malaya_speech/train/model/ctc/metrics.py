@@ -9,23 +9,23 @@ def pad_second_dim(x, desired_size):
 
 
 def ctc_sequence_accuracy(
-    logits, label, input_lengths, beam_width = 1, merge_repeated = True
+    logits, label, input_lengths, beam_width=1, merge_repeated=True
 ):
     logits = tf.transpose(logits, [1, 0, 2])
-    Y_seq_len = tf.count_nonzero(label, 1, dtype = tf.int32)
+    Y_seq_len = tf.count_nonzero(label, 1, dtype=tf.int32)
 
     decoded, log_prob = tf.nn.ctc_beam_search_decoder(
         logits,
         input_lengths,
-        beam_width = beam_width,
-        merge_repeated = merge_repeated,
+        beam_width=beam_width,
+        merge_repeated=merge_repeated,
     )
 
     decoded = tf.to_int32(decoded[0])
     preds = tf.sparse.to_dense(decoded)
     preds = preds[:, : tf.reduce_max(Y_seq_len)]
     masks = tf.sequence_mask(
-        Y_seq_len, tf.reduce_max(Y_seq_len), dtype = tf.float32
+        Y_seq_len, tf.reduce_max(Y_seq_len), dtype=tf.float32
     )
 
     preds = pad_second_dim(preds, tf.reduce_max(Y_seq_len))
@@ -41,18 +41,18 @@ def ctc_sequence_accuracy_estimator(
     logits,
     label,
     input_lengths,
-    beam_width = 1,
-    merge_repeated = True,
-    metrics_collections = None,
-    updates_collections = None,
-    name = None,
+    beam_width=1,
+    merge_repeated=True,
+    metrics_collections=None,
+    updates_collections=None,
+    name=None,
 ):
     accuracy = ctc_sequence_accuracy(
-        logits = logits,
-        label = label,
-        input_lengths = input_lengths,
-        beam_width = beam_width,
-        merge_repeated = merge_repeated,
+        logits=logits,
+        label=label,
+        input_lengths=input_lengths,
+        beam_width=beam_width,
+        merge_repeated=merge_repeated,
     )
 
     accuracy, update_accuracy_op = tf.metrics.mean(accuracy)
@@ -74,7 +74,7 @@ def weights_nonzero(labels):
 def from_tokens(raw, lookup):
     gathered = tf.gather(lookup, tf.cast(raw, tf.int32))
     joined = tf.regex_replace(
-        tf.reduce_join(gathered, axis = 1), b'<EOS>.*', b''
+        tf.reduce_join(gathered, axis=1), b'<EOS>.*', b''
     )
     cleaned = tf.regex_replace(joined, b'_', b' ')
     cleaned = tf.regex_replace(joined, b'<PAD>.*', b' ')
@@ -89,7 +89,7 @@ def from_characters(raw, lookup):
     )
 
     gathered = tf.gather(lookup, tf.cast(corrected, tf.int32))[:, :, 0]
-    joined = tf.reduce_join(gathered, axis = 1)
+    joined = tf.reduce_join(gathered, axis=1)
     cleaned = tf.regex_replace(joined, b'\0', b'')
     tokens = tf.string_split(cleaned, ' ')
     return tokens
@@ -97,7 +97,7 @@ def from_characters(raw, lookup):
 
 # https://github.com/tensorflow/tensor2tensor/blob/master/tensor2tensor/utils/metrics.py#L808
 def word_error_rate(
-    raw_predictions, labels, lookup = None, weights_fn = weights_nonzero
+    raw_predictions, labels, lookup=None, weights_fn=weights_nonzero
 ):
     """
     Calculate word error rate.
@@ -120,20 +120,20 @@ def word_error_rate(
         raise ValueError('Only weights_nonzero can be used for this metric.')
 
     with tf.variable_scope(
-        'word_error_rate', values = [raw_predictions, labels]
+        'word_error_rate', values=[raw_predictions, labels]
     ):
 
-        raw_predictions = tf.argmax(raw_predictions, axis = -1)
+        raw_predictions = tf.argmax(raw_predictions, axis=-1)
         labels = labels
 
         reference = convert_fn(labels, lookup)
         predictions = convert_fn(raw_predictions, lookup)
 
         distance = tf.reduce_sum(
-            tf.edit_distance(predictions, reference, normalize = False)
+            tf.edit_distance(predictions, reference, normalize=False)
         )
         reference_length = tf.cast(
-            tf.size(reference.values, out_type = tf.int32), dtype = tf.float32
+            tf.size(reference.values, out_type=tf.int32), dtype=tf.float32
         )
 
         return distance / reference_length, reference_length
@@ -142,13 +142,13 @@ def word_error_rate(
 def word_error_rate_estimator(
     raw_predictions,
     labels,
-    lookup = None,
-    metrics_collections = None,
-    updates_collections = None,
-    name = None,
+    lookup=None,
+    metrics_collections=None,
+    updates_collections=None,
+    name=None,
 ):
     wer, reference_length = word_error_rate(
-        raw_predictions, labels, lookup = lookup
+        raw_predictions, labels, lookup=lookup
     )
 
     wer, update_wer_op = tf.metrics.mean(wer)

@@ -56,20 +56,20 @@ def exp_decay(
     decay_steps,
     decay_rate,
     use_staircase_decay,
-    begin_decay_at = 0,
-    min_lr = 0.0,
+    begin_decay_at=0,
+    min_lr=0.0,
 ):
     new_lr = tf.cond(
         global_step < begin_decay_at,
         lambda: learning_rate,
         lambda: tf.train.exponential_decay(
-            learning_rate = learning_rate,
-            global_step = global_step - begin_decay_at,
-            decay_steps = decay_steps,
-            decay_rate = decay_rate,
-            staircase = use_staircase_decay,
+            learning_rate=learning_rate,
+            global_step=global_step - begin_decay_at,
+            decay_steps=decay_steps,
+            decay_rate=decay_rate,
+            staircase=use_staircase_decay,
         ),
-        name = 'learning_rate',
+        name='learning_rate',
     )
     final_lr = tf.maximum(min_lr, new_lr)
     return final_lr
@@ -88,9 +88,9 @@ def generate(files):
         if mel_length > maxlen or mel_length < minlen:
             continue
 
-        stop_token_target = np.zeros([len(mel)], dtype = np.float32)
+        stop_token_target = np.zeros([len(mel)], dtype=np.float32)
 
-        text_ids = np.load(f.replace('mels', 'text_ids'), allow_pickle = True)[
+        text_ids = np.load(f.replace('mels', 'text_ids'), allow_pickle=True)[
             0
         ]
         text_ids = ''.join(
@@ -106,10 +106,10 @@ def generate(files):
         )
         num_pad = pad_to - ((len(text_input) + 2) % pad_to)
         text_input = np.pad(
-            text_input, ((1, 1)), 'constant', constant_values = ((1, 2))
+            text_input, ((1, 1)), 'constant', constant_values=((1, 2))
         )
         text_input = np.pad(
-            text_input, ((0, num_pad)), 'constant', constant_values = 0
+            text_input, ((0, num_pad)), 'constant', constant_values=0
         )
         num_pad = pad_to - ((len(mel) + 1) % pad_to) + 1
         pad_value_mel = np.log(data_min)
@@ -117,10 +117,10 @@ def generate(files):
             mel,
             ((0, num_pad), (0, 0)),
             'constant',
-            constant_values = pad_value_mel,
+            constant_values=pad_value_mel,
         )
         stop_token_target = np.pad(
-            stop_token_target, ((0, num_pad)), 'constant', constant_values = 1
+            stop_token_target, ((0, num_pad)), 'constant', constant_values=1
         )
         len_mel = [len(mel)]
         len_text_ids = [len(text_input)]
@@ -138,13 +138,13 @@ def parse(example):
     mel_len = example['len_mel'][0]
     input_len = example['len_text_ids'][0]
     g = tacotron2.generate_guided_attention(
-        mel_len, input_len, reduction_factor = reduction_factor
+        mel_len, input_len, reduction_factor=reduction_factor
     )
     example['g'] = g
     return example
 
 
-def get_dataset(files, batch_size = 32, shuffle_size = 32, thread_count = 24):
+def get_dataset(files, batch_size=32, shuffle_size=32, thread_count=24):
     def get():
         dataset = tf.data.Dataset.from_generator(
             generate,
@@ -155,20 +155,20 @@ def get_dataset(files, batch_size = 32, shuffle_size = 32, thread_count = 24):
                 'len_text_ids': tf.int32,
                 'stop_token_target': tf.float32,
             },
-            output_shapes = {
+            output_shapes={
                 'mel': tf.TensorShape([None, 80]),
                 'text_ids': tf.TensorShape([None]),
                 'len_mel': tf.TensorShape([1]),
                 'len_text_ids': tf.TensorShape([1]),
                 'stop_token_target': tf.TensorShape([None]),
             },
-            args = (files,),
+            args=(files,),
         )
-        dataset = dataset.map(parse, num_parallel_calls = thread_count)
+        dataset = dataset.map(parse, num_parallel_calls=thread_count)
         dataset = dataset.shuffle(batch_size)
         dataset = dataset.padded_batch(
             shuffle_size,
-            padded_shapes = {
+            padded_shapes={
                 'mel': tf.TensorShape([None, 80]),
                 'text_ids': tf.TensorShape([None]),
                 'len_mel': tf.TensorShape([1]),
@@ -176,13 +176,13 @@ def get_dataset(files, batch_size = 32, shuffle_size = 32, thread_count = 24):
                 'g': tf.TensorShape([None, None]),
                 'stop_token_target': tf.TensorShape([None]),
             },
-            padding_values = {
-                'mel': tf.constant(0, dtype = tf.float32),
-                'text_ids': tf.constant(0, dtype = tf.int32),
-                'len_mel': tf.constant(0, dtype = tf.int32),
-                'len_text_ids': tf.constant(0, dtype = tf.int32),
-                'g': tf.constant(-1.0, dtype = tf.float32),
-                'stop_token_target': tf.constant(0, dtype = tf.float32),
+            padding_values={
+                'mel': tf.constant(0, dtype=tf.float32),
+                'text_ids': tf.constant(0, dtype=tf.int32),
+                'len_mel': tf.constant(0, dtype=tf.int32),
+                'len_text_ids': tf.constant(0, dtype=tf.int32),
+                'g': tf.constant(-1.0, dtype=tf.float32),
+                'stop_token_target': tf.constant(0, dtype=tf.float32),
             },
         )
         return dataset
@@ -193,7 +193,7 @@ def get_dataset(files, batch_size = 32, shuffle_size = 32, thread_count = 24):
 def model_fn(features, labels, mode, params):
     input_ids = features['text_ids']
     input_lengths = features['len_text_ids'][:, 0]
-    speaker_ids = tf.constant([0], dtype = tf.int32)
+    speaker_ids = tf.constant([0], dtype=tf.int32)
     mel_outputs = features['mel']
     mel_lengths = features['len_mel'][:, 0]
     guided = features['g']
@@ -214,36 +214,36 @@ def model_fn(features, labels, mode, params):
 
     loss_f = tf.losses.mean_squared_error
     mask = tf.sequence_mask(
-        lengths = mel_lengths, maxlen = max_length, dtype = tf.float32
+        lengths=mel_lengths, maxlen=max_length, dtype=tf.float32
     )
-    mask = tf.expand_dims(mask, axis = -1)
+    mask = tf.expand_dims(mask, axis=-1)
 
     mel_loss_before = loss_f(
-        labels = mel_outputs, predictions = decoder_output, weights = mask
+        labels=mel_outputs, predictions=decoder_output, weights=mask
     )
     mel_loss_after = loss_f(
-        labels = mel_outputs, predictions = post_mel_outputs, weights = mask
+        labels=mel_outputs, predictions=post_mel_outputs, weights=mask
     )
     stop_token_loss = tf.nn.sigmoid_cross_entropy_with_logits(
-        labels = stop_token, logits = stop_token_predictions
+        labels=stop_token, logits=stop_token_predictions
     )
     stop_token_loss = stop_token_loss * mask
     stop_token_loss = tf.reduce_sum(stop_token_loss) / tf.reduce_sum(mask)
 
     attention_masks = tf.cast(tf.math.not_equal(guided, -1.0), tf.float32)
     loss_att = tf.reduce_sum(
-        tf.abs(alignment_histories * guided) * attention_masks, axis = [1, 2]
+        tf.abs(alignment_histories * guided) * attention_masks, axis=[1, 2]
     )
-    loss_att /= tf.reduce_sum(attention_masks, axis = [1, 2])
+    loss_att /= tf.reduce_sum(attention_masks, axis=[1, 2])
     loss_att = tf.reduce_mean(loss_att)
 
     loss = stop_token_loss + mel_loss_before + mel_loss_after + loss_att
 
     tf.identity(loss, 'loss')
-    tf.identity(stop_token_loss, name = 'stop_token_loss')
-    tf.identity(mel_loss_before, name = 'mel_loss_before')
-    tf.identity(mel_loss_after, name = 'mel_loss_after')
-    tf.identity(loss_att, name = 'loss_att')
+    tf.identity(stop_token_loss, name='stop_token_loss')
+    tf.identity(mel_loss_before, name='mel_loss_before')
+    tf.identity(mel_loss_after, name='mel_loss_after')
+    tf.identity(loss_att, name='loss_att')
 
     tf.summary.scalar('stop_token_loss', stop_token_loss)
     tf.summary.scalar('mel_loss_before', mel_loss_before)
@@ -256,20 +256,20 @@ def model_fn(features, labels, mode, params):
             tf.train.AdamOptimizer,
             parameters['optimizer_params'],
             learning_rate_scheduler,
-            summaries = ['learning_rate'],
-            larc_params = parameters.get('larc_params', None),
-            loss_scaling = parameters.get('loss_scaling', 1.0),
-            loss_scaling_params = parameters.get('loss_scaling_params', None),
-            clip_gradients = parameters.get('max_grad_norm', None),
+            summaries=['learning_rate'],
+            larc_params=parameters.get('larc_params', None),
+            loss_scaling=parameters.get('loss_scaling', 1.0),
+            loss_scaling_params=parameters.get('loss_scaling_params', None),
+            clip_gradients=parameters.get('max_grad_norm', None),
         )
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = mode, loss = loss, train_op = train_op
+            mode=mode, loss=loss, train_op=train_op
         )
 
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = tf.estimator.ModeKeys.EVAL, loss = loss
+            mode=tf.estimator.ModeKeys.EVAL, loss=loss
         )
 
     return estimator_spec
@@ -284,20 +284,20 @@ train_hooks = [
             'mel_loss_after',
             'loss_att',
         ],
-        every_n_iter = 1,
+        every_n_iter=1,
     )
 ]
 
 train_dataset = get_dataset(files)
 
 train.run_training(
-    train_fn = train_dataset,
-    model_fn = model_fn,
-    model_dir = 'tacotron2-case-female-singlish',
-    num_gpus = 1,
-    log_step = 1,
-    save_checkpoint_step = 2000,
-    max_steps = 100000,
-    eval_fn = None,
-    train_hooks = train_hooks,
+    train_fn=train_dataset,
+    model_fn=model_fn,
+    model_dir='tacotron2-case-female-singlish',
+    num_gpus=1,
+    log_step=1,
+    save_checkpoint_step=2000,
+    max_steps=100000,
+    eval_fn=None,
+    train_hooks=train_hooks,
 )

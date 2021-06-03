@@ -54,10 +54,10 @@ class TFHifiResBlock(tf.keras.layers.Layer):
                         (kernel_size - 1) // 2 * dilation_rate[i]
                     ),
                     tf.keras.layers.Conv1D(
-                        filters = filters,
-                        kernel_size = kernel_size,
-                        dilation_rate = dilation_rate[i],
-                        use_bias = use_bias,
+                        filters=filters,
+                        kernel_size=kernel_size,
+                        dilation_rate=dilation_rate[i],
+                        use_bias=use_bias,
                     ),
                 ]
             )
@@ -65,10 +65,10 @@ class TFHifiResBlock(tf.keras.layers.Layer):
                 [
                     TFReflectionPad1d((kernel_size - 1) // 2 * 1),
                     tf.keras.layers.Conv1D(
-                        filters = filters,
-                        kernel_size = kernel_size,
-                        dilation_rate = 1,
-                        use_bias = use_bias,
+                        filters=filters,
+                        kernel_size=kernel_size,
+                        dilation_rate=1,
+                        use_bias=use_bias,
                     ),
                 ]
             )
@@ -125,13 +125,13 @@ class Generator(tf.keras.Model):
         layers += [
             TFReflectionPad1d(
                 (config.kernel_size - 1) // 2,
-                padding_type = config.padding_type,
-                name = 'first_reflect_padding',
+                padding_type=config.padding_type,
+                name='first_reflect_padding',
             ),
             tf.keras.layers.Conv1D(
-                filters = config.filters,
-                kernel_size = config.kernel_size,
-                use_bias = config.use_bias,
+                filters=config.filters,
+                kernel_size=config.kernel_size,
+                use_bias=config.use_bias,
             ),
         ]
 
@@ -142,13 +142,13 @@ class Generator(tf.keras.Model):
                     **config.nonlinear_activation_params
                 ),
                 TFConvTranspose1d(
-                    filters = config.filters // (2 ** (i + 1)),
-                    kernel_size = upsample_scale * 2,
-                    strides = upsample_scale,
-                    padding = 'same',
-                    is_weight_norm = config.is_weight_norm,
-                    initializer_seed = config.initializer_seed,
-                    name = 'conv_transpose_._{}'.format(i),
+                    filters=config.filters // (2 ** (i + 1)),
+                    kernel_size=upsample_scale * 2,
+                    strides=upsample_scale,
+                    padding='same',
+                    is_weight_norm=config.is_weight_norm,
+                    initializer_seed=config.initializer_seed,
+                    name='conv_transpose_._{}'.format(i),
                 ),
             ]
 
@@ -156,15 +156,15 @@ class Generator(tf.keras.Model):
             for j in range(config.stacks):
                 layers += [
                     TFHifiResBlock(
-                        kernel_size = config.stack_kernel_size[j],
-                        filters = config.filters // (2 ** (i + 1)),
-                        dilation_rate = config.stack_dilation_rate[j],
-                        use_bias = config.use_bias,
-                        nonlinear_activation = config.nonlinear_activation,
-                        nonlinear_activation_params = config.nonlinear_activation_params,
-                        is_weight_norm = config.is_weight_norm,
-                        initializer_seed = config.initializer_seed,
-                        name = 'hifigan_resblock_._{}._._{}'.format(i, j),
+                        kernel_size=config.stack_kernel_size[j],
+                        filters=config.filters // (2 ** (i + 1)),
+                        dilation_rate=config.stack_dilation_rate[j],
+                        use_bias=config.use_bias,
+                        nonlinear_activation=config.nonlinear_activation,
+                        nonlinear_activation_params=config.nonlinear_activation_params,
+                        is_weight_norm=config.is_weight_norm,
+                        initializer_seed=config.initializer_seed,
+                        name='hifigan_resblock_._{}._._{}'.format(i, j),
                     )
                 ]
         # add final layer
@@ -174,18 +174,18 @@ class Generator(tf.keras.Model):
             ),
             TFReflectionPad1d(
                 (config.kernel_size - 1) // 2,
-                padding_type = config.padding_type,
-                name = 'last_reflect_padding',
+                padding_type=config.padding_type,
+                name='last_reflect_padding',
             ),
             tf.keras.layers.Conv1D(
-                filters = config.out_channels,
-                kernel_size = config.kernel_size,
-                use_bias = config.use_bias,
-                dtype = tf.float32,
+                filters=config.out_channels,
+                kernel_size=config.kernel_size,
+                use_bias=config.use_bias,
+                dtype=tf.float32,
             ),
         ]
         if config.use_final_nolinear_activation:
-            layers += [tf.keras.layers.Activation('tanh', dtype = tf.float32)]
+            layers += [tf.keras.layers.Activation('tanh', dtype=tf.float32)]
 
         if config.is_weight_norm is True:
             self._apply_weightnorm(layers)
@@ -221,17 +221,17 @@ class PeriodDiscriminator(tf.keras.layers.Layer):
     def __init__(
         self,
         period,
-        out_channels = 1,
-        n_layers = 5,
-        kernel_size = 5,
-        strides = 3,
-        filters = 8,
-        filter_scales = 4,
-        max_filters = 1024,
-        nonlinear_activation = 'LeakyReLU',
-        nonlinear_activation_params = {'alpha': 0.2},
-        initializer_seed = 42,
-        is_weight_norm = False,
+        out_channels=1,
+        n_layers=5,
+        kernel_size=5,
+        strides=3,
+        filters=8,
+        filter_scales=4,
+        max_filters=1024,
+        nonlinear_activation='LeakyReLU',
+        nonlinear_activation_params={'alpha': 0.2},
+        initializer_seed=42,
+        is_weight_norm=False,
         **kwargs
     ):
         super().__init__(**kwargs)
@@ -242,16 +242,16 @@ class PeriodDiscriminator(tf.keras.layers.Layer):
         for i in range(n_layers):
             self.convs.append(
                 tf.keras.layers.Conv2D(
-                    filters = min(
+                    filters=min(
                         filters * (filter_scales ** (i + 1)), max_filters
                     ),
-                    kernel_size = (kernel_size, 1),
-                    strides = (strides, 1),
-                    padding = 'same',
+                    kernel_size=(kernel_size, 1),
+                    strides=(strides, 1),
+                    padding='same',
                 )
             )
         self.conv_post = tf.keras.layers.Conv2D(
-            filters = out_channels, kernel_size = (3, 1), padding = 'same'
+            filters=out_channels, kernel_size=(3, 1), padding='same'
         )
         self.activation = getattr(tf.keras.layers, nonlinear_activation)(
             **nonlinear_activation_params
@@ -269,7 +269,7 @@ class PeriodDiscriminator(tf.keras.layers.Layer):
             List: List of output tensors.
         """
         shape = tf.shape(x)
-        n_pad = tf.convert_to_tensor(0, dtype = tf.int32)
+        n_pad = tf.convert_to_tensor(0, dtype=tf.int32)
         if shape[1] % self.period != 0:
             n_pad = self.period - (shape[1] % self.period)
             x = tf.pad(x, [[0, 0], [0, n_pad], [0, 0]], 'REFLECT')
@@ -312,18 +312,18 @@ class MultiPeriodDiscriminator(tf.keras.Model):
             self.discriminator += [
                 PeriodDiscriminator(
                     config.period_scales[i],
-                    out_channels = config.out_channels,
-                    n_layers = config.n_layers,
-                    kernel_size = config.kernel_size,
-                    strides = config.strides,
-                    filters = config.filters,
-                    filter_scales = config.filter_scales,
-                    max_filters = config.max_filters,
-                    nonlinear_activation = config.nonlinear_activation,
-                    nonlinear_activation_params = config.nonlinear_activation_params,
-                    initializer_seed = config.initializer_seed,
-                    is_weight_norm = config.is_weight_norm,
-                    name = 'hifigan_period_discriminator_._{}'.format(i),
+                    out_channels=config.out_channels,
+                    n_layers=config.n_layers,
+                    kernel_size=config.kernel_size,
+                    strides=config.strides,
+                    filters=config.filters,
+                    filter_scales=config.filter_scales,
+                    max_filters=config.max_filters,
+                    nonlinear_activation=config.nonlinear_activation,
+                    nonlinear_activation_params=config.nonlinear_activation_params,
+                    initializer_seed=config.initializer_seed,
+                    is_weight_norm=config.is_weight_norm,
+                    name='hifigan_period_discriminator_._{}'.format(i),
                 )
             ]
 

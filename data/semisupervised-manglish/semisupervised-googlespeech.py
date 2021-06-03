@@ -5,17 +5,17 @@ from tqdm import tqdm
 
 def split(
     file,
-    min_silence_len = 500,
-    silence_thresh = -20,
-    max_len = 7,
-    keep_silence = 1000,
+    min_silence_len=500,
+    silence_thresh=-20,
+    max_len=7,
+    keep_silence=1000,
 ):
     audio = AudioSegment.from_mp3(file)
     audio_chunks = split_on_silence(
         audio,
-        min_silence_len = min_silence_len,
-        silence_thresh = silence_thresh,
-        keep_silence = keep_silence,
+        min_silence_len=min_silence_len,
+        silence_thresh=silence_thresh,
+        keep_silence=keep_silence,
     )
 
     audios, temp, length = [], [], 0
@@ -40,17 +40,17 @@ import uuid
 r = sr.Recognizer()
 
 
-def audiosegment_google_speech(audio, filename, lang = 'en-SG'):
+def audiosegment_google_speech(audio, filename, lang='en-SG'):
     if os.path.exists('output-wav/' + filename):
         return False
 
-    audio.set_frame_rate(32000).set_channels(1).export(filename, format = 'wav')
+    audio.set_frame_rate(32000).set_channels(1).export(filename, format='wav')
     try:
         with sr.AudioFile(filename) as source:
             a = r.record(source)
 
-        text = r.recognize_google(a, language = lang)
-    except:
+        text = r.recognize_google(a, language=lang)
+    except BaseException:
         text = ''
 
     if len(text):
@@ -59,7 +59,7 @@ def audiosegment_google_speech(audio, filename, lang = 'en-SG'):
             fopen.write(text)
 
         audio.set_frame_rate(16000).set_channels(1).export(
-            'output-wav/' + filename, format = 'wav'
+            'output-wav/' + filename, format='wav'
         )
 
     os.remove(filename)

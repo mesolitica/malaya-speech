@@ -13,3 +13,16 @@
   - Recorded using mid-end tech microphone.
   - 44100 sample rate, random 7 - 11 words window.
   - approximate 0.15 hours.
+
+## Citation
+
+```bibtex
+@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Speech Dataset from Wattpad texts,
+  author = {Husein, Zolkepli},
+  title = {Malay-Dataset},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/wattpad}}
+}
+```

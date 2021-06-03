@@ -40,7 +40,7 @@ import os
 import re
 
 
-def _clean_text(text, match = None):
+def _clean_text(text, match=None):
     """ Clean text, remove forbidden characters.
     """
     # all non alpha numeric characters, except for _ and :
@@ -55,7 +55,7 @@ def _clean_text(text, match = None):
     return text
 
 
-def build_node_set(node, s = None):
+def build_node_set(node, s=None):
     """Build a set of all the nodes in a streamz graph
 
     Parameters
@@ -111,11 +111,11 @@ def create_graph(node, graph):
         t = hash(n)
         graph.add_node(
             t,
-            label = _clean_text(str(n)),
-            shape = n._graphviz_shape,
-            orientation = str(n._graphviz_orientation),
-            style = n._graphviz_style,
-            fillcolor = n._graphviz_fillcolor,
+            label=_clean_text(str(n)),
+            shape=n._graphviz_shape,
+            orientation=str(n._graphviz_orientation),
+            style=n._graphviz_style,
+            fillcolor=n._graphviz_fillcolor,
         )
 
     # Step 3 for each node establish its edges
@@ -130,7 +130,7 @@ def create_graph(node, graph):
         for i, nn in enumerate(downstreams):
             tt = hash(nn)
             if len(downstreams) > 1:
-                graph.add_edge(t, tt, label = str(i))
+                graph.add_edge(t, tt, label=str(i))
             else:
                 graph.add_edge(t, tt)
 
@@ -158,14 +158,14 @@ def readable_graph(graph):
             idx_mapping[v] = 0
 
     gg = {k: v for k, v in mapping.items()}
-    rg = nx.relabel_nodes(graph, gg, copy = True)
+    rg = nx.relabel_nodes(graph, gg, copy=True)
     return rg
 
 
 def to_graphviz(graph, **graph_attr):
     import graphviz
 
-    gvz = graphviz.Digraph(graph_attr = graph_attr)
+    gvz = graphviz.Digraph(graph_attr=graph_attr)
     for node, attrs in graph.nodes.items():
         gvz.node(node, **attrs)
     for edge, attrs in graph.edges().items():
@@ -173,7 +173,7 @@ def to_graphviz(graph, **graph_attr):
     return gvz
 
 
-def visualize(node, filename = 'mystream.png', **kwargs):
+def visualize(node, filename='mystream.png', **kwargs):
     """
     Render a task graph using dot.
 
@@ -226,7 +226,7 @@ def visualize(node, filename = 'mystream.png', **kwargs):
     else:
         format = 'png'
 
-    data = g.pipe(format = format)
+    data = g.pipe(format=format)
     if not data:
         raise RuntimeError(
             'Graphviz failed to properly produce an image. '
@@ -239,13 +239,13 @@ def visualize(node, filename = 'mystream.png', **kwargs):
     display_cls = _get_display_cls(format)
 
     if not filename:
-        return display_cls(data = data)
+        return display_cls(data=data)
 
     full_filename = '.'.join([filename, format])
     with open(full_filename, 'wb') as f:
         f.write(data)
 
-    return display_cls(filename = full_filename)
+    return display_cls(filename=full_filename)
 
 
 IPYTHON_IMAGE_FORMATS = frozenset(['jpeg', 'png'])
@@ -275,7 +275,7 @@ def _get_display_cls(format):
     elif format in IPYTHON_IMAGE_FORMATS:
         # Partially apply `format` so that `Image` and `SVG` supply a uniform
         # interface to the caller.
-        return partial(display.Image, format = format)
+        return partial(display.Image, format=format)
     elif format == 'svg':
         return display.SVG
     else:

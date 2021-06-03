@@ -24,10 +24,10 @@ import pandas as pd
 
 def chunks(l, n):
     for i in range(0, len(l), n):
-        yield (l[i : i + n], i // n)
+        yield (l[i: i + n], i // n)
 
 
-def multiprocessing(strings, function, cores = 6, returned = True):
+def multiprocessing(strings, function, cores=6, returned=True):
     df_split = chunks(strings, len(strings) // cores)
     pool = Pool(cores)
     print('initiate pool map')
@@ -53,7 +53,7 @@ speakers = defaultdict(list)
 for f in librispeech:
     speakers[get_speaker_librispeech(f)].append(f)
 
-vctk = glob('vtck/**/*.flac', recursive = True)
+vctk = glob('vtck/**/*.flac', recursive=True)
 vctk_speakers = defaultdict(list)
 for f in vctk:
     s = f.split('/')[-1].split('_')[0]
@@ -75,9 +75,9 @@ speakers_malay['dari-pasentran-ke-istana'] = glob(
 )
 
 noises = glob('../noise-44k/noise/*.wav') + glob('../noise-44k/clean-wav/*.wav')
-basses = glob('HHDS/Sources/**/*bass.wav', recursive = True)
-drums = glob('HHDS/Sources/**/*drums.wav', recursive = True)
-others = glob('HHDS/Sources/**/*other.wav', recursive = True)
+basses = glob('HHDS/Sources/**/*bass.wav', recursive=True)
+drums = glob('HHDS/Sources/**/*drums.wav', recursive=True)
+others = glob('HHDS/Sources/**/*other.wav', recursive=True)
 noises = noises + basses + drums + others
 random.shuffle(noises)
 sr = 22050
@@ -97,18 +97,18 @@ def random_speakers(n):
 
 
 def read_wav(f):
-    return malaya_speech.load(f, sr = sr)
+    return malaya_speech.load(f, sr=sr)
 
 
 def random_sampling(s, length):
-    return augmentation.random_sampling(s, sr = sr, length = length)
+    return augmentation.random_sampling(s, sr=sr, length=length)
 
 
-def combine_speakers(files, n = 5, limit = 4):
+def combine_speakers(files, n=5, limit=4):
     w_samples = random.sample(files, n)
     w_samples = [
         random_sampling(
-            read_wav(f)[0], length = random.randint(1500, max(10000 // n, 6000))
+            read_wav(f)[0], length=random.randint(1500, max(10000 // n, 6000))
         )
         for f in w_samples
     ]
@@ -175,7 +175,7 @@ def parallel(f):
             y = [malaya_speech.featurization.universal_mel(i) for i in y]
 
             break
-        except:
+        except BaseException:
             pass
 
     return combined, y, [len(combined)]
@@ -189,10 +189,10 @@ def loop(files):
     return results
 
 
-def generate(batch_size = 10, repeat = 50):
+def generate(batch_size=10, repeat=50):
     fs = [i for i in range(batch_size)]
     while True:
-        results = multiprocessing(fs, loop, cores = len(fs))
+        results = multiprocessing(fs, loop, cores=len(fs))
         for _ in range(repeat):
             random.shuffle(results)
             for r in results:
@@ -200,12 +200,12 @@ def generate(batch_size = 10, repeat = 50):
                     yield {'combined': r[0], 'y': r[1], 'length': r[2]}
 
 
-def get_dataset(batch_size = 4):
+def get_dataset(batch_size=4):
     def get():
         dataset = tf.data.Dataset.from_generator(
             generate,
             {'combined': tf.float32, 'y': tf.float32, 'length': tf.int32},
-            output_shapes = {
+            output_shapes={
                 'combined': tf.TensorShape([None, 80]),
                 'y': tf.TensorShape([speakers_size, None, 80]),
                 'length': tf.TensorShape([None]),
@@ -213,15 +213,15 @@ def get_dataset(batch_size = 4):
         )
         dataset = dataset.padded_batch(
             batch_size,
-            padded_shapes = {
+            padded_shapes={
                 'combined': tf.TensorShape([None, 80]),
                 'y': tf.TensorShape([speakers_size, None, 80]),
                 'length': tf.TensorShape([None]),
             },
-            padding_values = {
-                'combined': tf.constant(0, dtype = tf.float32),
-                'y': tf.constant(0, dtype = tf.float32),
-                'length': tf.constant(0, dtype = tf.int32),
+            padding_values={
+                'combined': tf.constant(0, dtype=tf.float32),
+                'y': tf.constant(0, dtype=tf.float32),
+                'length': tf.constant(0, dtype=tf.int32),
             },
         )
         return dataset
@@ -238,15 +238,15 @@ def model_fn(features, labels, mode, params):
     dim = 192
     config['encoder_hidden_size'] = dim
     config['decoder_hidden_size'] = dim * speakers_size
-    config = fastspeech.Config(vocab_size = 1, **config)
-    model = fast_swave.Model(config, R = 2, C = speakers_size, N = dim, O = dim)
+    config = fastspeech.Config(vocab_size=1, **config)
+    model = fast_swave.Model(config, R=2, C=speakers_size, N=dim, O=dim)
     outputs, output_all = model(features['combined'], lengths)
 
     loss = 0
     for c_idx, est_src in enumerate(outputs):
         coeff = (c_idx + 1) * (1 / len(outputs))
         abs_loss = fast_swave.calculate_loss(
-            features['y'], est_src, lengths, C = speakers_size
+            features['y'], est_src, lengths, C=speakers_size
         )
         loss += abs_loss
 
@@ -260,42 +260,42 @@ def model_fn(features, labels, mode, params):
 
         train_op = train.optimizer.adamw.create_optimizer(
             loss,
-            init_lr = 0.0001,
-            num_train_steps = total_steps,
-            num_warmup_steps = 100000,
-            end_learning_rate = 0.00005,
-            weight_decay_rate = 0.001,
-            beta_1 = 0.9,
-            beta_2 = 0.98,
-            epsilon = 1e-6,
-            clip_norm = 1.0,
+            init_lr=0.0001,
+            num_train_steps=total_steps,
+            num_warmup_steps=100000,
+            end_learning_rate=0.00005,
+            weight_decay_rate=0.001,
+            beta_1=0.9,
+            beta_2=0.98,
+            epsilon=1e-6,
+            clip_norm=1.0,
         )
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = mode, loss = loss, train_op = train_op
+            mode=mode, loss=loss, train_op=train_op
         )
 
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = tf.estimator.ModeKeys.EVAL, loss = loss
+            mode=tf.estimator.ModeKeys.EVAL, loss=loss
         )
 
     return estimator_spec
 
 
-train_hooks = [tf.train.LoggingTensorHook(['total_loss'], every_n_iter = 1)]
+train_hooks = [tf.train.LoggingTensorHook(['total_loss'], every_n_iter=1)]
 train_dataset = get_dataset()
 
 save_directory = 'speaker-split-fast-swave-r2'
 
 train.run_training(
-    train_fn = train_dataset,
-    model_fn = model_fn,
-    model_dir = save_directory,
-    num_gpus = 1,
-    log_step = 1,
-    save_checkpoint_step = 3000,
-    max_steps = total_steps,
-    train_hooks = train_hooks,
-    eval_step = 0,
+    train_fn=train_dataset,
+    model_fn=model_fn,
+    model_dir=save_directory,
+    num_gpus=1,
+    log_step=1,
+    save_checkpoint_step=3000,
+    max_steps=total_steps,
+    train_hooks=train_hooks,
+    eval_step=0,
 )

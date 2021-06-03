@@ -29,10 +29,10 @@ class PreempInit(tf.keras.initializers.Initializer):
       alpha < 1 (higher alpha boosts high frequencies)
   """
 
-    def __init__(self, alpha = 0.97):
+    def __init__(self, alpha=0.97):
         self.alpha = alpha
 
-    def __call__(self, shape, dtype = None):
+    def __call__(self, shape, dtype=None):
         assert shape == (
             2,
             1,
@@ -41,7 +41,7 @@ class PreempInit(tf.keras.initializers.Initializer):
         preemp_arr = np.zeros(shape)
         preemp_arr[0, 0, 0] = -self.alpha
         preemp_arr[1, 0, 0] = 1
-        return tf.convert_to_tensor(preemp_arr, dtype = dtype)
+        return tf.convert_to_tensor(preemp_arr, dtype=dtype)
 
     def get_config(self):
         return self.__dict__
@@ -62,17 +62,17 @@ class GaborInit(tf.keras.initializers.Initializer):
         kwargs.pop('n_filters', None)
         self._kwargs = kwargs
 
-    def __call__(self, shape, dtype = None):
+    def __call__(self, shape, dtype=None):
         n_filters = shape[0] if len(shape) == 2 else shape[-1] // 2
         window_len = 401 if len(shape) == 2 else shape[0]
         gabor_filters = Gabor(
-            n_filters = n_filters, window_len = window_len, **self._kwargs
+            n_filters=n_filters, window_len=window_len, **self._kwargs
         )
         if len(shape) == 2:
             return gabor_filters.gabor_params_from_mels
         else:
-            even_indices = tf.range(shape[2], delta = 2)
-            odd_indices = tf.range(start = 1, limit = shape[2], delta = 2)
+            even_indices = tf.range(shape[2], delta=2)
+            odd_indices = tf.range(start=1, limit=shape[2], delta=2)
             filters = gabor_filters.gabor_filters
             filters_real_and_imag = tf.dynamic_stitch(
                 [even_indices, odd_indices],
@@ -98,7 +98,7 @@ class ExponentialMovingAverage(tf.keras.layers.Layer):
       per_channel: whether the smoothing should be different per channel.
       trainable: whether the smoothing should be trained or not.
     """
-        super().__init__(name = 'EMA')
+        super().__init__(name='EMA')
         self._coeff_init = coeff_init
         self._per_channel = per_channel
         self._trainable = trainable
@@ -106,21 +106,21 @@ class ExponentialMovingAverage(tf.keras.layers.Layer):
     def build(self, input_shape):
         num_channels = input_shape[-1]
         self._weights = self.add_weight(
-            name = 'smooth',
-            shape = (num_channels,) if self._per_channel else (1,),
-            initializer = tf.keras.initializers.Constant(self._coeff_init),
-            trainable = self._trainable,
+            name='smooth',
+            shape=(num_channels,) if self._per_channel else (1,),
+            initializer=tf.keras.initializers.Constant(self._coeff_init),
+            trainable=self._trainable,
         )
 
     def call(self, inputs: tf.Tensor, initial_state: tf.Tensor):
         """Inputs is of shape [batch, seq_length, num_filters]."""
         w = tf.clip_by_value(
-            self._weights, clip_value_min = 0.0, clip_value_max = 1.0
+            self._weights, clip_value_min=0.0, clip_value_max=1.0
         )
         result = tf.scan(
             lambda a, x: w * x + (1.0 - w) * a,
             tf.transpose(inputs, (1, 0, 2)),
-            initializer = initial_state,
+            initializer=initial_state,
         )
         return tf.transpose(result, (1, 0, 2))
 
@@ -142,7 +142,7 @@ class PCENLayer(tf.keras.layers.Layer):
         trainable: bool = False,
         learn_smooth_coef: bool = False,
         per_channel_smooth_coef: bool = False,
-        name = 'PCEN',
+        name='PCEN',
     ):
         """PCEN constructor.
     Args:
@@ -158,7 +158,7 @@ class PCENLayer(tf.keras.layers.Layer):
         coefficient
       name: str, name of the layer
     """
-        super().__init__(name = name)
+        super().__init__(name=name)
         self._alpha_init = alpha
         self._delta_init = delta
         self._root_init = root
@@ -171,49 +171,49 @@ class PCENLayer(tf.keras.layers.Layer):
     def build(self, input_shape):
         num_channels = input_shape[-1]
         self.alpha = self.add_weight(
-            name = 'alpha',
-            shape = [num_channels],
-            initializer = tf.keras.initializers.Constant(self._alpha_init),
-            trainable = self._trainable,
+            name='alpha',
+            shape=[num_channels],
+            initializer=tf.keras.initializers.Constant(self._alpha_init),
+            trainable=self._trainable,
         )
         self.delta = self.add_weight(
-            name = 'delta',
-            shape = [num_channels],
-            initializer = tf.keras.initializers.Constant(self._delta_init),
-            trainable = self._trainable,
+            name='delta',
+            shape=[num_channels],
+            initializer=tf.keras.initializers.Constant(self._delta_init),
+            trainable=self._trainable,
         )
         self.root = self.add_weight(
-            name = 'root',
-            shape = [num_channels],
-            initializer = tf.keras.initializers.Constant(self._root_init),
-            trainable = self._trainable,
+            name='root',
+            shape=[num_channels],
+            initializer=tf.keras.initializers.Constant(self._root_init),
+            trainable=self._trainable,
         )
         if self._learn_smooth_coef:
             self.ema = ExponentialMovingAverage(
-                coeff_init = self._smooth_coef,
-                per_channel = self._per_channel_smooth_coef,
-                trainable = True,
+                coeff_init=self._smooth_coef,
+                per_channel=self._per_channel_smooth_coef,
+                trainable=True,
             )
         else:
             self.ema = tf.keras.layers.SimpleRNN(
-                units = num_channels,
-                activation = None,
-                use_bias = False,
-                kernel_initializer = tf.keras.initializers.Identity(
-                    gain = self._smooth_coef
+                units=num_channels,
+                activation=None,
+                use_bias=False,
+                kernel_initializer=tf.keras.initializers.Identity(
+                    gain=self._smooth_coef
                 ),
-                recurrent_initializer = tf.keras.initializers.Identity(
-                    gain = 1.0 - self._smooth_coef
+                recurrent_initializer=tf.keras.initializers.Identity(
+                    gain=1.0 - self._smooth_coef
                 ),
-                return_sequences = True,
-                trainable = False,
+                return_sequences=True,
+                trainable=False,
             )
 
     def call(self, inputs):
         alpha = tf.math.minimum(self.alpha, 1.0)
         root = tf.math.maximum(self.root, 1.0)
         ema_smoother = self.ema(
-            inputs, initial_state = tf.gather(inputs, 0, axis = 1)
+            inputs, initial_state=tf.gather(inputs, 0, axis=1)
         )
         one_over_root = 1.0 / root
         output = (
@@ -227,14 +227,14 @@ def gabor_impulse_response(
 ) -> tf.Tensor:
     """Computes the gabor impulse response."""
     denominator = 1.0 / (tf.math.sqrt(2.0 * math.pi) * fwhm)
-    gaussian = tf.exp(tf.tensordot(1.0 / (2.0 * fwhm ** 2), -t ** 2, axes = 0))
+    gaussian = tf.exp(tf.tensordot(1.0 / (2.0 * fwhm ** 2), -t ** 2, axes=0))
     center_frequency_complex = tf.cast(center, tf.complex64)
     t_complex = tf.cast(t, tf.complex64)
     sinusoid = tf.math.exp(
-        1j * tf.tensordot(center_frequency_complex, t_complex, axes = 0)
+        1j * tf.tensordot(center_frequency_complex, t_complex, axes=0)
     )
-    denominator = tf.cast(denominator, dtype = tf.complex64)[:, tf.newaxis]
-    gaussian = tf.cast(gaussian, dtype = tf.complex64)
+    denominator = tf.cast(denominator, dtype=tf.complex64)[:, tf.newaxis]
+    gaussian = tf.cast(gaussian, dtype=tf.complex64)
     return denominator * sinusoid * gaussian
 
 
@@ -247,9 +247,9 @@ def gabor_filters_function(kernel, size: int = 401) -> tf.Tensor:
     A tf.Tensor<float>[filters, size].
   """
     return gabor_impulse_response(
-        tf.range(-(size // 2), (size + 1) // 2, dtype = tf.float32),
-        center = kernel[:, 0],
-        fwhm = kernel[:, 1],
+        tf.range(-(size // 2), (size + 1) // 2, dtype=tf.float32),
+        center=kernel[:, 0],
+        fwhm=kernel[:, 1],
     )
 
 
@@ -268,16 +268,16 @@ class SquaredModulus(tf.keras.layers.Layer):
   """
 
     def __init__(self):
-        super().__init__(name = 'squared_modulus')
+        super().__init__(name='squared_modulus')
         # self._pool = tf.keras.layers.AveragePooling1D(
         #     pool_size = 2, strides = 2
         # )
 
     def call(self, x):
-        x = tf.transpose(x, perm = [0, 2, 1])
-        output = 2 * tf.nn.avg_pool1d(x ** 2, 2, 2, padding = 'VALID')
+        x = tf.transpose(x, perm=[0, 2, 1])
+        output = 2 * tf.nn.avg_pool1d(x ** 2, 2, 2, padding='VALID')
         # output = 2 * self._pool(x ** 2)
-        return tf.transpose(output, perm = [0, 2, 1])
+        return tf.transpose(output, perm=[0, 2, 1])
 
 
 class GaborConstraint(tf.keras.constraints.Constraint):
@@ -302,7 +302,7 @@ class GaborConstraint(tf.keras.constraints.Constraint):
         sigma_upper = self._kernel_size * math.sqrt(2 * math.log(2)) / math.pi
         clipped_mu = tf.clip_by_value(kernel[:, 0], mu_lower, mu_upper)
         clipped_sigma = tf.clip_by_value(kernel[:, 1], sigma_lower, sigma_upper)
-        return tf.stack([clipped_mu, clipped_sigma], axis = 1)
+        return tf.stack([clipped_mu, clipped_sigma], axis=1)
 
 
 class GaborConv1D(tf.keras.layers.Layer):
@@ -324,9 +324,9 @@ class GaborConv1D(tf.keras.layers.Layer):
         kernel_regularizer,
         name,
         trainable,
-        sort_filters = False,
+        sort_filters=False,
     ):
-        super().__init__(name = name)
+        super().__init__(name=name)
         self._filters = filters // 2
         self._kernel_size = kernel_size
         self._strides = strides
@@ -335,41 +335,41 @@ class GaborConv1D(tf.keras.layers.Layer):
         self._sort_filters = sort_filters
         # Weights are the concatenation of center freqs and inverse bandwidths.
         self._kernel = self.add_weight(
-            name = 'kernel',
-            shape = (self._filters, 2),
-            initializer = kernel_initializer,
-            regularizer = kernel_regularizer,
-            trainable = trainable,
-            constraint = GaborConstraint(self._kernel_size),
+            name='kernel',
+            shape=(self._filters, 2),
+            initializer=kernel_initializer,
+            regularizer=kernel_regularizer,
+            trainable=trainable,
+            constraint=GaborConstraint(self._kernel_size),
         )
         if self._use_bias:
             self._bias = self.add_weight(
-                name = 'bias', shape = (self._filters * 2,)
+                name='bias', shape=(self._filters * 2,)
             )
 
     def call(self, inputs):
         kernel = self._kernel.constraint(self._kernel)
         if self._sort_filters:
             filter_order = tf.argsort(kernel[:, 0])
-            kernel = tf.gather(kernel, filter_order, axis = 0)
+            kernel = tf.gather(kernel, filter_order, axis=0)
         filters = gabor_filters_function(kernel, self._kernel_size)
         real_filters = tf.math.real(filters)
         img_filters = tf.math.imag(filters)
-        stacked_filters = tf.stack([real_filters, img_filters], axis = 1)
+        stacked_filters = tf.stack([real_filters, img_filters], axis=1)
         stacked_filters = tf.reshape(
             stacked_filters, [2 * self._filters, self._kernel_size]
         )
         stacked_filters = tf.expand_dims(
-            tf.transpose(stacked_filters, perm = (1, 0)), axis = 1
+            tf.transpose(stacked_filters, perm=(1, 0)), axis=1
         )
         outputs = tf.nn.conv1d(
             inputs,
             stacked_filters,
-            stride = self._strides,
-            padding = self._padding,
+            stride=self._strides,
+            padding=self._padding,
         )
         if self._use_bias:
-            outputs = tf.nn.bias_add(outputs, self._bias, data_format = 'NWC')
+            outputs = tf.nn.bias_add(outputs, self._bias, data_format='NWC')
         return outputs
 
 
@@ -382,9 +382,9 @@ def gaussian_lowpass(sigma: tf.Tensor, filter_size: int):
     A tf.Tensor<float>[1, filter_size, C, 1].
   """
     sigma = tf.clip_by_value(
-        sigma, clip_value_min = (2.0 / filter_size), clip_value_max = 0.5
+        sigma, clip_value_min=(2.0 / filter_size), clip_value_max=0.5
     )
-    t = tf.range(0, filter_size, dtype = tf.float32)
+    t = tf.range(0, filter_size, dtype=tf.float32)
     t = tf.reshape(t, (1, filter_size, 1, 1))
     numerator = t - 0.5 * (filter_size - 1)
     denominator = sigma * 0.5 * (filter_size - 1)
@@ -402,15 +402,15 @@ class GaussianLowpass(tf.keras.layers.Layer):
     def __init__(
         self,
         kernel_size,
-        strides = 1,
-        padding = 'same',
-        use_bias = True,
-        kernel_initializer = 'glorot_uniform',
-        kernel_regularizer = None,
-        trainable = False,
+        strides=1,
+        padding='same',
+        use_bias=True,
+        kernel_initializer='glorot_uniform',
+        kernel_regularizer=None,
+        trainable=False,
     ):
 
-        super().__init__(name = 'learnable_pooling')
+        super().__init__(name='learnable_pooling')
         self.kernel_size = kernel_size
         self.strides = strides
         self.padding = padding
@@ -421,23 +421,23 @@ class GaussianLowpass(tf.keras.layers.Layer):
 
     def build(self, input_shape):
         self.kernel = self.add_weight(
-            name = 'kernel',
-            shape = (1, 1, input_shape[2], 1),
-            initializer = self.kernel_initializer,
-            regularizer = self.kernel_regularizer,
-            trainable = self.trainable,
+            name='kernel',
+            shape=(1, 1, input_shape[2], 1),
+            initializer=self.kernel_initializer,
+            regularizer=self.kernel_regularizer,
+            trainable=self.trainable,
         )
 
     def call(self, inputs):
         kernel = gaussian_lowpass(self.kernel, self.kernel_size)
-        outputs = tf.expand_dims(inputs, axis = 1)
+        outputs = tf.expand_dims(inputs, axis=1)
         outputs = tf.nn.depthwise_conv2d(
             outputs,
             kernel,
-            strides = (1, self.strides, self.strides, 1),
-            padding = self.padding.upper(),
+            strides=(1, self.strides, self.strides, 1),
+            padding=self.padding.upper(),
         )
-        return tf.squeeze(outputs, axis = 1)
+        return tf.squeeze(outputs, axis=1)
 
 
 class Gabor:
@@ -479,32 +479,32 @@ class Gabor:
         coeff = tf.math.sqrt(2.0 * tf.math.log(2.0)) * self.n_fft
         sqrt_filters = tf.math.sqrt(self.mel_filters)
         center_frequencies = tf.cast(
-            tf.argmax(sqrt_filters, axis = 1), dtype = tf.float32
+            tf.argmax(sqrt_filters, axis=1), dtype=tf.float32
         )
-        peaks = tf.reduce_max(sqrt_filters, axis = 1, keepdims = True)
+        peaks = tf.reduce_max(sqrt_filters, axis=1, keepdims=True)
         half_magnitudes = peaks / 2.0
         fwhms = tf.reduce_sum(
-            tf.cast(sqrt_filters >= half_magnitudes, dtype = tf.float32),
-            axis = 1,
+            tf.cast(sqrt_filters >= half_magnitudes, dtype=tf.float32),
+            axis=1,
         )
         return tf.stack(
             [
                 center_frequencies * 2 * np.pi / self.n_fft,
                 coeff / (np.pi * fwhms),
             ],
-            axis = 1,
+            axis=1,
         )
 
     def _mel_filters_areas(self, filters):
         """Area under each mel-filter."""
-        peaks = tf.reduce_max(filters, axis = 1, keepdims = True)
+        peaks = tf.reduce_max(filters, axis=1, keepdims=True)
         return (
             peaks
             * (
                 tf.reduce_sum(
-                    tf.cast(filters > 0, dtype = tf.float32),
-                    axis = 1,
-                    keepdims = True,
+                    tf.cast(filters > 0, dtype=tf.float32),
+                    axis=1,
+                    keepdims=True,
                 )
                 + 2
             )
@@ -517,11 +517,11 @@ class Gabor:
         """Creates a bank of mel-filters."""
         # build mel filter matrix
         mel_filters = tf.signal.linear_to_mel_weight_matrix(
-            num_mel_bins = self.n_filters,
-            num_spectrogram_bins = self.n_fft // 2 + 1,
-            sample_rate = self.sample_rate,
-            lower_edge_hertz = self.min_freq,
-            upper_edge_hertz = self.max_freq,
+            num_mel_bins=self.n_filters,
+            num_spectrogram_bins=self.n_fft // 2 + 1,
+            sample_rate=self.sample_rate,
+            lower_edge_hertz=self.min_freq,
+            upper_edge_hertz=self.max_freq,
         )
         mel_filters = tf.transpose(mel_filters, [1, 0])
         if self.normalize_energy:
@@ -532,7 +532,7 @@ class Gabor:
     def gabor_filters(self):
         """Generates gabor filters that match the corresponding mel-filters."""
         gabor_filters = gabor_filters_function(
-            self.gabor_params_from_mels, size = self.window_len
+            self.gabor_params_from_mels, size=self.window_len
         )
         return gabor_filters * tf.cast(
             tf.math.sqrt(
@@ -541,7 +541,7 @@ class Gabor:
                 * tf.math.sqrt(np.pi)
                 * self.gabor_params_from_mels[:, 1:2]
             ),
-            dtype = tf.complex64,
+            dtype=tf.complex64,
         )
 
 
@@ -558,83 +558,83 @@ class Model(tf.keras.models.Model):
         self,
         learn_pooling: bool = True,
         learn_filters: bool = True,
-        conv1d_cls = GaborConv1D,
-        activation = SquaredModulus(),
-        pooling_cls = GaussianLowpass,
+        conv1d_cls=GaborConv1D,
+        activation=SquaredModulus(),
+        pooling_cls=GaussianLowpass,
         n_filters: int = 80,
         sample_rate: int = 16000,
         window_len: float = 25.0,
         window_stride: float = 10.0,
-        compression_fn = PCENLayer(
-            alpha = 0.96,
-            smooth_coef = 0.04,
-            delta = 2.0,
-            floor = 1e-12,
-            trainable = True,
-            learn_smooth_coef = True,
-            per_channel_smooth_coef = True,
+        compression_fn=PCENLayer(
+            alpha=0.96,
+            smooth_coef=0.04,
+            delta=2.0,
+            floor=1e-12,
+            trainable=True,
+            learn_smooth_coef=True,
+            per_channel_smooth_coef=True,
         ),
         preemp: bool = True,
-        preemp_init = PreempInit(),
-        complex_conv_init = GaborInit(
-            sample_rate = 16000, min_freq = 60.0, max_freq = 7800.0
+        preemp_init=PreempInit(),
+        complex_conv_init=GaborInit(
+            sample_rate=16000, min_freq=60.0, max_freq=7800.0
         ),
-        pooling_init = tf.keras.initializers.Constant(0.4),
-        regularizer_fn = None,
+        pooling_init=tf.keras.initializers.Constant(0.4),
+        regularizer_fn=None,
         mean_var_norm: bool = True,
-        name = 'leaf',
+        name='leaf',
     ):
-        super().__init__(name = name)
+        super().__init__(name=name)
         window_size = int(sample_rate * window_len // 1000 + 1)
         window_stride = int(sample_rate * window_stride // 1000)
         if preemp:
             self._preemp_conv = tf.keras.layers.Conv1D(
-                filters = 1,
-                kernel_size = 2,
-                strides = 1,
-                padding = 'SAME',
-                use_bias = False,
-                input_shape = (None, None, 1),
-                kernel_initializer = preemp_init,
-                kernel_regularizer = regularizer_fn if learn_filters else None,
-                name = 'tfbanks_preemp',
-                trainable = learn_filters,
+                filters=1,
+                kernel_size=2,
+                strides=1,
+                padding='SAME',
+                use_bias=False,
+                input_shape=(None, None, 1),
+                kernel_initializer=preemp_init,
+                kernel_regularizer=regularizer_fn if learn_filters else None,
+                name='tfbanks_preemp',
+                trainable=learn_filters,
             )
 
         self._complex_conv = conv1d_cls(
-            filters = 2 * n_filters,
-            kernel_size = window_size,
-            strides = 1,
-            padding = 'SAME',
-            use_bias = False,
-            input_shape = (None, None, 1),
-            kernel_initializer = complex_conv_init,
-            kernel_regularizer = regularizer_fn if learn_filters else None,
-            name = 'tfbanks_complex_conv',
-            trainable = learn_filters,
+            filters=2 * n_filters,
+            kernel_size=window_size,
+            strides=1,
+            padding='SAME',
+            use_bias=False,
+            input_shape=(None, None, 1),
+            kernel_initializer=complex_conv_init,
+            kernel_regularizer=regularizer_fn if learn_filters else None,
+            name='tfbanks_complex_conv',
+            trainable=learn_filters,
         )
 
         self._activation = activation
         self._pooling = pooling_cls(
-            kernel_size = window_size,
-            strides = window_stride,
-            padding = 'SAME',
-            use_bias = False,
-            kernel_initializer = pooling_init,
-            kernel_regularizer = regularizer_fn if learn_pooling else None,
-            trainable = learn_pooling,
+            kernel_size=window_size,
+            strides=window_stride,
+            padding='SAME',
+            use_bias=False,
+            kernel_initializer=pooling_init,
+            kernel_regularizer=regularizer_fn if learn_pooling else None,
+            trainable=learn_pooling,
         )
 
         self._instance_norm = None
         if mean_var_norm:
             self._instance_norm = normalization.InstanceNormalization(
-                axis = 2,
-                epsilon = 1e-6,
-                center = True,
-                scale = True,
-                beta_initializer = 'zeros',
-                gamma_initializer = 'ones',
-                name = 'tfbanks_instancenorm',
+                axis=2,
+                epsilon=1e-6,
+                center=True,
+                scale=True,
+                beta_initializer='zeros',
+                gamma_initializer='ones',
+                name='tfbanks_instancenorm',
             )
 
         self._compress_fn = compression_fn if compression_fn else tf.identity

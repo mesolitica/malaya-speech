@@ -13,7 +13,7 @@ class Frame:
         self.duration = duration
 
 
-@dataclass(frozen = True, order = True)
+@dataclass(frozen=True, order=True)
 class Segment:
     start: float = 0.0
     end: float = 0.0
@@ -61,7 +61,7 @@ class Segment:
         """
         start = max(self.start, other.start)
         end = min(self.end, other.end)
-        return Segment(start = start, end = end)
+        return Segment(start=start, end=end)
 
     def intersects(self, other: 'Segment') -> bool:
         """
@@ -124,7 +124,7 @@ class Segment:
             return self
         start = min(self.start, other.start)
         end = max(self.end, other.end)
-        return Segment(start = start, end = end)
+        return Segment(start=start, end=end)
 
     def __xor__(self, other):
         """
@@ -150,14 +150,14 @@ class Segment:
 
         start = min(self.end, other.end)
         end = max(self.start, other.start)
-        return Segment(start = start, end = end)
+        return Segment(start=start, end=end)
 
     def _str_helper(self, seconds: float):
         from datetime import timedelta
 
         negative = seconds < 0
         seconds = abs(seconds)
-        td = timedelta(seconds = seconds)
+        td = timedelta(seconds=seconds)
         seconds = td.seconds + 86400 * td.days
         microseconds = td.microseconds
         hours, remainder = divmod(seconds, 3600)

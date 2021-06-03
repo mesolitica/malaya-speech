@@ -2,7 +2,7 @@ import tensorflow as tf
 
 
 def calculate_input_length(inputs, logits, targets):
-    seq_lens = tf.count_nonzero(tf.reduce_sum(inputs, -1), 1, dtype = tf.int32)
+    seq_lens = tf.count_nonzero(tf.reduce_sum(inputs, -1), 1, dtype=tf.int32)
     targets_int32 = tf.cast(targets, tf.int32)
     filled = tf.fill(tf.shape(seq_lens), tf.reduce_max(targets_int32))
     seq_lens = tf.where(
@@ -20,17 +20,17 @@ def calculate_input_length(inputs, logits, targets):
 # https://github.com/tensorflow/models/blob/master/research/deep_speech/deep_speech.py#L42
 def calculate_input_length_deep_speech(inputs, logits):
     input_length = tf.count_nonzero(
-        tf.reduce_sum(inputs, -1), 1, dtype = tf.int32
+        tf.reduce_sum(inputs, -1), 1, dtype=tf.int32
     )
     max_time_steps = tf.shape(inputs)[1]
     ctc_time_steps = tf.shape(logits)[1]
     ctc_input_length = tf.cast(
-        tf.multiply(input_length, ctc_time_steps), dtype = tf.float32
+        tf.multiply(input_length, ctc_time_steps), dtype=tf.float32
     )
 
     return tf.cast(
         tf.math.floordiv(
-            ctc_input_length, tf.cast(max_time_steps, dtype = tf.float32)
+            ctc_input_length, tf.cast(max_time_steps, dtype=tf.float32)
         ),
-        dtype = tf.int32,
+        dtype=tf.int32,
     )

@@ -18,15 +18,15 @@ from multiprocessing import Pool
 from itertools import cycle
 import itertools
 
-np.seterr(all = 'raise')
+np.seterr(all='raise')
 
 
 def chunks(l, n):
     for i in range(0, len(l), n):
-        yield (l[i : i + n], i // n)
+        yield (l[i: i + n], i // n)
 
 
-def multiprocessing(strings, function, cores = 6, returned = True):
+def multiprocessing(strings, function, cores=6, returned=True):
     df_split = chunks(strings, len(strings) // cores)
     pool = Pool(cores)
     print('initiate pool map')
@@ -50,11 +50,11 @@ reduction_factor = 4
 
 
 def read_wav(f):
-    return malaya_speech.load(f, sr = sr)
+    return malaya_speech.load(f, sr=sr)
 
 
 def random_sampling(s, length):
-    return augmentation.random_sampling(s, sr = sr, length = length)
+    return augmentation.random_sampling(s, sr=sr, length=length)
 
 
 def downsample(y, sr, down_sr):
@@ -64,7 +64,7 @@ def downsample(y, sr, down_sr):
 
 def parallel(f):
     y = read_wav(f)[0]
-    y = random_sampling(y, length = 2000)
+    y = random_sampling(y, length=2000)
     y_ = malaya_speech.resample(y, sr, sr // reduction_factor)
     return y_, y
 
@@ -77,10 +77,10 @@ def loop(files):
     return results
 
 
-def generate(batch_size = 10, repeat = 5):
+def generate(batch_size=10, repeat=5):
     while True:
         fs = [next(file_cycle) for _ in range(batch_size)]
-        results = multiprocessing(fs, loop, cores = len(fs))
+        results = multiprocessing(fs, loop, cores=len(fs))
         for _ in range(repeat):
             random.shuffle(results)
             for r in results:
@@ -93,7 +93,7 @@ def get_dataset():
         dataset = tf.data.Dataset.from_generator(
             generate,
             {'combined': tf.float32, 'y': tf.float32},
-            output_shapes = {
+            output_shapes={
                 'combined': tf.TensorShape([None]),
                 'y': tf.TensorShape([None]),
             },
@@ -118,7 +118,7 @@ def model_fn(features, labels, mode, params):
         y, partition_size
     )
 
-    generator = srgan.Model(partitioned_x, num_filters = 256, training = True)
+    generator = srgan.Model(partitioned_x, num_filters=256, training=True)
     gen_out = generator.logits
     gen_out.set_shape((None, partition_size, 1))
 
@@ -134,48 +134,48 @@ def model_fn(features, labels, mode, params):
 
     global_step = tf.train.get_or_create_global_step()
 
-    learning_rate = tf.constant(value = init_lr, shape = [], dtype = tf.float32)
+    learning_rate = tf.constant(value=init_lr, shape=[], dtype=tf.float32)
     learning_rate = tf.train.polynomial_decay(
         learning_rate,
         global_step,
         epochs,
-        end_learning_rate = 1e-5,
-        power = 1.0,
-        cycle = False,
+        end_learning_rate=1e-5,
+        power=1.0,
+        cycle=False,
     )
     tf.summary.scalar('learning_rate', learning_rate)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
 
-        optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
+        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 
-        train_op = optimizer.minimize(loss, global_step = global_step)
+        train_op = optimizer.minimize(loss, global_step=global_step)
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = mode, loss = loss, train_op = train_op
+            mode=mode, loss=loss, train_op=train_op
         )
 
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = tf.estimator.ModeKeys.EVAL, loss = loss
+            mode=tf.estimator.ModeKeys.EVAL, loss=loss
         )
 
     return estimator_spec
 
 
-train_hooks = [tf.train.LoggingTensorHook(['total_loss'], every_n_iter = 1)]
+train_hooks = [tf.train.LoggingTensorHook(['total_loss'], every_n_iter=1)]
 train_dataset = get_dataset()
 
 save_directory = 'srgan-256-mse'
 
 train.run_training(
-    train_fn = train_dataset,
-    model_fn = model_fn,
-    model_dir = save_directory,
-    num_gpus = 1,
-    log_step = 1,
-    save_checkpoint_step = 3000,
-    max_steps = epochs,
-    train_hooks = train_hooks,
-    eval_step = 0,
+    train_fn=train_dataset,
+    model_fn=model_fn,
+    model_dir=save_directory,
+    num_gpus=1,
+    log_step=1,
+    save_checkpoint_step=3000,
+    max_steps=epochs,
+    train_hooks=train_hooks,
+    eval_step=0,
 )

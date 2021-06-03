@@ -49,7 +49,7 @@ def available_model():
 
     return describe_availability(
         _availability,
-        text = 'Only calculate SDR, ISR, SAR on voice sample. Higher is better.',
+        text='Only calculate SDR, ISR, SAR on voice sample. Higher is better.',
     )
 
 
@@ -67,7 +67,7 @@ def deep_model(model: str = 'resnet-unet', quantized: bool = False, **kwargs):
         * ``'resnet-unet'`` - pretrained resnet-UNET.
         * ``'resnext'`` - pretrained resnext-UNET.
     quantized : bool, optional (default=False)
-        if True, will load 8-bit quantized model. 
+        if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
 
     Returns
@@ -82,28 +82,28 @@ def deep_model(model: str = 'resnet-unet', quantized: bool = False, **kwargs):
         )
 
     return unet.load_stft(
-        model = model,
-        module = 'noise-reduction',
-        instruments = ['voice', 'noise'],
-        quantized = quantized,
+        model=model,
+        module='noise-reduction',
+        instruments=['voice', 'noise'],
+        quantized=quantized,
         **kwargs
     )
 
 
 # https://github.com/dodiku/noise_reduction/blob/master/noise.py
-def reduce_noise_power(y, sr = 16000):
+def reduce_noise_power(y, sr=16000):
     from pysndfx import AudioEffectsChain
 
     y = int_to_float(y)
-    cent = librosa.feature.spectral_centroid(y = y, sr = sr)
+    cent = librosa.feature.spectral_centroid(y=y, sr=sr)
 
     threshold_h = round(np.median(cent)) * 1.5
     threshold_l = round(np.median(cent)) * 0.1
 
     less_noise = (
         AudioEffectsChain()
-        .lowshelf(gain = -30.0, frequency = threshold_l, slope = 0.8)
-        .highshelf(gain = -12.0, frequency = threshold_h, slope = 0.5)
+        .lowshelf(gain=-30.0, frequency=threshold_l, slope=0.8)
+        .highshelf(gain=-12.0, frequency=threshold_h, slope=0.5)
     )
     y_clean = less_noise(y)
 
@@ -111,7 +111,7 @@ def reduce_noise_power(y, sr = 16000):
 
 
 # https://github.com/dodiku/noise_reduction/blob/master/noise.py
-def reduce_noise_centroid_s(y, sr = 16000):
+def reduce_noise_centroid_s(y, sr=16000):
     try:
         from pysndfx import AudioEffectsChain
     except Exception as e:
@@ -120,16 +120,16 @@ def reduce_noise_centroid_s(y, sr = 16000):
         )
 
     y = int_to_float(y)
-    cent = librosa.feature.spectral_centroid(y = y, sr = sr)
+    cent = librosa.feature.spectral_centroid(y=y, sr=sr)
 
     threshold_h = np.max(cent)
     threshold_l = np.min(cent)
 
     less_noise = (
         AudioEffectsChain()
-        .lowshelf(gain = -12.0, frequency = threshold_l, slope = 0.5)
-        .highshelf(gain = -12.0, frequency = threshold_h, slope = 0.5)
-        .limiter(gain = 6.0)
+        .lowshelf(gain=-12.0, frequency=threshold_l, slope=0.5)
+        .highshelf(gain=-12.0, frequency=threshold_h, slope=0.5)
+        .limiter(gain=6.0)
     )
 
     y_cleaned = less_noise(y)
@@ -138,7 +138,7 @@ def reduce_noise_centroid_s(y, sr = 16000):
 
 
 # https://github.com/dodiku/noise_reduction/blob/master/noise.py
-def reduce_noise_centroid_mb(y, sr = 16000):
+def reduce_noise_centroid_mb(y, sr=16000):
     try:
         from pysndfx import AudioEffectsChain
     except Exception as e:
@@ -147,26 +147,26 @@ def reduce_noise_centroid_mb(y, sr = 16000):
         )
 
     y = int_to_float(y)
-    cent = librosa.feature.spectral_centroid(y = y, sr = sr)
+    cent = librosa.feature.spectral_centroid(y=y, sr=sr)
 
     threshold_h = np.max(cent)
     threshold_l = np.min(cent)
 
     less_noise = (
         AudioEffectsChain()
-        .lowshelf(gain = -30.0, frequency = threshold_l, slope = 0.5)
-        .highshelf(gain = -30.0, frequency = threshold_h, slope = 0.5)
-        .limiter(gain = 10.0)
+        .lowshelf(gain=-30.0, frequency=threshold_l, slope=0.5)
+        .highshelf(gain=-30.0, frequency=threshold_h, slope=0.5)
+        .limiter(gain=10.0)
     )
     y_cleaned = less_noise(y)
 
-    cent_cleaned = librosa.feature.spectral_centroid(y = y_cleaned, sr = sr)
+    cent_cleaned = librosa.feature.spectral_centroid(y=y_cleaned, sr=sr)
     columns, rows = cent_cleaned.shape
     boost_h = math.floor(rows / 3 * 2)
     boost_l = math.floor(rows / 6)
     boost = math.floor(rows / 3)
     boost_bass = AudioEffectsChain().lowshelf(
-        gain = 16.0, frequency = boost_h, slope = 0.5
+        gain=16.0, frequency=boost_h, slope=0.5
     )
     y_clean_boosted = boost_bass(y_cleaned)
 
@@ -174,7 +174,7 @@ def reduce_noise_centroid_mb(y, sr = 16000):
 
 
 # https://github.com/dodiku/noise_reduction/blob/master/noise.py
-def reduce_noise_mfcc_down(y, sr = 16000):
+def reduce_noise_mfcc_down(y, sr=16000):
     try:
         from pysndfx import AudioEffectsChain
         import python_speech_features
@@ -205,8 +205,8 @@ def reduce_noise_mfcc_down(y, sr = 16000):
 
     speech_booster = (
         AudioEffectsChain()
-        .highshelf(frequency = min_hz * (-1) * 1.2, gain = -12.0, slope = 0.6)
-        .limiter(gain = 8.0)
+        .highshelf(frequency=min_hz * (-1) * 1.2, gain=-12.0, slope=0.6)
+        .limiter(gain=8.0)
     )
     y_speach_boosted = speech_booster(y)
 
@@ -214,7 +214,7 @@ def reduce_noise_mfcc_down(y, sr = 16000):
 
 
 # https://github.com/dodiku/noise_reduction/blob/master/noise.py
-def reduce_noise_mfcc_up(y, sr = 16000):
+def reduce_noise_mfcc_up(y, sr=16000):
     try:
         from pysndfx import AudioEffectsChain
         import python_speech_features
@@ -243,7 +243,7 @@ def reduce_noise_mfcc_up(y, sr = 16000):
     min_hz = min(hz)
 
     speech_booster = AudioEffectsChain().lowshelf(
-        frequency = min_hz * (-1), gain = 12.0, slope = 0.5
+        frequency=min_hz * (-1), gain=12.0, slope=0.5
     )
     y_speach_boosted = speech_booster(y)
 
@@ -252,14 +252,14 @@ def reduce_noise_mfcc_up(y, sr = 16000):
 
 def trim_silence(
     y,
-    top_db = 20,
-    frame_length = 2,
-    hop_length = 500,
-    return_trimmed_length = False,
+    top_db=20,
+    frame_length=2,
+    hop_length=500,
+    return_trimmed_length=False,
 ):
     y = int_to_float(y)
     y_trimmed, index = librosa.effects.trim(
-        y, top_db = top_db, frame_length = frame_length, hop_length = hop_length
+        y, top_db=top_db, frame_length=frame_length, hop_length=hop_length
     )
     trimmed_length = librosa.get_duration(y) - librosa.get_duration(y_trimmed)
 

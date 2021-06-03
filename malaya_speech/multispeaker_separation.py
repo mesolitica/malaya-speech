@@ -26,7 +26,7 @@ def available_deep_wav():
     """
     from malaya_speech.utils import describe_availability
 
-    return describe_availability(_availability, text = 'Tested on 1k samples')
+    return describe_availability(_availability, text='Tested on 1k samples')
 
 
 @check_type
@@ -43,7 +43,7 @@ def deep_wav(model: str = 'fastsep-4', quantized: bool = False, **kwargs):
         * ``'fastsep-4'`` - FastSep 4 layers trained on raw 8k wav.
         * ``'fastsep-6'`` - FastSep 6 layers trained on raw 8k wav.
     quantized : bool, optional (default=False)
-        if True, will load 8-bit quantized model. 
+        if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
 
     Returns
@@ -57,8 +57,8 @@ def deep_wav(model: str = 'fastsep-4', quantized: bool = False, **kwargs):
             'model not supported, please check supported models from `malaya_speech.multispeaker_separation.available_deep_wav()`.'
         )
     return separation.load(
-        model = model,
-        module = 'multispeaker-separation-wav',
-        quantized = quantized,
+        model=model,
+        module='multispeaker-separation-wav',
+        quantized=quantized,
         **kwargs
     )

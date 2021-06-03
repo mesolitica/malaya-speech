@@ -123,13 +123,13 @@ ctc_greedy_decoder(np.array(probs_seq1), vocab_list) == greedy_result[0]
 ctc_greedy_decoder(np.array(probs_seq2), vocab_list) == greedy_result[1]
 
 ctc_beam_search_decoder(
-    probs_seq = np.array(probs_seq1),
-    beam_size = beam_size,
-    vocabulary = vocab_list,
+    probs_seq=np.array(probs_seq1),
+    beam_size=beam_size,
+    vocabulary=vocab_list,
 )
 
 ctc_beam_search_decoder(
-    probs_seq = np.array(probs_seq2),
-    beam_size = beam_size,
-    vocabulary = vocab_list,
+    probs_seq=np.array(probs_seq2),
+    beam_size=beam_size,
+    vocabulary=vocab_list,
 )

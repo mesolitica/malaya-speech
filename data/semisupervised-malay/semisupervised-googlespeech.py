@@ -52,7 +52,7 @@ def split_vad_duration(
     """
     grouped = group_frames(frames)
     grouped = group_frames_threshold(
-        grouped, threshold_to_stop = negative_threshold
+        grouped, threshold_to_stop=negative_threshold
     )
     results, temp, lengths = [], [], 0
     for no, g in enumerate(grouped):
@@ -70,27 +70,27 @@ def split_vad_duration(
     return results
 
 
-def split(file, max_duration = 5.0):
+def split(file, max_duration=5.0):
     audio = AudioSegment.from_mp3(file).set_channels(1)
     y = np.array(audio.get_array_of_samples())
     y_ = np.array(audio.set_frame_rate(16000).get_array_of_samples())
     frames = malaya_speech.generator.frames(y, 30, audio.frame_rate)
     frames_ = malaya_speech.generator.frames(
-        y_, 30, 16000, append_ending_trail = False
+        y_, 30, 16000, append_ending_trail=False
     )
     frames_webrtc = [
         (frames[no], vad(frame)) for no, frame in enumerate(frames_)
     ]
     splitted = split_vad_duration(
         frames_webrtc,
-        max_duration = max_duration,
-        negative_threshold = 0.1,
-        sample_rate = audio.frame_rate,
+        max_duration=max_duration,
+        negative_threshold=0.1,
+        sample_rate=audio.frame_rate,
     )
     return splitted, audio, audio.frame_rate
 
 
-def audiosegment_google_speech(audio, filename, sample_rate, lang = 'ms'):
+def audiosegment_google_speech(audio, filename, sample_rate, lang='ms'):
     if os.path.exists('output-wav/' + filename):
         return False
 
@@ -99,8 +99,8 @@ def audiosegment_google_speech(audio, filename, sample_rate, lang = 'ms'):
         with sr.AudioFile(filename) as source:
             a = r.record(source)
 
-        text = r.recognize_google(a, language = lang)
-    except:
+        text = r.recognize_google(a, language=lang)
+    except BaseException:
         text = ''
 
     if len(text):

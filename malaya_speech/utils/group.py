@@ -88,7 +88,7 @@ def group_frames_threshold(frames, threshold_to_stop: float = 0.3):
             results.append(
                 (
                     Frame(a, result[0].timestamp, durations),
-                    max(d.items(), key = operator.itemgetter(1))[0],
+                    max(d.items(), key=operator.itemgetter(1))[0],
                 )
             )
             d = defaultdict(float)
@@ -100,7 +100,7 @@ def group_frames_threshold(frames, threshold_to_stop: float = 0.3):
         results.append(
             (
                 Frame(a, result[0].timestamp, durations),
-                max(d.items(), key = operator.itemgetter(1))[0],
+                max(d.items(), key=operator.itemgetter(1))[0],
             )
         )
 

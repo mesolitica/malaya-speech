@@ -74,8 +74,8 @@ config = {
 
 
 class Model:
-    def __init__(self, inputs, inputs_length, num_class = 7205, mode = 'train'):
-        self.model = abstract.TDNNEncoder(config, None, mode = mode)
+    def __init__(self, inputs, inputs_length, num_class=7205, mode='train'):
+        self.model = abstract.TDNNEncoder(config, None, mode=mode)
         input_dict = {'source_tensors': [inputs, inputs_length]}
         logits = self.model.encode(input_dict)['outputs']
 
@@ -86,11 +86,11 @@ class Model:
 
         pooled = tf.concat(
             [
-                tf.math.reduce_mean(logits, axis = 1),
-                tf.math.reduce_std(logits, axis = 1),
+                tf.math.reduce_mean(logits, axis=1),
+                tf.math.reduce_std(logits, axis=1),
             ],
-            axis = 1,
+            axis=1,
         )
         f = affine(pooled, 512)
         f = affine(f, 512)
-        self.logits = tf.layers.dense(f, num_class, use_bias = False)
+        self.logits = tf.layers.dense(f, num_class, use_bias=False)

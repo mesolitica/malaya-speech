@@ -19,7 +19,7 @@ def load(file: str):
 
     try:
         import pandas as pd
-    except:
+    except BaseException:
         raise ValueError(
             'pandas not installed. Please install it by `pip install pandas` and try again.'
         )
@@ -39,10 +39,10 @@ def load(file: str):
     dtype = {'uri': str, 'start': float, 'duration': float, 'speaker': str}
     data = pd.read_csv(
         file,
-        names = names,
-        dtype = dtype,
-        delim_whitespace = True,
-        keep_default_na = False,
+        names=names,
+        dtype=dtype,
+        delim_whitespace=True,
+        keep_default_na=False,
     )
     annotations = {}
     for uri, turns in data.groupby('uri'):

@@ -26,11 +26,12 @@ class Scorer(swig_decoders.Scorer):
 class BeamDecoder(swig_decoders.BeamDecoder):
     """Wrapper for BeamDecoder.
     """
-    def __init__(self, vocabulary, beam_size, 
+
+    def __init__(self, vocabulary, beam_size,
                  cutoff_prob=1.0,
                  cutoff_top_n=40,
                  ext_scorer=None):
-        swig_decoders.BeamDecoder.__init__(self, vocabulary, beam_size, 
+        swig_decoders.BeamDecoder.__init__(self, vocabulary, beam_size,
                                            cutoff_prob,
                                            cutoff_top_n,
                                            ext_scorer)

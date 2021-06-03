@@ -44,7 +44,7 @@ class Tacotron2Encoder(Encoder):
         )
 
     def __init__(
-        self, params, model, name = 'tacotron2_encoder', mode = 'train'
+        self, params, model, name='tacotron2_encoder', mode='train'
     ):
         super(Tacotron2Encoder, self).__init__(params, model, name, mode)
 
@@ -58,9 +58,9 @@ class Tacotron2Encoder(Encoder):
         zoneout_prob = self.params.get('zoneout_prob', 0.0)
 
         enc_emb_w = tf.get_variable(
-            name = 'EncoderEmbeddingMatrix',
-            shape = [src_vocab_size, self.params['src_emb_size']],
-            dtype = self.params['dtype'],
+            name='EncoderEmbeddingMatrix',
+            shape=[src_vocab_size, self.params['src_emb_size']],
+            dtype=self.params['dtype'],
             # initializer=tf.random_normal_initializer()
         )
         embedded_inputs = tf.cast(
@@ -109,24 +109,24 @@ class Tacotron2Encoder(Encoder):
                 text_len = (text_len + strides[0] - 1) // strides[0]
 
             top_layer = conv_bn_actv(
-                layer_type = 'conv1d',
-                name = 'conv{}'.format(i + 1),
-                inputs = top_layer,
-                filters = ch_out,
-                kernel_size = kernel_size,
-                activation_fn = self.params['activation_fn'],
-                strides = strides,
-                padding = padding,
-                regularizer = regularizer,
-                training = training,
-                data_format = data_format,
-                bn_momentum = self.params.get('bn_momentum', 0.1),
-                bn_epsilon = self.params.get('bn_epsilon', 1e-5),
+                layer_type='conv1d',
+                name='conv{}'.format(i + 1),
+                inputs=top_layer,
+                filters=ch_out,
+                kernel_size=kernel_size,
+                activation_fn=self.params['activation_fn'],
+                strides=strides,
+                padding=padding,
+                regularizer=regularizer,
+                training=training,
+                data_format=data_format,
+                bn_momentum=self.params.get('bn_momentum', 0.1),
+                bn_epsilon=self.params.get('bn_epsilon', 1e-5),
             )
             top_layer = tf.layers.dropout(
                 top_layer,
-                rate = self.params['cnn_dropout_prob'],
-                training = training,
+                rate=self.params['cnn_dropout_prob'],
+                training=training,
             )
 
         if data_format == 'channels_first':
@@ -143,7 +143,7 @@ class Tacotron2Encoder(Encoder):
 
             if self.params['use_cudnn_rnn']:
                 if self._mode == 'infer':
-                    cell = lambda: tf.contrib.cudnn_rnn.CudnnCompatibleLSTMCell(
+                    def cell(): return tf.contrib.cudnn_rnn.CudnnCompatibleLSTMCell(
                         cell_params['num_units']
                     )
                     cells_fw = [cell() for _ in range(1)]
@@ -156,9 +156,9 @@ class Tacotron2Encoder(Encoder):
                         cells_fw,
                         cells_bw,
                         rnn_input,
-                        sequence_length = text_len,
-                        dtype = rnn_input.dtype,
-                        time_major = False,
+                        sequence_length=text_len,
+                        dtype=rnn_input.dtype,
+                        time_major=False,
                     )
                 else:
                     all_cudnn_classes = [
@@ -167,7 +167,7 @@ class Tacotron2Encoder(Encoder):
                             tf.contrib.cudnn_rnn, inspect.isclass
                         )
                     ]
-                    if not rnn_type in all_cudnn_classes:
+                    if rnn_type not in all_cudnn_classes:
                         raise TypeError('rnn_type must be a Cudnn RNN class')
                     if zoneout_prob != 0.0:
                         raise ValueError(
@@ -181,11 +181,11 @@ class Tacotron2Encoder(Encoder):
                         direction = cudnn_rnn_ops.CUDNN_RNN_BIDIRECTION
 
                     rnn_block = rnn_type(
-                        num_layers = num_rnn_layers,
-                        num_units = cell_params['num_units'],
-                        direction = direction,
-                        dtype = rnn_input.dtype,
-                        name = 'cudnn_rnn',
+                        num_layers=num_rnn_layers,
+                        num_units=cell_params['num_units'],
+                        direction=direction,
+                        dtype=rnn_input.dtype,
+                        name='cudnn_rnn',
                     )
                     rnn_block.build(rnn_input.get_shape())
                     top_layer, _ = rnn_block(rnn_input)
@@ -196,11 +196,11 @@ class Tacotron2Encoder(Encoder):
                 multirnn_cell_fw = tf.nn.rnn_cell.MultiRNNCell(
                     [
                         single_cell(
-                            cell_class = rnn_type,
-                            cell_params = cell_params,
-                            zoneout_prob = zoneout_prob,
-                            training = training,
-                            residual_connections = False,
+                            cell_class=rnn_type,
+                            cell_params=cell_params,
+                            zoneout_prob=zoneout_prob,
+                            training=training,
+                            residual_connections=False,
                         )
                         for _ in range(num_rnn_layers)
                     ]
@@ -208,32 +208,32 @@ class Tacotron2Encoder(Encoder):
                 rnn_vars += multirnn_cell_fw.trainable_variables
                 if self.params['rnn_unidirectional']:
                     top_layer, _ = tf.nn.dynamic_rnn(
-                        cell = multirnn_cell_fw,
-                        inputs = rnn_input,
-                        sequence_length = text_len,
-                        dtype = rnn_input.dtype,
-                        time_major = False,
+                        cell=multirnn_cell_fw,
+                        inputs=rnn_input,
+                        sequence_length=text_len,
+                        dtype=rnn_input.dtype,
+                        time_major=False,
                     )
                 else:
                     multirnn_cell_bw = tf.nn.rnn_cell.MultiRNNCell(
                         [
                             single_cell(
-                                cell_class = rnn_type,
-                                cell_params = cell_params,
-                                zoneout_prob = zoneout_prob,
-                                training = training,
-                                residual_connections = False,
+                                cell_class=rnn_type,
+                                cell_params=cell_params,
+                                zoneout_prob=zoneout_prob,
+                                training=training,
+                                residual_connections=False,
                             )
                             for _ in range(num_rnn_layers)
                         ]
                     )
                     top_layer, _ = tf.nn.bidirectional_dynamic_rnn(
-                        cell_fw = multirnn_cell_fw,
-                        cell_bw = multirnn_cell_bw,
-                        inputs = rnn_input,
-                        sequence_length = text_len,
-                        dtype = rnn_input.dtype,
-                        time_major = False,
+                        cell_fw=multirnn_cell_fw,
+                        cell_bw=multirnn_cell_bw,
+                        inputs=rnn_input,
+                        sequence_length=text_len,
+                        dtype=rnn_input.dtype,
+                        time_major=False,
                     )
                     # concat 2 tensors [B, T, n_cell_dim] --> [B, T, 2*n_cell_dim]
                     top_layer = tf.concat(top_layer, 2)
@@ -261,12 +261,12 @@ class Tacotron2Encoder(Encoder):
 
         top_layer = tf.layers.dropout(
             top_layer,
-            rate = self.params['rnn_dropout_prob'],
-            training = training,
+            rate=self.params['rnn_dropout_prob'],
+            training=training,
         )
         outputs = top_layer
         if self.params.get('style_embedding_enable', False):
-            outputs = tf.concat([outputs, style_embedding], axis = -1)
+            outputs = tf.concat([outputs, style_embedding], axis=-1)
 
         return {'outputs': outputs, 'src_length': text_len}
 
@@ -312,25 +312,25 @@ class Tacotron2Encoder(Encoder):
                     style_len = (style_len + strides[0] - 1) // strides[0]
 
                 top_layer = conv_bn_actv(
-                    layer_type = 'conv2d',
-                    name = 'conv{}'.format(i + 1),
-                    inputs = top_layer,
-                    filters = ch_out,
-                    kernel_size = kernel_size,
-                    activation_fn = self.params['activation_fn'],
-                    strides = strides,
-                    padding = padding,
-                    regularizer = regularizer,
-                    training = training,
-                    data_format = data_format,
-                    bn_momentum = self.params.get('bn_momentum', 0.1),
-                    bn_epsilon = self.params.get('bn_epsilon', 1e-5),
+                    layer_type='conv2d',
+                    name='conv{}'.format(i + 1),
+                    inputs=top_layer,
+                    filters=ch_out,
+                    kernel_size=kernel_size,
+                    activation_fn=self.params['activation_fn'],
+                    strides=strides,
+                    padding=padding,
+                    regularizer=regularizer,
+                    training=training,
+                    data_format=data_format,
+                    bn_momentum=self.params.get('bn_momentum', 0.1),
+                    bn_epsilon=self.params.get('bn_epsilon', 1e-5),
                 )
 
             if data_format == 'channels_first':
                 top_layer = tf.transpose(top_layer, [0, 2, 1])
 
-        top_layer = tf.concat(tf.unstack(top_layer, axis = 2), axis = -1)
+        top_layer = tf.concat(tf.unstack(top_layer, axis=2), axis=-1)
 
         num_rnn_layers = params['num_rnn_layers']
         if num_rnn_layers > 0:
@@ -343,10 +343,10 @@ class Tacotron2Encoder(Encoder):
             multirnn_cell_fw = tf.nn.rnn_cell.MultiRNNCell(
                 [
                     single_cell(
-                        cell_class = rnn_type,
-                        cell_params = cell_params,
-                        training = training,
-                        residual_connections = False,
+                        cell_class=rnn_type,
+                        cell_params=cell_params,
+                        training=training,
+                        residual_connections=False,
                     )
                     for _ in range(num_rnn_layers)
                 ]
@@ -354,32 +354,32 @@ class Tacotron2Encoder(Encoder):
             rnn_vars += multirnn_cell_fw.trainable_variables
             if params['rnn_unidirectional']:
                 top_layer, final_state = tf.nn.dynamic_rnn(
-                    cell = multirnn_cell_fw,
-                    inputs = rnn_input,
-                    sequence_length = style_len,
-                    dtype = rnn_input.dtype,
-                    time_major = False,
+                    cell=multirnn_cell_fw,
+                    inputs=rnn_input,
+                    sequence_length=style_len,
+                    dtype=rnn_input.dtype,
+                    time_major=False,
                 )
                 final_state = final_state[0]
             else:
                 multirnn_cell_bw = tf.nn.rnn_cell.MultiRNNCell(
                     [
                         single_cell(
-                            cell_class = rnn_type,
-                            cell_params = cell_params,
-                            training = training,
-                            residual_connections = False,
+                            cell_class=rnn_type,
+                            cell_params=cell_params,
+                            training=training,
+                            residual_connections=False,
                         )
                         for _ in range(num_rnn_layers)
                     ]
                 )
                 top_layer, final_state = tf.nn.bidirectional_dynamic_rnn(
-                    cell_fw = multirnn_cell_fw,
-                    cell_bw = multirnn_cell_bw,
-                    inputs = rnn_input,
-                    sequence_length = style_len,
-                    dtype = rnn_input.dtype,
-                    time_major = False,
+                    cell_fw=multirnn_cell_fw,
+                    cell_bw=multirnn_cell_bw,
+                    inputs=rnn_input,
+                    sequence_length=style_len,
+                    dtype=rnn_input.dtype,
+                    time_major=False,
                 )
                 # concat 2 tensors [B, T, n_cell_dim] --> [B, T, 2*n_cell_dim]
                 final_state = tf.concat(
@@ -392,9 +392,9 @@ class Tacotron2Encoder(Encoder):
             top_layer = tf.layers.dense(
                 top_layer,
                 128,
-                activation = tf.nn.tanh,
-                kernel_regularizer = regularizer,
-                name = 'reference_activation',
+                activation=tf.nn.tanh,
+                kernel_regularizer=regularizer,
+                name='reference_activation',
             )
             if regularizer and training:
                 cell_weights = rnn_vars
@@ -418,12 +418,12 @@ class Tacotron2Encoder(Encoder):
         # Randomly initilized tokens
         gst_embedding = tf.get_variable(
             'token_embeddings',
-            shape = [num_units, params['emb_size']],
-            dtype = self.params['dtype'],
-            initializer = tf.random_uniform_initializer(
-                minval = -1.0, maxval = 1.0, dtype = self.params['dtype']
+            shape=[num_units, params['emb_size']],
+            dtype=self.params['dtype'],
+            initializer=tf.random_uniform_initializer(
+                minval=-1.0, maxval=1.0, dtype=self.params['dtype']
             ),
-            trainable = False,
+            trainable=False,
         )
 
         attention = Attention(
@@ -431,7 +431,7 @@ class Tacotron2Encoder(Encoder):
             params['num_heads'],
             0.0,
             training,
-            mode = 'bahdanau',
+            mode='bahdanau',
         )
 
         top_layer = tf.expand_dims(top_layer, 1)

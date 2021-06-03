@@ -60,7 +60,7 @@ def available_deep_masking():
 
     return describe_availability(
         _masking_availability,
-        text = 'Only calculate SDR, ISR, SAR on voice sample. Higher is better.',
+        text='Only calculate SDR, ISR, SAR on voice sample. Higher is better.',
     )
 
 
@@ -72,7 +72,7 @@ def available_deep_enhance():
 
     return describe_availability(
         _sampling_availability,
-        text = 'Only calculate SDR, ISR, SAR on voice sample. Higher is better.',
+        text='Only calculate SDR, ISR, SAR on voice sample. Higher is better.',
     )
 
 
@@ -89,7 +89,7 @@ def deep_masking(model: str = 'resnet-unet', quantized: bool = False, **kwargs):
         * ``'unet'`` - pretrained UNET.
         * ``'resnet-unet'`` - pretrained resnet-UNET.
     quantized : bool, optional (default=False)
-        if True, will load 8-bit quantized model. 
+        if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
 
     Returns
@@ -104,10 +104,10 @@ def deep_masking(model: str = 'resnet-unet', quantized: bool = False, **kwargs):
         )
 
     return unet.load_stft(
-        model = model,
-        module = 'speech-enhancement-mask',
-        instruments = ['voice', 'noise'],
-        quantized = quantized,
+        model=model,
+        module='speech-enhancement-mask',
+        instruments=['voice', 'noise'],
+        quantized=quantized,
         **kwargs
     )
 
@@ -126,7 +126,7 @@ def deep_enhance(model: str = 'unet', quantized: bool = False, **kwargs):
         * ``'resnet-unet'`` - pretrained resnet-UNET Speech Enhancement.
         * ``'resnext-unet'`` - pretrained resnext-UNET Speech Enhancement.
     quantized : bool, optional (default=False)
-        if True, will load 8-bit quantized model. 
+        if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
 
     Returns
@@ -141,8 +141,8 @@ def deep_enhance(model: str = 'unet', quantized: bool = False, **kwargs):
         )
 
     return unet.load_1d(
-        model = model,
-        module = 'speech-enhancement',
-        quantized = quantized,
+        model=model,
+        module='speech-enhancement',
+        quantized=quantized,
         **kwargs
     )

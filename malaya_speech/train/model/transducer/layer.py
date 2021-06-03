@@ -21,9 +21,9 @@ class Embedding(tf.keras.layers.Layer):
         self,
         vocab_size,
         embed_dim,
-        contraint = None,
-        regularizer = None,
-        initializer = None,
+        contraint=None,
+        regularizer=None,
+        initializer=None,
         **kwargs
     ):
         super(Embedding, self).__init__(**kwargs)
@@ -37,13 +37,13 @@ class Embedding(tf.keras.layers.Layer):
         self.embeddings = tf.get_variable(
             'transducer/transducer_prediction/transducer_prediction_embedding/embeddings',
             [self.vocab_size, self.embed_dim],
-            dtype = tf.float32,
-            initializer = self.initializer,
+            dtype=tf.float32,
+            initializer=self.initializer,
         )
         self.built = True
 
     def call(self, inputs):
-        outputs = tf.cast(tf.expand_dims(inputs, axis = -1), dtype = tf.int32)
+        outputs = tf.cast(tf.expand_dims(inputs, axis=-1), dtype=tf.int32)
         return tf.gather_nd(self.embeddings, outputs)
 
     def get_config(self):
@@ -79,12 +79,12 @@ def get_shape_invariants(tensor):
 
 def merge_two_last_dims(x):
     b, _, f, c = shape_list(x)
-    return tf.reshape(x, shape = [b, -1, f * c])
+    return tf.reshape(x, shape=[b, -1, f * c])
 
 
 class TimeReduction(tf.keras.layers.Layer):
     def __init__(self, factor: int, name: str = 'TimeReduction', **kwargs):
-        super(TimeReduction, self).__init__(name = name, **kwargs)
+        super(TimeReduction, self).__init__(name=name, **kwargs)
         self.time_reduction_factor = factor
 
     def padding(self, time):
@@ -92,7 +92,7 @@ class TimeReduction(tf.keras.layers.Layer):
             tf.math.ceil(time / self.time_reduction_factor)
             * self.time_reduction_factor
         )
-        return tf.cast(new_time, dtype = tf.int32) - time
+        return tf.cast(new_time, dtype=tf.int32) - time
 
     def call(self, inputs, **kwargs):
         shape = shape_list(inputs)
@@ -110,9 +110,9 @@ class TimeReduction(tf.keras.layers.Layer):
 
 def find_max_length_prediction_tfarray(tfarray):
     with tf.name_scope('find_max_length_prediction_tfarray'):
-        index = tf.constant(0, dtype = tf.int32)
+        index = tf.constant(0, dtype=tf.int32)
         total = tfarray.size()
-        max_length = tf.constant(0, dtype = tf.int32)
+        max_length = tf.constant(0, dtype=tf.int32)
 
         def condition(index, _):
             return tf.less(index, total)
@@ -128,15 +128,15 @@ def find_max_length_prediction_tfarray(tfarray):
         index, max_length = tf.while_loop(
             condition,
             body,
-            loop_vars = [index, max_length],
-            swap_memory = False,
+            loop_vars=[index, max_length],
+            swap_memory=False,
         )
         return max_length
 
 
 def pad_prediction_tfarray(tfarray, blank: int = 0):
     with tf.name_scope('pad_prediction_tfarray'):
-        index = tf.constant(0, dtype = tf.int32)
+        index = tf.constant(0, dtype=tf.int32)
         total = tfarray.size()
         max_length = find_max_length_prediction_tfarray(tfarray)
 
@@ -147,25 +147,25 @@ def pad_prediction_tfarray(tfarray, blank: int = 0):
             prediction = tfarray.read(index)
             prediction = tf.pad(
                 prediction,
-                paddings = [[0, max_length - tf.shape(prediction)[0]]],
-                mode = 'CONSTANT',
-                constant_values = blank,
+                paddings=[[0, max_length - tf.shape(prediction)[0]]],
+                mode='CONSTANT',
+                constant_values=blank,
             )
             tfarray = tfarray.write(index, prediction)
             return index + 1, tfarray
 
         index, tfarray = tf.while_loop(
-            condition, body, loop_vars = [index, tfarray], swap_memory = False
+            condition, body, loop_vars=[index, tfarray], swap_memory=False
         )
         return tfarray
 
 
-def count_non_blank(tensor, blank: 0, axis = None):
+def count_non_blank(tensor, blank: 0, axis=None):
     return tf.reduce_sum(
         tf.where(
             tf.not_equal(tensor, blank),
-            x = tf.ones_like(tensor),
-            y = tf.zeros_like(tensor),
+            x=tf.ones_like(tensor),
+            y=tf.zeros_like(tensor),
         ),
-        axis = axis,
+        axis=axis,
     )

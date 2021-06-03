@@ -31,15 +31,15 @@ class FastSpeechVariantPredictor(tf.keras.layers.Layer):
                 tf.keras.layers.Conv1D(
                     config.variant_predictor_filter,
                     config.variant_predictor_kernel_size,
-                    padding = 'same',
-                    name = 'conv_._{}'.format(i),
+                    padding='same',
+                    name='conv_._{}'.format(i),
                 )
             )
             self.conv_layers.append(tf.keras.layers.Activation(tf.nn.relu))
             self.conv_layers.append(
                 tf.keras.layers.LayerNormalization(
-                    epsilon = config.layer_norm_eps,
-                    name = 'LayerNorm_._{}'.format(i),
+                    epsilon=config.layer_norm_eps,
+                    name='LayerNorm_._{}'.format(i),
                 )
             )
             self.conv_layers.append(
@@ -52,19 +52,19 @@ class FastSpeechVariantPredictor(tf.keras.layers.Layer):
             self.decoder_speaker_embeddings = tf.keras.layers.Embedding(
                 config.n_speakers,
                 config.encoder_self_attention_params.hidden_size,
-                embeddings_initializer = get_initializer(
+                embeddings_initializer=get_initializer(
                     config.initializer_range
                 ),
-                name = 'speaker_embeddings',
+                name='speaker_embeddings',
             )
             self.speaker_fc = tf.keras.layers.Dense(
-                units = config.encoder_self_attention_params.hidden_size,
-                name = 'speaker_fc',
+                units=config.encoder_self_attention_params.hidden_size,
+                name='speaker_fc',
             )
 
         self.config = config
 
-    def call(self, inputs, training = False):
+    def call(self, inputs, training=False):
         """Call logic."""
         encoder_hidden_states, speaker_ids, attention_mask = inputs
         attention_mask = tf.cast(
@@ -99,28 +99,28 @@ class Model(FastSpeech):
         """Init layers for fastspeech."""
         super().__init__(config, **kwargs)
         self.f0_predictor = FastSpeechVariantPredictor(
-            config, dtype = tf.float32, name = 'f0_predictor'
+            config, dtype=tf.float32, name='f0_predictor'
         )
         self.energy_predictor = FastSpeechVariantPredictor(
-            config, dtype = tf.float32, name = 'energy_predictor'
+            config, dtype=tf.float32, name='energy_predictor'
         )
         self.duration_predictor = FastSpeechVariantPredictor(
-            config, dtype = tf.float32, name = 'duration_predictor'
+            config, dtype=tf.float32, name='duration_predictor'
         )
 
         # define f0_embeddings and energy_embeddings
         self.f0_embeddings = tf.keras.layers.Conv1D(
-            filters = config.encoder_self_attention_params.hidden_size,
-            kernel_size = 9,
-            padding = 'same',
-            name = 'f0_embeddings',
+            filters=config.encoder_self_attention_params.hidden_size,
+            kernel_size=9,
+            padding='same',
+            name='f0_embeddings',
         )
         self.f0_dropout = tf.keras.layers.Dropout(0.5)
         self.energy_embeddings = tf.keras.layers.Conv1D(
-            filters = config.encoder_self_attention_params.hidden_size,
-            kernel_size = 9,
-            padding = 'same',
-            name = 'energy_embeddings',
+            filters=config.encoder_self_attention_params.hidden_size,
+            kernel_size=9,
+            padding='same',
+            name='energy_embeddings',
         )
         self.energy_dropout = tf.keras.layers.Dropout(0.5)
 
@@ -141,11 +141,11 @@ class Model(FastSpeech):
             [[10, 10, 10, 10, 10, 10, 10, 10, 10, 10]], tf.float32
         )
         self(
-            input_ids = input_ids,
-            speaker_ids = speaker_ids,
-            duration_gts = duration_gts,
-            f0_gts = f0_gts,
-            energy_gts = energy_gts,
+            input_ids=input_ids,
+            speaker_ids=speaker_ids,
+            duration_gts=duration_gts,
+            f0_gts=f0_gts,
+            energy_gts=energy_gts,
         )
 
     def call(
@@ -154,16 +154,16 @@ class Model(FastSpeech):
         duration_gts,
         f0_gts,
         energy_gts,
-        training = True,
+        training=True,
         **kwargs,
     ):
         speaker_ids = tf.convert_to_tensor([0], tf.int32)
         attention_mask = tf.math.not_equal(input_ids, 0)
         embedding_output = self.embeddings(
-            [input_ids, speaker_ids], training = training
+            [input_ids, speaker_ids], training=training
         )
         encoder_output = self.encoder(
-            [embedding_output, attention_mask], training = training
+            [embedding_output, attention_mask], training=training
         )
         last_encoder_hidden_states = encoder_output[0]
 
@@ -175,11 +175,11 @@ class Model(FastSpeech):
 
         f0_outputs = self.f0_predictor(
             [last_encoder_hidden_states, speaker_ids, attention_mask],
-            training = training,
+            training=training,
         )
         energy_outputs = self.energy_predictor(
             [last_encoder_hidden_states, speaker_ids, attention_mask],
-            training = training,
+            training=training,
         )
 
         f0_embedding = self.f0_embeddings(
@@ -190,21 +190,21 @@ class Model(FastSpeech):
         )  # [barch_size, mel_length, feature]
 
         # apply dropout both training/inference
-        f0_embedding = self.f0_dropout(f0_embedding, training = True)
+        f0_embedding = self.f0_dropout(f0_embedding, training=True)
         energy_embedding = self.energy_dropout(
-            energy_embedding, training = True
+            energy_embedding, training=True
         )
 
         # sum features
         last_encoder_hidden_states += f0_embedding + energy_embedding
 
         length_regulator_outputs, encoder_masks = self.length_regulator(
-            [last_encoder_hidden_states, duration_gts], training = training
+            [last_encoder_hidden_states, duration_gts], training=training
         )
 
         # create decoder positional embedding
         decoder_pos = tf.range(
-            1, tf.shape(length_regulator_outputs)[1] + 1, dtype = tf.int32
+            1, tf.shape(length_regulator_outputs)[1] + 1, dtype=tf.int32
         )
         masked_decoder_pos = tf.expand_dims(decoder_pos, 0) * encoder_masks
 
@@ -215,14 +215,14 @@ class Model(FastSpeech):
                 encoder_masks,
                 masked_decoder_pos,
             ],
-            training = training,
+            training=training,
         )
         last_decoder_hidden_states = decoder_output[0]
 
         # here u can use sum or concat more than 1 hidden states layers from decoder.
         mels_before = self.mel_dense(last_decoder_hidden_states)
         mels_after = (
-            self.postnet([mels_before, encoder_masks], training = training)
+            self.postnet([mels_before, encoder_masks], training=training)
             + mels_before
         )
 
@@ -241,10 +241,10 @@ class Model(FastSpeech):
         speaker_ids = tf.convert_to_tensor([0], tf.int32)
         attention_mask = tf.math.not_equal(input_ids, 0)
         embedding_output = self.embeddings(
-            [input_ids, speaker_ids], training = False
+            [input_ids, speaker_ids], training=False
         )
         encoder_output = self.encoder(
-            [embedding_output, attention_mask], training = False
+            [embedding_output, attention_mask], training=False
         )
         last_encoder_hidden_states = encoder_output[0]
 
@@ -265,34 +265,34 @@ class Model(FastSpeech):
 
         f0_outputs = self.f0_predictor(
             [last_encoder_hidden_states, speaker_ids, attention_mask],
-            training = False,
+            training=False,
         )
         f0_outputs *= f0_ratios
 
         energy_outputs = self.energy_predictor(
             [last_encoder_hidden_states, speaker_ids, attention_mask],
-            training = False,
+            training=False,
         )
         energy_outputs *= energy_ratios
 
         f0_embedding = self.f0_dropout(
-            self.f0_embeddings(tf.expand_dims(f0_outputs, 2)), training = True
+            self.f0_embeddings(tf.expand_dims(f0_outputs, 2)), training=True
         )
         energy_embedding = self.energy_dropout(
             self.energy_embeddings(tf.expand_dims(energy_outputs, 2)),
-            training = True,
+            training=True,
         )
 
         # sum features
         last_encoder_hidden_states += f0_embedding + energy_embedding
 
         length_regulator_outputs, encoder_masks = self.length_regulator(
-            [last_encoder_hidden_states, duration_outputs], training = False
+            [last_encoder_hidden_states, duration_outputs], training=False
         )
 
         # create decoder positional embedding
         decoder_pos = tf.range(
-            1, tf.shape(length_regulator_outputs)[1] + 1, dtype = tf.int32
+            1, tf.shape(length_regulator_outputs)[1] + 1, dtype=tf.int32
         )
         masked_decoder_pos = tf.expand_dims(decoder_pos, 0) * encoder_masks
 
@@ -303,14 +303,14 @@ class Model(FastSpeech):
                 encoder_masks,
                 masked_decoder_pos,
             ],
-            training = False,
+            training=False,
         )
         last_decoder_hidden_states = decoder_output[0]
 
         # here u can use sum or concat more than 1 hidden states layers from decoder.
         mel_before = self.mel_dense(last_decoder_hidden_states)
         mel_after = (
-            self.postnet([mel_before, encoder_masks], training = True)
+            self.postnet([mel_before, encoder_masks], training=True)
             + mel_before
         )
 

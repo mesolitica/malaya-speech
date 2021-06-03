@@ -115,11 +115,11 @@ def conv1d(
     num_filters,
     filter_length,
     name,
-    dilation = 1,
-    causal = True,
-    kernel_initializer = tf.uniform_unit_scaling_initializer(1.0),
-    biases_initializer = tf.constant_initializer(0.0),
-    is_training = True,
+    dilation=1,
+    causal=True,
+    kernel_initializer=tf.uniform_unit_scaling_initializer(1.0),
+    biases_initializer=tf.constant_initializer(0.0),
+    is_training=True,
 ):
     """Fast 1D convolution that supports causal padding and dilation.
 
@@ -148,15 +148,15 @@ def conv1d(
     with tf.variable_scope(name):
         weights = tf.get_variable(
             'W',
-            shape = kernel_shape,
-            initializer = kernel_initializer,
-            trainable = is_training,
+            shape=kernel_shape,
+            initializer=kernel_initializer,
+            trainable=is_training,
         )
         biases = tf.get_variable(
             'biases',
-            shape = biases_shape,
-            initializer = biases_initializer,
-            trainable = is_training,
+            shape=biases_shape,
+            initializer=biases_initializer,
+            trainable=is_training,
         )
 
     x_ttb = time_to_batch(x, dilation)
@@ -167,7 +167,7 @@ def conv1d(
     x_4d = tf.reshape(
         x_ttb, [x_ttb_shape[0], 1, x_ttb_shape[1], num_input_channels]
     )
-    y = tf.nn.conv2d(x_4d, weights, strides, padding = padding)
+    y = tf.nn.conv2d(x_4d, weights, strides, padding=padding)
     y = tf.nn.bias_add(y, biases)
     y_shape = y.get_shape().as_list()
     y = tf.reshape(y, [y_shape[0], y_shape[2], num_filters])
@@ -176,7 +176,7 @@ def conv1d(
     return y
 
 
-def pool1d(x, window_length, name, mode = 'avg', stride = None):
+def pool1d(x, window_length, name, mode='avg', stride=None):
     """1D pooling function that supports multiple different modes.
 
   Args:
@@ -202,5 +202,5 @@ def pool1d(x, window_length, name, mode = 'avg', stride = None):
     window_shape = [1, 1, window_length, 1]
     strides = [1, 1, stride, 1]
     x_4d = tf.reshape(x, [batch_size, 1, length, num_channels])
-    pooled = pool_fn(x_4d, window_shape, strides, padding = 'SAME', name = name)
+    pooled = pool_fn(x_4d, window_shape, strides, padding='SAME', name=name)
     return tf.reshape(pooled, [batch_size, length // stride, num_channels])

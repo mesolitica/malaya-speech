@@ -33,7 +33,7 @@ def resample(data, old_samplerate, new_samplerate):
     return data
 
 
-def read_audio(data, old_samplerate, sample_rate = 22050):
+def read_audio(data, old_samplerate, sample_rate=22050):
     if len(data.shape) == 2:
         data = data[:, 0]
 
@@ -46,7 +46,7 @@ def read_audio(data, old_samplerate, sample_rate = 22050):
 
 
 @check_type
-def load(file: str, sr = 16000, scale: bool = True):
+def load(file: str, sr=16000, scale: bool = True):
     """
     Read sound file, any format supported by soundfile.read
 

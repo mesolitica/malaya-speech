@@ -9,7 +9,7 @@ import random
 # https://espnet.github.io/espnet/_modules/espnet/transform/spec_augment.html
 
 
-def warp_time_pil(features, max_time_warp = 80):
+def warp_time_pil(features, max_time_warp=80):
     from PIL import Image
     from PIL.Image import BICUBIC
 
@@ -29,32 +29,32 @@ def warp_time_pil(features, max_time_warp = 80):
     return np.concatenate((left, right), 0)
 
 
-def tf_warp_time(features, max_time_warp = 80):
+def tf_warp_time(features, max_time_warp=80):
     window = max_time_warp
     t = tf.shape(features)[0]
 
     def warp(features):
         center = tf.random.uniform(
-            shape = [], minval = window, maxval = t - window, dtype = tf.int32
+            shape=[], minval=window, maxval=t - window, dtype=tf.int32
         )
         warped = (
             tf.random.uniform(
-                shape = [],
-                minval = center - window,
-                maxval = center + window,
-                dtype = tf.int32,
+                shape=[],
+                minval=center - window,
+                maxval=center + window,
+                dtype=tf.int32,
             )
             + 1
         )
         f = features[:center]
         im = f[tf.newaxis, :, :, tf.newaxis]
         left = tf.image.resize(
-            im, (warped, features.shape[1]), method = 'bicubic'
+            im, (warped, features.shape[1]), method='bicubic'
         )
         f = features[center:]
         im = f[tf.newaxis, :, :, tf.newaxis]
         right = tf.image.resize(
-            im, (t - warped, features.shape[1]), method = 'bicubic'
+            im, (t - warped, features.shape[1]), method='bicubic'
         )
         left = left[0, :, :, 0]
         right = right[0, :, :, 0]
@@ -66,7 +66,7 @@ def tf_warp_time(features, max_time_warp = 80):
     )
 
 
-def warp_time_interpolate(features, W = 40, T = 30, mt = 2):
+def warp_time_interpolate(features, W=40, T=30, mt=2):
 
     from scipy.spatial.distance import pdist, cdist, squareform
     from scipy import interpolate
@@ -77,8 +77,8 @@ def warp_time_interpolate(features, W = 40, T = 30, mt = 2):
         T[:K, 0] = 1
         T[:K, 1:3] = cp
         T[K, 3:] = 1
-        T[K + 1 :, 3:] = cp.T
-        R = squareform(pdist(cp, metric = 'euclidean'))
+        T[K + 1:, 3:] = cp.T
+        R = squareform(pdist(cp, metric='euclidean'))
         R = R * R
         R[R == 0] = 1  # a trick to make R ln(R) 0
         R = R * np.log(R)
@@ -157,7 +157,7 @@ def warp_time_interpolate(features, W = 40, T = 30, mt = 2):
     spec_warped = np.zeros_like(spec)
     for f_ind in range(Nbin):
         spec_tmp = spec[f_ind, :]
-        func = interpolate.interp1d(xgt, spec_tmp, fill_value = 'extrapolate')
+        func = interpolate.interp1d(xgt, spec_tmp, fill_value='extrapolate')
         xnew = np.linspace(0, Nframe - 1, Nframe)
         spec_warped[f_ind, :] = func(xnew)
 
@@ -165,7 +165,7 @@ def warp_time_interpolate(features, W = 40, T = 30, mt = 2):
 
 
 def mask_frequency(
-    features, n_freq_mask: int = 2, width_freq_mask: int = 8, random_band = True
+    features, n_freq_mask: int = 2, width_freq_mask: int = 8, random_band=True
 ):
     """
     Mask frequency.
@@ -189,12 +189,12 @@ def mask_frequency(
         else:
             freq_band = width_freq_mask
         freq_base = np.random.randint(0, features.shape[1] - freq_band)
-        features[:, freq_base : freq_base + freq_band] = 0
+        features[:, freq_base: freq_base + freq_band] = 0
     return features
 
 
 def mask_time(
-    features, n_time_mask = 2, width_time_mask = 8, random_band = True
+    features, n_time_mask=2, width_time_mask=8, random_band=True
 ):
     """
     Time frequency.
@@ -219,11 +219,11 @@ def mask_time(
             time_band = width_time_mask
         if features.shape[0] - time_band > 0:
             time_base = np.random.randint(features.shape[0] - time_band)
-            features[time_base : time_base + time_band, :] = 0
+            features[time_base: time_base + time_band, :] = 0
     return features
 
 
-def tf_mask_frequency(features, n_freq_mask = 2, F = 27):
+def tf_mask_frequency(features, n_freq_mask=2, F=27):
     """
     Mask frequency using Tensorflow.
 
@@ -242,9 +242,9 @@ def tf_mask_frequency(features, n_freq_mask = 2, F = 27):
         f0 = tf.random_uniform([], 0, v - f, tf.int32)
         mask = tf.concat(
             (
-                tf.ones(shape = (n, v - f0 - f)),
-                tf.zeros(shape = (n, f)),
-                tf.ones(shape = (n, f0)),
+                tf.ones(shape=(n, v - f0 - f)),
+                tf.zeros(shape=(n, f)),
+                tf.ones(shape=(n, f0)),
             ),
             1,
         )
@@ -253,10 +253,10 @@ def tf_mask_frequency(features, n_freq_mask = 2, F = 27):
     return tf.to_float(masked)
 
 
-def tf_mask_time(features, n_time_mask = 2, T = 80):
+def tf_mask_time(features, n_time_mask=2, T=80):
     """
     Mask time using Tensorflow.
-    
+
     Parameters
     ----------
 
@@ -270,9 +270,9 @@ def tf_mask_time(features, n_time_mask = 2, T = 80):
         t0 = tf.random_uniform([], 0, n - T, tf.int32)
         mask = tf.concat(
             (
-                tf.ones(shape = (n - t0 - t, v)),
-                tf.zeros(shape = (t, v)),
-                tf.ones(shape = (t0, v)),
+                tf.ones(shape=(n - t0 - t, v)),
+                tf.zeros(shape=(t, v)),
+                tf.ones(shape=(t0, v)),
             ),
             0,
         )

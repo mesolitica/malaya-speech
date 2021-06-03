@@ -119,7 +119,7 @@ class TextIDS:
         pad_to,
         sentence_tokenizer,
         true_case,
-        understand_punct = False,
+        understand_punct=False,
     ):
         self.normalizer = normalizer
         self.pad_to = pad_to
@@ -130,18 +130,18 @@ class TextIDS:
     def normalize(
         self,
         string,
-        normalize = True,
-        assume_newline_fullstop = False,
+        normalize=True,
+        assume_newline_fullstop=False,
         **kwargs
     ):
         string = convert_to_ascii(string)
         if assume_newline_fullstop:
             string = string.replace('\n', '. ')
-            string = self.sentence_tokenizer(string, minimum_length = 0)
+            string = self.sentence_tokenizer(string, minimum_length=0)
             string = '. '.join(string)
 
         if self.true_case:
-            string = self.true_case.predict([string], beam_search = False)[0]
+            string = self.true_case.predict([string], beam_search=False)[0]
 
         string = re.sub(r'[ ]+', ' ', string).strip()
         if string[-1] in '-,':
@@ -159,12 +159,12 @@ class TextIDS:
             string = ' '.join(t)
             string = self.normalizer.normalize(
                 string,
-                check_english = False,
-                normalize_entity = False,
-                normalize_text = False,
-                normalize_url = True,
-                normalize_email = True,
-                normalize_telephone = True,
+                check_english=False,
+                normalize_entity=False,
+                normalize_text=False,
+                normalize_url=True,
+                normalize_email=True,
+                normalize_telephone=True,
             )
             string = string['normalize']
         else:
@@ -181,15 +181,15 @@ class TextIDS:
             string = ''.join([c for c in string if c not in _punct])
         string = re.sub(r'[ ]+', ' ', string).strip()
         string = string.lower()
-        ids = tts_encode(string, MALAYA_SPEECH_SYMBOLS, add_eos = False)
+        ids = tts_encode(string, MALAYA_SPEECH_SYMBOLS, add_eos=False)
         ids = ids + [2, 0, 0, 0]
         text_input = np.array(ids)
         num_pad = self.pad_to - ((len(text_input) + 2) % self.pad_to)
         text_input = np.pad(
-            text_input, ((1, 1)), 'constant', constant_values = ((1, 2))
+            text_input, ((1, 1)), 'constant', constant_values=((1, 2))
         )
         text_input = np.pad(
-            text_input, ((0, num_pad)), 'constant', constant_values = 0
+            text_input, ((0, num_pad)), 'constant', constant_values=0
         )
 
         return string, text_input
@@ -197,31 +197,31 @@ class TextIDS:
 
 def load_text_ids(
     pad_to: int = 8,
-    understand_punct = False,
-    true_case = None,
-    quantized = False,
+    understand_punct=False,
+    true_case=None,
+    quantized=False,
     **kwargs
 ):
     try:
         import malaya
-    except:
+    except BaseException:
         raise ModuleNotFoundError(
             'malaya not installed. Please install it by `pip install malaya` and try again.'
         )
 
-    normalizer = malaya.normalize.normalizer(date = False, time = False)
+    normalizer = malaya.normalize.normalizer(date=False, time=False)
     sentence_tokenizer = malaya.text.function.split_into_sentences
     if true_case:
         true_case = malaya.true_case.transformer(
-            model = true_case, quantized = quantized, **kwargs
+            model=true_case, quantized=quantized, **kwargs
         )
 
     return TextIDS(
-        normalizer = normalizer,
-        pad_to = pad_to,
-        sentence_tokenizer = sentence_tokenizer,
-        true_case = true_case,
-        understand_punct = understand_punct,
+        normalizer=normalizer,
+        pad_to=pad_to,
+        sentence_tokenizer=sentence_tokenizer,
+        true_case=true_case,
+        understand_punct=understand_punct,
     )
 
 
@@ -233,7 +233,7 @@ def available_tacotron2():
 
     return describe_availability(
         _tacotron2_availability,
-        text = '`husein` and `haqkiem` combined loss from training set.',
+        text='`husein` and `haqkiem` combined loss from training set.',
     )
 
 
@@ -245,7 +245,7 @@ def available_fastspeech2():
 
     return describe_availability(
         _fastspeech2_availability,
-        text = '`husein` and `haqkiem` combined loss from training set',
+        text='`husein` and `haqkiem` combined loss from training set',
     )
 
 
@@ -269,9 +269,9 @@ def tacotron2(
         * ``'husein'`` - Tacotron2 trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
         * ``'haqkiem'`` - Tacotron2 trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
         * ``'female-singlish'`` - Tacotron2 trained on female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
-        
+
     quantized : bool, optional (default=False)
-        if True, will load 8-bit quantized model. 
+        if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
 
     pad_to : int, optional (default=8)
@@ -297,22 +297,22 @@ def tacotron2(
         )
 
     text_ids = load_text_ids(
-        pad_to = pad_to,
-        understand_punct = _tacotron2_availability[model][
+        pad_to=pad_to,
+        understand_punct=_tacotron2_availability[model][
             'understand punctuations'
         ],
-        true_case = true_case,
-        quantized = quantized,
+        true_case=true_case,
+        quantized=quantized,
         **kwargs
     )
 
     return tts.tacotron_load(
-        path = PATH_TTS_TACOTRON2,
-        s3_path = S3_PATH_TTS_TACOTRON2,
-        model = model,
-        name = 'text-to-speech',
-        normalizer = text_ids,
-        quantized = quantized,
+        path=PATH_TTS_TACOTRON2,
+        s3_path=S3_PATH_TTS_TACOTRON2,
+        model=model,
+        name='text-to-speech',
+        normalizer=text_ids,
+        quantized=quantized,
         **kwargs
     )
 
@@ -340,9 +340,9 @@ def fastspeech2(
         * ``'husein-v2'`` - Fastspeech2 V2 trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
         * ``'haqkiem'`` - Fastspeech2 trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
         * ``'female-singlish'`` - Fastspeech2 trained on female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
-        
+
     quantized : bool, optional (default=False)
-        if True, will load 8-bit quantized model. 
+        if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
 
     pad_to : int, optional (default=8)
@@ -369,20 +369,20 @@ def fastspeech2(
         )
 
     text_ids = load_text_ids(
-        pad_to = pad_to,
-        understand_punct = _fastspeech2_availability[model][
+        pad_to=pad_to,
+        understand_punct=_fastspeech2_availability[model][
             'understand punctuations'
         ],
-        true_case = true_case,
-        quantized = quantized,
+        true_case=true_case,
+        quantized=quantized,
         **kwargs
     )
     return tts.fastspeech_load(
-        path = PATH_TTS_FASTSPEECH2,
-        s3_path = S3_PATH_TTS_FASTSPEECH2,
-        model = model,
-        name = 'text-to-speech',
-        normalizer = text_ids,
-        quantized = quantized,
+        path=PATH_TTS_FASTSPEECH2,
+        s3_path=S3_PATH_TTS_FASTSPEECH2,
+        model=model,
+        name='text-to-speech',
+        normalizer=text_ids,
+        quantized=quantized,
         **kwargs
     )

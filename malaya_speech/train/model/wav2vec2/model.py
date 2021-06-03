@@ -7,16 +7,16 @@ from ..utils import shape_list
 
 class Model(tf.keras.Model):
     def __init__(self, cfg, encoder, **kwargs):
-        super(Model, self).__init__(name = 'wav2vec2', **kwargs)
+        super(Model, self).__init__(name='wav2vec2', **kwargs)
         self.cfg = cfg
 
         feature_enc_layers = eval(cfg.conv_feature_layers)
         self.embed = feature_enc_layers[-1][0]
         self.feature_extractor = ConvFeatureExtractionModel(
-            conv_layers = feature_enc_layers,
-            dropout = 0.0,
-            mode = cfg.extractor_mode,
-            conv_bias = cfg.conv_bias,
+            conv_layers=feature_enc_layers,
+            dropout=0.0,
+            mode=cfg.extractor_mode,
+            conv_bias=cfg.conv_bias,
         )
         self.layer_norm = tf.keras.layers.LayerNormalization()
 
@@ -62,12 +62,12 @@ class Model(tf.keras.Model):
         if cfg.quantize_targets:
             vq_dim = cfg.latent_dim if cfg.latent_dim > 0 else final_dim
             self.quantizer = GumbelVectorQuantizer(
-                dim = self.embed,
-                num_vars = cfg.latent_vars,
-                temp = cfg.latent_temp,
-                groups = cfg.latent_groups,
-                combine_groups = False,
-                vq_dim = vq_dim,
+                dim=self.embed,
+                num_vars=cfg.latent_vars,
+                temp=cfg.latent_temp,
+                groups=cfg.latent_groups,
+                combine_groups=False,
+                vq_dim=vq_dim,
             )
         self.project_q = tf.keras.layers.Dense(final_dim)
 
@@ -82,25 +82,25 @@ class Model(tf.keras.Model):
                     else cfg.encoder_embed_dim
                 )
                 self.input_quantizer = GumbelVectorQuantizer(
-                    dim = self.embed,
-                    num_vars = cfg.latent_vars,
-                    temp = cfg.latent_temp,
-                    groups = cfg.latent_groups,
-                    combine_groups = False,
-                    vq_dim = vq_dim,
+                    dim=self.embed,
+                    num_vars=cfg.latent_vars,
+                    temp=cfg.latent_temp,
+                    groups=cfg.latent_groups,
+                    combine_groups=False,
+                    vq_dim=vq_dim,
                 )
 
         self.mask_emb = tf.get_variable(
-            name = 'mask_emb',
-            shape = [cfg.encoder_embed_dim],
-            initializer = tf.truncated_normal_initializer(),
+            name='mask_emb',
+            shape=[cfg.encoder_embed_dim],
+            initializer=tf.truncated_normal_initializer(),
         )
         self.encoder = encoder
         self.layer_norm = tf.keras.layers.LayerNormalization()
         self.target_glu = None
         if cfg.target_glu:
             self.target_glu = tf.keras.layers.Dense(
-                final_dim * 2, activation = glu
+                final_dim * 2, activation=glu
             )
 
         self.final_proj = tf.keras.layers.Dense(final_dim)
@@ -119,7 +119,7 @@ class Model(tf.keras.Model):
         return tf.cast(input_lengths, tf.int32)
 
     def apply_mask(
-        self, x, padding_mask, mask_indices = None, mask_channel_indices = None
+        self, x, padding_mask, mask_indices=None, mask_channel_indices=None
     ):
         B, T, C = shape_list(x)
         if self.mask_prob > 0:
@@ -168,9 +168,9 @@ class Model(tf.keras.Model):
             x = index_put_constant(x, mask_channel_indices, 0.0)
         return x, mask_indices
 
-    def sample_negatives(self, y, num, padding_count = None):
+    def sample_negatives(self, y, num, padding_count=None):
         if self.n_negatives == 0 and self.cross_sample_negatives == 0:
-            return tf.zeros(shape = (0,), dtype = tf.int32)
+            return tf.zeros(shape=(0,), dtype=tf.int32)
         bsz, tsz, fsz = shape_list(y)
         y = tf.reshape(y, (-1, fsz))
         cross_high = tsz * bsz
@@ -184,10 +184,10 @@ class Model(tf.keras.Model):
                 [-1],
             )
             neg_idxs = tf.random.uniform(
-                minval = 0,
-                maxval = high - 1,
-                shape = (bsz, self.n_negatives * num),
-                dtype = tf.int32,
+                minval=0,
+                maxval=high - 1,
+                shape=(bsz, self.n_negatives * num),
+                dtype=tf.int32,
             )
 
             mask = neg_idxs >= tszs
@@ -201,10 +201,10 @@ class Model(tf.keras.Model):
                 [-1],
             )
             cross_neg_idxs = tf.random.uniform(
-                minval = 0,
-                maxval = cross_high - 1,
-                shape = (bsz, self.cross_sample_negatives * num),
-                dtype = tf.int32,
+                minval=0,
+                maxval=cross_high - 1,
+                shape=(bsz, self.cross_sample_negatives * num),
+                dtype=tf.int32,
             )
             mask = cross_neg_idxs >= tszs
             cross_neg_idxs = tf.where(mask, cross_neg_idxs + 1, cross_neg_idxs)
@@ -217,7 +217,7 @@ class Model(tf.keras.Model):
             neg_idxs = cross_neg_idxs
 
         if self.cross_sample_negatives > 0 and self.n_negatives > 0:
-            neg_idxs = tf.concat([neg_idxs, cross_neg_idxs], axis = 1)
+            neg_idxs = tf.concat([neg_idxs, cross_neg_idxs], axis=1)
 
         negs = tf.gather(y, tf.reshape(neg_idxs, [-1]))
         negs = tf.reshape(
@@ -229,16 +229,16 @@ class Model(tf.keras.Model):
 
     def compute_preds(self, x, y, negatives):
         tiled = tf.tile(tf.expand_dims(y, 0), (tf.shape(negatives)[0], 1, 1, 1))
-        neg_is_pos = tf.reduce_all(tf.equal(tiled, negatives), axis = -1)
+        neg_is_pos = tf.reduce_all(tf.equal(tiled, negatives), axis=-1)
         y = tf.expand_dims(y, 0)
-        targets = tf.concat([y, negatives], axis = 0)
+        targets = tf.concat([y, negatives], axis=0)
         x = tf.tile(tf.expand_dims(x, 0), (tf.shape(targets)[0], 1, 1, 1))
         logits = -(
             tf.losses.cosine_distance(
                 tf.nn.l2_normalize(x, -1),
                 tf.nn.l2_normalize(targets, -1),
-                dim = -1,
-                reduction = 'none',
+                dim=-1,
+                reduction='none',
             )
             - 1
         )
@@ -250,27 +250,27 @@ class Model(tf.keras.Model):
             lambda: index_put_constant(right, neg_is_pos, -1e9),
             lambda: right,
         )
-        logits = tf.concat([left, right], axis = 0)
+        logits = tf.concat([left, right], axis=0)
         return logits
 
     def call(
         self,
         source,
-        padding_mask = None,
-        mask = True,
-        features_only = False,
-        mask_indices = None,
-        mask_channel_indices = None,
-        padding_count = None,
-        training = True,
+        padding_mask=None,
+        mask=True,
+        features_only=False,
+        mask_indices=None,
+        mask_channel_indices=None,
+        padding_count=None,
+        training=True,
     ):
-        features = self.feature_extractor(source, training = training)
+        features = self.feature_extractor(source, training=training)
         if self.feature_grad_mult <= 0:
             features = tf.stop_gradient(features)
 
         features_pen = tf.reduce_mean(tf.math.pow(features, 2))
-        features = self.layer_norm(features, training = training)
-        unmasked_features = tf.identity(features, name = 'unmasked_features')
+        features = self.layer_norm(features, training=training)
+        unmasked_features = tf.identity(features, name='unmasked_features')
         if padding_mask is not None:
             input_lengths = padding_mask
             output_lengths = self._get_feat_extract_output_lengths(
@@ -279,9 +279,9 @@ class Model(tf.keras.Model):
 
             max_length = tf.cast(tf.reduce_max(output_lengths), tf.int32)
             padding_mask = tf.sequence_mask(
-                lengths = output_lengths,
-                maxlen = max_length,
-                dtype = tf.float32,
+                lengths=output_lengths,
+                maxlen=max_length,
+                dtype=tf.float32,
             )
             padding_mask.set_shape((None, None))
             padding_mask = tf.math.logical_not(tf.cast(padding_mask, tf.bool))
@@ -290,9 +290,9 @@ class Model(tf.keras.Model):
         if self.post_extract_proj is not None:
             features = self.post_extract_proj(features)
 
-        features = self.dropout_input(features, training = training)
+        features = self.dropout_input(features, training=training)
         unmasked_features = self.dropout_features(
-            unmasked_features, training = training
+            unmasked_features, training=training
         )
 
         num_vars = None
@@ -302,7 +302,7 @@ class Model(tf.keras.Model):
 
         if self.input_quantizer:
             q = self.input_quantizer(
-                features, produce_targets = False, training = training
+                features, produce_targets=False, training=training
             )
             features = q['x']
             num_vars = q['num_vars']
@@ -315,8 +315,8 @@ class Model(tf.keras.Model):
             x, mask_indices = self.apply_mask(
                 features,
                 padding_mask,
-                mask_indices = mask_indices,
-                mask_channel_indices = mask_channel_indices,
+                mask_indices=mask_indices,
+                mask_channel_indices=mask_channel_indices,
             )
             y = unmasked_features
         else:
@@ -327,13 +327,13 @@ class Model(tf.keras.Model):
         self.x = x
         self.y = y
 
-        x = self.encoder(x, padding_mask, training = training)
+        x = self.encoder(x, padding_mask, training=training)
 
         if features_only:
             return {'x': x, 'padding_mask': padding_mask}
 
         if self.quantizer:
-            q = self.quantizer(y, produce_targets = False, training = training)
+            q = self.quantizer(y, produce_targets=False, training=training)
             y = q['x']
             num_vars = q['num_vars']
             code_ppl = q['code_perplexity']
@@ -343,13 +343,13 @@ class Model(tf.keras.Model):
             y = self.project_q(y)
 
             negs, _ = self.sample_negatives(
-                y, tf.shape(y)[1], padding_count = padding_count
+                y, tf.shape(y)[1], padding_count=padding_count
             )
 
         else:
             y = self.project_q(y)
             negs, _ = self.sample_negatives(
-                y, tf.shape(y)[1], padding_count = padding_count
+                y, tf.shape(y)[1], padding_count=padding_count
             )
 
         if self.target_glu:

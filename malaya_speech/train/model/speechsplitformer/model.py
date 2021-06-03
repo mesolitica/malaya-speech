@@ -28,7 +28,7 @@ class Encoder_6(tf.layers.Layer):
         self.layers = []
 
         self.before_dense_1 = tf.keras.layers.Dense(
-            units = self.dim_enc_3, dtype = tf.float32, name = 'before_dense_1'
+            units=self.dim_enc_3, dtype=tf.float32, name='before_dense_1'
         )
 
         params = copy.deepcopy(params)
@@ -47,7 +47,7 @@ class Encoder_6(tf.layers.Layer):
                 params['relu_dropout'],
                 train,
                 params['allow_ffn_pad'],
-                activation = params.get('activation', 'relu'),
+                activation=params.get('activation', 'relu'),
             )
 
             self.layers.append(
@@ -63,24 +63,24 @@ class Encoder_6(tf.layers.Layer):
 
         self.output_normalization = LayerNormalization(params['hidden_size'])
         self.encoder_dense_1 = tf.keras.layers.Dense(
-            units = self.dim_neck_3,
-            dtype = tf.float32,
-            name = 'encoder_dense_1',
+            units=self.dim_neck_3,
+            dtype=tf.float32,
+            name='encoder_dense_1',
         )
 
         self.interp = InterpLnr(hparams)
 
-    def call(self, encoder_inputs, attention_mask, training = True):
+    def call(self, encoder_inputs, attention_mask, training=True):
         encoder_inputs = self.before_dense_1(encoder_inputs)
         initializer = tf.variance_scaling_initializer(
             self.params['initializer_gain'],
-            mode = 'fan_avg',
-            distribution = 'uniform',
+            mode='fan_avg',
+            distribution='uniform',
         )
         inputs_padding = tf.cast(
             tf.logical_not(tf.cast(attention_mask, tf.bool)), tf.float32
         )
-        with tf.variable_scope('Transformer', initializer = initializer):
+        with tf.variable_scope('Transformer', initializer=initializer):
             attention_bias = get_padding_bias(inputs_padding)
             with tf.name_scope('encode'):
 
@@ -110,7 +110,7 @@ class Encoder_6(tf.layers.Layer):
                             [tf.shape(encoder_inputs)[1]],
                             [tf.shape(encoder_inputs)[0]],
                         ),
-                        training = True,
+                        training=True,
                     )
 
                 return self.encoder_dense_1(
@@ -130,10 +130,10 @@ class Encoder_7(tf.layers.Layer):
         self.params = params
 
         self.before_dense_1 = tf.keras.layers.Dense(
-            units = self.dim_enc, dtype = tf.float32, name = 'before_dense_1'
+            units=self.dim_enc, dtype=tf.float32, name='before_dense_1'
         )
         self.before_dense_2 = tf.keras.layers.Dense(
-            units = self.dim_enc_3, dtype = tf.float32, name = 'before_dense_2'
+            units=self.dim_enc_3, dtype=tf.float32, name='before_dense_2'
         )
 
         params_1 = copy.deepcopy(params)
@@ -154,7 +154,7 @@ class Encoder_7(tf.layers.Layer):
                 params_1['relu_dropout'],
                 train,
                 params_1['allow_ffn_pad'],
-                activation = params_1.get('activation', 'relu'),
+                activation=params_1.get('activation', 'relu'),
             )
 
             self.layers_1.append(
@@ -180,7 +180,7 @@ class Encoder_7(tf.layers.Layer):
                 params_2['relu_dropout'],
                 train,
                 params_2['allow_ffn_pad'],
-                activation = params_2.get('activation', 'relu'),
+                activation=params_2.get('activation', 'relu'),
             )
 
             self.layers_2.append(
@@ -202,26 +202,26 @@ class Encoder_7(tf.layers.Layer):
         )
 
         self.encoder_dense_1 = tf.keras.layers.Dense(
-            units = self.dim_neck, dtype = tf.float32, name = 'encoder_dense_1'
+            units=self.dim_neck, dtype=tf.float32, name='encoder_dense_1'
         )
         self.encoder_dense_2 = tf.keras.layers.Dense(
-            units = self.dim_neck_3,
-            dtype = tf.float32,
-            name = 'encoder_dense_2',
+            units=self.dim_neck_3,
+            dtype=tf.float32,
+            name='encoder_dense_2',
         )
 
         self.interp = InterpLnr(hparams)
 
-    def call(self, encoder_inputs, attention_mask, training = True):
+    def call(self, encoder_inputs, attention_mask, training=True):
         initializer = tf.variance_scaling_initializer(
             self.params['initializer_gain'],
-            mode = 'fan_avg',
-            distribution = 'uniform',
+            mode='fan_avg',
+            distribution='uniform',
         )
         inputs_padding = tf.cast(
             tf.logical_not(tf.cast(attention_mask, tf.bool)), tf.float32
         )
-        with tf.variable_scope('Transformer', initializer = initializer):
+        with tf.variable_scope('Transformer', initializer=initializer):
             attention_bias = get_padding_bias(inputs_padding)
             with tf.name_scope('encode'):
 
@@ -232,7 +232,7 @@ class Encoder_7(tf.layers.Layer):
                     )
 
                 x = encoder_inputs[:, :, : self.dim_freq]
-                f0 = encoder_inputs[:, :, self.dim_freq :]
+                f0 = encoder_inputs[:, :, self.dim_freq:]
 
                 x = self.before_dense_1(x)
                 f0 = self.before_dense_2(f0)
@@ -256,17 +256,17 @@ class Encoder_7(tf.layers.Layer):
                         with tf.variable_scope('ffn'):
                             f0 = feed_forward_network(f0, inputs_padding)
 
-                    x_f0 = tf.concat((x, f0), axis = 2)
+                    x_f0 = tf.concat((x, f0), axis=2)
                     x_f0 = self.interp(
                         x_f0,
                         tf.tile([tf.shape(x_f0)[1]], [tf.shape(x)[0]]),
-                        training = True,
+                        training=True,
                     )
                     x = x_f0[:, :, : self.dim_enc]
-                    f0 = x_f0[:, :, self.dim_enc :]
+                    f0 = x_f0[:, :, self.dim_enc:]
 
                 x = x_f0[:, :, : self.dim_enc]
-                f0 = x_f0[:, :, self.dim_enc :]
+                f0 = x_f0[:, :, self.dim_enc:]
                 x = self.encoder_dense_1(self.output_normalization_1(x))
                 f0 = self.encoder_dense_2(self.output_normalization_2(f0))
 
@@ -285,7 +285,7 @@ class Encoder_t(tf.layers.Layer):
         self.params = params
 
         self.before_dense = tf.keras.layers.Dense(
-            units = self.dim_enc_2, dtype = tf.float32, name = 'before_dense_1'
+            units=self.dim_enc_2, dtype=tf.float32, name='before_dense_1'
         )
 
         params = copy.deepcopy(params)
@@ -306,7 +306,7 @@ class Encoder_t(tf.layers.Layer):
                 params['relu_dropout'],
                 train,
                 params['allow_ffn_pad'],
-                activation = params.get('activation', 'relu'),
+                activation=params.get('activation', 'relu'),
             )
 
             self.layers.append(
@@ -322,20 +322,20 @@ class Encoder_t(tf.layers.Layer):
 
         self.output_normalization = LayerNormalization(params['hidden_size'])
         self.encoder_dense = tf.keras.layers.Dense(
-            units = self.dim_neck_2, dtype = tf.float32, name = 'encoder_dense'
+            units=self.dim_neck_2, dtype=tf.float32, name='encoder_dense'
         )
 
-    def call(self, encoder_inputs, attention_mask, training = True):
+    def call(self, encoder_inputs, attention_mask, training=True):
         encoder_inputs = self.before_dense(encoder_inputs)
         initializer = tf.variance_scaling_initializer(
             self.params['initializer_gain'],
-            mode = 'fan_avg',
-            distribution = 'uniform',
+            mode='fan_avg',
+            distribution='uniform',
         )
         inputs_padding = tf.cast(
             tf.logical_not(tf.cast(attention_mask, tf.bool)), tf.float32
         )
-        with tf.variable_scope('Transformer', initializer = initializer):
+        with tf.variable_scope('Transformer', initializer=initializer):
             attention_bias = get_padding_bias(inputs_padding)
             with tf.name_scope('encode'):
 
@@ -364,36 +364,36 @@ class Encoder_t(tf.layers.Layer):
 
 class Decoder_3(tf.keras.layers.Layer):
     def __init__(self, params, hparams, train, **kwargs):
-        super(Decoder_3, self).__init__(name = 'Decoder_3', **kwargs)
+        super(Decoder_3, self).__init__(name='Decoder_3', **kwargs)
         self.decoder_stack = DecoderStack(params, train)
         params = copy.deepcopy(params)
         self.params = params
         self.before_dense = tf.keras.layers.Dense(
-            units = params['hidden_size'],
-            dtype = tf.float32,
-            name = 'before_dense_1',
+            units=params['hidden_size'],
+            dtype=tf.float32,
+            name='before_dense_1',
         )
         self.linear_projection = tf.keras.layers.Dense(
-            units = hparams.dim_freq,
-            dtype = tf.float32,
-            name = 'self.linear_projection',
+            units=hparams.dim_freq,
+            dtype=tf.float32,
+            name='self.linear_projection',
         )
 
-    def call(self, x, attention_mask, encoder_outputs, training = True):
+    def call(self, x, attention_mask, encoder_outputs, training=True):
         x = self.before_dense(x)
         input_shape = tf.shape(x)
 
         initializer = tf.variance_scaling_initializer(
             self.params['initializer_gain'],
-            mode = 'fan_avg',
-            distribution = 'uniform',
+            mode='fan_avg',
+            distribution='uniform',
         )
 
         inputs_padding = tf.cast(
             tf.logical_not(tf.cast(attention_mask, tf.bool)), tf.float32
         )
 
-        with tf.variable_scope('Decoder_3', initializer = initializer):
+        with tf.variable_scope('Decoder_3', initializer=initializer):
             attention_bias = get_padding_bias(inputs_padding)
 
             with tf.name_scope('decode'):
@@ -420,36 +420,36 @@ class Decoder_3(tf.keras.layers.Layer):
 
 class Decoder_4(tf.keras.layers.Layer):
     def __init__(self, params, hparams, train, **kwargs):
-        super(Decoder_4, self).__init__(name = 'Decoder_4', **kwargs)
+        super(Decoder_4, self).__init__(name='Decoder_4', **kwargs)
         self.decoder_stack = DecoderStack(params, train)
         params = copy.deepcopy(params)
         self.params = params
         self.before_dense = tf.keras.layers.Dense(
-            units = params['hidden_size'],
-            dtype = tf.float32,
-            name = 'before_dense_1',
+            units=params['hidden_size'],
+            dtype=tf.float32,
+            name='before_dense_1',
         )
         self.linear_projection = tf.keras.layers.Dense(
-            units = hparams.dim_f0,
-            dtype = tf.float32,
-            name = 'self.linear_projection',
+            units=hparams.dim_f0,
+            dtype=tf.float32,
+            name='self.linear_projection',
         )
 
-    def call(self, x, attention_mask, encoder_outputs, training = True):
+    def call(self, x, attention_mask, encoder_outputs, training=True):
         x = self.before_dense(x)
         input_shape = tf.shape(x)
 
         initializer = tf.variance_scaling_initializer(
             self.params['initializer_gain'],
-            mode = 'fan_avg',
-            distribution = 'uniform',
+            mode='fan_avg',
+            distribution='uniform',
         )
 
         inputs_padding = tf.cast(
             tf.logical_not(tf.cast(attention_mask, tf.bool)), tf.float32
         )
 
-        with tf.variable_scope('Decoder_4', initializer = initializer):
+        with tf.variable_scope('Decoder_4', initializer=initializer):
             attention_bias = get_padding_bias(inputs_padding)
 
             with tf.name_scope('decode'):
@@ -476,40 +476,40 @@ class Decoder_4(tf.keras.layers.Layer):
 
 class Model(tf.keras.Model):
     def __init__(
-        self, params_encoder, params_decoder, hparams, train = True, **kwargs
+        self, params_encoder, params_decoder, hparams, train=True, **kwargs
     ):
-        super(Model, self).__init__(name = 'speechsplit', **kwargs)
-        self.encoder_1 = Encoder_7(params_encoder, hparams, train = train)
-        self.encoder_2 = Encoder_t(params_encoder, hparams, train = train)
-        self.decoder = Decoder_3(params_decoder, hparams, train = train)
+        super(Model, self).__init__(name='speechsplit', **kwargs)
+        self.encoder_1 = Encoder_7(params_encoder, hparams, train=train)
+        self.encoder_2 = Encoder_t(params_encoder, hparams, train=train)
+        self.decoder = Decoder_3(params_decoder, hparams, train=train)
         self.freq = hparams.freq
         self.freq_2 = hparams.freq_2
         self.freq_3 = hparams.freq_3
 
-    def call(self, x_f0, x_org, c_trg, mel_lengths, training = True):
+    def call(self, x_f0, x_org, c_trg, mel_lengths, training=True):
         max_length = tf.cast(tf.reduce_max(mel_lengths), tf.int32)
         attention_mask = tf.sequence_mask(
-            lengths = mel_lengths, maxlen = max_length, dtype = tf.float32
+            lengths=mel_lengths, maxlen=max_length, dtype=tf.float32
         )
         attention_mask.set_shape((None, None))
 
         codes_x, codes_f0 = self.encoder_1(
-            x_f0, attention_mask, training = training
+            x_f0, attention_mask, training=training
         )
-        codes_2 = self.encoder_2(x_org, attention_mask, training = training)
+        codes_2 = self.encoder_2(x_org, attention_mask, training=training)
         code_exp_1 = codes_x
         code_exp_3 = codes_f0
         code_exp_2 = codes_2
         c_trg = tf.tile(tf.expand_dims(c_trg, 1), (1, tf.shape(x_f0)[1], 1))
 
         encoder_outputs = tf.concat(
-            (code_exp_1, code_exp_2, code_exp_3, c_trg), axis = -1
+            (code_exp_1, code_exp_2, code_exp_3, c_trg), axis=-1
         )
         mel_outputs = self.decoder(
             encoder_outputs,
             attention_mask,
             encoder_outputs,
-            training = training,
+            training=training,
         )
 
         return codes_x, codes_f0, codes_2, encoder_outputs, mel_outputs
@@ -517,32 +517,32 @@ class Model(tf.keras.Model):
 
 class Model_F0(tf.keras.Model):
     def __init__(
-        self, params_encoder, params_decoder, hparams, train = True, **kwargs
+        self, params_encoder, params_decoder, hparams, train=True, **kwargs
     ):
-        super(Model_F0, self).__init__(name = 'speechsplit_f0', **kwargs)
-        self.encoder_2 = Encoder_t(params_encoder, hparams, train = train)
-        self.encoder_3 = Encoder_6(params_encoder, hparams, train = train)
-        self.decoder = Decoder_4(params_decoder, hparams, train = train)
+        super(Model_F0, self).__init__(name='speechsplit_f0', **kwargs)
+        self.encoder_2 = Encoder_t(params_encoder, hparams, train=train)
+        self.encoder_3 = Encoder_6(params_encoder, hparams, train=train)
+        self.decoder = Decoder_4(params_decoder, hparams, train=train)
         self.freq_2 = hparams.freq_2
         self.freq_3 = hparams.freq_3
 
-    def call(self, x_org, f0_trg, mel_lengths, training = True):
+    def call(self, x_org, f0_trg, mel_lengths, training=True):
         max_length = tf.cast(tf.reduce_max(mel_lengths), tf.int32)
         attention_mask = tf.sequence_mask(
-            lengths = mel_lengths, maxlen = max_length, dtype = tf.float32
+            lengths=mel_lengths, maxlen=max_length, dtype=tf.float32
         )
         attention_mask.set_shape((None, None))
 
-        codes_2 = self.encoder_2(x_org, attention_mask, training = training)
+        codes_2 = self.encoder_2(x_org, attention_mask, training=training)
         code_exp_2 = codes_2
-        codes_3 = self.encoder_3(f0_trg, attention_mask, training = training)
+        codes_3 = self.encoder_3(f0_trg, attention_mask, training=training)
         code_exp_3 = codes_3
         self.o = [code_exp_2, code_exp_3]
-        encoder_outputs = tf.concat((code_exp_2, code_exp_3), axis = -1)
+        encoder_outputs = tf.concat((code_exp_2, code_exp_3), axis=-1)
         mel_outputs = self.decoder(
             encoder_outputs,
             attention_mask,
             encoder_outputs,
-            training = training,
+            training=training,
         )
         return codes_2, codes_3, encoder_outputs, mel_outputs

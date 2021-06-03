@@ -56,7 +56,7 @@ def webrtc(
 
     try:
         import webrtcvad
-    except:
+    except BaseException:
         raise ModuleNotFoundError(
             'webrtcvad not installed. Please install it by `pip install webrtcvad` and try again.'
         )
@@ -78,7 +78,7 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
         * ``'vggvox-v1'`` - finetuned VGGVox V1.
         * ``'vggvox-v2'`` - finetuned VGGVox V2.
     quantized : bool, optional (default=False)
-        if True, will load 8-bit quantized model. 
+        if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
 
     Returns
@@ -98,10 +98,10 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     }
 
     return classification.load(
-        model = model,
-        module = 'vad',
-        extra = settings[model],
-        label = [False, True],
-        quantized = quantized,
+        model=model,
+        module='vad',
+        extra=settings[model],
+        label=[False, True],
+        quantized=quantized,
         **kwargs
     )

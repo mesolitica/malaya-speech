@@ -7,7 +7,7 @@ from ..utils import shape_list
 
 class Model(tf.keras.Model):
     def __init__(self, cfg, **kwargs):
-        super(Model, self).__init__(name = 'wav2vec2', **kwargs)
+        super(Model, self).__init__(name='wav2vec2', **kwargs)
         self.cfg = cfg
 
         feature_enc_layers = eval(cfg.conv_feature_layers)
@@ -27,26 +27,26 @@ class Model(tf.keras.Model):
         if cfg.quantize_targets:
             vq_dim = cfg.latent_dim if cfg.latent_dim > 0 else final_dim
             self.quantizer = GumbelVectorQuantizer(
-                dim = self.embed,
-                num_vars = cfg.latent_vars,
-                temp = cfg.latent_temp,
-                groups = cfg.latent_groups,
-                combine_groups = False,
-                vq_dim = vq_dim,
+                dim=self.embed,
+                num_vars=cfg.latent_vars,
+                temp=cfg.latent_temp,
+                groups=cfg.latent_groups,
+                combine_groups=False,
+                vq_dim=vq_dim,
             )
         self.project_q = tf.keras.layers.Dense(final_dim)
 
         self.target_glu = None
         if cfg.target_glu:
             self.target_glu = tf.keras.layers.Dense(
-                final_dim * 2, activation = glu
+                final_dim * 2, activation=glu
             )
 
         self.final_proj = tf.keras.layers.Dense(final_dim)
 
-    def sample_negatives(self, y, num, padding_count = None):
+    def sample_negatives(self, y, num, padding_count=None):
         if self.n_negatives == 0 and self.cross_sample_negatives == 0:
-            return tf.zeros(shape = (0,), dtype = tf.int32)
+            return tf.zeros(shape=(0,), dtype=tf.int32)
         bsz, tsz, fsz = shape_list(y)
         y = tf.reshape(y, (-1, fsz))
         cross_high = tsz * bsz
@@ -60,10 +60,10 @@ class Model(tf.keras.Model):
                 [-1],
             )
             neg_idxs = tf.random.uniform(
-                minval = 0,
-                maxval = high - 1,
-                shape = (bsz, self.n_negatives * num),
-                dtype = tf.int32,
+                minval=0,
+                maxval=high - 1,
+                shape=(bsz, self.n_negatives * num),
+                dtype=tf.int32,
             )
 
             mask = neg_idxs >= tszs
@@ -77,10 +77,10 @@ class Model(tf.keras.Model):
                 [-1],
             )
             cross_neg_idxs = tf.random.uniform(
-                minval = 0,
-                maxval = cross_high - 1,
-                shape = (bsz, self.cross_sample_negatives * num),
-                dtype = tf.int32,
+                minval=0,
+                maxval=cross_high - 1,
+                shape=(bsz, self.cross_sample_negatives * num),
+                dtype=tf.int32,
             )
             mask = cross_neg_idxs >= tszs
             cross_neg_idxs = tf.where(mask, cross_neg_idxs + 1, cross_neg_idxs)
@@ -93,7 +93,7 @@ class Model(tf.keras.Model):
             neg_idxs = cross_neg_idxs
 
         if self.cross_sample_negatives > 0 and self.n_negatives > 0:
-            neg_idxs = tf.concat([neg_idxs, cross_neg_idxs], axis = 1)
+            neg_idxs = tf.concat([neg_idxs, cross_neg_idxs], axis=1)
 
         negs = tf.gather(y, tf.reshape(neg_idxs, [-1]))
         negs = tf.reshape(
@@ -105,16 +105,16 @@ class Model(tf.keras.Model):
 
     def compute_preds(self, x, y, negatives):
         tiled = tf.tile(tf.expand_dims(y, 0), (tf.shape(negatives)[0], 1, 1, 1))
-        neg_is_pos = tf.reduce_all(tf.equal(tiled, negatives), axis = -1)
+        neg_is_pos = tf.reduce_all(tf.equal(tiled, negatives), axis=-1)
         y = tf.expand_dims(y, 0)
-        targets = tf.concat([y, negatives], axis = 0)
+        targets = tf.concat([y, negatives], axis=0)
         x = tf.tile(tf.expand_dims(x, 0), (tf.shape(targets)[0], 1, 1, 1))
         logits = -(
             tf.losses.cosine_distance(
                 tf.nn.l2_normalize(x, -1),
                 tf.nn.l2_normalize(targets, -1),
-                dim = -1,
-                reduction = 'none',
+                dim=-1,
+                reduction='none',
             )
             - 1
         )
@@ -126,13 +126,13 @@ class Model(tf.keras.Model):
             lambda: index_put_constant(right, neg_is_pos, -1e9),
             lambda: right,
         )
-        logits = tf.concat([left, right], axis = 0)
+        logits = tf.concat([left, right], axis=0)
         return logits
 
-    def call(self, x, y, training = True):
+    def call(self, x, y, training=True):
 
         if self.quantizer:
-            q = self.quantizer(y, produce_targets = False)
+            q = self.quantizer(y, produce_targets=False)
             y = q['x']
             num_vars = q['num_vars']
             code_ppl = q['code_perplexity']

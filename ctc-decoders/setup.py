@@ -6,16 +6,17 @@ from __future__ import print_function
 from setuptools import setup, Extension, distutils
 import glob
 import platform
-import os, sys
+import os
+import sys
 import multiprocessing.pool
 import argparse
 
-parser = argparse.ArgumentParser(description = __doc__)
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
     '--num_processes',
-    default = 1,
-    type = int,
-    help = 'Number of cpu processes to build package. (default: %(default)d)',
+    default=1,
+    type=int,
+    help='Number of cpu processes to build package. (default: %(default)d)',
 )
 args = parser.parse_known_args()
 
@@ -28,13 +29,13 @@ sys.argv = [sys.argv[0]] + args[1]
 def parallelCCompile(
     self,
     sources,
-    output_dir = None,
-    macros = None,
-    include_dirs = None,
-    debug = 0,
-    extra_preargs = None,
-    extra_postargs = None,
-    depends = None,
+    output_dir=None,
+    macros=None,
+    include_dirs=None,
+    debug=0,
+    extra_preargs=None,
+    extra_postargs=None,
+    depends=None,
 ):
     # those lines are copied from distutils.ccompiler.CCompiler directly
     macros, objects, extra_postargs, pp_opts, build = self._setup_compile(
@@ -115,24 +116,24 @@ os.system('swig -python -c++ ./decoders.i')
 
 decoders_module = [
     Extension(
-        name = '_swig_decoders',
-        sources = FILES + glob.glob('*.cxx') + glob.glob('*.cpp'),
-        language = 'c++',
-        include_dirs = [
+        name='_swig_decoders',
+        sources=FILES + glob.glob('*.cxx') + glob.glob('*.cpp'),
+        language='c++',
+        include_dirs=[
             '.',
             'kenlm',
             'openfst-1.6.3/src/include',
             'ThreadPool',
         ],
-        libraries = LIBS,
-        extra_compile_args = ARGS,
+        libraries=LIBS,
+        extra_compile_args=ARGS,
     )
 ]
 
 setup(
-    name = 'ctc-decoders',
-    version = '1.0',
-    description = """CTC decoders""",
-    ext_modules = decoders_module,
-    py_modules = ['ctc_decoders', 'swig_decoders'],
+    name='ctc-decoders',
+    version='1.0',
+    description="""CTC decoders""",
+    ext_modules=decoders_module,
+    py_modules=['ctc_decoders', 'swig_decoders'],
 )

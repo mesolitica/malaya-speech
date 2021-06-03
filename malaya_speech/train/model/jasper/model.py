@@ -167,11 +167,11 @@ config = {
 
 
 class Model:
-    def __init__(self, inputs, inputs_length, training = True):
+    def __init__(self, inputs, inputs_length, training=True):
         if training:
             mode = 'train'
         else:
             mode = 'eval'
-        self.model = TDNNEncoder(config, None, mode = mode)
+        self.model = TDNNEncoder(config, None, mode=mode)
         input_dict = {'source_tensors': [inputs, inputs_length]}
         self.logits = self.model.encode(input_dict)

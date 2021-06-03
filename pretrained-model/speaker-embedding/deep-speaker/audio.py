@@ -23,7 +23,7 @@ def read_mfcc(input_filename, sample_rate):
     # left_blank_duration_ms = (1000.0 * offsets[0]) // self.sample_rate  # frame_id to duration (ms)
     # right_blank_duration_ms = (1000.0 * (len(audio) - offsets[-1])) // self.sample_rate
     # TODO: could use trim_silence() here or a better VAD.
-    audio_voice_only = audio[offsets[0] : offsets[-1]]
+    audio_voice_only = audio[offsets[0]: offsets[-1]]
     mfcc = mfcc_fbank(audio_voice_only, sample_rate)
     return mfcc
 
@@ -43,7 +43,7 @@ class Audio:
         cache_dir: str,
         audio_dir: str = None,
         sample_rate: int = SAMPLE_RATE,
-        ext = 'flac',
+        ext='flac',
     ):
         self.ext = ext
         self.cache_dir = os.path.join(cache_dir, 'audio-fbanks')
@@ -51,7 +51,7 @@ class Audio:
         if audio_dir is not None:
             self.build_cache(os.path.expanduser(audio_dir), sample_rate)
         self.speakers_to_utterances = defaultdict(dict)
-        for cache_file in find_files(self.cache_dir, ext = 'npy'):
+        for cache_file in find_files(self.cache_dir, ext='npy'):
             # /path/to/speaker_utterance.npy
             speaker_id, utterance_id = Path(cache_file).stem.split('_')
             self.speakers_to_utterances[speaker_id][utterance_id] = cache_file
@@ -72,15 +72,15 @@ class Audio:
         left_blank = audio[0:0]
         right_blank = audio[0:0]
         if indices.size:
-            audio_trim = audio[indices[0] : indices[-1]]
+            audio_trim = audio[indices[0]: indices[-1]]
             left_blank = audio[: indices[0]]  # slice before.
-            right_blank = audio[indices[-1] :]  # slice after.
+            right_blank = audio[indices[-1]:]  # slice after.
         return audio_trim, left_blank, right_blank
 
     @staticmethod
-    def read(filename, sample_rate = SAMPLE_RATE):
+    def read(filename, sample_rate=SAMPLE_RATE):
         audio, sr = librosa.load(
-            filename, sr = sample_rate, mono = True, dtype = np.float32
+            filename, sr=sample_rate, mono=True, dtype=np.float32
         )
         assert sr == sample_rate
         return audio
@@ -88,7 +88,7 @@ class Audio:
     def build_cache(self, audio_dir, sample_rate):
         logger.info(f'audio_dir: {audio_dir}.')
         logger.info(f'sample_rate: {sample_rate:,} hz.')
-        audio_files = find_files(audio_dir, ext = self.ext)
+        audio_files = find_files(audio_dir, ext=self.ext)
         audio_files_count = len(audio_files)
         assert (
             audio_files_count != 0
@@ -124,16 +124,16 @@ def pad_mfcc(mfcc, max_length):  # num_frames, nfilt=64.
 def mfcc_fbank(signal: np.array, sample_rate: int):  # 1D signal array.
     # Returns MFCC with shape (num_frames, n_filters, 3).
     filter_banks, energies = fbank(
-        signal, samplerate = sample_rate, nfilt = NUM_FBANKS
+        signal, samplerate=sample_rate, nfilt=NUM_FBANKS
     )
     frames_features = normalize_frames(filter_banks)
     # delta_1 = delta(filter_banks, N=1)
     # delta_2 = delta(delta_1, N=1)
     # frames_features = np.transpose(np.stack([filter_banks, delta_1, delta_2]), (1, 2, 0))
     return np.array(
-        frames_features, dtype = np.float32
+        frames_features, dtype=np.float32
     )  # Float32 precision is enough here.
 
 
-def normalize_frames(m, epsilon = 1e-12):
+def normalize_frames(m, epsilon=1e-12):
     return [(v - np.mean(v)) / max(np.std(v), epsilon) for v in m]

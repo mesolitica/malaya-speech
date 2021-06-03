@@ -12,7 +12,7 @@ def _expand_to_beam_size(tensor, beam_size):
   Returns:
     Tiled tensor [batch_size, beam_size, ...]
   """
-    tensor = tf.expand_dims(tensor, axis = 1)
+    tensor = tf.expand_dims(tensor, axis=1)
     tile_dims = [1] * tensor.shape.ndims
     tile_dims[1] = beam_size
 
@@ -49,16 +49,16 @@ def beam_search(
     beam_size,
     vocab_size,
     alpha,
-    states = None,
-    eos_id = EOS_ID,
-    stop_early = True,
-    use_top_k_with_unique = True,
+    states=None,
+    eos_id=EOS_ID,
+    stop_early=True,
+    use_top_k_with_unique=True,
 ):
     batch_size = tf.shape(initial_ids)[0]
     initial_log_probs = tf.constant([[0.0] + [-INF] * (beam_size - 1)])
     alive_log_probs = tf.tile(initial_log_probs, [batch_size, 1])
     alive_seq = _expand_to_beam_size(initial_ids, beam_size)
-    alive_seq = tf.expand_dims(alive_seq, axis = 2)
+    alive_seq = tf.expand_dims(alive_seq, axis=2)
     if states:
         states = nest.map_structure(
             lambda state: _expand_to_beam_size(state, beam_size), states

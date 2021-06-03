@@ -4,7 +4,7 @@ from typing import Tuple
 
 
 def index_put(tensor, indices, value):
-    value = tf.expand_dims(tf.expand_dims(value, axis = 0), axis = 0)
+    value = tf.expand_dims(tf.expand_dims(value, axis=0), axis=0)
     tiled = tf.tile(value, (tf.shape(tensor)[0], tf.shape(tensor)[1], 1))
     indices = tf.tile(tf.expand_dims(indices, -1), (1, 1, tensor.shape[-1]))
     return tf.where(indices, tiled, tensor)
@@ -56,13 +56,13 @@ def compute_mask_indices(
             lengths = np.full(num_mask, mask_length)
         elif mask_type == 'uniform':
             lengths = np.random.randint(
-                mask_other, mask_length * 2 + 1, size = num_mask
+                mask_other, mask_length * 2 + 1, size=num_mask
             )
         elif mask_type == 'normal':
-            lengths = np.random.normal(mask_length, mask_other, size = num_mask)
+            lengths = np.random.normal(mask_length, mask_other, size=num_mask)
             lengths = [max(1, int(round(x))) for x in lengths]
         elif mask_type == 'poisson':
-            lengths = np.random.poisson(mask_length, size = num_mask)
+            lengths = np.random.poisson(mask_length, size=num_mask)
             lengths = [int(round(x)) for x in lengths]
         else:
             raise Exception('unknown mask selection ' + mask_type)
@@ -86,7 +86,7 @@ def compute_mask_indices(
 
             parts = [(0, sz)]
             min_length = min(lengths)
-            for length in sorted(lengths, reverse = True):
+            for length in sorted(lengths, reverse=True):
                 lens = np.fromiter(
                     (
                         e - s if e - s >= length + min_space else 0
@@ -98,7 +98,7 @@ def compute_mask_indices(
                 if l_sum == 0:
                     break
                 probs = lens / np.sum(lens)
-                c = np.random.choice(len(parts), p = probs)
+                c = np.random.choice(len(parts), p=probs)
                 s, e = parts.pop(c)
                 parts.extend(arrange(s, e, length, min_length))
             mask_idc = np.asarray(mask_idc)
@@ -107,7 +107,7 @@ def compute_mask_indices(
             if sz - min_len <= num_mask:
                 min_len = sz - num_mask - 1
 
-            mask_idc = np.random.choice(sz - min_len, num_mask, replace = False)
+            mask_idc = np.random.choice(sz - min_len, num_mask, replace=False)
 
             mask_idc = np.asarray(
                 [
@@ -122,7 +122,7 @@ def compute_mask_indices(
     min_len = min([len(m) for m in mask_idcs])
     for i, mask_idc in enumerate(mask_idcs):
         if len(mask_idc) > min_len:
-            mask_idc = np.random.choice(mask_idc, min_len, replace = False)
+            mask_idc = np.random.choice(mask_idc, min_len, replace=False)
         mask[i, mask_idc] = True
 
     return mask

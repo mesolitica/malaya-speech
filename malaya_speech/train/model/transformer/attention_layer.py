@@ -39,17 +39,17 @@ class Attention(tf.layers.Layer):
 
         # Layers for linearly projecting the queries, keys, and values.
         self.q_dense_layer = tf.layers.Dense(
-            hidden_size, use_bias = False, name = 'q'
+            hidden_size, use_bias=False, name='q'
         )
         self.k_dense_layer = tf.layers.Dense(
-            hidden_size, use_bias = False, name = 'k'
+            hidden_size, use_bias=False, name='k'
         )
         self.v_dense_layer = tf.layers.Dense(
-            hidden_size, use_bias = False, name = 'v'
+            hidden_size, use_bias=False, name='v'
         )
 
         self.output_dense_layer = tf.layers.Dense(
-            hidden_size, use_bias = False, name = 'output_transform'
+            hidden_size, use_bias=False, name='output_transform'
         )
 
     def split_heads(self, x):
@@ -94,7 +94,7 @@ class Attention(tf.layers.Layer):
             )  # --> [batch, length, num_heads, depth]
             return tf.reshape(x, [batch_size, length, self.hidden_size])
 
-    def call(self, x, y, bias, cache = None):
+    def call(self, x, y, bias, cache=None):
         """Apply attention mechanism to x and y.
 
     Args:
@@ -120,8 +120,8 @@ class Attention(tf.layers.Layer):
 
         if cache is not None:
             # Combine cached keys and values with new keys and values.
-            k = tf.concat([cache['k'], k], axis = 1)
-            v = tf.concat([cache['v'], v], axis = 1)
+            k = tf.concat([cache['k'], k], axis=1)
+            v = tf.concat([cache['v'], v], axis=1)
 
             # Update cache
             cache['k'] = k
@@ -137,11 +137,11 @@ class Attention(tf.layers.Layer):
         q *= depth ** -0.5
 
         # Calculate dot product attention
-        logits = tf.matmul(q, k, transpose_b = True)
+        logits = tf.matmul(q, k, transpose_b=True)
         logits += bias
-        weights = tf.nn.softmax(logits, name = 'attention_weights')
+        weights = tf.nn.softmax(logits, name='attention_weights')
         if self.train:
-            weights = tf.nn.dropout(weights, rate = self.attention_dropout)
+            weights = tf.nn.dropout(weights, rate=self.attention_dropout)
         attention_output = tf.matmul(weights, v)
 
         # Recombine heads --> [batch_size, length, hidden_size]
@@ -155,5 +155,5 @@ class Attention(tf.layers.Layer):
 class SelfAttention(Attention):
     """Multiheaded self-attention layer."""
 
-    def call(self, x, bias, cache = None):
+    def call(self, x, bias, cache=None):
         return super(SelfAttention, self).call(x, x, bias, cache)

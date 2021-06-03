@@ -19,6 +19,7 @@ try:
 except ImportError:
     import __builtin__
 
+
 def _swig_repr(self):
     try:
         strthis = "proxy of " + self.this.__repr__()
@@ -62,7 +63,11 @@ class _SwigNonDynamicMeta(type):
 
 
 class SwigPyIterator(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    thisown = property(
+        lambda x: x.this.own(),
+        lambda x,
+        v: x.this.own(v),
+        doc="The membership flag")
 
     def __init__(self, *args, **kwargs):
         raise AttributeError("No constructor defined - class is abstract")
@@ -116,18 +121,26 @@ class SwigPyIterator(object):
 
     def __sub__(self, *args):
         return _swig_decoders.SwigPyIterator___sub__(self, *args)
+
     def __iter__(self):
         return self
+
 
 # Register SwigPyIterator in _swig_decoders:
 _swig_decoders.SwigPyIterator_swigregister(SwigPyIterator)
 
+
 class DoubleVector(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    thisown = property(
+        lambda x: x.this.own(),
+        lambda x,
+        v: x.this.own(v),
+        doc="The membership flag")
     __repr__ = _swig_repr
 
     def iterator(self):
         return _swig_decoders.DoubleVector_iterator(self)
+
     def __iter__(self):
         return self.iterator()
 
@@ -225,15 +238,22 @@ class DoubleVector(object):
         return _swig_decoders.DoubleVector_capacity(self)
     __swig_destroy__ = _swig_decoders.delete_DoubleVector
 
+
 # Register DoubleVector in _swig_decoders:
 _swig_decoders.DoubleVector_swigregister(DoubleVector)
 
+
 class IntVector(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    thisown = property(
+        lambda x: x.this.own(),
+        lambda x,
+        v: x.this.own(v),
+        doc="The membership flag")
     __repr__ = _swig_repr
 
     def iterator(self):
         return _swig_decoders.IntVector_iterator(self)
+
     def __iter__(self):
         return self.iterator()
 
@@ -331,15 +351,22 @@ class IntVector(object):
         return _swig_decoders.IntVector_capacity(self)
     __swig_destroy__ = _swig_decoders.delete_IntVector
 
+
 # Register IntVector in _swig_decoders:
 _swig_decoders.IntVector_swigregister(IntVector)
 
+
 class StringVector(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    thisown = property(
+        lambda x: x.this.own(),
+        lambda x,
+        v: x.this.own(v),
+        doc="The membership flag")
     __repr__ = _swig_repr
 
     def iterator(self):
         return _swig_decoders.StringVector_iterator(self)
+
     def __iter__(self):
         return self.iterator()
 
@@ -437,15 +464,22 @@ class StringVector(object):
         return _swig_decoders.StringVector_capacity(self)
     __swig_destroy__ = _swig_decoders.delete_StringVector
 
+
 # Register StringVector in _swig_decoders:
 _swig_decoders.StringVector_swigregister(StringVector)
 
+
 class VectorOfStructVector(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    thisown = property(
+        lambda x: x.this.own(),
+        lambda x,
+        v: x.this.own(v),
+        doc="The membership flag")
     __repr__ = _swig_repr
 
     def iterator(self):
         return _swig_decoders.VectorOfStructVector_iterator(self)
+
     def __iter__(self):
         return self.iterator()
 
@@ -516,7 +550,8 @@ class VectorOfStructVector(object):
         return _swig_decoders.VectorOfStructVector_erase(self, *args)
 
     def __init__(self, *args):
-        _swig_decoders.VectorOfStructVector_swiginit(self, _swig_decoders.new_VectorOfStructVector(*args))
+        _swig_decoders.VectorOfStructVector_swiginit(
+            self, _swig_decoders.new_VectorOfStructVector(*args))
 
     def push_back(self, x):
         return _swig_decoders.VectorOfStructVector_push_back(self, x)
@@ -543,15 +578,22 @@ class VectorOfStructVector(object):
         return _swig_decoders.VectorOfStructVector_capacity(self)
     __swig_destroy__ = _swig_decoders.delete_VectorOfStructVector
 
+
 # Register VectorOfStructVector in _swig_decoders:
 _swig_decoders.VectorOfStructVector_swigregister(VectorOfStructVector)
 
+
 class FloatVector(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    thisown = property(
+        lambda x: x.this.own(),
+        lambda x,
+        v: x.this.own(v),
+        doc="The membership flag")
     __repr__ = _swig_repr
 
     def iterator(self):
         return _swig_decoders.FloatVector_iterator(self)
+
     def __iter__(self):
         return self.iterator()
 
@@ -649,26 +691,36 @@ class FloatVector(object):
         return _swig_decoders.FloatVector_capacity(self)
     __swig_destroy__ = _swig_decoders.delete_FloatVector
 
+
 # Register FloatVector in _swig_decoders:
 _swig_decoders.FloatVector_swigregister(FloatVector)
 
+
 class Pair(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    thisown = property(
+        lambda x: x.this.own(),
+        lambda x,
+        v: x.this.own(v),
+        doc="The membership flag")
     __repr__ = _swig_repr
 
     def __init__(self, *args):
         _swig_decoders.Pair_swiginit(self, _swig_decoders.new_Pair(*args))
     first = property(_swig_decoders.Pair_first_get, _swig_decoders.Pair_first_set)
     second = property(_swig_decoders.Pair_second_get, _swig_decoders.Pair_second_set)
+
     def __len__(self):
         return 2
+
     def __repr__(self):
         return str((self.first, self.second))
-    def __getitem__(self, index): 
+
+    def __getitem__(self, index):
         if not (index % 2):
             return self.first
         else:
             return self.second
+
     def __setitem__(self, index, val):
         if not (index % 2):
             self.first = val
@@ -676,15 +728,22 @@ class Pair(object):
             self.second = val
     __swig_destroy__ = _swig_decoders.delete_Pair
 
+
 # Register Pair in _swig_decoders:
 _swig_decoders.Pair_swigregister(Pair)
 
+
 class PairFloatStringVector(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    thisown = property(
+        lambda x: x.this.own(),
+        lambda x,
+        v: x.this.own(v),
+        doc="The membership flag")
     __repr__ = _swig_repr
 
     def iterator(self):
         return _swig_decoders.PairFloatStringVector_iterator(self)
+
     def __iter__(self):
         return self.iterator()
 
@@ -755,7 +814,8 @@ class PairFloatStringVector(object):
         return _swig_decoders.PairFloatStringVector_erase(self, *args)
 
     def __init__(self, *args):
-        _swig_decoders.PairFloatStringVector_swiginit(self, _swig_decoders.new_PairFloatStringVector(*args))
+        _swig_decoders.PairFloatStringVector_swiginit(
+            self, _swig_decoders.new_PairFloatStringVector(*args))
 
     def push_back(self, x):
         return _swig_decoders.PairFloatStringVector_push_back(self, x)
@@ -782,15 +842,22 @@ class PairFloatStringVector(object):
         return _swig_decoders.PairFloatStringVector_capacity(self)
     __swig_destroy__ = _swig_decoders.delete_PairFloatStringVector
 
+
 # Register PairFloatStringVector in _swig_decoders:
 _swig_decoders.PairFloatStringVector_swigregister(PairFloatStringVector)
 
+
 class PairDoubleStringVector(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    thisown = property(
+        lambda x: x.this.own(),
+        lambda x,
+        v: x.this.own(v),
+        doc="The membership flag")
     __repr__ = _swig_repr
 
     def iterator(self):
         return _swig_decoders.PairDoubleStringVector_iterator(self)
+
     def __iter__(self):
         return self.iterator()
 
@@ -861,7 +928,8 @@ class PairDoubleStringVector(object):
         return _swig_decoders.PairDoubleStringVector_erase(self, *args)
 
     def __init__(self, *args):
-        _swig_decoders.PairDoubleStringVector_swiginit(self, _swig_decoders.new_PairDoubleStringVector(*args))
+        _swig_decoders.PairDoubleStringVector_swiginit(
+            self, _swig_decoders.new_PairDoubleStringVector(*args))
 
     def push_back(self, x):
         return _swig_decoders.PairDoubleStringVector_push_back(self, x)
@@ -888,15 +956,22 @@ class PairDoubleStringVector(object):
         return _swig_decoders.PairDoubleStringVector_capacity(self)
     __swig_destroy__ = _swig_decoders.delete_PairDoubleStringVector
 
+
 # Register PairDoubleStringVector in _swig_decoders:
 _swig_decoders.PairDoubleStringVector_swigregister(PairDoubleStringVector)
 
+
 class PairDoubleStringVector2(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    thisown = property(
+        lambda x: x.this.own(),
+        lambda x,
+        v: x.this.own(v),
+        doc="The membership flag")
     __repr__ = _swig_repr
 
     def iterator(self):
         return _swig_decoders.PairDoubleStringVector2_iterator(self)
+
     def __iter__(self):
         return self.iterator()
 
@@ -967,7 +1042,8 @@ class PairDoubleStringVector2(object):
         return _swig_decoders.PairDoubleStringVector2_erase(self, *args)
 
     def __init__(self, *args):
-        _swig_decoders.PairDoubleStringVector2_swiginit(self, _swig_decoders.new_PairDoubleStringVector2(*args))
+        _swig_decoders.PairDoubleStringVector2_swiginit(
+            self, _swig_decoders.new_PairDoubleStringVector2(*args))
 
     def push_back(self, x):
         return _swig_decoders.PairDoubleStringVector2_push_back(self, x)
@@ -994,15 +1070,22 @@ class PairDoubleStringVector2(object):
         return _swig_decoders.PairDoubleStringVector2_capacity(self)
     __swig_destroy__ = _swig_decoders.delete_PairDoubleStringVector2
 
+
 # Register PairDoubleStringVector2 in _swig_decoders:
 _swig_decoders.PairDoubleStringVector2_swigregister(PairDoubleStringVector2)
 
+
 class DoubleVector3(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    thisown = property(
+        lambda x: x.this.own(),
+        lambda x,
+        v: x.this.own(v),
+        doc="The membership flag")
     __repr__ = _swig_repr
 
     def iterator(self):
         return _swig_decoders.DoubleVector3_iterator(self)
+
     def __iter__(self):
         return self.iterator()
 
@@ -1100,6 +1183,7 @@ class DoubleVector3(object):
         return _swig_decoders.DoubleVector3_capacity(self)
     __swig_destroy__ = _swig_decoders.delete_DoubleVector3
 
+
 # Register DoubleVector3 in _swig_decoders:
 _swig_decoders.DoubleVector3_swigregister(DoubleVector3)
 
@@ -1107,22 +1191,33 @@ _swig_decoders.DoubleVector3_swigregister(DoubleVector3)
 def IntDoublePairCompSecondRev(a, b):
     return _swig_decoders.IntDoublePairCompSecondRev(a, b)
 
+
 def StringDoublePairCompSecondRev(a, b):
     return _swig_decoders.StringDoublePairCompSecondRev(a, b)
 
+
 def DoubleStringPairCompFirstRev(a, b):
     return _swig_decoders.DoubleStringPairCompFirstRev(a, b)
+
+
 class RetriveStrEnumerateVocab(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    thisown = property(
+        lambda x: x.this.own(),
+        lambda x,
+        v: x.this.own(v),
+        doc="The membership flag")
     __repr__ = _swig_repr
 
     def __init__(self):
-        _swig_decoders.RetriveStrEnumerateVocab_swiginit(self, _swig_decoders.new_RetriveStrEnumerateVocab())
+        _swig_decoders.RetriveStrEnumerateVocab_swiginit(
+            self, _swig_decoders.new_RetriveStrEnumerateVocab())
 
     def Add(self, index, str):
         return _swig_decoders.RetriveStrEnumerateVocab_Add(self, index, str)
-    vocabulary = property(_swig_decoders.RetriveStrEnumerateVocab_vocabulary_get, _swig_decoders.RetriveStrEnumerateVocab_vocabulary_set)
+    vocabulary = property(_swig_decoders.RetriveStrEnumerateVocab_vocabulary_get,
+                          _swig_decoders.RetriveStrEnumerateVocab_vocabulary_set)
     __swig_destroy__ = _swig_decoders.delete_RetriveStrEnumerateVocab
+
 
 # Register RetriveStrEnumerateVocab in _swig_decoders:
 _swig_decoders.RetriveStrEnumerateVocab_swigregister(RetriveStrEnumerateVocab)
@@ -1132,12 +1227,19 @@ START_TOKEN = cvar.START_TOKEN
 UNK_TOKEN = cvar.UNK_TOKEN
 END_TOKEN = cvar.END_TOKEN
 
+
 class Scorer(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    thisown = property(
+        lambda x: x.this.own(),
+        lambda x,
+        v: x.this.own(v),
+        doc="The membership flag")
     __repr__ = _swig_repr
 
     def __init__(self, alpha, beta, lm_path, vocabulary):
-        _swig_decoders.Scorer_swiginit(self, _swig_decoders.new_Scorer(alpha, beta, lm_path, vocabulary))
+        _swig_decoders.Scorer_swiginit(
+            self, _swig_decoders.new_Scorer(
+                alpha, beta, lm_path, vocabulary))
     __swig_destroy__ = _swig_decoders.delete_Scorer
 
     def get_log_cond_prob(self, words):
@@ -1165,7 +1267,10 @@ class Scorer(object):
         return _swig_decoders.Scorer_split_labels(self, labels)
     alpha = property(_swig_decoders.Scorer_alpha_get, _swig_decoders.Scorer_alpha_set)
     beta = property(_swig_decoders.Scorer_beta_get, _swig_decoders.Scorer_beta_set)
-    dictionary = property(_swig_decoders.Scorer_dictionary_get, _swig_decoders.Scorer_dictionary_set)
+    dictionary = property(
+        _swig_decoders.Scorer_dictionary_get,
+        _swig_decoders.Scorer_dictionary_set)
+
 
 # Register Scorer in _swig_decoders:
 _swig_decoders.Scorer_swigregister(Scorer)
@@ -1174,14 +1279,35 @@ _swig_decoders.Scorer_swigregister(Scorer)
 def ctc_greedy_decoder(probs_seq, vocabulary):
     return _swig_decoders.ctc_greedy_decoder(probs_seq, vocabulary)
 
-def ctc_beam_search_decoder(probs_seq, vocabulary, beam_size, cutoff_prob=1.0, cutoff_top_n=40, ext_scorer=None):
-    return _swig_decoders.ctc_beam_search_decoder(probs_seq, vocabulary, beam_size, cutoff_prob, cutoff_top_n, ext_scorer)
+
+def ctc_beam_search_decoder(
+        probs_seq,
+        vocabulary,
+        beam_size,
+        cutoff_prob=1.0,
+        cutoff_top_n=40,
+        ext_scorer=None):
+    return _swig_decoders.ctc_beam_search_decoder(
+        probs_seq, vocabulary, beam_size, cutoff_prob, cutoff_top_n, ext_scorer)
+
+
 class BeamDecoder(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    thisown = property(
+        lambda x: x.this.own(),
+        lambda x,
+        v: x.this.own(v),
+        doc="The membership flag")
     __repr__ = _swig_repr
 
     def __init__(self, vocabulary, beam_size, cutoff_prob=1.0, cutoff_top_n=40, ext_scorer=None):
-        _swig_decoders.BeamDecoder_swiginit(self, _swig_decoders.new_BeamDecoder(vocabulary, beam_size, cutoff_prob, cutoff_top_n, ext_scorer))
+        _swig_decoders.BeamDecoder_swiginit(
+            self,
+            _swig_decoders.new_BeamDecoder(
+                vocabulary,
+                beam_size,
+                cutoff_prob,
+                cutoff_top_n,
+                ext_scorer))
     __swig_destroy__ = _swig_decoders.delete_BeamDecoder
 
     def decode(self, probs_seq):
@@ -1199,11 +1325,24 @@ class BeamDecoder(object):
     def reset(self, keep_offset=False, keep_words=False):
         return _swig_decoders.BeamDecoder_reset(self, keep_offset, keep_words)
 
+
 # Register BeamDecoder in _swig_decoders:
 _swig_decoders.BeamDecoder_swigregister(BeamDecoder)
 
 
-def ctc_beam_search_decoder_batch(probs_split, vocabulary, beam_size, num_processes, cutoff_prob=1.0, cutoff_top_n=40, ext_scorer=None):
-    return _swig_decoders.ctc_beam_search_decoder_batch(probs_split, vocabulary, beam_size, num_processes, cutoff_prob, cutoff_top_n, ext_scorer)
-
-
+def ctc_beam_search_decoder_batch(
+        probs_split,
+        vocabulary,
+        beam_size,
+        num_processes,
+        cutoff_prob=1.0,
+        cutoff_top_n=40,
+        ext_scorer=None):
+    return _swig_decoders.ctc_beam_search_decoder_batch(
+        probs_split,
+        vocabulary,
+        beam_size,
+        num_processes,
+        cutoff_prob,
+        cutoff_top_n,
+        ext_scorer)

@@ -27,18 +27,18 @@ class TFFastSpeechSelfAttention(tf.keras.layers.Layer):
 
         self.query = tf.keras.layers.Dense(
             self.all_head_size,
-            kernel_initializer = get_initializer(config.initializer_range),
-            name = 'query',
+            kernel_initializer=get_initializer(config.initializer_range),
+            name='query',
         )
         self.key = tf.keras.layers.Dense(
             self.all_head_size,
-            kernel_initializer = get_initializer(config.initializer_range),
-            name = 'key',
+            kernel_initializer=get_initializer(config.initializer_range),
+            name='key',
         )
         self.value = tf.keras.layers.Dense(
             self.all_head_size,
-            kernel_initializer = get_initializer(config.initializer_range),
-            name = 'value',
+            kernel_initializer=get_initializer(config.initializer_range),
+            name='value',
         )
 
         self.dropout = tf.keras.layers.Dropout(
@@ -57,9 +57,9 @@ class TFFastSpeechSelfAttention(tf.keras.layers.Layer):
                 self.config.attention_head_size,
             ),
         )
-        return tf.transpose(x, perm = [0, 2, 1, 3])
+        return tf.transpose(x, perm=[0, 2, 1, 3])
 
-    def call(self, inputs, x, training = False):
+    def call(self, inputs, x, training=False):
         """Call logic."""
         hidden_states, attention_mask = inputs
 
@@ -72,7 +72,7 @@ class TFFastSpeechSelfAttention(tf.keras.layers.Layer):
         key_layer = self.transpose_for_scores(mixed_key_layer, batch_size)
         value_layer = self.transpose_for_scores(mixed_value_layer, batch_size)
 
-        attention_scores = tf.matmul(query_layer, key_layer, transpose_b = True)
+        attention_scores = tf.matmul(query_layer, key_layer, transpose_b=True)
         dk = tf.cast(
             tf.shape(key_layer)[-1], attention_scores.dtype
         )  # scale attention_scores
@@ -90,11 +90,11 @@ class TFFastSpeechSelfAttention(tf.keras.layers.Layer):
             attention_scores = attention_scores + extended_attention_mask
 
         # Normalize the attention scores to probabilities.
-        attention_probs = tf.nn.softmax(attention_scores, axis = -1)
-        attention_probs = self.dropout(attention_probs, training = training)
+        attention_probs = tf.nn.softmax(attention_scores, axis=-1)
+        attention_probs = self.dropout(attention_probs, training=training)
 
         context_layer = tf.matmul(attention_probs, value_layer)
-        context_layer = tf.transpose(context_layer, perm = [0, 2, 1, 3])
+        context_layer = tf.transpose(context_layer, perm=[0, 2, 1, 3])
         context_layer = tf.reshape(
             context_layer, (batch_size, -1, self.all_head_size)
         )
@@ -113,20 +113,20 @@ class TFFastSpeechAttention(tf.keras.layers.Layer):
     def __init__(self, config, **kwargs):
         """Init variables."""
         super().__init__(**kwargs)
-        self.self_attention = TFFastSpeechSelfAttention(config, name = 'self')
-        self.dense_output = TFFastSpeechSelfOutput(config, name = 'output')
+        self.self_attention = TFFastSpeechSelfAttention(config, name='self')
+        self.dense_output = TFFastSpeechSelfOutput(config, name='output')
 
-    def call(self, inputs, x, training = False):
+    def call(self, inputs, x, training=False):
         input_tensor, attention_mask = inputs
 
         self_outputs = self.self_attention(
-            [input_tensor, attention_mask], x, training = training
+            [input_tensor, attention_mask], x, training=training
         )
         attention_output = self.dense_output(
-            [self_outputs[0], input_tensor], training = training
+            [self_outputs[0], input_tensor], training=training
         )
         masked_attention_output = attention_output * tf.cast(
-            tf.expand_dims(attention_mask, 2), dtype = attention_output.dtype
+            tf.expand_dims(attention_mask, 2), dtype=attention_output.dtype
         )
         outputs = (masked_attention_output,) + self_outputs[
             1:
@@ -140,28 +140,28 @@ class TFFastSpeechLayer(tf.keras.layers.Layer):
     def __init__(self, config, **kwargs):
         """Init variables."""
         super().__init__(**kwargs)
-        self.attention = TFFastSpeechAttention(config, name = 'attention')
+        self.attention = TFFastSpeechAttention(config, name='attention')
         self.intermediate = TFFastSpeechIntermediate(
-            config, name = 'intermediate'
+            config, name='intermediate'
         )
-        self.bert_output = TFFastSpeechOutput(config, name = 'output')
+        self.bert_output = TFFastSpeechOutput(config, name='output')
 
-    def call(self, inputs, x, training = False):
+    def call(self, inputs, x, training=False):
         """Call logic."""
         hidden_states, attention_mask = inputs
 
         attention_outputs = self.attention(
-            [hidden_states, attention_mask], x, training = training
+            [hidden_states, attention_mask], x, training=training
         )
         attention_output = attention_outputs[0]
         intermediate_output = self.intermediate(
-            [attention_output, attention_mask], training = training
+            [attention_output, attention_mask], training=training
         )
         layer_output = self.bert_output(
-            [intermediate_output, attention_output], training = training
+            [intermediate_output, attention_output], training=training
         )
         masked_layer_output = layer_output * tf.cast(
-            tf.expand_dims(attention_mask, 2), dtype = layer_output.dtype
+            tf.expand_dims(attention_mask, 2), dtype=layer_output.dtype
         )
         outputs = (masked_layer_output,) + attention_outputs[
             1:
@@ -178,11 +178,11 @@ class TFFastSpeechDecoder(tf.keras.layers.Layer):
         self.output_attentions = config.output_attentions
         self.output_hidden_states = config.output_hidden_states
         self.layer = [
-            TFFastSpeechLayer(config, name = 'layer_._{}'.format(i))
+            TFFastSpeechLayer(config, name='layer_._{}'.format(i))
             for i in range(config.num_hidden_layers)
         ]
 
-    def call(self, inputs, x, training = False):
+    def call(self, inputs, x, training=False):
         """Call logic."""
         hidden_states, attention_mask = inputs
 
@@ -193,7 +193,7 @@ class TFFastSpeechDecoder(tf.keras.layers.Layer):
                 all_hidden_states = all_hidden_states + (hidden_states,)
 
             layer_outputs = layer_module(
-                [hidden_states, attention_mask], x, training = training
+                [hidden_states, attention_mask], x, training=training
             )
             hidden_states = layer_outputs[0]
 

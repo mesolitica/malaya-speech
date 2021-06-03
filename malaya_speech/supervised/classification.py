@@ -16,13 +16,13 @@ from malaya_speech.config import (
 )
 
 
-def load(model, module, extra, label, quantized = False, **kwargs):
+def load(model, module, extra, label, quantized=False, **kwargs):
 
     path = check_file(
-        file = model,
-        module = module,
-        keys = {'model': 'model.pb'},
-        quantized = quantized,
+        file=model,
+        module=module,
+        keys={'model': 'model.pb'},
+        quantized=quantized,
         **kwargs,
     )
     g = load_graph(path['model'], **kwargs)
@@ -57,12 +57,12 @@ def load(model, module, extra, label, quantized = False, **kwargs):
     input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
     return model_class(
-        input_nodes = input_nodes,
-        output_nodes = output_nodes,
-        vectorizer = vectorizer_mapping[model],
-        sess = generate_session(graph = g, **kwargs),
-        model = model,
-        extra = extra,
-        label = label,
-        name = module,
+        input_nodes=input_nodes,
+        output_nodes=output_nodes,
+        vectorizer=vectorizer_mapping[model],
+        sess=generate_session(graph=g, **kwargs),
+        model=model,
+        extra=extra,
+        label=label,
+        name=module,
     )

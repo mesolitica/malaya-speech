@@ -1,6 +1,8 @@
 import tensorflow as tf
 
 # https://github.com/NVIDIA/OpenSeq2Seq/blob/master/open_seq2seq/utils/utils.py#L403
+
+
 def check_params(config, required_dict, optional_dict):
     if required_dict is None or optional_dict is None:
         return

@@ -37,7 +37,7 @@ def available_model():
 
     return describe_availability(
         _availability,
-        text = 'tested on VoxCeleb2 test set. Lower EER is better.',
+        text='tested on VoxCeleb2 test set. Lower EER is better.',
     )
 
 
@@ -57,7 +57,7 @@ def deep_model(model: str = 'speakernet', quantized: bool = False, **kwargs):
         * ``'speakernet'`` - SpeakerNet, embedding size 7205, exported from https://github.com/NVIDIA/NeMo/tree/main/examples/speaker_recognition
 
     quantized : bool, optional (default=False)
-        if True, will load 8-bit quantized model. 
+        if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
 
     Returns
@@ -72,10 +72,10 @@ def deep_model(model: str = 'speakernet', quantized: bool = False, **kwargs):
         )
 
     return classification.load(
-        model = model,
-        module = 'speaker-vector',
-        extra = {},
-        label = {},
-        quantized = quantized,
+        model=model,
+        module='speaker-vector',
+        extra={},
+        label={},
+        quantized=quantized,
         **kwargs
     )

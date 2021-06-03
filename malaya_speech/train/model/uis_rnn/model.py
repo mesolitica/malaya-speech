@@ -6,14 +6,14 @@ _INITIAL_SIGMA2_VALUE = 0.1
 class CoreRNN(tf.keras.layers.Layer):
     def __init__(
         self,
-        observation_dim = 256,
-        rnn_hidden_size = 512,
-        rnn_depth = 1,
-        rnn_dropout = 0.0,
-        rnn_cell = tf.keras.layers.GRU,
+        observation_dim=256,
+        rnn_hidden_size=512,
+        rnn_depth=1,
+        rnn_dropout=0.0,
+        rnn_cell=tf.keras.layers.GRU,
         **kwargs,
     ):
-        super(CoreRNN, self).__init__(name = 'CoreRNN', **kwargs)
+        super(CoreRNN, self).__init__(name='CoreRNN', **kwargs)
         # self.lstm = tf.keras.Sequential()
         # for i in range(rnn_depth):
         #     self.lstm.add(
@@ -28,25 +28,25 @@ class CoreRNN(tf.keras.layers.Layer):
 
         self.lstm = tf.keras.layers.LSTM(
             rnn_hidden_size,
-            return_sequences = True,
-            return_state = True,
-            kernel_regularizer = tf.keras.regularizers.l2(1e-5),
-            recurrent_regularizer = tf.keras.regularizers.l2(1e-5),
+            return_sequences=True,
+            return_state=True,
+            kernel_regularizer=tf.keras.regularizers.l2(1e-5),
+            recurrent_regularizer=tf.keras.regularizers.l2(1e-5),
         )
         self.linear_mean1 = tf.keras.layers.Dense(
-            units = rnn_hidden_size,
-            dtype = tf.float32,
-            activation = tf.nn.relu,
-            kernel_regularizer = tf.keras.regularizers.l2(1e-5),
+            units=rnn_hidden_size,
+            dtype=tf.float32,
+            activation=tf.nn.relu,
+            kernel_regularizer=tf.keras.regularizers.l2(1e-5),
         )
         self.linear_mean2 = tf.keras.layers.Dense(
-            units = observation_dim,
-            dtype = tf.float32,
-            kernel_regularizer = tf.keras.regularizers.l2(1e-5),
+            units=observation_dim,
+            dtype=tf.float32,
+            kernel_regularizer=tf.keras.regularizers.l2(1e-5),
         )
 
-    def call(self, x, hidden = None, training = True):
-        output_seq = self.lstm(x, initial_state = hidden, training = training)
+    def call(self, x, hidden=None, training=True):
+        output_seq = self.lstm(x, initial_state=hidden, training=training)
         mean = self.linear_mean2(self.linear_mean1(output_seq[0]))
 
         return mean, output_seq[1:]
@@ -55,7 +55,7 @@ class CoreRNN(tf.keras.layers.Layer):
 class BeamState:
     """Structure that contains necessary states for beam search."""
 
-    def __init__(self, source = None):
+    def __init__(self, source=None):
         if not source:
             self.mean_set = []
             self.hidden_set = []
@@ -80,16 +80,16 @@ class BeamState:
 class Model(tf.keras.Model):
     def __init__(
         self,
-        observation_dim = 256,
-        rnn_hidden_size = 512,
-        rnn_depth = 1,
-        rnn_dropout = 0.0,
-        sigma2 = None,
-        transition_bias = None,
-        crp_alpha = 1.0,
+        observation_dim=256,
+        rnn_hidden_size=512,
+        rnn_depth=1,
+        rnn_dropout=0.0,
+        sigma2=None,
+        transition_bias=None,
+        crp_alpha=1.0,
         **kwargs,
     ):
-        super(Model, self).__init__(name = 'uis-rnn', **kwargs)
+        super(Model, self).__init__(name='uis-rnn', **kwargs)
         self.rnn_model = CoreRNN(
             observation_dim, rnn_hidden_size, rnn_depth, rnn_dropout
         )
@@ -97,13 +97,13 @@ class Model(tf.keras.Model):
         self.estimate_transition_bias = transition_bias is None
         sigma2 = _INITIAL_SIGMA2_VALUE if self.estimate_sigma2 else args.sigma2
         self.sigma2 = sigma2 * tf.get_variable(
-            name = 'sigma2',
-            shape = [observation_dim],
-            initializer = tf.ones_initializer(),
+            name='sigma2',
+            shape=[observation_dim],
+            initializer=tf.ones_initializer(),
         )
         self.transition_bias = transition_bias
         self.transition_bias_denominator = 0.0
         self.crp_alpha = crp_alpha
 
-    def call(self, x, hidden = None, training = True):
-        return self.rnn_model(x, hidden = hidden, training = training)
+    def call(self, x, hidden=None, training=True):
+        return self.rnn_model(x, hidden=hidden, training=training)

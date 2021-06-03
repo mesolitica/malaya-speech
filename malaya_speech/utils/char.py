@@ -35,7 +35,7 @@ def generate_vocab(strings: List[str]):
     unique_chars = set(joined)
     unique_chars = [(c, joined.count(c)) for c in unique_chars]
     unique_chars = sorted(
-        unique_chars, key = lambda element: element[1], reverse = True
+        unique_chars, key=lambda element: element[1], reverse=True
     )
     unique_chars, _ = zip(*unique_chars)
     unique_chars = list(unique_chars)

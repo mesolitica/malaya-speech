@@ -42,7 +42,7 @@ class TDNNEncoder(Encoder):
             }
         )
 
-    def __init__(self, params, model, name = 'w2l_encoder', mode = 'train'):
+    def __init__(self, params, model, name='w2l_encoder', mode='train'):
         super(TDNNEncoder, self).__init__(params, model, name, mode)
 
     def _encode(self, input_dict):
@@ -88,9 +88,9 @@ class TDNNEncoder(Encoder):
 
         if self.params.get('use_conv_mask', False):
             mask = tf.sequence_mask(
-                lengths = src_length,
-                maxlen = max_len,
-                dtype = source_sequence.dtype,
+                lengths=src_length,
+                maxlen=max_len,
+                dtype=source_sequence.dtype,
             )
             mask = tf.expand_dims(mask, 2)
 
@@ -167,54 +167,54 @@ class TDNNEncoder(Encoder):
                     padding == 'VALID' or strides[0] > 1
                 ):
                     mask = tf.sequence_mask(
-                        lengths = src_length,
-                        maxlen = max_len,
-                        dtype = conv_feats.dtype,
+                        lengths=src_length,
+                        maxlen=max_len,
+                        dtype=conv_feats.dtype,
                     )
                     mask = tf.expand_dims(mask, 2)
 
                 if residual and idx_layer == layer_repeat - 1:
                     conv_feats = conv_bn_res_bn_actv(
-                        layer_type = layer_type,
-                        name = 'conv{}{}'.format(
+                        layer_type=layer_type,
+                        name='conv{}{}'.format(
                             idx_convnet + 1, idx_layer + 1
                         ),
-                        inputs = conv_feats,
-                        res_inputs = layer_res,
-                        filters = ch_out,
-                        kernel_size = kernel_size,
-                        activation_fn = self.params['activation_fn'],
-                        strides = strides,
-                        padding = padding,
-                        dilation = dilation,
-                        regularizer = regularizer,
-                        training = training,
-                        data_format = data_format,
-                        drop_block_prob = drop_block_prob,
-                        drop_block = (drop_block_index == idx_convnet),
+                        inputs=conv_feats,
+                        res_inputs=layer_res,
+                        filters=ch_out,
+                        kernel_size=kernel_size,
+                        activation_fn=self.params['activation_fn'],
+                        strides=strides,
+                        padding=padding,
+                        dilation=dilation,
+                        regularizer=regularizer,
+                        training=training,
+                        data_format=data_format,
+                        drop_block_prob=drop_block_prob,
+                        drop_block=(drop_block_index == idx_convnet),
                         **normalization_params
                     )
                 else:
                     conv_feats = conv_block(
-                        layer_type = layer_type,
-                        name = 'conv{}{}'.format(
+                        layer_type=layer_type,
+                        name='conv{}{}'.format(
                             idx_convnet + 1, idx_layer + 1
                         ),
-                        inputs = conv_feats,
-                        filters = ch_out,
-                        kernel_size = kernel_size,
-                        activation_fn = self.params['activation_fn'],
-                        strides = strides,
-                        padding = padding,
-                        dilation = dilation,
-                        regularizer = regularizer,
-                        training = training,
-                        data_format = data_format,
+                        inputs=conv_feats,
+                        filters=ch_out,
+                        kernel_size=kernel_size,
+                        activation_fn=self.params['activation_fn'],
+                        strides=strides,
+                        padding=padding,
+                        dilation=dilation,
+                        regularizer=regularizer,
+                        training=training,
+                        data_format=data_format,
                         **normalization_params
                     )
 
                 conv_feats = tf.nn.dropout(
-                    x = conv_feats, keep_prob = dropout_keep
+                    x=conv_feats, keep_prob=dropout_keep
                 )
 
         outputs = conv_feats

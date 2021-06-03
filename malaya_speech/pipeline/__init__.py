@@ -59,7 +59,7 @@ class Pipeline(object):
 
     __name__ = 'pipeline'
 
-    def __init__(self, upstream = None, upstreams = None, name = None):
+    def __init__(self, upstream=None, upstreams=None, name=None):
         self.downstreams = OrderedWeakrefSet()
         if upstreams is not None:
             self.upstreams = list(upstreams)
@@ -108,7 +108,7 @@ class Pipeline(object):
     __repr__ = __str__
 
     @classmethod
-    def register_api(cls, modifier = identity):
+    def register_api(cls, modifier=identity):
         def _(func):
             @functools.wraps(func)
             def wrapped(*args, **kwargs):
@@ -148,15 +148,15 @@ class Pipeline(object):
 
         result = []
         for downstream in list(self.downstreams):
-            r = downstream.update(x, who = self)
-            if type(r) is list:
+            r = downstream.update(x, who=self)
+            if isinstance(r, list):
                 result.extend(r)
             else:
                 result.append(r)
 
         return [element for element in result if element is not None]
 
-    def update(self, x, who = None):
+    def update(self, x, who=None):
         self._emit(x)
 
     @property
@@ -166,7 +166,7 @@ class Pipeline(object):
         else:
             return self.upstreams[0]
 
-    def visualize(self, filename = 'pipeline.png', **kwargs):
+    def visualize(self, filename='pipeline.png', **kwargs):
         """
         Render the computation of this object's task graph using graphviz.
 
@@ -194,7 +194,7 @@ class Pipeline(object):
 
 @Pipeline.register_api()
 class map(Pipeline):
-    """ 
+    """
     apply a function / method to the pipeline
 
     Examples
@@ -211,10 +211,10 @@ class map(Pipeline):
         self.kwargs = kwargs
         self.args = args
 
-        Pipeline.__init__(self, upstream, name = name)
+        Pipeline.__init__(self, upstream, name=name)
         _global_sinks.add(self)
 
-    def update(self, x, who = None):
+    def update(self, x, who=None):
         try:
             result = self.func(x, *self.args, **self.kwargs)
         except Exception as e:
@@ -226,7 +226,7 @@ class map(Pipeline):
 
 @Pipeline.register_api()
 class batching(Pipeline):
-    """ 
+    """
     Batching stream into tuples
 
     Examples
@@ -245,7 +245,7 @@ class batching(Pipeline):
 
         _global_sinks.add(self)
 
-    def update(self, x, who = None):
+    def update(self, x, who=None):
         result = []
         for i in range(0, len(x), self.n):
             index = min(i + self.n, len(x))
@@ -255,7 +255,7 @@ class batching(Pipeline):
 
 @Pipeline.register_api()
 class partition(Pipeline):
-    """ 
+    """
     Partition stream into tuples of equal size
 
     Examples
@@ -278,7 +278,7 @@ class partition(Pipeline):
 
         _global_sinks.add(self)
 
-    def update(self, x, who = None):
+    def update(self, x, who=None):
         self.buffer.append(x)
         if len(self.buffer) == self.n:
             result, self.buffer = self.buffer, []
@@ -289,7 +289,7 @@ class partition(Pipeline):
 
 @Pipeline.register_api()
 class sliding_window(Pipeline):
-    """ 
+    """
     Produce overlapping tuples of size n
 
     Parameters
@@ -315,15 +315,15 @@ class sliding_window(Pipeline):
 
     _graphviz_shape = 'diamond'
 
-    def __init__(self, upstream, n, return_partial = True, **kwargs):
+    def __init__(self, upstream, n, return_partial=True, **kwargs):
         self.n = n
-        self.buffer = deque(maxlen = n)
+        self.buffer = deque(maxlen=n)
         self.partial = return_partial
         Pipeline.__init__(self, upstream, **kwargs)
 
         _global_sinks.add(self)
 
-    def update(self, x, who = None):
+    def update(self, x, who=None):
         self.buffer.append(x)
         if self.partial or len(self.buffer) == self.n:
             return self._emit(tuple(self.buffer))
@@ -333,7 +333,7 @@ class sliding_window(Pipeline):
 
 @Pipeline.register_api()
 class foreach_map(Pipeline):
-    """ 
+    """
     Apply a function to every element in a tuple in the stream.
 
     Parameters
@@ -344,9 +344,9 @@ class foreach_map(Pipeline):
 
         * ``'sync'`` - loop one-by-one to process.
         * ``'async'`` - async process all elements at the same time.
-        * ``'thread'`` - multithreading level to process all elements at the same time. 
+        * ``'thread'`` - multithreading level to process all elements at the same time.
                          Default is 1 worker. Override `worker_size=n` to increase.
-        * ``'process'`` - multiprocessing level to process all elements at the same time. 
+        * ``'process'`` - multiprocessing level to process all elements at the same time.
                           Default is 1 worker. Override `worker_size=n` to increase.
 
     *args :
@@ -365,7 +365,7 @@ class foreach_map(Pipeline):
     (4, 4)
     """
 
-    def __init__(self, upstream, func, method = 'sync', *args, **kwargs):
+    def __init__(self, upstream, func, method='sync', *args, **kwargs):
         method = method.lower()
         if method not in ['sync', 'async', 'thread', 'process']:
             raise ValueError(
@@ -381,7 +381,7 @@ class foreach_map(Pipeline):
         if self.method == 'async':
             try:
                 from tornado import gen
-            except:
+            except BaseException:
                 raise ValueError(
                     'tornado not installed. Please install it by `pip install tornado` and try again.'
                 )
@@ -389,15 +389,15 @@ class foreach_map(Pipeline):
         if self.method in ['thread', 'process']:
             try:
                 import dask.bag as db
-            except:
+            except BaseException:
                 raise ValueError(
                     'dask not installed. Please install it by `pip install dask` and try again.'
                 )
 
-        Pipeline.__init__(self, upstream, name = name)
+        Pipeline.__init__(self, upstream, name=name)
         _global_sinks.add(self)
 
-    def update(self, x, who = None):
+    def update(self, x, who=None):
         try:
             if self.method == 'async':
                 from tornado import gen
@@ -428,7 +428,7 @@ class foreach_map(Pipeline):
                     scheduler = 'processes'
 
                 result = mapped.compute(
-                    scheduler = scheduler, num_workers = self.worker_size
+                    scheduler=scheduler, num_workers=self.worker_size
                 )
             if self.method == 'sync':
                 result = [self.func(e, *self.args, **self.kwargs) for e in x]
@@ -441,7 +441,7 @@ class foreach_map(Pipeline):
 
 @Pipeline.register_api()
 class flatten(Pipeline):
-    """ 
+    """
     Flatten streams of lists or iterables into a stream of elements
 
     Examples
@@ -458,10 +458,10 @@ class flatten(Pipeline):
         self.kwargs = kwargs
         self.args = args
 
-        Pipeline.__init__(self, upstream, name = name)
+        Pipeline.__init__(self, upstream, name=name)
         _global_sinks.add(self)
 
-    def update(self, x, who = None):
+    def update(self, x, who=None):
         L = []
         for item in x:
             if isinstance(item, list) or isinstance(item, tuple):
@@ -508,7 +508,7 @@ class zip(Pipeline):
             upstream for upstream in upstreams if isinstance(upstream, Pipeline)
         ]
 
-        Pipeline.__init__(self, upstreams = upstreams2, **kwargs)
+        Pipeline.__init__(self, upstreams=upstreams2, **kwargs)
         _global_sinks.add(self)
 
     def _add_upstream(self, upstream):
@@ -535,7 +535,7 @@ class zip(Pipeline):
 
         return out
 
-    def update(self, x, who = None):
+    def update(self, x, who=None):
         L = self.buffers[who]  # get buffer for stream
         L.append(x)
         if len(L) == 1 and all(self.buffers.values()):
@@ -576,7 +576,7 @@ class foreach_zip(Pipeline):
             upstream for upstream in upstreams if isinstance(upstream, Pipeline)
         ]
 
-        Pipeline.__init__(self, upstreams = upstreams2, **kwargs)
+        Pipeline.__init__(self, upstreams=upstreams2, **kwargs)
         _global_sinks.add(self)
 
     def _add_upstream(self, upstream):
@@ -603,7 +603,7 @@ class foreach_zip(Pipeline):
 
         return out
 
-    def update(self, x, who = None):
+    def update(self, x, who=None):
         L = self.buffers[who]  # get buffer for stream
         L.append(x)
         if len(L) == 1 and all(self.buffers.values()):

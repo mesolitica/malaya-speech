@@ -32,6 +32,17 @@ Read random sentences from IIUM Confession.
 - approximate 2.4 hours.
 - Still on going recording.
 
+```bibtex
+@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Speech Dataset from IIUM Confession texts,
+  author = {Husein, Zolkepli},
+  title = {Malay-Dataset},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/iium}}
+}
+```
+
 ### [IIUM-Clear](https://github.com/huseinzol05/malaya-speech/tree/master/data/iium-clear)
 
 Read random sentences from IIUM Confession, cleaner version.
@@ -41,6 +52,17 @@ Read random sentences from IIUM Confession, cleaner version.
 - Recorded using mid-end tech microphone.
 - 44100 sample rate, random 7 - 11 words window.
 - approximate 0.1 hours.
+
+```bibtex
+@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Speech Dataset from IIUM Confession texts,
+  author = {Husein, Zolkepli},
+  title = {Malay-Dataset},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/iium}}
+}
+```
 
 ### [IMDA](https://github.com/huseinzol05/malaya-speech/tree/master/data/imda)
 
@@ -55,6 +77,17 @@ Gather youtube urls for hyperlocal language detection from speech {malay, indone
 
 Check hyperlocal language detection models at https://malaya-speech.readthedocs.io/en/latest/load-language-detection.html
 
+```bibtex
+@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Hyperlocal languages for speech dataset,
+  author = {Husein, Zolkepli},
+  title = {Malay-Dataset},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/language}}
+}
+```
+
 ### [news](https://github.com/huseinzol05/malaya-speech/tree/master/data/news)
 
 Read random sentences from bahasa news.
@@ -65,6 +98,17 @@ Read random sentences from bahasa news.
 - 44100 sample rate, random 7 - 11 words window.
 - approximate 3.01 hours.
 - Still on going recording.
+
+```bibtex
+@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Speech Dataset from local news texts,
+  author = {Husein, Zolkepli},
+  title = {Malay-Dataset},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/news}}
+}
+```
 
 ### [noise](https://github.com/huseinzol05/malaya-speech/tree/master/data/noise)
 
@@ -79,6 +123,17 @@ Read random words from malay dictionary started with 'tolong sebut <word>'.
 - `sebut-perkataan-woman` voice by [Mas Aisyah Ahmad](https://www.linkedin.com/in/mas-aisyah-ahmad-b46508a9/)
 - Recorded using low-end tech microphones.
 
+```bibtex
+@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Short Speech Dataset,
+  author = {Husein, Zolkepli},
+  title = {Malay-Dataset},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/sebut-perkataan}}
+}
+```
+
 ### [Semisupervised audiobook](https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-audiobook)
 
 Semisupervised malay audiobooks from Nusantara Audiobook using Google Speech to Text.
@@ -86,6 +141,17 @@ Semisupervised malay audiobooks from Nusantara Audiobook using Google Speech to 
 - 44100 sample rate, super clean.
 - semisupervised approximate 45.29 hours.
 - windowed using Malaya-Speech VAD, each atleast 5 negative voice activities.
+
+```bibtex
+@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Semisupervised Speech Recognition from Audiobook,
+  author = {Husein, Zolkepli},
+  title = {Malay-Dataset},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-audiobook}}
+}
+```
 
 ### [Semisupervised malay](https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-malay)
 
@@ -96,6 +162,17 @@ Semisupervised malay youtube videos using Google Speech to Text, after that corr
 - random length between 2 - 20 seconds, windowed using google VAD.
 - supervised 768 samples, approximate 1.3 hours.
 
+```bibtex
+@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Semisupervised Speech Recognition from Malay Youtube Videos,
+  author = {Husein, Zolkepli},
+  title = {Malay-Dataset},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-malay}}
+}
+```
+
 ### [Semisupervised manglish](https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-manglish)
 
 Semisupervised manglish youtube videos using Google Speech to Text.
@@ -103,6 +180,17 @@ Semisupervised manglish youtube videos using Google Speech to Text.
 - 16000 sample rate.
 - semisupervised approximate 107 hours.
 - random length between 2 - 20 seconds, windowed using google VAD.
+
+```bibtex
+@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Semisupervised Speech Recognition from Manglish Youtube Videos,
+  author = {Husein, Zolkepli},
+  title = {Malay-Dataset},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-manglish}}
+}
+```
 
 ### [wattpad](https://github.com/huseinzol05/malaya-speech/tree/master/data/wattpad)
 
@@ -115,6 +203,17 @@ Read random sentences from bahasa wattpad.
 - approximate 0.15 hours.
 - Still on going recording.
 
+```bibtex
+@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Speech Dataset from Wattpad texts,
+  author = {Husein, Zolkepli},
+  title = {Malay-Dataset},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/wattpad}}
+}
+```
+
 ### [Wikipedia](https://github.com/huseinzol05/malaya-speech/tree/master/data/wikipedia)
 
 Read random sentences from Bahasa Wikipedia.
@@ -125,6 +224,17 @@ Read random sentences from Bahasa Wikipedia.
 - 44100 sample rate, 4 words window.
 - approximate 3.4 hours.
 - Still on going recording.
+
+```bibtex
+@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Speech Dataset from Wikipedia texts,
+  author = {Husein, Zolkepli},
+  title = {Malay-Dataset},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/wikipedia}}
+}
+```
 
 ### [youtube](https://github.com/huseinzol05/malaya-speech/tree/master/data/youtube)
 

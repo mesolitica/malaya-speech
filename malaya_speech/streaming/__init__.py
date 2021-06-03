@@ -1,6 +1,10 @@
 # https://github.com/mozilla/DeepSpeech-examples/blob/r0.8/mic_vad_streaming/mic_vad_streaming.py
 
-import threading, collections, queue, os, os.path
+import threading
+import collections
+import queue
+import os
+import os.path
 import numpy as np
 import wave
 from datetime import datetime
@@ -13,9 +17,9 @@ class Audio:
     def __init__(
         self,
         vad,
-        callback = None,
-        device = None,
-        format = None,
+        callback=None,
+        device=None,
+        format=None,
         input_rate: int = 16000,
         sample_rate: int = 16000,
         blocks_per_second: int = 50,
@@ -42,7 +46,7 @@ class Audio:
             return (None, pyaudio.paContinue)
 
         if callback is None:
-            callback = lambda in_data: self.buffer_queue.put(in_data)
+            def callback(in_data): return self.buffer_queue.put(in_data)
         self.buffer_queue = queue.Queue()
         self.device = device
         self.format = format
@@ -65,15 +69,15 @@ class Audio:
         self.stream.start_stream()
 
     def resample(self, data, input_rate):
-        data16 = np.fromstring(string = data, dtype = np.int16)
+        data16 = np.fromstring(string=data, dtype=np.int16)
         resample_size = int(len(data16) / self.input_rate * self.sample_rate)
         resample = signal.resample(data16, resample_size)
-        resample16 = np.array(resample, dtype = np.int16)
+        resample16 = np.array(resample, dtype=np.int16)
         return resample16.tostring()
 
     def read_resampled(self):
         return self.resample(
-            data = self.buffer_queue.get(), input_rate = self.input_rate
+            data=self.buffer_queue.get(), input_rate=self.input_rate
         )
 
     def read(self):
@@ -101,7 +105,7 @@ class Audio:
         wf.writeframes(data)
         wf.close()
 
-    def vad_collector(self, padding_ms = 300, ratio = 0.75):
+    def vad_collector(self, padding_ms=300, ratio=0.75):
         """
         Generator that yields series of consecutive audio frames comprising each utterence, separated by yielding a single None.
         Determines voice activity by ratio of frames in padding_ms. Uses a buffer to include padding_ms prior to being triggered.
@@ -110,7 +114,7 @@ class Audio:
         """
         frames = self.frame_generator()
         num_padding_frames = padding_ms // self.frame_duration_ms
-        ring_buffer = collections.deque(maxlen = num_padding_frames)
+        ring_buffer = collections.deque(maxlen=num_padding_frames)
         triggered = False
 
         for frame in frames:
@@ -144,9 +148,9 @@ class Audio:
 
 def record(
     vad,
-    asr_model = None,
-    classification_model = None,
-    device = None,
+    asr_model=None,
+    classification_model=None,
+    device=None,
     input_rate: int = 16000,
     sample_rate: int = 16000,
     blocks_per_second: int = 50,
@@ -195,7 +199,7 @@ def record(
 
     try:
         import pyaudio
-    except:
+    except BaseException:
         raise ModuleNotFoundError(
             'pyaudio not installed. Please install it by `pip install pyaudio` and try again.'
         )
@@ -210,24 +214,24 @@ def record(
 
     audio = Audio(
         vad,
-        device = device,
-        input_rate = input_rate,
-        sample_rate = sample_rate,
-        format = pyaudio.paInt16,
-        blocks_per_second = blocks_per_second,
+        device=device,
+        input_rate=input_rate,
+        sample_rate=sample_rate,
+        format=pyaudio.paInt16,
+        blocks_per_second=blocks_per_second,
     )
-    frames = audio.vad_collector(padding_ms = padding_ms, ratio = ratio)
+    frames = audio.vad_collector(padding_ms=padding_ms, ratio=ratio)
 
     if spinner:
         try:
             from halo import Halo
-        except:
+        except BaseException:
             raise ModuleNotFoundError(
                 'halo not installed. Please install it by `pip install halo` and try again, or simply set `spinner=False`.'
             )
 
         spinner = Halo(
-            text = 'Listening (ctrl-C to stop recording) ...', spinner = 'line'
+            text='Listening (ctrl-C to stop recording) ...', spinner='line'
         )
     else:
         print('Listening (ctrl-C to stop recording) ... \n')

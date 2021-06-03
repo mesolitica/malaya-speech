@@ -37,9 +37,9 @@ _transpose_batch_time = decoder._transpose_batch_time
 
 def _unstack_ta(inp):
     return tensor_array_ops.TensorArray(
-        dtype = inp.dtype,
-        size = array_ops.shape(inp)[0],
-        element_shape = inp.get_shape()[1:],
+        dtype=inp.dtype,
+        size=array_ops.shape(inp)[0],
+        element_shape=inp.get_shape()[1:],
     ).unstack(inp)
 
 
@@ -51,12 +51,12 @@ class TacotronTrainingHelper(Helper):
         self,
         inputs,
         sequence_length,
-        prenet = None,
-        time_major = False,
-        sample_ids_shape = None,
-        sample_ids_dtype = None,
-        model_dtype = tf.float32,
-        mask_decoder_sequence = None,
+        prenet=None,
+        time_major=False,
+        sample_ids_shape=None,
+        sample_ids_dtype=None,
+        model_dtype=tf.float32,
+        mask_decoder_sequence=None,
     ):
         """Initializer.
     Args:
@@ -103,15 +103,15 @@ class TacotronTrainingHelper(Helper):
     def sample_ids_dtype(self):
         return self._sample_ids_dtype
 
-    def initialize(self, name = None):
+    def initialize(self, name=None):
         finished = array_ops.tile([False], [self._batch_size])
         return (finished, self._start_inputs)
 
-    def sample(self, time, outputs, state, name = None):
+    def sample(self, time, outputs, state, name=None):
         # Fully deterministic, output should already be projected
         pass
 
-    def next_inputs(self, time, outputs, state, name = None, **unused_kwargs):
+    def next_inputs(self, time, outputs, state, name=None, **unused_kwargs):
         # Applies the fully connected pre-net to the decoder
         # Also decides whether the decoder is finished
         next_time = time + 1
@@ -143,11 +143,11 @@ class TacotronHelper(Helper):
     def __init__(
         self,
         inputs,
-        prenet = None,
-        time_major = False,
-        sample_ids_shape = None,
-        sample_ids_dtype = None,
-        mask_decoder_sequence = None,
+        prenet=None,
+        time_major=False,
+        sample_ids_shape=None,
+        sample_ids_dtype=None,
+        mask_decoder_sequence=None,
     ):
         """Initializer.
     Args:
@@ -190,11 +190,11 @@ class TacotronHelper(Helper):
     def sample_ids_dtype(self):
         return self._sample_ids_dtype
 
-    def initialize(self, name = None):
+    def initialize(self, name=None):
         finished = array_ops.tile([False], [self._batch_size])
         return (finished, self._start_inputs)
 
-    def sample(self, time, outputs, state, name = None):
+    def sample(self, time, outputs, state, name=None):
         pass
 
     def next_inputs(
@@ -203,7 +203,7 @@ class TacotronHelper(Helper):
         outputs,
         state,
         stop_token_predictions,
-        name = None,
+        name=None,
         **unused_kwargs
     ):
         next_time = time + 1

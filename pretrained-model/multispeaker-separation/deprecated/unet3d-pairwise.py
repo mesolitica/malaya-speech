@@ -25,10 +25,10 @@ import pandas as pd
 
 def chunks(l, n):
     for i in range(0, len(l), n):
-        yield (l[i : i + n], i // n)
+        yield (l[i: i + n], i // n)
 
 
-def multiprocessing(strings, function, cores = 6, returned = True):
+def multiprocessing(strings, function, cores=6, returned=True):
     df_split = chunks(strings, len(strings) // cores)
     pool = Pool(cores)
     print('initiate pool map')
@@ -66,7 +66,7 @@ for f in es_ar_male:
 len(speakers_es_ar_male)
 
 df_nepali = pd.read_csv(
-    '../speech-bahasa/asr_nepali/utt_spk_text.tsv', sep = '\t', header = None
+    '../speech-bahasa/asr_nepali/utt_spk_text.tsv', sep='\t', header=None
 )
 asr_nepali = glob('../speech-bahasa/asr_nepali/data/*/*.flac')
 asr_nepali.extend(glob('../speech-bahasa/nepali_1/asr_nepali/data/*/*.flac'))
@@ -85,8 +85,8 @@ len(speakers_nepali)
 
 df_sinhala = pd.read_csv(
     '../speech-bahasa/sinhala_0/asr_sinhala/utt_spk_text.tsv',
-    sep = '\t',
-    header = None,
+    sep='\t',
+    header=None,
 )
 asr_sinhala = glob('../speech-bahasa/sinhala_0/asr_sinhala/data/*/*.flac')
 asr_sinhala.extend(glob('../speech-bahasa/sinhala_1/asr_sinhala/data/*/*.flac'))
@@ -120,9 +120,9 @@ speakers_malay['dari-pasentran-ke-istana'] = glob(
 )
 
 noises = glob('../noise-44k/noise/*.wav') + glob('../noise-44k/clean-wav/*.wav')
-basses = glob('HHDS/Sources/**/*bass.wav', recursive = True)
-drums = glob('HHDS/Sources/**/*drums.wav', recursive = True)
-others = glob('HHDS/Sources/**/*other.wav', recursive = True)
+basses = glob('HHDS/Sources/**/*bass.wav', recursive=True)
+drums = glob('HHDS/Sources/**/*drums.wav', recursive=True)
+others = glob('HHDS/Sources/**/*other.wav', recursive=True)
 noises = noises + basses + drums + others
 random.shuffle(noises)
 sr = 44100
@@ -149,19 +149,19 @@ def random_speakers(n):
 
 
 def read_wav(f):
-    return malaya_speech.load(f, sr = sr)
+    return malaya_speech.load(f, sr=sr)
 
 
 def random_sampling(s, length):
-    return augmentation.random_sampling(s, sr = sr, length = length)
+    return augmentation.random_sampling(s, sr=sr, length=length)
 
 
-def combine_speakers(files, n = 5, limit = 4):
+def combine_speakers(files, n=5, limit=4):
     w_samples = random.sample(files, n)
     w_samples = [
         random_sampling(
             read_wav(f)[0],
-            length = min(
+            length=min(
                 random.randint(20000 // n, 240_000 // n), 100_000 // n
             ),
         )
@@ -220,7 +220,7 @@ def parallel(f):
 
             if 10 < (len(combined) / sr):
                 break
-        except:
+        except BaseException:
             pass
 
     while len(y) < 4:
@@ -238,10 +238,10 @@ def loop(files):
     return results
 
 
-def generate(batch_size = 10, repeat = 20):
+def generate(batch_size=10, repeat=20):
     fs = [i for i in range(batch_size)]
     while True:
-        results = multiprocessing(fs, loop, cores = len(fs))
+        results = multiprocessing(fs, loop, cores=len(fs))
         for _ in range(repeat):
             random.shuffle(results)
             for r in results:
@@ -249,12 +249,12 @@ def generate(batch_size = 10, repeat = 20):
                     yield {'combined': r[0], 'y': r[1], 'length': r[2]}
 
 
-def get_dataset(batch_size = 2):
+def get_dataset(batch_size=2):
     def get():
         dataset = tf.data.Dataset.from_generator(
             generate,
             {'combined': tf.float32, 'y': tf.float32},
-            output_shapes = {
+            output_shapes={
                 'combined': tf.TensorShape([None]),
                 'y': tf.TensorShape([speakers_size, None]),
                 'length': tf.TensorShape([None]),
@@ -262,15 +262,15 @@ def get_dataset(batch_size = 2):
         )
         dataset = dataset.padded_batch(
             batch_size,
-            padded_shapes = {
+            padded_shapes={
                 'combined': tf.TensorShape([None]),
                 'y': tf.TensorShape([speakers_size, None]),
                 'length': tf.TensorShape([None]),
             },
-            padding_values = {
-                'combined': tf.constant(0, dtype = tf.float32),
-                'y': tf.constant(0, dtype = tf.float32),
-                'length': tf.constant(0, dtype = tf.int32),
+            padding_values={
+                'combined': tf.constant(0, dtype=tf.float32),
+                'y': tf.constant(0, dtype=tf.float32),
+                'length': tf.constant(0, dtype=tf.int32),
             },
         )
         return dataset
@@ -281,16 +281,16 @@ def get_dataset(batch_size = 2):
 def get_stft(X):
     batch_size = tf.shape(X)[0]
     stft_X = tf.TensorArray(
-        dtype = tf.complex64,
-        size = batch_size,
-        dynamic_size = False,
-        infer_shape = False,
+        dtype=tf.complex64,
+        size=batch_size,
+        dynamic_size=False,
+        infer_shape=False,
     )
     D_X = tf.TensorArray(
-        dtype = tf.float32,
-        size = batch_size,
-        dynamic_size = False,
-        infer_shape = False,
+        dtype=tf.float32,
+        size=batch_size,
+        dynamic_size=False,
+        infer_shape=False,
     )
 
     init_state = (0, stft_X, D_X)
@@ -311,7 +311,7 @@ def get_stft(X):
 
 
 class Model:
-    def __init__(self, X, Y, length, size = 4):
+    def __init__(self, X, Y, length, size=4):
         # self.X = tf.placeholder(tf.float32, (None, None))
         # self.Y = tf.placeholder(tf.float32, (None, size, None))
 
@@ -333,7 +333,7 @@ class Model:
         for i in range(size):
             with tf.variable_scope(f'model_{i}'):
                 output = unet.Model3D(
-                    D_X, dropout = 0.0, training = True
+                    D_X, dropout=0.0, training=True
                 ).logits
                 self.outputs.append(output)
 
@@ -341,15 +341,15 @@ class Model:
         fft_size = self.outputs[0].shape[3]
 
         labels = [i[1] for i in self.stft]
-        labels = tf.concat(labels, axis = 4)
+        labels = tf.concat(labels, axis=4)
         labels = tf.reshape(labels, [batch_size, -1, fft_size, size])
-        labels = tf.transpose(labels, perm = [0, 3, 1, 2])
+        labels = tf.transpose(labels, perm=[0, 3, 1, 2])
 
-        concatenated = tf.concat(self.outputs, axis = 4)
+        concatenated = tf.concat(self.outputs, axis=4)
         concatenated = tf.reshape(
             concatenated, [batch_size, -1, fft_size, size]
         )
-        concatenated = tf.transpose(concatenated, perm = [0, 3, 1, 2])
+        concatenated = tf.transpose(concatenated, perm=[0, 3, 1, 2])
 
         mask = tf.cast(
             tf.sequence_mask(self.lengths, tf.shape(concatenated)[2]),
@@ -365,7 +365,7 @@ class Model:
         targets = tf.expand_dims(labels, 1)
         est_targets = tf.expand_dims(concatenated, 2)
         pw_loss = tf.abs(targets - est_targets)
-        pair_wise_abs = tf.reduce_mean(pw_loss, axis = [3, 4])
+        pair_wise_abs = tf.reduce_mean(pw_loss, axis=[3, 4])
 
         perms = tf.convert_to_tensor(np.array(list(permutations(range(size)))))
         perms = tf.cast(perms, tf.int32)
@@ -376,19 +376,19 @@ class Model:
         indices = index
         tensor = perms_one_hot
         original_tensor = tensor
-        indices = tf.reshape(indices, shape = [-1, tf.shape(indices)[-1]])
+        indices = tf.reshape(indices, shape=[-1, tf.shape(indices)[-1]])
         indices_add = tf.expand_dims(
             tf.range(0, tf.shape(indices)[0], 1) * (tf.shape(tensor)[-1]),
-            axis = -1,
+            axis=-1,
         )
         indices += indices_add
-        tensor = tf.reshape(perms_one_hot, shape = [-1])
-        indices = tf.reshape(indices, shape = [-1, 1])
-        updates = tf.reshape(ones, shape = [-1])
+        tensor = tf.reshape(perms_one_hot, shape=[-1])
+        indices = tf.reshape(indices, shape=[-1, 1])
+        updates = tf.reshape(ones, shape=[-1])
         scatter = tf.tensor_scatter_nd_update(tensor, indices, updates)
         perms_one_hot = tf.reshape(
             scatter,
-            shape = [
+            shape=[
                 tf.shape(original_tensor)[0],
                 tf.shape(original_tensor)[1],
                 -1,
@@ -396,7 +396,7 @@ class Model:
         )
 
         abs_set = tf.einsum('bij,pij->bp', pair_wise_abs, perms_one_hot)
-        min_abs = tf.reduce_min(abs_set, axis = 1, keepdims = True)
+        min_abs = tf.reduce_min(abs_set, axis=1, keepdims=True)
         min_abs /= size
         self.cost = tf.reduce_mean(min_abs)
 
@@ -406,54 +406,54 @@ epochs = 500_000
 
 
 def model_fn(features, labels, mode, params):
-    model = Model(features['combined'], features['y'], size = speakers_size)
+    model = Model(features['combined'], features['y'], size=speakers_size)
     loss = model.cost
     tf.identity(loss, 'total_loss')
     tf.summary.scalar('total_loss', loss)
 
     global_step = tf.train.get_or_create_global_step()
-    learning_rate = tf.constant(value = init_lr, shape = [], dtype = tf.float32)
+    learning_rate = tf.constant(value=init_lr, shape=[], dtype=tf.float32)
     learning_rate = tf.train.polynomial_decay(
         learning_rate,
         global_step,
         epochs,
-        end_learning_rate = 1e-6,
-        power = 1.0,
-        cycle = False,
+        end_learning_rate=1e-6,
+        power=1.0,
+        cycle=False,
     )
     tf.summary.scalar('learning_rate', learning_rate)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
 
-        optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
+        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 
-        train_op = optimizer.minimize(loss, global_step = global_step)
+        train_op = optimizer.minimize(loss, global_step=global_step)
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = mode, loss = loss, train_op = train_op
+            mode=mode, loss=loss, train_op=train_op
         )
 
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = tf.estimator.ModeKeys.EVAL, loss = loss
+            mode=tf.estimator.ModeKeys.EVAL, loss=loss
         )
 
     return estimator_spec
 
 
-train_hooks = [tf.train.LoggingTensorHook(['total_loss'], every_n_iter = 1)]
+train_hooks = [tf.train.LoggingTensorHook(['total_loss'], every_n_iter=1)]
 train_dataset = get_dataset()
 
 save_directory = 'speaker-split-unet3d-pairwise'
 
 train.run_training(
-    train_fn = train_dataset,
-    model_fn = model_fn,
-    model_dir = save_directory,
-    num_gpus = 2,
-    log_step = 1,
-    save_checkpoint_step = 3000,
-    max_steps = epochs,
-    train_hooks = train_hooks,
-    eval_step = 0,
+    train_fn=train_dataset,
+    model_fn=model_fn,
+    model_dir=save_directory,
+    num_gpus=2,
+    log_step=1,
+    save_checkpoint_step=3000,
+    max_steps=epochs,
+    train_hooks=train_hooks,
+    eval_step=0,
 )

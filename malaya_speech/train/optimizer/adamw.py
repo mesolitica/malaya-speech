@@ -33,35 +33,35 @@ def create_optimizer(
     init_lr,
     num_train_steps,
     num_warmup_steps,
-    end_learning_rate = 0.0,
-    weight_decay_rate = 0.1,
-    clip_norm = 0.5,
-    exclude_from_weight_decay = ['LayerNorm', 'layer_norm', 'bias'],
-    fp16 = False,
-    beta_1 = 0.9,
-    beta_2 = 0.999,
-    epsilon = 1e-6,
+    end_learning_rate=0.0,
+    weight_decay_rate=0.1,
+    clip_norm=0.5,
+    exclude_from_weight_decay=['LayerNorm', 'layer_norm', 'bias'],
+    fp16=False,
+    beta_1=0.9,
+    beta_2=0.999,
+    epsilon=1e-6,
 ):
     """Creates an optimizer training op."""
     global_step = tf.train.get_or_create_global_step()
 
-    learning_rate = tf.constant(value = init_lr, shape = [], dtype = tf.float32)
+    learning_rate = tf.constant(value=init_lr, shape=[], dtype=tf.float32)
 
     # Implements linear decay of the learning rate.
     learning_rate = tf.train.polynomial_decay(
         learning_rate,
         global_step,
         num_train_steps,
-        end_learning_rate = end_learning_rate,
-        power = 1.0,
-        cycle = False,
+        end_learning_rate=end_learning_rate,
+        power=1.0,
+        cycle=False,
     )
 
     # Implements linear warmup. I.e., if global_step < num_warmup_steps, the
     # learning rate will be `global_step/num_warmup_steps * init_lr`.
     if num_warmup_steps:
         global_steps_int = tf.cast(global_step, tf.int32)
-        warmup_steps_int = tf.constant(num_warmup_steps, dtype = tf.int32)
+        warmup_steps_int = tf.constant(num_warmup_steps, dtype=tf.int32)
 
         global_steps_float = tf.cast(global_steps_int, tf.float32)
         warmup_steps_float = tf.cast(warmup_steps_int, tf.float32)
@@ -80,12 +80,12 @@ def create_optimizer(
     # is how the model was trained (note that the Adam m/v variables are NOT
     # loaded from init_checkpoint.)
     optimizer = AdamWeightDecayOptimizer(
-        learning_rate = learning_rate,
-        weight_decay_rate = weight_decay_rate,
-        beta_1 = beta_1,
-        beta_2 = beta_2,
-        epsilon = epsilon,
-        exclude_from_weight_decay = exclude_from_weight_decay,
+        learning_rate=learning_rate,
+        weight_decay_rate=weight_decay_rate,
+        beta_1=beta_1,
+        beta_2=beta_2,
+        epsilon=epsilon,
+        exclude_from_weight_decay=exclude_from_weight_decay,
     )
 
     # REF: https://github.com/tensorflow/tensorflow/issues/25080
@@ -106,19 +106,19 @@ def create_optimizer(
             [tf.reduce_all(tf.is_finite(g)) for g in grads]
         )
     else:
-        all_finite = tf.constant(True, dtype = tf.bool)
+        all_finite = tf.constant(True, dtype=tf.bool)
 
     # This is how the model was pre-trained.
     (grads, _) = tf.clip_by_global_norm(
         grads,
-        clip_norm = clip_norm,
-        use_norm = tf.cond(
+        clip_norm=clip_norm,
+        use_norm=tf.cond(
             all_finite, lambda: tf.global_norm(grads), lambda: tf.constant(1.0)
         ),
     )
 
     train_op = optimizer.apply_gradients(
-        zip(grads, tvars), global_step = global_step
+        zip(grads, tvars), global_step=global_step
     )
 
     # Normally the global step update is done inside of `apply_gradients`.
@@ -127,7 +127,7 @@ def create_optimizer(
     new_global_step = tf.cond(
         all_finite, lambda: global_step + 1, lambda: global_step
     )
-    new_global_step = tf.identity(new_global_step, name = 'update_step')
+    new_global_step = tf.identity(new_global_step, name='update_step')
     train_op = tf.group(train_op, [global_step.assign(new_global_step)])
     return train_op
 
@@ -138,17 +138,17 @@ class AdamWeightDecayOptimizer(Optimizer):
     def __init__(
         self,
         learning_rate,
-        weight_decay_rate = 0.0,
-        beta_1 = 0.9,
-        beta_2 = 0.999,
-        epsilon = 1e-6,
-        exclude_from_weight_decay = None,
-        name = 'AdamWeightDecayOptimizer',
+        weight_decay_rate=0.0,
+        beta_1=0.9,
+        beta_2=0.999,
+        epsilon=1e-6,
+        exclude_from_weight_decay=None,
+        name='AdamWeightDecayOptimizer',
     ):
         """Constructs a AdamWeightDecayOptimizer."""
         super(AdamWeightDecayOptimizer, self).__init__(False, name)
 
-        self.learning_rate = tf.identity(learning_rate, name = 'learning_rate')
+        self.learning_rate = tf.identity(learning_rate, name='learning_rate')
         self.weight_decay_rate = weight_decay_rate
         self.beta_1 = beta_1
         self.beta_2 = beta_2
@@ -157,14 +157,14 @@ class AdamWeightDecayOptimizer(Optimizer):
 
     def _prepare(self):
         self.learning_rate_t = ops.convert_to_tensor(
-            self.learning_rate, name = 'learning_rate'
+            self.learning_rate, name='learning_rate'
         )
         self.weight_decay_rate_t = ops.convert_to_tensor(
-            self.weight_decay_rate, name = 'weight_decay_rate'
+            self.weight_decay_rate, name='weight_decay_rate'
         )
-        self.beta_1_t = ops.convert_to_tensor(self.beta_1, name = 'beta_1')
-        self.beta_2_t = ops.convert_to_tensor(self.beta_2, name = 'beta_2')
-        self.epsilon_t = ops.convert_to_tensor(self.epsilon, name = 'epsilon')
+        self.beta_1_t = ops.convert_to_tensor(self.beta_1, name='beta_1')
+        self.beta_2_t = ops.convert_to_tensor(self.beta_2, name='beta_2')
+        self.epsilon_t = ops.convert_to_tensor(self.epsilon, name='epsilon')
 
     def _create_slots(self, var_list):
         for v in var_list:
@@ -251,14 +251,14 @@ class AdamWeightDecayOptimizer(Optimizer):
         m = self.get_slot(var, 'm')
         v = self.get_slot(var, 'v')
 
-        m_t = state_ops.assign(m, m * beta_1_t, use_locking = self._use_locking)
+        m_t = state_ops.assign(m, m * beta_1_t, use_locking=self._use_locking)
 
         m_scaled_g_values = grad * (1 - beta_1_t)
         with ops.control_dependencies([m_t]):
             m_t = scatter_add(m, indices, m_scaled_g_values)
 
         v_scaled_g_values = (grad * grad) * (1 - beta_2_t)
-        v_t = state_ops.assign(v, v * beta_2_t, use_locking = self._use_locking)
+        v_t = state_ops.assign(v, v * beta_2_t, use_locking=self._use_locking)
         with ops.control_dependencies([v_t]):
             v_t = scatter_add(v, indices, v_scaled_g_values)
 
@@ -270,7 +270,7 @@ class AdamWeightDecayOptimizer(Optimizer):
         update_with_lr = learning_rate_t * update
 
         var_update = state_ops.assign_sub(
-            var, update_with_lr, use_locking = self._use_locking
+            var, update_with_lr, use_locking=self._use_locking
         )
         return control_flow_ops.group(*[var_update, m_t, v_t])
 
@@ -280,7 +280,7 @@ class AdamWeightDecayOptimizer(Optimizer):
             var,
             grad.indices,
             lambda x, i, v: state_ops.scatter_add(  # pylint: disable=g-long-lambda
-                x, i, v, use_locking = self._use_locking
+                x, i, v, use_locking=self._use_locking
             ),
         )
 

@@ -23,12 +23,12 @@ class Model:
     def __init__(
         self,
         inputs,
-        dropout = 0.5,
-        training = True,
-        layers = 4,
-        n_filters = [128, 384, 512, 512, 512, 512, 512, 512],
-        n_filtersizes = [65, 33, 17, 9, 9, 9, 9, 9, 9],
-        logging = True,
+        dropout=0.5,
+        training=True,
+        layers=4,
+        n_filters=[128, 384, 512, 512, 512, 512, 512, 512],
+        n_filtersizes=[65, 33, 17, 9, 9, 9, 9, 9, 9],
+        logging=True,
     ):
         with tf.name_scope('generator'):
             x = inputs
@@ -38,11 +38,11 @@ class Model:
                 with tf.name_scope('downsc_conv%d' % l):
                     x = (
                         Conv1D(
-                            filters = nf,
-                            kernel_size = fs,
-                            activation = None,
-                            padding = 'same',
-                            strides = 2,
+                            filters=nf,
+                            kernel_size=fs,
+                            activation=None,
+                            padding='same',
+                            strides=2,
                         )
                     )(x)
                     x = LeakyReLU(0.2)(x)
@@ -55,14 +55,14 @@ class Model:
             with tf.name_scope('bottleneck_conv'):
                 x = (
                     Conv1D(
-                        filters = n_filters[-1],
-                        kernel_size = n_filtersizes[-1],
-                        activation = None,
-                        padding = 'same',
-                        strides = 2,
+                        filters=n_filters[-1],
+                        kernel_size=n_filtersizes[-1],
+                        activation=None,
+                        padding='same',
+                        strides=2,
                     )
                 )(x)
-                x = Dropout(rate = dropout)(x, training = training)
+                x = Dropout(rate=dropout)(x, training=training)
                 x = LeakyReLU(0.2)(x)
 
                 if logging:
@@ -74,16 +74,16 @@ class Model:
                 with tf.name_scope('upsc_conv%d' % l):
                     x = (
                         Conv1D(
-                            filters = 2 * nf,
-                            kernel_size = fs,
-                            activation = None,
-                            padding = 'same',
+                            filters=2 * nf,
+                            kernel_size=fs,
+                            activation=None,
+                            padding='same',
                         )
                     )(x)
-                    x = Dropout(rate = dropout)(x, training = training)
+                    x = Dropout(rate=dropout)(x, training=training)
                     x = Activation('relu')(x)
-                    x = SubPixel1D(x, r = 2)
-                    x = tf.concat([x, l_in], axis = -1)
+                    x = SubPixel1D(x, r=2)
+                    x = tf.concat([x, l_in], axis=-1)
 
                     if logging:
                         print(x)
@@ -91,13 +91,13 @@ class Model:
             with tf.name_scope('lastconv'):
                 x = (
                     Conv1D(
-                        filters = 2,
-                        kernel_size = 9,
-                        activation = None,
-                        padding = 'same',
+                        filters=2,
+                        kernel_size=9,
+                        activation=None,
+                        padding='same',
                     )
                 )(x)
-                x = SubPixel1D(x, r = 2)
+                x = SubPixel1D(x, r=2)
 
                 if logging:
                     print(x)

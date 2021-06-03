@@ -77,14 +77,14 @@ class NovoGrad(MomentumOptimizer):
 
     def __init__(
         self,
-        learning_rate = 1.0,
-        beta1 = 0.95,
-        beta2 = 0.98,
-        epsilon = 1e-8,
-        weight_decay = 0.0,
-        grad_averaging = False,
-        use_locking = False,
-        name = 'NovoGrad',
+        learning_rate=1.0,
+        beta1=0.95,
+        beta2=0.98,
+        epsilon=1e-8,
+        weight_decay=0.0,
+        grad_averaging=False,
+        use_locking=False,
+        name='NovoGrad',
     ):
         """Constructor:
     Args:
@@ -101,10 +101,10 @@ class NovoGrad(MomentumOptimizer):
     """
         super(NovoGrad, self).__init__(
             learning_rate,
-            momentum = beta1,
-            use_locking = use_locking,
-            name = name,
-            use_nesterov = False,
+            momentum=beta1,
+            use_locking=use_locking,
+            name=name,
+            use_nesterov=False,
         )
         self._beta1 = beta1
         self._beta2 = beta2
@@ -118,7 +118,7 @@ class NovoGrad(MomentumOptimizer):
         # self._beta2_t = None
         # self._wd_t = None
 
-    def apply_gradients(self, grads_and_vars, global_step = None, name = None):
+    def apply_gradients(self, grads_and_vars, global_step=None, name=None):
         # self._beta1_t = ops.convert_to_tensor(self._beta1, name='beta1', dtype = tf.float32)
         # self._beta2_t = ops.convert_to_tensor(self._beta2, name='beta2', dtype = tf.float32)
 
@@ -128,16 +128,16 @@ class NovoGrad(MomentumOptimizer):
             self._grads_ema = [None] * len_vars
             for i in range(len_vars):
                 self._grads_ema[i] = tf.get_variable(
-                    name = 'nvgrad2_ema' + str(i),
-                    shape = [],
-                    dtype = tf.float32,
-                    initializer = tf.keras.initializers.Zeros(),
-                    trainable = False,
+                    name='nvgrad2_ema' + str(i),
+                    shape=[],
+                    dtype=tf.float32,
+                    initializer=tf.keras.initializers.Zeros(),
+                    trainable=False,
                 )
 
         # compute ema for grads^2 for each layer
         for i, (grad, var) in enumerate(grads_and_vars):
-            g_2 = tf.reduce_sum(tf.square(x = tf.cast(grad, tf.float32)))
+            g_2 = tf.reduce_sum(tf.square(x=tf.cast(grad, tf.float32)))
             self._grads_ema[i] = tf.cond(
                 tf.equal(self._grads_ema[i], 0.0),
                 lambda: g_2,
@@ -156,7 +156,7 @@ class NovoGrad(MomentumOptimizer):
 
         # call Momentum to do update
         return super(NovoGrad, self).apply_gradients(
-            grads_and_vars, global_step = global_step, name = name
+            grads_and_vars, global_step=global_step, name=name
         )
 
 
@@ -165,13 +165,13 @@ def optimize_loss(
     optimizer,
     optimizer_params,
     learning_rate_decay_fn,
-    var_list = None,
-    dtype = tf.float32,
-    clip_gradients = None,
-    summaries = None,
-    larc_params = None,
-    loss_scaling = 1.0,
-    loss_scaling_params = None,
+    var_list=None,
+    dtype=tf.float32,
+    clip_gradients=None,
+    summaries=None,
+    larc_params=None,
+    loss_scaling=1.0,
+    loss_scaling_params=None,
 ):
 
     if summaries is None:
@@ -212,26 +212,26 @@ def optimize_loss(
                     )
                 )
 
-        opt = optimizer(learning_rate = lr, **optimizer_params)
+        opt = optimizer(learning_rate=lr, **optimizer_params)
         if isinstance(loss_scaling, str):
             loss_scaling = AutomaticLossScaler(
-                algorithm = loss_scaling, params = loss_scaling_params
+                algorithm=loss_scaling, params=loss_scaling_params
             )
             if 'loss_scale' in summaries:
                 tf.summary.scalar('loss_scale', loss_scaling.loss_scale)
 
         grads_and_vars = opt.compute_gradients(
-            loss, colocate_gradients_with_ops = True, var_list = var_list
+            loss, colocate_gradients_with_ops=True, var_list=var_list
         )
         grad_updates = opt.apply_gradients(
             post_process_gradients(
                 grads_and_vars,
-                lr = lr,
-                clip_gradients = clip_gradients,
-                larc_params = larc_params,
-                summaries = summaries,
+                lr=lr,
+                clip_gradients=clip_gradients,
+                larc_params=larc_params,
+                summaries=summaries,
             ),
-            global_step = global_step,
+            global_step=global_step,
         )
         train_tensor = control_flow_ops.with_dependencies([grad_updates], loss)
         return train_tensor
@@ -291,9 +291,9 @@ def post_process_gradients(
     # LARC gradient re-scaling
     if larc_params is not None:
         check_params(
-            config = larc_params,
-            required_dict = {'larc_eta': float},
-            optional_dict = {
+            config=larc_params,
+            required_dict={'larc_eta': float},
+            optional_dict={
                 'larc_mode': ['clip', 'scale'],
                 'min_update': float,
                 'epsilon': float,
@@ -307,8 +307,8 @@ def post_process_gradients(
         grads_and_vars_larc = [None] * len(grads_and_vars)
         for idx, (g, v) in enumerate(grads_and_vars):
             var_dtype = v.dtype
-            v_norm = tf.norm(tensor = tf.cast(v, tf.float32), ord = 2)
-            g_norm = tf.norm(tensor = tf.cast(g, tf.float32), ord = 2)
+            v_norm = tf.norm(tensor=tf.cast(v, tf.float32), ord=2)
+            g_norm = tf.norm(tensor=tf.cast(g, tf.float32), ord=2)
 
             if larc_mode == 'clip':
                 larc_grad_update = tf.maximum(
@@ -349,7 +349,7 @@ def _clip_gradients_by_norm(grads_and_vars, clip_gradients):
     clipped_gradients, _ = _clip_by_global_norm(
         gradients,
         clip_gradients,
-        use_norm = _global_norm_with_cast(grads_and_vars),
+        use_norm=_global_norm_with_cast(grads_and_vars),
     )
 
     # Convert gradients back to the proper dtype
@@ -368,7 +368,7 @@ def _global_norm_with_cast(grads_and_vars):
     )
 
 
-def _clip_by_global_norm(t_list, clip_norm, use_norm, name = None):
+def _clip_by_global_norm(t_list, clip_norm, use_norm, name=None):
     """Clips values of multiple tensors by the ratio of the sum of their norms.
   Given a tuple or list of tensors `t_list`, and a clipping ratio `clip_norm`,
   this operation returns a list of clipped tensors `list_clipped`
@@ -413,16 +413,16 @@ def _clip_by_global_norm(t_list, clip_norm, use_norm, name = None):
     ) as name:
         # Calculate L2-norm, clip elements by ratio of clip_norm to L2-norm
         scale = clip_norm * tf.minimum(
-            1.0 / use_norm, tf.ones([1], dtype = use_norm.dtype) / clip_norm
+            1.0 / use_norm, tf.ones([1], dtype=use_norm.dtype) / clip_norm
         )
 
         values = [
             tf.cast(
                 tf.convert_to_tensor(
                     t.values if isinstance(t, tf.IndexedSlices) else t,
-                    name = 't_%d' % i,
+                    name='t_%d' % i,
                 ),
-                dtype = tf.float32,
+                dtype=tf.float32,
             )
             if t is not None
             else t
@@ -436,7 +436,7 @@ def _clip_by_global_norm(t_list, clip_norm, use_norm, name = None):
             else:
                 with tf.colocate_with(v):
                     values_clipped.append(
-                        tf.identity(v * scale, name = '%s_%d' % (name, i))
+                        tf.identity(v * scale, name='%s_%d' % (name, i))
                     )
 
         list_clipped = [

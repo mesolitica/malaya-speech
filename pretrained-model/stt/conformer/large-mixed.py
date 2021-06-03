@@ -34,12 +34,12 @@ parameters = {
 }
 
 featurizer = malaya_speech.tf_featurization.STTFeaturizer(
-    normalize_per_feature = True
+    normalize_per_feature=True
 )
 n_mels = featurizer.num_feature_bins
 
 
-def transformer_schedule(step, d_model, warmup_steps = 4000, max_lr = None):
+def transformer_schedule(step, d_model, warmup_steps=4000, max_lr=None):
     arg1 = tf.math.rsqrt(tf.cast(step, tf.float32))
     arg2 = step * (warmup_steps ** -1.5)
     arg1 = tf.cast(arg1, tf.float32)
@@ -62,22 +62,22 @@ def learning_rate_scheduler(global_step):
     )
 
 
-def augment_room(y, scale = 1.0):
+def augment_room(y, scale=1.0):
     corners = np.array(
         [[0, 0], [0, 5 * scale], [3 * scale, 5 * scale], [3 * scale, 0]]
     ).T
     room = pra.Room.from_corners(
         corners,
-        fs = sr,
-        materials = pra.Material(0.2, 0.15),
-        ray_tracing = True,
-        air_absorption = True,
+        fs=sr,
+        materials=pra.Material(0.2, 0.15),
+        ray_tracing=True,
+        air_absorption=True,
     )
-    room.extrude(3.5, materials = pra.Material(0.2, 0.15))
+    room.extrude(3.5, materials=pra.Material(0.2, 0.15))
     room.set_ray_tracing(
-        receiver_radius = 0.5, n_rays = 1000, energy_thres = 1e-5
+        receiver_radius=0.5, n_rays=1000, energy_thres=1e-5
     )
-    room.add_source([1.5 * scale, 4 * scale, 0.5], signal = y)
+    room.add_source([1.5 * scale, 4 * scale, 0.5], signal=y)
     R = np.array([[1.5 * scale], [0.5 * scale], [0.5]])
     room.add_microphone(R)
     room.simulate()
@@ -87,14 +87,14 @@ def augment_room(y, scale = 1.0):
 def mel_augmentation(features):
 
     features = mask_augmentation.warp_time_pil(features)
-    features = mask_augmentation.mask_frequency(features, width_freq_mask = 8)
+    features = mask_augmentation.mask_frequency(features, width_freq_mask=8)
     features = mask_augmentation.mask_time(
-        features, width_time_mask = int(features.shape[0] * 0.02)
+        features, width_time_mask=int(features.shape[0] * 0.02)
     )
     return features
 
 
-def mp3_to_wav(file, sr = sr):
+def mp3_to_wav(file, sr=sr):
     audio = AudioSegment.from_file(file)
     audio = audio.set_frame_rate(sr).set_channels(1)
     sample = np.array(audio.get_array_of_samples())
@@ -113,7 +113,7 @@ def generate(file):
                     # print('found mp3', audios[i])
                     wav_data, _ = mp3_to_wav(audios[i])
                 else:
-                    wav_data, _ = malaya_speech.load(audios[i], sr = sr)
+                    wav_data, _ = malaya_speech.load(audios[i], sr=sr)
 
                 if (len(wav_data) / sr) > maxlen:
                     # print(f'skipped audio too long {audios[i]}')
@@ -124,7 +124,7 @@ def generate(file):
                     continue
 
                 t = malaya_speech.subword.encode(
-                    subwords, cleaned_texts[i], add_blank = False
+                    subwords, cleaned_texts[i], add_blank=False
                 )
 
                 if random.random() > 0.9:
@@ -154,10 +154,10 @@ def preprocess_inputs(example):
 
 def get_dataset(
     file,
-    batch_size = 10,
-    shuffle_size = 20,
-    thread_count = 24,
-    maxlen_feature = 1800,
+    batch_size=10,
+    shuffle_size=20,
+    thread_count=24,
+    maxlen_feature=1800,
 ):
     def get():
         dataset = tf.data.Dataset.from_generator(
@@ -167,30 +167,30 @@ def get_dataset(
                 'targets': tf.int32,
                 'targets_length': tf.int32,
             },
-            output_shapes = {
+            output_shapes={
                 'waveforms': tf.TensorShape([None]),
                 'targets': tf.TensorShape([None]),
                 'targets_length': tf.TensorShape([None]),
             },
-            args = (file,),
+            args=(file,),
         )
         dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
         dataset = dataset.map(
-            preprocess_inputs, num_parallel_calls = thread_count
+            preprocess_inputs, num_parallel_calls=thread_count
         )
         dataset = dataset.padded_batch(
             batch_size,
-            padded_shapes = {
+            padded_shapes={
                 'inputs': tf.TensorShape([None, n_mels]),
                 'inputs_length': tf.TensorShape([None]),
                 'targets': tf.TensorShape([None]),
                 'targets_length': tf.TensorShape([None]),
             },
-            padding_values = {
-                'inputs': tf.constant(0, dtype = tf.float32),
-                'inputs_length': tf.constant(0, dtype = tf.int32),
-                'targets': tf.constant(0, dtype = tf.int32),
-                'targets_length': tf.constant(0, dtype = tf.int32),
+            padding_values={
+                'inputs': tf.constant(0, dtype=tf.float32),
+                'inputs_length': tf.constant(0, dtype=tf.int32),
+                'targets': tf.constant(0, dtype=tf.int32),
+                'targets_length': tf.constant(0, dtype=tf.int32),
             },
         )
         return dataset
@@ -200,24 +200,24 @@ def get_dataset(
 
 def model_fn(features, labels, mode, params):
     conformer_model = conformer.Model(
-        kernel_regularizer = None, bias_regularizer = None, **config
+        kernel_regularizer=None, bias_regularizer=None, **config
     )
     decoder_config = malaya_speech.config.conformer_large_decoder_config
     transducer_model = transducer.rnn.Model(
-        conformer_model, vocabulary_size = subwords.vocab_size, **decoder_config
+        conformer_model, vocabulary_size=subwords.vocab_size, **decoder_config
     )
     targets_length = features['targets_length'][:, 0]
     v = tf.expand_dims(features['inputs'], -1)
-    z = tf.zeros((tf.shape(features['targets'])[0], 1), dtype = tf.int32)
-    c = tf.concat([z, features['targets']], axis = 1)
+    z = tf.zeros((tf.shape(features['targets'])[0], 1), dtype=tf.int32)
+    c = tf.concat([z, features['targets']], axis=1)
 
-    logits = transducer_model([v, c, targets_length + 1], training = True)
+    logits = transducer_model([v, c, targets_length + 1], training=True)
 
     cost = transducer.loss.rnnt_loss(
-        logits = logits,
-        labels = features['targets'],
-        label_length = targets_length,
-        logit_length = features['inputs_length'][:, 0]
+        logits=logits,
+        labels=features['targets'],
+        label_length=targets_length,
+        logit_length=features['inputs_length'][:, 0]
         // conformer_model.conv_subsampling.time_reduction_factor,
     )
     mean_error = tf.reduce_mean(cost)
@@ -232,36 +232,36 @@ def model_fn(features, labels, mode, params):
             tf.train.AdamOptimizer,
             parameters['optimizer_params'],
             learning_rate_scheduler,
-            summaries = ['learning_rate', 'loss_scale'],
-            larc_params = parameters.get('larc_params', None),
-            loss_scaling = parameters.get('loss_scaling', 1.0),
-            loss_scaling_params = parameters.get('loss_scaling_params', None),
+            summaries=['learning_rate', 'loss_scale'],
+            larc_params=parameters.get('larc_params', None),
+            loss_scaling=parameters.get('loss_scaling', 1.0),
+            loss_scaling_params=parameters.get('loss_scaling_params', None),
         )
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = mode, loss = loss, train_op = train_op
+            mode=mode, loss=loss, train_op=train_op
         )
 
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = tf.estimator.ModeKeys.EVAL, loss = loss
+            mode=tf.estimator.ModeKeys.EVAL, loss=loss
         )
 
     return estimator_spec
 
 
-train_hooks = [tf.train.LoggingTensorHook(['train_loss'], every_n_iter = 1)]
+train_hooks = [tf.train.LoggingTensorHook(['train_loss'], every_n_iter=1)]
 train_dataset = get_dataset('mixed-asr-train.json')
 dev_dataset = get_dataset('mixed-asr-test.json')
 
 train.run_training(
-    train_fn = train_dataset,
-    model_fn = model_fn,
-    model_dir = 'asr-large-conformer-transducer-mixed',
-    num_gpus = 1,
-    log_step = 1,
-    save_checkpoint_step = 5000,
-    max_steps = 1_000_000,
-    eval_fn = dev_dataset,
-    train_hooks = train_hooks,
+    train_fn=train_dataset,
+    model_fn=model_fn,
+    model_dir='asr-large-conformer-transducer-mixed',
+    num_gpus=1,
+    log_step=1,
+    save_checkpoint_step=5000,
+    max_steps=1_000_000,
+    eval_fn=dev_dataset,
+    train_hooks=train_hooks,
 )

@@ -28,7 +28,7 @@ import tensorflow.compat.v2 as tf
 
 def _re_compile(pattern):
     return re.compile(
-        pattern, flags = re.UNICODE
+        pattern, flags=re.UNICODE
     )  # pytype: disable=wrong-keyword-args
 
 
@@ -41,7 +41,7 @@ class TextEncoderConfig(object):
     """Configuration for `tfds.features.Text`."""
 
     def __init__(
-        self, encoder = None, encoder_cls = None, vocab_size = None, name = None
+        self, encoder=None, encoder_cls=None, vocab_size=None, name=None
     ):
         if encoder:
             if encoder_cls or vocab_size:
@@ -107,7 +107,7 @@ class TextEncoder(object):
         raise NotImplementedError
 
     @classmethod
-    def _write_lines_to_file(cls, filename, lines, metadata_dict = None):
+    def _write_lines_to_file(cls, filename, lines, metadata_dict=None):
         """Writes lines to file prepended by header and metadata."""
         write_lines_to_file(cls.__name__, filename, lines, metadata_dict)
 
@@ -122,7 +122,7 @@ class TextEncoder(object):
 class ByteTextEncoder(TextEncoder):
     """Byte-encodes text."""
 
-    def __init__(self, additional_tokens = None):
+    def __init__(self, additional_tokens=None):
         """Constructs ByteTextEncoder.
 
     Args:
@@ -223,7 +223,7 @@ class ByteTextEncoder(TextEncoder):
     @classmethod
     def load_from_file(cls, filename_prefix):
         lines, _ = cls._read_lines_from_file(cls._filename(filename_prefix))
-        return cls(additional_tokens = lines)
+        return cls(additional_tokens=lines)
 
 
 class TokenTextEncoder(TextEncoder):
@@ -236,12 +236,12 @@ class TokenTextEncoder(TextEncoder):
     def __init__(
         self,
         vocab_list,
-        oov_buckets = 1,
-        oov_token = 'UNK',
-        lowercase = False,
-        tokenizer = None,
-        strip_vocab = True,
-        decode_token_separator = ' ',
+        oov_buckets=1,
+        oov_token='UNK',
+        lowercase=False,
+        tokenizer=None,
+        strip_vocab=True,
+        decode_token_separator=' ',
     ):
         """Constructs a TokenTextEncoder.
 
@@ -278,7 +278,7 @@ class TokenTextEncoder(TextEncoder):
         # Reserved tokens are all tokens that are mixed alphanum and non-alphanum.
         reserved_tokens = [t for t in self._vocab_list if is_mixed_alphanum(t)]
         self._tokenizer = tokenizer or Tokenizer(
-            reserved_tokens = reserved_tokens
+            reserved_tokens=reserved_tokens
         )
         self._user_defined_tokenizer = tokenizer
 
@@ -363,13 +363,13 @@ class TokenTextEncoder(TextEncoder):
         has_tokenizer = kwargs.pop('has_tokenizer', False)
         if has_tokenizer:
             kwargs['tokenizer'] = Tokenizer.load_from_file(filename)
-        return cls(vocab_list = vocab_lines, **kwargs)
+        return cls(vocab_list=vocab_lines, **kwargs)
 
 
 class Tokenizer(object):
     """Splits a string into tokens, and joins them back."""
 
-    def __init__(self, alphanum_only = True, reserved_tokens = None):
+    def __init__(self, alphanum_only=True, reserved_tokens=None):
         """Constructs a Tokenizer.
 
     Note that the Tokenizer is invertible if `alphanum_only=False`.
@@ -520,7 +520,7 @@ def write_lines_to_file(cls_name, filename, lines, metadata_dict):
     header_line = '%s%s' % (_HEADER_PREFIX, cls_name)
     metadata_line = '%s%s' % (
         _METADATA_PREFIX,
-        json.dumps(metadata_dict, sort_keys = True),
+        json.dumps(metadata_dict, sort_keys=True),
     )
     with tf.io.gfile.GFile(filename, 'wb') as f:
         for line in [header_line, metadata_line]:
@@ -539,7 +539,7 @@ def read_lines_from_file(cls_name, filename):
     if lines[0] != header_line:
         raise ValueError(
             'File {fname} does not seem to have been created from '
-            '{name}.save_to_file.'.format(fname = filename, name = cls_name)
+            '{name}.save_to_file.'.format(fname=filename, name=cls_name)
         )
-    metadata_dict = json.loads(lines[1][len(_METADATA_PREFIX) :])
+    metadata_dict = json.loads(lines[1][len(_METADATA_PREFIX):])
     return lines[2:], metadata_dict

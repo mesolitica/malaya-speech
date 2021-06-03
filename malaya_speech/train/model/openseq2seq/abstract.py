@@ -94,7 +94,7 @@ class Encoder:
             'dtype': [tf.float32, tf.float16, 'mixed'],
         }
 
-    def __init__(self, params, model, name = 'encoder', mode = 'train'):
+    def __init__(self, params, model, name='encoder', mode='train'):
         check_params(
             params, self.get_required_params(), self.get_optional_params()
         )
@@ -141,7 +141,7 @@ class Encoder:
         self._compiled = True
 
         with tf.variable_scope(
-            self._name, initializer = initializer, dtype = self.params['dtype']
+            self._name, initializer=initializer, dtype=self.params['dtype']
         ):
             return self._encode(self._cast_types(input_dict))
 
@@ -196,7 +196,7 @@ class Decoder:
             'dtype': [tf.float32, tf.float16, 'mixed'],
         }
 
-    def __init__(self, params, model, name = 'decoder', mode = 'train'):
+    def __init__(self, params, model, name='decoder', mode='train'):
         """Decoder constructor.
     Note that decoder constructors should not modify TensorFlow graph, all
     graph construction should happen in the :meth:`self._decode() <_decode>`
@@ -283,7 +283,7 @@ class Decoder:
         self._compiled = True
 
         with tf.variable_scope(
-            self._name, initializer = initializer, dtype = self.params['dtype']
+            self._name, initializer=initializer, dtype=self.params['dtype']
         ):
             return self._decode(self._cast_types(input_dict))
 

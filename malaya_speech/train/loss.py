@@ -82,7 +82,7 @@ def calculate_2d_loss(y_gt, y_pred, loss_fn):
 class AutomaticLossScaler(object):
     SUPPORTED_ALGOS = ['backoff', 'logmax']
 
-    def __init__(self, algorithm = 'Backoff', params = None):
+    def __init__(self, algorithm='Backoff', params=None):
         algorithm = algorithm.lower().strip()
         if algorithm == 'backoff':
             self.scaler = BackoffScaler(params)
@@ -124,9 +124,9 @@ class BackoffScaler(object):
         if params is None:
             params = {}
         check_params(
-            config = params,
-            required_dict = {},
-            optional_dict = {
+            config=params,
+            required_dict={},
+            optional_dict={
                 'scale_min': float,
                 'scale_max': float,
                 'step_factor': float,
@@ -139,13 +139,13 @@ class BackoffScaler(object):
         self.step_window = params.get('step_window', 2000)
 
         self.iteration = tf.Variable(
-            initial_value = 0, trainable = False, dtype = tf.int64
+            initial_value=0, trainable=False, dtype=tf.int64
         )
         self.last_overflow_iteration = tf.Variable(
-            initial_value = -1, trainable = False, dtype = tf.int64
+            initial_value=-1, trainable=False, dtype=tf.int64
         )
         self.scale = tf.Variable(
-            initial_value = self.scale_max, trainable = False
+            initial_value=self.scale_max, trainable=False
         )
 
     def update_op(self, has_nan, amax):
@@ -192,9 +192,9 @@ class LogMaxScaler(object):
         if params is None:
             params = {}
         check_params(
-            config = params,
-            required_dict = {},
-            optional_dict = {
+            config=params,
+            required_dict={},
+            optional_dict={
                 'scale_min': float,
                 'scale_max': float,
                 'log_max': float,
@@ -211,23 +211,23 @@ class LogMaxScaler(object):
         self.overflow_std_dev = params.get('overflow_std_dev', 3.09)
 
         self.iteration = tf.Variable(
-            initial_value = 0, trainable = False, dtype = tf.int64
+            initial_value=0, trainable=False, dtype=tf.int64
         )
-        self.scale = tf.Variable(initial_value = 1.0, trainable = False)
+        self.scale = tf.Variable(initial_value=1.0, trainable=False)
         self.x_hat = tf.Variable(
-            initial_value = 0, trainable = False, dtype = tf.float32
+            initial_value=0, trainable=False, dtype=tf.float32
         )
         self.slow_x_hat = tf.Variable(
-            initial_value = 0, trainable = False, dtype = tf.float32
+            initial_value=0, trainable=False, dtype=tf.float32
         )
         self.xsquared_hat = tf.Variable(
-            initial_value = 0, trainable = False, dtype = tf.float32
+            initial_value=0, trainable=False, dtype=tf.float32
         )
         self.b1_correction = tf.Variable(
-            initial_value = 1.0, trainable = False, dtype = tf.float32
+            initial_value=1.0, trainable=False, dtype=tf.float32
         )
         self.b2_correction = tf.Variable(
-            initial_value = 1.0, trainable = False, dtype = tf.float32
+            initial_value=1.0, trainable=False, dtype=tf.float32
         )
 
     # NB: assumes that `amax` is already has been downscaled

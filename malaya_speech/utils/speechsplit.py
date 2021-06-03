@@ -9,7 +9,7 @@ B = np.array(
 sr = 22050
 
 
-def quantize_f0_numpy(x, num_bins = 256):
+def quantize_f0_numpy(x, num_bins=256):
     # x is logf0
     assert x.ndim == 1
     x = x.astype(float).copy()
@@ -18,7 +18,7 @@ def quantize_f0_numpy(x, num_bins = 256):
     x = np.round(x * (num_bins - 1))
     x = x + 1
     x[uv] = 0.0
-    enc = np.zeros((len(x), num_bins + 1), dtype = np.float32)
+    enc = np.zeros((len(x), num_bins + 1), dtype=np.float32)
     enc[np.arange(len(x)), x.astype(np.int32)] = 1.0
     return enc, x.astype(np.int64)
 
@@ -35,7 +35,7 @@ def get_f0_sptk(wav, lo, hi):
     from pysptk import sptk
 
     f0_rapt = sptk.rapt(
-        wav.astype(np.float32) * 32768, sr, 256, min = lo, max = hi, otype = 2
+        wav.astype(np.float32) * 32768, sr, 256, min=lo, max=hi, otype=2
     )
     index_nonzero = f0_rapt != -1e10
     mean_f0, std_f0 = (
@@ -48,7 +48,7 @@ def get_f0_sptk(wav, lo, hi):
 def get_fo_pyworld(wav):
     import pyworld as pw
 
-    _f0, t = pw.dio(wav, sr, f0_ceil = 7600, frame_period = 1000 * 256 / sr)
+    _f0, t = pw.dio(wav, sr, f0_ceil=7600, frame_period=1000 * 256 / sr)
     f0_rapt = pw.stonemask(wav.astype(np.double), _f0, t, sr)
     index_nonzero = f0_rapt != 0.0
     mean_f0, std_f0 = (

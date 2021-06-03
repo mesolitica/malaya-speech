@@ -9,19 +9,19 @@ def get_vocab_ctc(language):
 
 def load(model, module, alpha, beta, **kwargs):
     path = check_file(
-        file = model,
-        module = module,
-        keys = {
+        file=model,
+        module=module,
+        keys={
             'model': 'model.trie.klm',
             'vocab': get_vocab_ctc(model.split('-')[-1]),
         },
-        quantized = False,
+        quantized=False,
         **kwargs,
     )
 
     try:
         from ctc_decoders import Scorer
-    except:
+    except BaseException:
         raise ModuleNotFoundError(
             'ctc_decoders not installed. Please install it by `pip3 install ctc-decoders` and try again.'
         )

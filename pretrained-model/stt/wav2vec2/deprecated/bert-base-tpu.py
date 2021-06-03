@@ -76,7 +76,7 @@ flags.DEFINE_bool('do_train', True, 'Whether to run training.')
 flags.DEFINE_string('init_checkpoint', None, 'Initial checkpoint.')
 
 
-def input_fn_builder(input_files, is_training, num_cpu_threads = 4):
+def input_fn_builder(input_files, is_training, num_cpu_threads=4):
 
     data_fields = {
         'waveforms': tf.VarLenFeature(tf.float32),
@@ -86,7 +86,7 @@ def input_fn_builder(input_files, is_training, num_cpu_threads = 4):
     def parse(serialized_example):
 
         features = tf.parse_single_example(
-            serialized_example, features = data_fields
+            serialized_example, features=data_fields
         )
         for k in features.keys():
             features[k] = features[k].values
@@ -101,26 +101,26 @@ def input_fn_builder(input_files, is_training, num_cpu_threads = 4):
         if is_training:
             d = tf.data.Dataset.from_tensor_slices(tf.constant(input_files))
             d = d.repeat()
-            d = d.shuffle(buffer_size = len(input_files))
+            d = d.shuffle(buffer_size=len(input_files))
             cycle_length = min(num_cpu_threads, len(input_files))
             d = d.apply(
                 tf.contrib.data.parallel_interleave(
                     tf.data.TFRecordDataset,
-                    sloppy = is_training,
-                    cycle_length = cycle_length,
+                    sloppy=is_training,
+                    cycle_length=cycle_length,
                 )
             )
-            d = d.shuffle(buffer_size = 100)
+            d = d.shuffle(buffer_size=100)
         else:
             d = tf.data.TFRecordDataset(input_files)
             d = d.repeat()
-        d = d.map(parse, num_parallel_calls = 32)
+        d = d.map(parse, num_parallel_calls=32)
         d = d.apply(
             tf.contrib.data.map_and_batch(
                 lambda record: _decode_record(record, data_fields),
-                batch_size = batch_size,
-                num_parallel_batches = num_cpu_threads,
-                drop_remainder = True,
+                batch_size=batch_size,
+                num_parallel_batches=num_cpu_threads,
+                drop_remainder=True,
             )
         )
         return d
@@ -147,14 +147,14 @@ class Encoder:
         self.config = config
         self.model = None
 
-    def __call__(self, x, input_mask, training = True):
+    def __call__(self, x, input_mask, training=True):
         if self.model is None:
             input_mask = tf.logical_not(input_mask)
             self.model = bert.BertModel(
-                config = self.config,
-                is_training = training,
-                input_ids = x,
-                input_mask = input_mask,
+                config=self.config,
+                is_training=training,
+                input_ids=x,
+                input_mask=input_mask,
             )
         return self.model.sequence_output
 
@@ -171,23 +171,23 @@ def model_fn_builder(
 
         X = features['waveforms']
         X_len = features['waveforms_len'][:, 0]
-        encoder = Encoder(config = bert.BertConfig())
+        encoder = Encoder(config=bert.BertConfig())
         cfg = wav2vec2.Wav2Vec2Config()
         model = wav2vec2.Model(cfg, encoder)
 
         is_training = mode == tf.estimator.ModeKeys.TRAIN
 
-        r, num_vars, curr_temp = model(X, padding_mask = X_len)
+        r, num_vars, curr_temp = model(X, padding_mask=X_len)
 
         logits = r['x']
         logits = tf.transpose(logits, [2, 1, 0])
         logits = tf.reshape(logits, (-1, tf.shape(logits)[-1]))
         target = tf.zeros(
-            shape = (tf.shape(r['x'])[1] * tf.shape(r['x'])[2]),
-            dtype = tf.int32,
+            shape=(tf.shape(r['x'])[1] * tf.shape(r['x'])[2]),
+            dtype=tf.int32,
         )
         loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
-            labels = target, logits = logits
+            labels=target, logits=logits
         )
         loss = tf.reduce_sum(loss)
 
@@ -205,7 +205,7 @@ def model_fn_builder(
             if coef != 0 and p is not None:
                 p = coef * p * sample_size
                 loss += p
-                
+
         total_loss = loss
         tf.identity(total_loss, 'train_loss')
 
@@ -221,15 +221,15 @@ def model_fn_builder(
             )
 
             output_spec = tf.contrib.tpu.TPUEstimatorSpec(
-                mode = mode,
-                loss = total_loss,
-                train_op = train_op,
-                scaffold_fn = scaffold_fn,
+                mode=mode,
+                loss=total_loss,
+                train_op=train_op,
+                scaffold_fn=scaffold_fn,
             )
         elif mode == tf.estimator.ModeKeys.EVAL:
 
             output_spec = tf.contrib.tpu.TPUEstimatorSpec(
-                mode = mode, loss = total_loss, scaffold_fn = scaffold_fn
+                mode=mode, loss=total_loss, scaffold_fn=scaffold_fn
             )
         else:
             raise ValueError(
@@ -262,46 +262,46 @@ def main(_):
     tpu_cluster_resolver = None
     if FLAGS.use_tpu and FLAGS.tpu_name:
         tpu_cluster_resolver = tf.contrib.cluster_resolver.TPUClusterResolver(
-            FLAGS.tpu_name, zone = FLAGS.tpu_zone, project = FLAGS.gcp_project
+            FLAGS.tpu_name, zone=FLAGS.tpu_zone, project=FLAGS.gcp_project
         )
 
     is_per_host = tf.contrib.tpu.InputPipelineConfig.PER_HOST_V2
     run_config = tf.contrib.tpu.RunConfig(
-        cluster = tpu_cluster_resolver,
-        master = FLAGS.master,
-        model_dir = FLAGS.output_dir,
-        save_checkpoints_steps = FLAGS.save_checkpoints_steps,
-        tpu_config = tf.contrib.tpu.TPUConfig(
-            iterations_per_loop = FLAGS.iterations_per_loop,
-            num_shards = FLAGS.num_tpu_cores,
-            per_host_input_for_training = is_per_host,
+        cluster=tpu_cluster_resolver,
+        master=FLAGS.master,
+        model_dir=FLAGS.output_dir,
+        save_checkpoints_steps=FLAGS.save_checkpoints_steps,
+        tpu_config=tf.contrib.tpu.TPUConfig(
+            iterations_per_loop=FLAGS.iterations_per_loop,
+            num_shards=FLAGS.num_tpu_cores,
+            per_host_input_for_training=is_per_host,
         ),
     )
 
     model_fn = model_fn_builder(
-        init_checkpoint = FLAGS.init_checkpoint,
-        learning_rate = FLAGS.learning_rate,
-        num_train_steps = FLAGS.num_train_steps,
-        num_warmup_steps = FLAGS.num_warmup_steps,
-        use_tpu = FLAGS.use_tpu,
+        init_checkpoint=FLAGS.init_checkpoint,
+        learning_rate=FLAGS.learning_rate,
+        num_train_steps=FLAGS.num_train_steps,
+        num_warmup_steps=FLAGS.num_warmup_steps,
+        use_tpu=FLAGS.use_tpu,
     )
 
     estimator = tf.contrib.tpu.TPUEstimator(
-        use_tpu = FLAGS.use_tpu,
-        model_fn = model_fn,
-        config = run_config,
-        train_batch_size = FLAGS.train_batch_size,
-        eval_batch_size = FLAGS.train_batch_size,
+        use_tpu=FLAGS.use_tpu,
+        model_fn=model_fn,
+        config=run_config,
+        train_batch_size=FLAGS.train_batch_size,
+        eval_batch_size=FLAGS.train_batch_size,
     )
 
     if FLAGS.do_train:
         tf.logging.info('***** Running training *****')
         tf.logging.info('  Batch size = %d', FLAGS.train_batch_size)
         train_input_fn = input_fn_builder(
-            input_files = input_files, is_training = True
+            input_files=input_files, is_training=True
         )
         estimator.train(
-            input_fn = train_input_fn, max_steps = FLAGS.num_train_steps
+            input_fn=train_input_fn, max_steps=FLAGS.num_train_steps
         )
 
 

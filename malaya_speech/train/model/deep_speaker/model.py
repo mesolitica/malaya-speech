@@ -32,7 +32,7 @@ class DeepSpeakerModel:
     def clipped_relu(self, inputs):
         relu = Lambda(
             lambda y: K.minimum(K.maximum(y, 0), 20),
-            name = f'clipped_relu_{self.clipped_relu_count}',
+            name=f'clipped_relu_{self.clipped_relu_count}',
         )(inputs)
         self.clipped_relu_count += 1
         return relu
@@ -42,28 +42,28 @@ class DeepSpeakerModel:
 
         x = Conv2D(
             filters,
-            kernel_size = kernel_size,
-            strides = 1,
-            activation = None,
-            padding = 'same',
-            kernel_initializer = 'glorot_uniform',
-            kernel_regularizer = regularizers.l2(l = 0.0001),
-            name = conv_name_base + '_2a',
+            kernel_size=kernel_size,
+            strides=1,
+            activation=None,
+            padding='same',
+            kernel_initializer='glorot_uniform',
+            kernel_regularizer=regularizers.l2(l=0.0001),
+            name=conv_name_base + '_2a',
         )(input_tensor)
-        x = BatchNormalization(name = conv_name_base + '_2a_bn')(x)
+        x = BatchNormalization(name=conv_name_base + '_2a_bn')(x)
         x = self.clipped_relu(x)
 
         x = Conv2D(
             filters,
-            kernel_size = kernel_size,
-            strides = 1,
-            activation = None,
-            padding = 'same',
-            kernel_initializer = 'glorot_uniform',
-            kernel_regularizer = regularizers.l2(l = 0.0001),
-            name = conv_name_base + '_2b',
+            kernel_size=kernel_size,
+            strides=1,
+            activation=None,
+            padding='same',
+            kernel_initializer='glorot_uniform',
+            kernel_regularizer=regularizers.l2(l=0.0001),
+            name=conv_name_base + '_2b',
         )(x)
-        x = BatchNormalization(name = conv_name_base + '_2b_bn')(x)
+        x = BatchNormalization(name=conv_name_base + '_2b_bn')(x)
 
         x = self.clipped_relu(x)
 
@@ -75,27 +75,27 @@ class DeepSpeakerModel:
         conv_name = 'conv{}-s'.format(filters)
         o = Conv2D(
             filters,
-            kernel_size = 5,
-            strides = 2,
-            activation = None,
-            padding = 'same',
-            kernel_initializer = 'glorot_uniform',
-            kernel_regularizer = regularizers.l2(l = 0.0001),
-            name = conv_name,
+            kernel_size=5,
+            strides=2,
+            activation=None,
+            padding='same',
+            kernel_initializer='glorot_uniform',
+            kernel_regularizer=regularizers.l2(l=0.0001),
+            name=conv_name,
         )(inp)
-        o = BatchNormalization(name = conv_name + '_bn')(o)
+        o = BatchNormalization(name=conv_name + '_bn')(o)
         o = self.clipped_relu(o)
         for i in range(3):
             o = self.identity_block(
-                o, kernel_size = 3, filters = filters, stage = stage, block = i
+                o, kernel_size=3, filters=filters, stage=stage, block=i
             )
         return o
 
     def cnn_component(self, inp):
-        x = self.conv_and_res_block(inp, 64, stage = 1)
-        x = self.conv_and_res_block(x, 128, stage = 2)
-        x = self.conv_and_res_block(x, 256, stage = 3)
-        x = self.conv_and_res_block(x, 512, stage = 4)
+        x = self.conv_and_res_block(inp, 64, stage=1)
+        x = self.conv_and_res_block(x, 128, stage=2)
+        x = self.conv_and_res_block(x, 256, stage=3)
+        x = self.conv_and_res_block(x, 512, stage=4)
         return x
 
     def set_weights(self, w):
@@ -105,11 +105,11 @@ class DeepSpeakerModel:
 
 
 class Model:
-    def __init__(self, inputs, num_class, mode = 'train'):
+    def __init__(self, inputs, num_class, mode='train'):
         deepspeaker = DeepSpeakerModel()
         x = deepspeaker.cnn_component(inputs)
         x = Reshape((-1, 2048))(x)
-        x = Lambda(lambda y: K.mean(y, axis = 1), name = 'average')(x)
-        x = Dense(512, name = 'affine')(x)
+        x = Lambda(lambda y: K.mean(y, axis=1), name='average')(x)
+        x = Dense(512, name='affine')(x)
         x = tf.layers.dense(x, num_class)
         self.logits = x

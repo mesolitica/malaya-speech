@@ -43,3 +43,16 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
 5. Test set, https://f000.backblazeb2.com/file/malaya-speech-model/data/testset-audiobook.tar.gz
 
 6. Train set with augmentation, https://f000.backblazeb2.com/file/malaya-speech-model/data/trainset-audiobook.tar.gz
+
+## Citation
+
+```bibtex
+@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Semisupervised Speech Recognition from Audiobook,
+  author = {Husein, Zolkepli},
+  title = {Malay-Dataset},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-audiobook}}
+}
+```

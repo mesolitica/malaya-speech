@@ -106,11 +106,11 @@ def _prepare_memory(memory, memory_sequence_length, check_inner_dims_defined):
       `memory.shape[2:].is_fully_defined()`.
   """
     memory = nest.map_structure(
-        lambda m: ops.convert_to_tensor(m, name = 'memory'), memory
+        lambda m: ops.convert_to_tensor(m, name='memory'), memory
     )
     if memory_sequence_length is not None:
         memory_sequence_length = ops.convert_to_tensor(
-            memory_sequence_length, name = 'memory_sequence_length'
+            memory_sequence_length, name='memory_sequence_length'
         )
     if check_inner_dims_defined:
 
@@ -127,8 +127,8 @@ def _prepare_memory(memory, memory_sequence_length, check_inner_dims_defined):
     else:
         seq_len_mask = array_ops.sequence_mask(
             memory_sequence_length,
-            maxlen = array_ops.shape(nest.flatten(memory)[0])[1],
-            dtype = nest.flatten(memory)[0].dtype,
+            maxlen=array_ops.shape(nest.flatten(memory)[0])[1],
+            dtype=nest.flatten(memory)[0].dtype,
         )
         seq_len_batch_size = (
             memory_sequence_length.shape[0].value
@@ -138,7 +138,7 @@ def _prepare_memory(memory, memory_sequence_length, check_inner_dims_defined):
     def _maybe_mask(m, seq_len_mask):
         rank = m.get_shape().ndims
         rank = rank if rank is not None else array_ops.rank(m)
-        extra_ones = array_ops.ones(rank - 2, dtype = dtypes.int32)
+        extra_ones = array_ops.ones(rank - 2, dtype=dtypes.int32)
         m_batch_size = m.shape[0].value or array_ops.shape(m)[0]
         if memory_sequence_length is not None:
             message = (
@@ -148,7 +148,7 @@ def _prepare_memory(memory, memory_sequence_length, check_inner_dims_defined):
             with ops.control_dependencies(
                 [
                     check_ops.assert_equal(
-                        seq_len_batch_size, m_batch_size, message = message
+                        seq_len_batch_size, m_batch_size, message=message
                     )
                 ]
             ):
@@ -170,10 +170,10 @@ def _maybe_mask_score(score, memory_sequence_length, score_mask_value):
         return score
     message = 'All values in memory_sequence_length must greater than zero.'
     with ops.control_dependencies(
-        [check_ops.assert_positive(memory_sequence_length, message = message)]
+        [check_ops.assert_positive(memory_sequence_length, message=message)]
     ):
         score_mask = array_ops.sequence_mask(
-            memory_sequence_length, maxlen = array_ops.shape(score)[1]
+            memory_sequence_length, maxlen=array_ops.shape(score)[1]
         )
         score_mask_values = score_mask_value * array_ops.ones_like(score)
         return array_ops.where(score_mask, score, score_mask_values)
@@ -192,11 +192,11 @@ class _BaseAttentionMechanism(AttentionMechanism):
         query_layer,
         memory,
         probability_fn,
-        memory_sequence_length = None,
-        memory_layer = None,
-        check_inner_dims_defined = True,
-        score_mask_value = None,
-        name = None,
+        memory_sequence_length=None,
+        memory_layer=None,
+        check_inner_dims_defined=True,
+        score_mask_value=None,
+        name=None,
     ):
         """Construct base AttentionMechanism class.
 
@@ -262,7 +262,7 @@ class _BaseAttentionMechanism(AttentionMechanism):
             self._values = _prepare_memory(
                 memory,
                 memory_sequence_length,
-                check_inner_dims_defined = check_inner_dims_defined,
+                check_inner_dims_defined=check_inner_dims_defined,
             )
             self._keys = (
                 self.memory_layer(self._values)
@@ -391,13 +391,13 @@ def _luong_score(query, keys, scale):
     # resulting in an output shape of:
     #   [batch_size, 1, max_time].
     # we then squeeze out the center singleton dimension.
-    score = math_ops.matmul(query, keys, transpose_b = True)
+    score = math_ops.matmul(query, keys, transpose_b=True)
     score = array_ops.squeeze(score, [1])
 
     if scale:
         # Scalar used in weight scaling
         g = variable_scope.get_variable(
-            'attention_g', dtype = dtype, initializer = 1.0
+            'attention_g', dtype=dtype, initializer=1.0
         )
         score = g * score
     return score
@@ -424,12 +424,12 @@ class LuongAttention(_BaseAttentionMechanism):
         self,
         num_units,
         memory,
-        memory_sequence_length = None,
-        scale = False,
-        probability_fn = None,
-        score_mask_value = None,
-        dtype = None,
-        name = 'LuongAttention',
+        memory_sequence_length=None,
+        scale=False,
+        probability_fn=None,
+        score_mask_value=None,
+        dtype=None,
+        name='LuongAttention',
     ):
         """Construct the AttentionMechanism mechanism.
 
@@ -457,20 +457,21 @@ class LuongAttention(_BaseAttentionMechanism):
             probability_fn = nn_ops.softmax
         if dtype is None:
             dtype = dtypes.float32
-        wrapped_probability_fn = lambda score, _: probability_fn(score)
+
+        def wrapped_probability_fn(score, _): return probability_fn(score)
         super(LuongAttention, self).__init__(
-            query_layer = None,
-            memory_layer = layers_core.Dense(
+            query_layer=None,
+            memory_layer=layers_core.Dense(
                 num_units,
-                name = 'memory_layer',
-                use_bias = False,
-                dtype = dtype,
+                name='memory_layer',
+                use_bias=False,
+                dtype=dtype,
             ),
-            memory = memory,
-            probability_fn = wrapped_probability_fn,
-            memory_sequence_length = memory_sequence_length,
-            score_mask_value = score_mask_value,
-            name = name,
+            memory=memory,
+            probability_fn=wrapped_probability_fn,
+            memory_sequence_length=memory_sequence_length,
+            score_mask_value=score_mask_value,
+            name=name,
         )
         self._num_units = num_units
         self._scale = scale
@@ -531,24 +532,24 @@ def _bahdanau_score(processed_query, keys, normalize):
     num_units = keys.shape[2].value or array_ops.shape(keys)[2]
     # Reshape from [batch_size, ...] to [batch_size, 1, ...] for broadcasting.
     processed_query = array_ops.expand_dims(processed_query, 1)
-    v = variable_scope.get_variable('attention_v', [num_units], dtype = dtype)
+    v = variable_scope.get_variable('attention_v', [num_units], dtype=dtype)
     if normalize:
         # Scalar used in weight normalization
         g = variable_scope.get_variable(
             'attention_g',
-            dtype = dtype,
-            shape = [1],
+            dtype=dtype,
+            shape=[1],
             # initializer=math.sqrt((1. / num_units)))
-            initializer = init_ops.constant_initializer(
-                math.sqrt(1.0 / num_units), dtype = dtype
+            initializer=init_ops.constant_initializer(
+                math.sqrt(1.0 / num_units), dtype=dtype
             ),
         )
         # Bias added prior to the nonlinearity
         b = variable_scope.get_variable(
             'attention_b',
             [num_units],
-            dtype = dtype,
-            initializer = init_ops.zeros_initializer(),
+            dtype=dtype,
+            initializer=init_ops.zeros_initializer(),
         )
         # normed_v = g * v / ||v||
         normed_v = (
@@ -589,12 +590,12 @@ class BahdanauAttention(_BaseAttentionMechanism):
         self,
         num_units,
         memory,
-        memory_sequence_length = None,
-        normalize = False,
-        probability_fn = None,
-        score_mask_value = None,
-        dtype = None,
-        name = 'BahdanauAttention',
+        memory_sequence_length=None,
+        normalize=False,
+        probability_fn=None,
+        score_mask_value=None,
+        dtype=None,
+        name='BahdanauAttention',
     ):
         """Construct the Attention mechanism.
 
@@ -621,22 +622,23 @@ class BahdanauAttention(_BaseAttentionMechanism):
             probability_fn = nn_ops.softmax
         if dtype is None:
             dtype = dtypes.float32
-        wrapped_probability_fn = lambda score, _: probability_fn(score)
+
+        def wrapped_probability_fn(score, _): return probability_fn(score)
         super(BahdanauAttention, self).__init__(
-            query_layer = layers_core.Dense(
-                num_units, name = 'query_layer', use_bias = False, dtype = dtype
+            query_layer=layers_core.Dense(
+                num_units, name='query_layer', use_bias=False, dtype=dtype
             ),
-            memory_layer = layers_core.Dense(
+            memory_layer=layers_core.Dense(
                 num_units,
-                name = 'memory_layer',
-                use_bias = False,
-                dtype = dtype,
+                name='memory_layer',
+                use_bias=False,
+                dtype=dtype,
             ),
-            memory = memory,
-            probability_fn = wrapped_probability_fn,
-            memory_sequence_length = memory_sequence_length,
-            score_mask_value = score_mask_value,
-            name = name,
+            memory=memory,
+            probability_fn=wrapped_probability_fn,
+            memory_sequence_length=memory_sequence_length,
+            score_mask_value=score_mask_value,
+            name=name,
         )
         self._num_units = num_units
         self._normalize = normalize
@@ -693,10 +695,10 @@ def _bahdanau_score_with_location(processed_query, keys, location, use_bias):
     num_units = keys.shape[2].value or array_ops.shape(keys)[2]
     # Reshape from [batch_size, ...] to [batch_size, 1, ...] for broadcasting.
     processed_query = array_ops.expand_dims(processed_query, 1)
-    v = variable_scope.get_variable('attention_v', [num_units], dtype = dtype)
+    v = variable_scope.get_variable('attention_v', [num_units], dtype=dtype)
     if use_bias:
         b = variable_scope.get_variable(
-            'attention_bias', [num_units], dtype = dtype
+            'attention_bias', [num_units], dtype=dtype
         )
         return math_ops.reduce_sum(
             v * math_ops.tanh(keys + processed_query + location + b), [2]
@@ -716,33 +718,33 @@ class ChorowskiLocationLayer(layers_base.Layer):
         filters,
         kernel_size,
         attention_units,
-        strides = 1,
-        data_format = 'channels_last',
-        name = 'location',
-        dtype = None,
+        strides=1,
+        data_format='channels_last',
+        name='location',
+        dtype=None,
         **kwargs
     ):
-        super(ChorowskiLocationLayer, self).__init__(name = name, **kwargs)
+        super(ChorowskiLocationLayer, self).__init__(name=name, **kwargs)
         self.conv_layer = Conv1D(
-            name = '{}_conv'.format(name),
-            filters = filters,
-            kernel_size = kernel_size,
-            strides = strides,
-            padding = 'SAME',
-            use_bias = True,
-            data_format = data_format,
+            name='{}_conv'.format(name),
+            filters=filters,
+            kernel_size=kernel_size,
+            strides=strides,
+            padding='SAME',
+            use_bias=True,
+            data_format=data_format,
         )
         self.location_dense = Conv1D(
-            name = '{}_dense'.format(name),
-            filters = attention_units,
-            kernel_size = 1,
-            strides = strides,
-            padding = 'SAME',
-            use_bias = False,
-            data_format = data_format,
+            name='{}_dense'.format(name),
+            filters=attention_units,
+            kernel_size=1,
+            strides=strides,
+            padding='SAME',
+            use_bias=False,
+            data_format=data_format,
         )
 
-    def __call__(self, prev_attention, query = None):
+    def __call__(self, prev_attention, query=None):
         location_attention = self.conv_layer(prev_attention)
         location_attention = self.location_dense(location_attention)
         return location_attention
@@ -750,7 +752,7 @@ class ChorowskiLocationLayer(layers_base.Layer):
 
 class ZhaopengLocationLayer(layers_base.Layer):
     """
-  The layer that processed the location information. 
+  The layer that processed the location information.
   Similar to https://arxiv.org/abs/1805.03294 and https://arxiv.org/abs/1601.04811.
   """
 
@@ -758,18 +760,18 @@ class ZhaopengLocationLayer(layers_base.Layer):
         self,
         attention_units,
         query_dim,
-        name = 'location',
-        dtype = None,
+        name='location',
+        dtype=None,
         **kwargs
     ):
-        super(ZhaopengLocationLayer, self).__init__(name = name, **kwargs)
+        super(ZhaopengLocationLayer, self).__init__(name=name, **kwargs)
         self.vbeta = variable_scope.get_variable(
-            'location_attention_vbeta', [query_dim], dtype = dtypes.float32
+            'location_attention_vbeta', [query_dim], dtype=dtypes.float32
         )
         self.location_dense = layers_core.Dense(
-            name = '{}_dense'.format(name),
-            units = attention_units,
-            use_bias = False,
+            name='{}_dense'.format(name),
+            units=attention_units,
+            use_bias=False,
         )
 
     def __call__(self, prev_attention, query):
@@ -804,16 +806,16 @@ class LocationSensitiveAttention(_BaseAttentionMechanism):
         self,
         num_units,
         memory,
-        query_dim = None,
-        memory_sequence_length = None,
-        probability_fn = None,
-        score_mask_value = None,
-        dtype = None,
-        use_bias = False,
-        use_coverage = True,
-        location_attn_type = 'chorowski',
-        location_attention_params = None,
-        name = 'LocationSensitiveAttention',
+        query_dim=None,
+        memory_sequence_length=None,
+        probability_fn=None,
+        score_mask_value=None,
+        dtype=None,
+        use_bias=False,
+        use_coverage=True,
+        location_attn_type='chorowski',
+        location_attention_params=None,
+        name='LocationSensitiveAttention',
     ):
         """Construct the Attention mechanism.
 
@@ -843,26 +845,27 @@ class LocationSensitiveAttention(_BaseAttentionMechanism):
             probability_fn = nn_ops.softmax
         if dtype is None:
             dtype = dtypes.float32
-        wrapped_probability_fn = lambda score, _: probability_fn(score)
+
+        def wrapped_probability_fn(score, _): return probability_fn(score)
         super(LocationSensitiveAttention, self).__init__(
-            query_layer = layers_core.Dense(
-                num_units, name = 'query_layer', use_bias = False, dtype = dtype
+            query_layer=layers_core.Dense(
+                num_units, name='query_layer', use_bias=False, dtype=dtype
             ),
-            memory_layer = Conv1D(
-                name = 'memory_layer'.format(name),
-                filters = num_units,
-                kernel_size = 1,
-                strides = 1,
-                padding = 'SAME',
-                use_bias = False,
-                data_format = 'channels_last',
-                dtype = dtype,
+            memory_layer=Conv1D(
+                name='memory_layer'.format(name),
+                filters=num_units,
+                kernel_size=1,
+                strides=1,
+                padding='SAME',
+                use_bias=False,
+                data_format='channels_last',
+                dtype=dtype,
             ),
-            memory = memory,
-            probability_fn = wrapped_probability_fn,
-            memory_sequence_length = memory_sequence_length,
-            score_mask_value = score_mask_value,
-            name = name,
+            memory=memory,
+            probability_fn=wrapped_probability_fn,
+            memory_sequence_length=memory_sequence_length,
+            score_mask_value=score_mask_value,
+            name=name,
         )
 
         self._num_units = num_units
@@ -903,7 +906,7 @@ class LocationSensitiveAttention(_BaseAttentionMechanism):
             processed_query = (
                 self.query_layer(query) if self.query_layer else query
             )
-            location = array_ops.expand_dims(state, axis = -1)
+            location = array_ops.expand_dims(state, axis=-1)
             processed_location = self.location_layer(location, query)
             score = _bahdanau_score_with_location(
                 processed_query, self._keys, processed_location, self.use_bias
@@ -934,7 +937,7 @@ def safe_cumprod(x, *args, **kwargs):
     Cumulative product of x.
   """
     with ops.name_scope(None, 'SafeCumprod', [x]):
-        x = ops.convert_to_tensor(x, name = 'x')
+        x = ops.convert_to_tensor(x, name='x')
         tiny = np.finfo(x.dtype.as_numpy_dtype).tiny
         return math_ops.exp(
             math_ops.cumsum(
@@ -987,9 +990,9 @@ def monotonic_attention(p_choose_i, previous_attention, mode):
     ValueError: mode is not one of 'recursive', 'parallel', 'hard'.
   """
     # Force things to be tensors
-    p_choose_i = ops.convert_to_tensor(p_choose_i, name = 'p_choose_i')
+    p_choose_i = ops.convert_to_tensor(p_choose_i, name='p_choose_i')
     previous_attention = ops.convert_to_tensor(
-        previous_attention, name = 'previous_attention'
+        previous_attention, name='previous_attention'
     )
     if mode == 'recursive':
         # Use .shape[0].value when it's not None, or fall back on symbolic shape
@@ -1020,7 +1023,7 @@ def monotonic_attention(p_choose_i, previous_attention, mode):
     elif mode == 'parallel':
         # safe_cumprod computes cumprod in logspace with numeric checks
         cumprod_1mp_choose_i = safe_cumprod(
-            1 - p_choose_i, axis = 1, exclusive = True
+            1 - p_choose_i, axis=1, exclusive=True
         )
         # Compute recurrence relation solution
         attention = (
@@ -1030,19 +1033,19 @@ def monotonic_attention(p_choose_i, previous_attention, mode):
                 previous_attention /
                 # Clip cumprod_1mp to avoid divide-by-zero
                 clip_ops.clip_by_value(cumprod_1mp_choose_i, 1e-10, 1.0),
-                axis = 1,
+                axis=1,
             )
         )
     elif mode == 'hard':
         # Remove any probabilities before the index chosen last time step
-        p_choose_i *= math_ops.cumsum(previous_attention, axis = 1)
+        p_choose_i *= math_ops.cumsum(previous_attention, axis=1)
         # Now, use exclusive cumprod to remove probabilities after the first
         # chosen index, like so:
         # p_choose_i = [0, 0, 0, 1, 1, 0, 1, 1]
         # cumprod(1 - p_choose_i, exclusive=True) = [1, 1, 1, 1, 0, 0, 0, 0]
         # Product of above: [0, 0, 0, 1, 0, 0, 0, 0]
         attention = p_choose_i * math_ops.cumprod(
-            1 - p_choose_i, axis = 1, exclusive = True
+            1 - p_choose_i, axis=1, exclusive=True
         )
     else:
         raise ValueError("mode must be 'recursive', 'parallel', or 'hard'.")
@@ -1050,7 +1053,7 @@ def monotonic_attention(p_choose_i, previous_attention, mode):
 
 
 def _monotonic_probability_fn(
-    score, previous_alignments, sigmoid_noise, mode, seed = None
+    score, previous_alignments, sigmoid_noise, mode, seed=None
 ):
     """Attention probability function for monotonic attention.
 
@@ -1084,7 +1087,7 @@ def _monotonic_probability_fn(
     # Optionally add pre-sigmoid noise to the scores
     if sigmoid_noise > 0:
         noise = random_ops.random_normal(
-            array_ops.shape(score), dtype = score.dtype, seed = seed
+            array_ops.shape(score), dtype=score.dtype, seed=seed
         )
         score += sigmoid_noise * noise
     # Compute "choosing" probabilities from the attention scores
@@ -1121,9 +1124,9 @@ class _BaseMonotonicAttentionMechanism(_BaseAttentionMechanism):
     """
         max_time = self._alignments_size
         return array_ops.one_hot(
-            array_ops.zeros((batch_size,), dtype = dtypes.int32),
+            array_ops.zeros((batch_size,), dtype=dtypes.int32),
             max_time,
-            dtype = dtype,
+            dtype=dtype,
         )
 
 
@@ -1148,15 +1151,15 @@ class BahdanauMonotonicAttention(_BaseMonotonicAttentionMechanism):
         self,
         num_units,
         memory,
-        memory_sequence_length = None,
-        normalize = False,
-        score_mask_value = None,
-        sigmoid_noise = 0.0,
-        sigmoid_noise_seed = None,
-        score_bias_init = 0.0,
-        mode = 'parallel',
-        dtype = None,
-        name = 'BahdanauMonotonicAttention',
+        memory_sequence_length=None,
+        normalize=False,
+        score_mask_value=None,
+        sigmoid_noise=0.0,
+        sigmoid_noise_seed=None,
+        score_bias_init=0.0,
+        mode='parallel',
+        dtype=None,
+        name='BahdanauMonotonicAttention',
     ):
         """Construct the Attention mechanism.
 
@@ -1189,25 +1192,25 @@ class BahdanauMonotonicAttention(_BaseMonotonicAttentionMechanism):
             dtype = dtypes.float32
         wrapped_probability_fn = functools.partial(
             _monotonic_probability_fn,
-            sigmoid_noise = sigmoid_noise,
-            mode = mode,
-            seed = sigmoid_noise_seed,
+            sigmoid_noise=sigmoid_noise,
+            mode=mode,
+            seed=sigmoid_noise_seed,
         )
         super(BahdanauMonotonicAttention, self).__init__(
-            query_layer = layers_core.Dense(
-                num_units, name = 'query_layer', use_bias = False, dtype = dtype
+            query_layer=layers_core.Dense(
+                num_units, name='query_layer', use_bias=False, dtype=dtype
             ),
-            memory_layer = layers_core.Dense(
+            memory_layer=layers_core.Dense(
                 num_units,
-                name = 'memory_layer',
-                use_bias = False,
-                dtype = dtype,
+                name='memory_layer',
+                use_bias=False,
+                dtype=dtype,
             ),
-            memory = memory,
-            probability_fn = wrapped_probability_fn,
-            memory_sequence_length = memory_sequence_length,
-            score_mask_value = score_mask_value,
-            name = name,
+            memory=memory,
+            probability_fn=wrapped_probability_fn,
+            memory_sequence_length=memory_sequence_length,
+            score_mask_value=score_mask_value,
+            name=name,
         )
         self._num_units = num_units
         self._normalize = normalize
@@ -1240,8 +1243,8 @@ class BahdanauMonotonicAttention(_BaseMonotonicAttentionMechanism):
             )
             score_bias = variable_scope.get_variable(
                 'attention_score_bias',
-                dtype = processed_query.dtype,
-                initializer = self._score_bias_init,
+                dtype=processed_query.dtype,
+                initializer=self._score_bias_init,
             )
             score += score_bias
         alignments = self._probability_fn(score, state)
@@ -1268,15 +1271,15 @@ class LuongMonotonicAttention(_BaseMonotonicAttentionMechanism):
         self,
         num_units,
         memory,
-        memory_sequence_length = None,
-        scale = False,
-        score_mask_value = None,
-        sigmoid_noise = 0.0,
-        sigmoid_noise_seed = None,
-        score_bias_init = 0.0,
-        mode = 'parallel',
-        dtype = None,
-        name = 'LuongMonotonicAttention',
+        memory_sequence_length=None,
+        scale=False,
+        score_mask_value=None,
+        sigmoid_noise=0.0,
+        sigmoid_noise_seed=None,
+        score_bias_init=0.0,
+        mode='parallel',
+        dtype=None,
+        name='LuongMonotonicAttention',
     ):
         """Construct the Attention mechanism.
 
@@ -1309,23 +1312,23 @@ class LuongMonotonicAttention(_BaseMonotonicAttentionMechanism):
             dtype = dtypes.float32
         wrapped_probability_fn = functools.partial(
             _monotonic_probability_fn,
-            sigmoid_noise = sigmoid_noise,
-            mode = mode,
-            seed = sigmoid_noise_seed,
+            sigmoid_noise=sigmoid_noise,
+            mode=mode,
+            seed=sigmoid_noise_seed,
         )
         super(LuongMonotonicAttention, self).__init__(
-            query_layer = None,
-            memory_layer = layers_core.Dense(
+            query_layer=None,
+            memory_layer=layers_core.Dense(
                 num_units,
-                name = 'memory_layer',
-                use_bias = False,
-                dtype = dtype,
+                name='memory_layer',
+                use_bias=False,
+                dtype=dtype,
             ),
-            memory = memory,
-            probability_fn = wrapped_probability_fn,
-            memory_sequence_length = memory_sequence_length,
-            score_mask_value = score_mask_value,
-            name = name,
+            memory=memory,
+            probability_fn=wrapped_probability_fn,
+            memory_sequence_length=memory_sequence_length,
+            score_mask_value=score_mask_value,
+            name=name,
         )
         self._num_units = num_units
         self._scale = scale
@@ -1353,8 +1356,8 @@ class LuongMonotonicAttention(_BaseMonotonicAttentionMechanism):
             score = _luong_score(query, self._keys, self._scale)
             score_bias = variable_scope.get_variable(
                 'attention_score_bias',
-                dtype = query.dtype,
-                initializer = self._score_bias_init,
+                dtype=query.dtype,
+                initializer=self._score_bias_init,
             )
             score += score_bias
         alignments = self._probability_fn(score, state)
@@ -1429,7 +1432,7 @@ class AttentionWrapperState(
         )
 
 
-def hardmax(logits, name = None):
+def hardmax(logits, name=None):
     """Returns batched one-hot vectors.
 
   The depth index containing the `1` is that of the maximum logit value.
@@ -1441,13 +1444,13 @@ def hardmax(logits, name = None):
     A batched one-hot tensor.
   """
     with ops.name_scope(name, 'Hardmax', [logits]):
-        logits = ops.convert_to_tensor(logits, name = 'logits')
+        logits = ops.convert_to_tensor(logits, name='logits')
         if logits.get_shape()[-1].value is not None:
             depth = logits.get_shape()[-1].value
         else:
             depth = array_ops.shape(logits)[-1]
         return array_ops.one_hot(
-            math_ops.argmax(logits, -1), depth, dtype = logits.dtype
+            math_ops.argmax(logits, -1), depth, dtype=logits.dtype
         )
 
 
@@ -1456,7 +1459,7 @@ def _compute_attention(
 ):
     """Computes the attention and alignments for a given attention_mechanism."""
     alignments, next_attention_state = attention_mechanism(
-        cell_output, state = attention_state
+        cell_output, state=attention_state
     )
 
     # Reshape from [batch_size, memory_time] to [batch_size, 1, memory_time]
@@ -1489,12 +1492,12 @@ class AttentionWrapper(rnn_cell_impl.RNNCell):
         self,
         cell,
         attention_mechanism,
-        attention_layer_size = None,
-        alignment_history = False,
-        cell_input_fn = None,
-        output_attention = True,
-        initial_cell_state = None,
-        name = None,
+        attention_layer_size=None,
+        alignment_history=False,
+        cell_input_fn=None,
+        output_attention=True,
+        initial_cell_state=None,
+        name=None,
     ):
         """Construct the `AttentionWrapper`.
 
@@ -1567,7 +1570,7 @@ class AttentionWrapper(rnn_cell_impl.RNNCell):
       ValueError: if `attention_layer_size` is not None, `attention_mechanism`
         is a list, and its length does not match that of `attention_layer_size`.
     """
-        super(AttentionWrapper, self).__init__(name = name)
+        super(AttentionWrapper, self).__init__(name=name)
         rnn_cell_impl.assert_like_rnncell('cell', cell)
         if isinstance(attention_mechanism, (list, tuple)):
             self._is_multi = True
@@ -1590,7 +1593,7 @@ class AttentionWrapper(rnn_cell_impl.RNNCell):
             attention_mechanisms = (attention_mechanism,)
 
         if cell_input_fn is None:
-            cell_input_fn = lambda inputs, attention: array_ops.concat(
+            def cell_input_fn(inputs, attention): return array_ops.concat(
                 [inputs, attention], -1
             )
         else:
@@ -1615,9 +1618,9 @@ class AttentionWrapper(rnn_cell_impl.RNNCell):
             self._attention_layers = tuple(
                 layers_core.Dense(
                     attention_layer_size,
-                    name = 'attention_layer',
-                    use_bias = False,
-                    dtype = attention_mechanisms[i].dtype,
+                    name='attention_layer',
+                    use_bias=False,
+                    dtype=attention_mechanisms[i].dtype,
                 )
                 for i, attention_layer_size in enumerate(attention_layer_sizes)
             )
@@ -1656,7 +1659,7 @@ class AttentionWrapper(rnn_cell_impl.RNNCell):
                 ):
                     self._initial_cell_state = nest.map_structure(
                         lambda s: array_ops.identity(
-                            s, name = 'check_initial_cell_state'
+                            s, name='check_initial_cell_state'
                         ),
                         initial_cell_state,
                     )
@@ -1666,7 +1669,7 @@ class AttentionWrapper(rnn_cell_impl.RNNCell):
             check_ops.assert_equal(
                 batch_size,
                 attention_mechanism.batch_size,
-                message = error_message,
+                message=error_message,
             )
             for attention_mechanism in self._attention_mechanisms
         ]
@@ -1692,7 +1695,7 @@ class AttentionWrapper(rnn_cell_impl.RNNCell):
 
     @property
     def output_size(self):
-        if self._output_attention == True:
+        if self._output_attention:
             return self._attention_layer_size
         elif self._output_attention == False:
             return self._cell.output_size
@@ -1712,16 +1715,16 @@ class AttentionWrapper(rnn_cell_impl.RNNCell):
       An `AttentionWrapperState` tuple containing shapes used by this object.
     """
         return AttentionWrapperState(
-            cell_state = self._cell.state_size,
-            time = tensor_shape.TensorShape([]),
-            attention = self._attention_layer_size,
-            alignments = self._item_or_tuple(
+            cell_state=self._cell.state_size,
+            time=tensor_shape.TensorShape([]),
+            attention=self._attention_layer_size,
+            alignments=self._item_or_tuple(
                 a.alignments_size for a in self._attention_mechanisms
             ),
-            attention_state = self._item_or_tuple(
+            attention_state=self._item_or_tuple(
                 a.state_size for a in self._attention_mechanisms
             ),
-            alignment_history = self._item_or_tuple(
+            alignment_history=self._item_or_tuple(
                 () for _ in self._attention_mechanisms
             ),
         )  # sometimes a TensorArray
@@ -1747,7 +1750,7 @@ class AttentionWrapper(rnn_cell_impl.RNNCell):
         to the wrapper object at initialization time.
     """
         with ops.name_scope(
-            type(self).__name__ + 'ZeroState', values = [batch_size]
+            type(self).__name__ + 'ZeroState', values=[batch_size]
         ):
             if self._initial_cell_state is not None:
                 cell_state = self._initial_cell_state
@@ -1768,27 +1771,27 @@ class AttentionWrapper(rnn_cell_impl.RNNCell):
             ):
                 cell_state = nest.map_structure(
                     lambda s: array_ops.identity(
-                        s, name = 'checked_cell_state'
+                        s, name='checked_cell_state'
                     ),
                     cell_state,
                 )
             return AttentionWrapperState(
-                cell_state = cell_state,
-                time = array_ops.zeros([], dtype = dtypes.int32),
-                attention = _zero_state_tensors(
+                cell_state=cell_state,
+                time=array_ops.zeros([], dtype=dtypes.int32),
+                attention=_zero_state_tensors(
                     self._attention_layer_size, batch_size, dtype
                 ),
-                alignments = self._item_or_tuple(
+                alignments=self._item_or_tuple(
                     attention_mechanism.initial_alignments(batch_size, dtype)
                     for attention_mechanism in self._attention_mechanisms
                 ),
-                attention_state = self._item_or_tuple(
+                attention_state=self._item_or_tuple(
                     attention_mechanism.initial_state(batch_size, dtype)
                     for attention_mechanism in self._attention_mechanisms
                 ),
-                alignment_history = self._item_or_tuple(
+                alignment_history=self._item_or_tuple(
                     tensor_array_ops.TensorArray(
-                        dtype = dtype, size = 0, dynamic_size = True
+                        dtype=dtype, size=0, dynamic_size=True
                     )
                     if self._alignment_history
                     else ()
@@ -1853,7 +1856,7 @@ class AttentionWrapper(rnn_cell_impl.RNNCell):
             self._batch_size_checks(cell_batch_size, error_message)
         ):
             cell_output = array_ops.identity(
-                cell_output, name = 'checked_cell_output'
+                cell_output, name='checked_cell_output'
             )
 
         if self._is_multi:
@@ -1887,21 +1890,21 @@ class AttentionWrapper(rnn_cell_impl.RNNCell):
 
         attention = array_ops.concat(all_attentions, 1)
         next_state = AttentionWrapperState(
-            time = state.time + 1,
-            cell_state = next_cell_state,
-            attention = attention,
-            attention_state = self._item_or_tuple(all_attention_states),
-            alignments = self._item_or_tuple(all_alignments),
-            alignment_history = self._item_or_tuple(maybe_all_histories),
+            time=state.time + 1,
+            cell_state=next_cell_state,
+            attention=attention,
+            attention_state=self._item_or_tuple(all_attention_states),
+            alignments=self._item_or_tuple(all_alignments),
+            alignment_history=self._item_or_tuple(maybe_all_histories),
         )
 
-        if self._output_attention == True:
+        if self._output_attention:
             return attention, next_state
         elif self._output_attention == False:
             return cell_output, next_state
         elif self._output_attention == 'both':
             return (
-                array_ops.concat((cell_output, attention), axis = -1),
+                array_ops.concat((cell_output, attention), axis=-1),
                 next_state,
             )
         else:

@@ -138,12 +138,12 @@ def language_model(
         * ``'bahasa'`` - Gathered from malaya-speech ASR bahasa transcript.
         * ``'bahasa-news'`` - Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences).
         * ``'bahasa-combined'`` - Gathered from malaya-speech ASR bahasa transcript + Bahasa News + Bahasa Wikipedia.
-        
+
     alpha: float, optional (default=2.5)
-        score = alpha * np.log(lm) + beta * np.log(word_cnt), 
+        score = alpha * np.log(lm) + beta * np.log(word_cnt),
         increase will put more bias on lm score computed by kenlm.
     beta: float, optional (beta=0.3)
-        score = alpha * np.log(lm) + beta * np.log(word_cnt), 
+        score = alpha * np.log(lm) + beta * np.log(word_cnt),
         increase will put more bias on word count.
 
     Returns
@@ -158,10 +158,10 @@ def language_model(
         )
 
     scorer = lm.load(
-        model = model,
-        module = 'language-model',
-        alpha = alpha,
-        beta = beta,
+        model=model,
+        module='language-model',
+        alpha=alpha,
+        beta=beta,
         **kwargs
     )
     return scorer
@@ -181,9 +181,9 @@ def deep_ctc(
 
         * ``'wav2vec2-conformer'`` - Finetuned Wav2Vec2 Conformer.
         * ``'wav2vec2-conformer-large'`` - Finetuned Wav2Vec2 Conformer LARGE.
-        
+
     quantized : bool, optional (default=False)
-        if True, will load 8-bit quantized model. 
+        if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
 
     Returns
@@ -197,9 +197,9 @@ def deep_ctc(
         )
 
     return stt.wav2vec2_ctc_load(
-        model = model,
-        module = 'speech-to-text-ctc',
-        quantized = quantized,
+        model=model,
+        module='speech-to-text-ctc',
+        quantized=quantized,
         **kwargs
     )
 
@@ -224,9 +224,9 @@ def deep_transducer(
         * ``'small-conformer-mixed'`` - SMALL size Google Conformer with Pretrained LM Mixed (Malay + Singlish) languages.
         * ``'conformer-mixed'`` - BASE size Google Conformer with Pretrained LM Mixed (Malay + Singlish) languages.
         * ``'large-conformer-mixed'`` - LARGE size Google Conformer with Pretrained LM Mixed (Malay + Singlish) languages.
-        
+
     quantized : bool, optional (default=False)
-        if True, will load 8-bit quantized model. 
+        if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
 
     Returns
@@ -245,8 +245,8 @@ def deep_transducer(
         interface = stt.transducer_load
 
     return interface(
-        model = model,
-        module = 'speech-to-text',
-        quantized = quantized,
+        model=model,
+        module='speech-to-text',
+        quantized=quantized,
         **kwargs
     )

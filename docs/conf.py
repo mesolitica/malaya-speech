@@ -94,7 +94,7 @@ exclude_patterns = [
     'models-accuracy.rst',
     'translator.rst',
     'generate',
-    #'*.ipynb',
+    # '*.ipynb',
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.

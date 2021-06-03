@@ -22,13 +22,13 @@ class TFMelSpectrogram(tf.keras.layers.Layer):
 
     def __init__(
         self,
-        n_mels = 80,
-        f_min = 80.0,
-        f_max = 7600,
-        frame_length = 1024,
-        frame_step = 256,
-        fft_length = 1024,
-        sample_rate = 16000,
+        n_mels=80,
+        f_min=80.0,
+        f_max=7600,
+        frame_length=1024,
+        frame_step=256,
+        fft_length=1024,
+        sample_rate=16000,
         **kwargs
     ):
         """Initialize."""
@@ -50,9 +50,9 @@ class TFMelSpectrogram(tf.keras.layers.Layer):
         """
         stfts = tf.signal.stft(
             signals,
-            frame_length = self.frame_length,
-            frame_step = self.frame_step,
-            fft_length = self.fft_length,
+            frame_length=self.frame_length,
+            frame_step=self.frame_step,
+            fft_length=self.fft_length,
         )
         linear_spectrograms = tf.abs(stfts)
         mel_spectrograms = tf.tensordot(
@@ -79,5 +79,5 @@ class TFMelSpectrogram(tf.keras.layers.Layer):
         y_mels = self._calculate_log_mels_spectrogram(y)
         x_mels = self._calculate_log_mels_spectrogram(x)
         return tf.reduce_mean(
-            tf.abs(y_mels - x_mels), axis = list(range(1, len(x_mels.shape)))
+            tf.abs(y_mels - x_mels), axis=list(range(1, len(x_mels.shape)))
         )

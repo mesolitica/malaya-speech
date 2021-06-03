@@ -9,9 +9,9 @@ import numpy as np
 
 
 def tacotron_load(
-    path, s3_path, model, name, normalizer, quantized = False, **kwargs
+    path, s3_path, model, name, normalizer, quantized=False, **kwargs
 ):
-    check_file(path[model], s3_path[model], quantized = quantized, **kwargs)
+    check_file(path[model], s3_path[model], quantized=quantized, **kwargs)
     if quantized:
         model_path = 'quantized'
     else:
@@ -25,20 +25,20 @@ def tacotron_load(
     stats = np.load(path[model]['stats'])
 
     return Tacotron(
-        input_nodes = input_nodes,
-        output_nodes = output_nodes,
-        normalizer = normalizer,
-        stats = stats,
-        sess = generate_session(graph = g, **kwargs),
-        model = model,
-        name = name,
+        input_nodes=input_nodes,
+        output_nodes=output_nodes,
+        normalizer=normalizer,
+        stats=stats,
+        sess=generate_session(graph=g, **kwargs),
+        model=model,
+        name=name,
     )
 
 
 def fastspeech_load(
-    path, s3_path, model, name, normalizer, quantized = False, **kwargs
+    path, s3_path, model, name, normalizer, quantized=False, **kwargs
 ):
-    check_file(path[model], s3_path[model], quantized = quantized, **kwargs)
+    check_file(path[model], s3_path[model], quantized=quantized, **kwargs)
     if quantized:
         model_path = 'quantized'
     else:
@@ -52,11 +52,11 @@ def fastspeech_load(
     stats = np.load(path[model]['stats'])
 
     return Fastspeech(
-        input_nodes = input_nodes,
-        output_nodes = output_nodes,
-        normalizer = normalizer,
-        stats = stats,
-        sess = generate_session(graph = g, **kwargs),
-        model = model,
-        name = name,
+        input_nodes=input_nodes,
+        output_nodes=output_nodes,
+        normalizer=normalizer,
+        stats=stats,
+        sess=generate_session(graph=g, **kwargs),
+        model=model,
+        name=name,
     )

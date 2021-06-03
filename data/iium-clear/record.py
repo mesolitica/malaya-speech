@@ -1,5 +1,6 @@
 import json
-import curses, time
+import curses
+import time
 
 
 def input_char(message):
@@ -11,7 +12,7 @@ def input_char(message):
             if ch in range(32, 127):
                 break
             time.sleep(0.05)
-    except:
+    except BaseException:
         raise
     finally:
         curses.endwin()
@@ -25,7 +26,7 @@ try:
     with open('rejected-iium.json') as fopen:
         rejected = json.load(fopen)
 
-except:
+except BaseException:
     rejected = {}
 
 import queue
@@ -63,21 +64,21 @@ for no, text in enumerate(texts):
 
         def callback(indata, frames, time, status):
             if status:
-                print(status, file = sys.stderr)
+                print(status, file=sys.stderr)
             q.put(indata.copy())
 
         with sf.SoundFile(
             filename,
-            mode = 'x',
-            samplerate = samplerate,
-            channels = channels,
-            subtype = subtype,
+            mode='x',
+            samplerate=samplerate,
+            channels=channels,
+            subtype=subtype,
         ) as file:
             with sd.InputStream(
-                samplerate = samplerate,
-                device = device,
-                channels = channels,
-                callback = callback,
+                samplerate=samplerate,
+                device=device,
+                channels=channels,
+                callback=callback,
             ):
                 print('#' * 80)
                 print('press Ctrl+C to stop the recording')

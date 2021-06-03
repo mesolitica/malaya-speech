@@ -8,12 +8,12 @@ from malaya_speech.model.tf import FastSpeechSplit
 from malaya_speech import speaker_vector, gender
 
 
-def load(model, module, f0_mode = 'pyworld', quantized = False, **kwargs):
+def load(model, module, f0_mode='pyworld', quantized=False, **kwargs):
     path = check_file(
-        file = model,
-        module = module,
-        keys = {'model': 'model.pb'},
-        quantized = quantized,
+        file=model,
+        module=module,
+        keys={'model': 'model.pb'},
+        quantized=quantized,
         **kwargs,
     )
     g = load_graph(path['model'], **kwargs)
@@ -30,11 +30,11 @@ def load(model, module, f0_mode = 'pyworld', quantized = False, **kwargs):
         gender_model = None
 
     return FastSpeechSplit(
-        input_nodes = input_nodes,
-        output_nodes = output_nodes,
-        speaker_vector = speaker_model,
-        gender_model = gender_model,
-        sess = generate_session(graph = g, **kwargs),
-        model = model,
-        name = module,
+        input_nodes=input_nodes,
+        output_nodes=output_nodes,
+        speaker_vector=speaker_model,
+        gender_model=gender_model,
+        sess=generate_session(graph=g, **kwargs),
+        model=model,
+        name=module,
     )

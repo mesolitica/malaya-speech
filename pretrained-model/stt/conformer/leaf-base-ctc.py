@@ -35,7 +35,7 @@ parameters = {
 }
 
 
-def transformer_schedule(step, d_model, warmup_steps = 4000, max_lr = None):
+def transformer_schedule(step, d_model, warmup_steps=4000, max_lr=None):
     arg1 = tf.math.rsqrt(tf.cast(step, tf.float32))
     arg2 = step * (warmup_steps ** -1.5)
     arg1 = tf.cast(arg1, tf.float32)
@@ -58,22 +58,22 @@ def learning_rate_scheduler(global_step):
     )
 
 
-def augment_room(y, scale = 1.0):
+def augment_room(y, scale=1.0):
     corners = np.array(
         [[0, 0], [0, 5 * scale], [3 * scale, 5 * scale], [3 * scale, 0]]
     ).T
     room = pra.Room.from_corners(
         corners,
-        fs = sr,
-        materials = pra.Material(0.2, 0.15),
-        ray_tracing = True,
-        air_absorption = True,
+        fs=sr,
+        materials=pra.Material(0.2, 0.15),
+        ray_tracing=True,
+        air_absorption=True,
     )
-    room.extrude(3.5, materials = pra.Material(0.2, 0.15))
+    room.extrude(3.5, materials=pra.Material(0.2, 0.15))
     room.set_ray_tracing(
-        receiver_radius = 0.5, n_rays = 1000, energy_thres = 1e-5
+        receiver_radius=0.5, n_rays=1000, energy_thres=1e-5
     )
-    room.add_source([1.5 * scale, 4 * scale, 0.5], signal = y)
+    room.add_source([1.5 * scale, 4 * scale, 0.5], signal=y)
     R = np.array([[1.5 * scale], [0.5 * scale], [0.5]])
     room.add_microphone(R)
     room.simulate()
@@ -83,14 +83,14 @@ def augment_room(y, scale = 1.0):
 def mel_augmentation(features):
 
     features = mask_augmentation.warp_time_pil(features)
-    features = mask_augmentation.mask_frequency(features, width_freq_mask = 12)
+    features = mask_augmentation.mask_frequency(features, width_freq_mask=12)
     features = mask_augmentation.mask_time(
-        features, width_time_mask = int(features.shape[0] * 0.05)
+        features, width_time_mask=int(features.shape[0] * 0.05)
     )
     return features
 
 
-def mp3_to_wav(file, sr = sr):
+def mp3_to_wav(file, sr=sr):
     audio = AudioSegment.from_file(file)
     audio = audio.set_frame_rate(sr).set_channels(1)
     sample = np.array(audio.get_array_of_samples())
@@ -109,7 +109,7 @@ def generate(file):
                     # print('found mp3', audios[i])
                     wav_data, _ = mp3_to_wav(audios[i])
                 else:
-                    wav_data, _ = malaya_speech.load(audios[i], sr = sr)
+                    wav_data, _ = malaya_speech.load(audios[i], sr=sr)
 
                 if len(cleaned_texts[i]) < minlen_text:
                     # print(f'skipped text too short {audios[i]}')
@@ -137,10 +137,10 @@ def generate(file):
 
 def get_dataset(
     file,
-    batch_size = 8,
-    shuffle_size = 20,
-    thread_count = 24,
-    maxlen_feature = 1800,
+    batch_size=8,
+    shuffle_size=20,
+    thread_count=24,
+    maxlen_feature=1800,
 ):
     def get():
         dataset = tf.data.Dataset.from_generator(
@@ -151,28 +151,28 @@ def get_dataset(
                 'targets': tf.int32,
                 'targets_length': tf.int32,
             },
-            output_shapes = {
+            output_shapes={
                 'waveforms': tf.TensorShape([None]),
                 'waveforms_length': tf.TensorShape([None]),
                 'targets': tf.TensorShape([None]),
                 'targets_length': tf.TensorShape([None]),
             },
-            args = (file,),
+            args=(file,),
         )
         dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
         dataset = dataset.padded_batch(
             batch_size,
-            padded_shapes = {
+            padded_shapes={
                 'waveforms': tf.TensorShape([None]),
                 'waveforms_length': tf.TensorShape([None]),
                 'targets': tf.TensorShape([None]),
                 'targets_length': tf.TensorShape([None]),
             },
-            padding_values = {
-                'waveforms': tf.constant(0, dtype = tf.float32),
-                'waveforms_length': tf.constant(0, dtype = tf.int32),
-                'targets': tf.constant(0, dtype = tf.int32),
-                'targets_length': tf.constant(0, dtype = tf.int32),
+            padding_values={
+                'waveforms': tf.constant(0, dtype=tf.float32),
+                'waveforms_length': tf.constant(0, dtype=tf.int32),
+                'targets': tf.constant(0, dtype=tf.int32),
+                'targets_length': tf.constant(0, dtype=tf.int32),
             },
         )
         return dataset
@@ -186,21 +186,21 @@ def model_fn(features, labels, mode, params):
     training = True
     batch_size = tf.shape(X)[0]
     leaf_featurizer = leaf.Model(
-        n_filters = 40, preemp = False, mean_var_norm = False
+        n_filters=40, preemp=False, mean_var_norm=False
     )
-    leaf_f = leaf_featurizer(X, training = training)
+    leaf_f = leaf_featurizer(X, training=training)
     # pretty hacky
     padded_lens = tf.cast(
         tf.cast(X_len, tf.float32) // 159.734_042_553_191_5, tf.int32
     )
     conformer_model = conformer.Model(
-        kernel_regularizer = None, bias_regularizer = None, **config
+        kernel_regularizer=None, bias_regularizer=None, **config
     )
     targets_length = features['targets_length'][:, 0]
     v = tf.expand_dims(leaf_f, -1)
 
     logits = tf.layers.dense(
-        conformer_model(v, training = training), len(unique_vocab) + 1
+        conformer_model(v, training=training), len(unique_vocab) + 1
     )
     seq_lens = (
         padded_lens // conformer_model.conv_subsampling.time_reduction_factor
@@ -216,7 +216,7 @@ def model_fn(features, labels, mode, params):
     )
 
     tf.identity(loss, 'train_loss')
-    tf.identity(accuracy, name = 'train_accuracy')
+    tf.identity(accuracy, name='train_accuracy')
 
     tf.summary.scalar('train_accuracy', accuracy)
 
@@ -226,19 +226,19 @@ def model_fn(features, labels, mode, params):
             tf.train.AdamOptimizer,
             parameters['optimizer_params'],
             learning_rate_scheduler,
-            summaries = ['learning_rate', 'loss_scale'],
-            larc_params = parameters.get('larc_params', None),
-            loss_scaling = parameters.get('loss_scaling', 1.0),
-            loss_scaling_params = parameters.get('loss_scaling_params', None),
+            summaries=['learning_rate', 'loss_scale'],
+            larc_params=parameters.get('larc_params', None),
+            loss_scaling=parameters.get('loss_scaling', 1.0),
+            loss_scaling_params=parameters.get('loss_scaling_params', None),
         )
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = mode, loss = loss, train_op = train_op
+            mode=mode, loss=loss, train_op=train_op
         )
 
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = tf.estimator.ModeKeys.EVAL, loss = loss
+            mode=tf.estimator.ModeKeys.EVAL, loss=loss
         )
 
     return estimator_spec
@@ -246,18 +246,18 @@ def model_fn(features, labels, mode, params):
 
 train_hooks = [
     tf.train.LoggingTensorHook(
-        ['train_accuracy', 'train_loss'], every_n_iter = 1
+        ['train_accuracy', 'train_loss'], every_n_iter=1
     )
 ]
 train_dataset = get_dataset('bahasa-asr-train.json')
 
 train.run_training(
-    train_fn = train_dataset,
-    model_fn = model_fn,
-    model_dir = 'asr-leaf-base-conformer-ctc',
-    num_gpus = 1,
-    log_step = 1,
-    save_checkpoint_step = 5000,
-    max_steps = 1_000_000,
-    train_hooks = train_hooks,
+    train_fn=train_dataset,
+    model_fn=model_fn,
+    model_dir='asr-leaf-base-conformer-ctc',
+    num_gpus=1,
+    log_step=1,
+    save_checkpoint_step=5000,
+    max_steps=1_000_000,
+    train_hooks=train_hooks,
 )

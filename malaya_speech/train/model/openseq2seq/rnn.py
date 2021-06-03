@@ -8,7 +8,7 @@ class ZoneoutWrapper(rnn_cell_impl.RNNCell):
   Code taken from https://github.com/teganmaharaj/zoneout
   applying zoneout as described in https://arxiv.org/pdf/1606.01305.pdf"""
 
-    def __init__(self, cell, zoneout_prob, is_training = True, seed = None):
+    def __init__(self, cell, zoneout_prob, is_training=True, seed=None):
         if not isinstance(cell, rnn_cell_impl.RNNCell):
             raise TypeError('The parameter cell is not an RNNCell.')
         if isinstance(zoneout_prob, float) and not (
@@ -31,7 +31,7 @@ class ZoneoutWrapper(rnn_cell_impl.RNNCell):
     def output_size(self):
         return self._cell.output_size
 
-    def __call__(self, inputs, state, scope = None):
+    def __call__(self, inputs, state, scope=None):
         if isinstance(self.state_size, tuple) != isinstance(
             self._zoneout_prob, tuple
         ):
@@ -48,7 +48,7 @@ class ZoneoutWrapper(rnn_cell_impl.RNNCell):
                     * dropout(
                         new_state_part - state_part,
                         (1 - state_part_zoneout_prob),
-                        seed = self._seed,
+                        seed=self._seed,
                     )
                     + state_part
                     for new_state_part, state_part, state_part_zoneout_prob in zip(
@@ -72,19 +72,19 @@ class ZoneoutWrapper(rnn_cell_impl.RNNCell):
 def single_cell(
     cell_class,
     cell_params,
-    dp_input_keep_prob = 1.0,
-    dp_output_keep_prob = 1.0,
-    recurrent_keep_prob = 1.0,
-    input_weight_keep_prob = 1.0,
-    recurrent_weight_keep_prob = 1.0,
-    weight_variational = False,
-    dropout_seed = None,
-    zoneout_prob = 0.0,
-    training = True,
-    residual_connections = False,
-    awd_initializer = False,
-    variational_recurrent = False,  # in case they want to use DropoutWrapper
-    dtype = None,
+    dp_input_keep_prob=1.0,
+    dp_output_keep_prob=1.0,
+    recurrent_keep_prob=1.0,
+    input_weight_keep_prob=1.0,
+    recurrent_weight_keep_prob=1.0,
+    weight_variational=False,
+    dropout_seed=None,
+    zoneout_prob=0.0,
+    training=True,
+    residual_connections=False,
+    awd_initializer=False,
+    variational_recurrent=False,  # in case they want to use DropoutWrapper
+    dtype=None,
 ):
     """Creates an instance of the rnn cell.
      Such cell describes one step one layer and can include residual connection
@@ -105,7 +105,7 @@ def single_cell(
     if awd_initializer:
         val = 1.0 / math.sqrt(cell_params['num_units'])
         cell_params['initializer'] = tf.random_uniform_initializer(
-            minval = -val, maxval = val
+            minval=-val, maxval=val
         )
 
     cell = cell_class(**cell_params)
@@ -121,12 +121,12 @@ def single_cell(
     if dp_input_keep_prob != 1.0 or dp_output_keep_prob != 1.0 and training:
         cell = DropoutWrapper(
             cell,
-            input_keep_prob = dp_input_keep_prob,
-            output_keep_prob = dp_output_keep_prob,
-            variational_recurrent = variational_recurrent,
-            dtype = dtype,
-            seed = dropout_seed,
+            input_keep_prob=dp_input_keep_prob,
+            output_keep_prob=dp_output_keep_prob,
+            variational_recurrent=variational_recurrent,
+            dtype=dtype,
+            seed=dropout_seed,
         )
     if zoneout_prob > 0.0:
-        cell = ZoneoutWrapper(cell, zoneout_prob, is_training = training)
+        cell = ZoneoutWrapper(cell, zoneout_prob, is_training=training)
     return cell

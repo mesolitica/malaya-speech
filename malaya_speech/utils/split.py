@@ -25,7 +25,7 @@ def split_vad(frames, n: int = 3, negative_threshold: float = 0.1):
     """
     grouped = group_frames(frames)
     grouped = group_frames_threshold(
-        grouped, threshold_to_stop = negative_threshold
+        grouped, threshold_to_stop=negative_threshold
     )
     results, temp, not_activities = [], [], 0
     for no, g in enumerate(grouped):
@@ -68,7 +68,7 @@ def split_vad_duration(
     """
     grouped = group_frames(frames)
     grouped = group_frames_threshold(
-        grouped, threshold_to_stop = negative_threshold
+        grouped, threshold_to_stop=negative_threshold
     )
     results, temp, lengths = [], [], 0
     for no, g in enumerate(grouped):

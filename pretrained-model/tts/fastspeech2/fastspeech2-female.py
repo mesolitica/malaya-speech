@@ -32,7 +32,7 @@ def average_by_duration(x, durs):
     mel_len = durs.sum()
     durs_cum = np.cumsum(np.pad(durs, (1, 0)))
 
-    x_char = np.zeros((durs.shape[0],), dtype = np.float32)
+    x_char = np.zeros((durs.shape[0],), dtype=np.float32)
     for idx, start, end in zip(range(mel_len), durs_cum[:-1], durs_cum[1:]):
         values = x[start:end][np.where(x[start:end] != 0.0)[0]]
         x_char[idx] = np.mean(values) if len(values) > 0 else 0.0
@@ -85,9 +85,9 @@ def generate(files):
         if alignment is None:
             continue
 
-        stop_token_target = np.zeros([len(mel)], dtype = np.float32)
+        stop_token_target = np.zeros([len(mel)], dtype=np.float32)
 
-        text_ids = np.load(f.replace('mels', 'text_ids'), allow_pickle = True)[
+        text_ids = np.load(f.replace('mels', 'text_ids'), allow_pickle=True)[
             0
         ]
         text_ids = ''.join(
@@ -103,10 +103,10 @@ def generate(files):
         )
         num_pad = pad_to - ((len(text_input) + 2) % pad_to)
         text_input = np.pad(
-            text_input, ((1, 1)), 'constant', constant_values = ((1, 2))
+            text_input, ((1, 1)), 'constant', constant_values=((1, 2))
         )
         text_input = np.pad(
-            text_input, ((0, num_pad)), 'constant', constant_values = 0
+            text_input, ((0, num_pad)), 'constant', constant_values=0
         )
         num_pad = pad_to - ((len(mel) + 1) % pad_to) + 1
         pad_value_mel = np.log(data_min)
@@ -114,10 +114,10 @@ def generate(files):
             mel,
             ((0, num_pad), (0, 0)),
             'constant',
-            constant_values = pad_value_mel,
+            constant_values=pad_value_mel,
         )
         stop_token_target = np.pad(
-            stop_token_target, ((0, num_pad)), 'constant', constant_values = 1
+            stop_token_target, ((0, num_pad)), 'constant', constant_values=1
         )
         len_mel = [len(mel)]
         len_text_ids = [len(text_input)]
@@ -147,7 +147,7 @@ def generate(files):
         }
 
 
-def get_dataset(files, batch_size = 32, shuffle_size = 32, thread_count = 24):
+def get_dataset(files, batch_size=32, shuffle_size=32, thread_count=24):
     def get():
         dataset = tf.data.Dataset.from_generator(
             generate,
@@ -164,7 +164,7 @@ def get_dataset(files, batch_size = 32, shuffle_size = 32, thread_count = 24):
                 'f': tf.string,
                 'alignment': tf.int32,
             },
-            output_shapes = {
+            output_shapes={
                 'mel': tf.TensorShape([None, 80]),
                 'text_ids': tf.TensorShape([None]),
                 'len_mel': tf.TensorShape([1]),
@@ -177,11 +177,11 @@ def get_dataset(files, batch_size = 32, shuffle_size = 32, thread_count = 24):
                 'f': tf.TensorShape([1]),
                 'alignment': tf.TensorShape([None]),
             },
-            args = (files,),
+            args=(files,),
         )
         dataset = dataset.padded_batch(
             shuffle_size,
-            padded_shapes = {
+            padded_shapes={
                 'mel': tf.TensorShape([None, 80]),
                 'text_ids': tf.TensorShape([None]),
                 'len_mel': tf.TensorShape([1]),
@@ -194,18 +194,18 @@ def get_dataset(files, batch_size = 32, shuffle_size = 32, thread_count = 24):
                 'f': tf.TensorShape([1]),
                 'alignment': tf.TensorShape([None]),
             },
-            padding_values = {
-                'mel': tf.constant(0, dtype = tf.float32),
-                'text_ids': tf.constant(0, dtype = tf.int32),
-                'len_mel': tf.constant(0, dtype = tf.int32),
-                'len_text_ids': tf.constant(0, dtype = tf.int32),
-                'stop_token_target': tf.constant(0, dtype = tf.float32),
-                'f0': tf.constant(0, dtype = tf.float32),
-                'len_f0': tf.constant(0, dtype = tf.int32),
-                'energy': tf.constant(0, dtype = tf.float32),
-                'len_energy': tf.constant(0, dtype = tf.int32),
-                'f': tf.constant('', dtype = tf.string),
-                'alignment': tf.constant(0, dtype = tf.int32),
+            padding_values={
+                'mel': tf.constant(0, dtype=tf.float32),
+                'text_ids': tf.constant(0, dtype=tf.int32),
+                'len_mel': tf.constant(0, dtype=tf.int32),
+                'len_text_ids': tf.constant(0, dtype=tf.int32),
+                'stop_token_target': tf.constant(0, dtype=tf.float32),
+                'f0': tf.constant(0, dtype=tf.float32),
+                'len_f0': tf.constant(0, dtype=tf.int32),
+                'energy': tf.constant(0, dtype=tf.float32),
+                'len_energy': tf.constant(0, dtype=tf.int32),
+                'f': tf.constant('', dtype=tf.string),
+                'alignment': tf.constant(0, dtype=tf.int32),
             },
         )
         return dataset
@@ -227,12 +227,12 @@ def model_fn(features, labels, mode, params):
 
     config = malaya_speech.config.fastspeech2_config
     config = fastspeech2.Config(
-        vocab_size = len(MALAYA_SPEECH_SYMBOLS), **config
+        vocab_size=len(MALAYA_SPEECH_SYMBOLS), **config
     )
     model = fastspeech2.Model(config)
 
     mel_before, mel_after, duration_outputs, f0_outputs, energy_outputs = model(
-        input_ids, alignment, f0s, energies, training = True
+        input_ids, alignment, f0s, energies, training=True
     )
     mse = tf.losses.mean_squared_error
     mae = tf.losses.absolute_difference
@@ -242,29 +242,29 @@ def model_fn(features, labels, mode, params):
     max_length = tf.cast(tf.reduce_max(mel_lengths), tf.int32)
 
     mask = tf.sequence_mask(
-        lengths = mel_lengths, maxlen = max_length, dtype = tf.float32
+        lengths=mel_lengths, maxlen=max_length, dtype=tf.float32
     )
-    mask = tf.expand_dims(mask, axis = -1)
+    mask = tf.expand_dims(mask, axis=-1)
     mel_loss_before = mae(
-        labels = mel_outputs, predictions = mel_before, weights = mask
+        labels=mel_outputs, predictions=mel_before, weights=mask
     )
     mel_loss_after = mae(
-        labels = mel_outputs, predictions = mel_after, weights = mask
+        labels=mel_outputs, predictions=mel_after, weights=mask
     )
 
     max_length = tf.cast(tf.reduce_max(energies_lengths), tf.int32)
     mask = tf.sequence_mask(
-        lengths = energies_lengths, maxlen = max_length, dtype = tf.float32
+        lengths=energies_lengths, maxlen=max_length, dtype=tf.float32
     )
     energies_loss = mse(
-        labels = energies, predictions = energy_outputs, weights = mask
+        labels=energies, predictions=energy_outputs, weights=mask
     )
 
     max_length = tf.cast(tf.reduce_max(f0s_lengths), tf.int32)
     mask = tf.sequence_mask(
-        lengths = f0s_lengths, maxlen = max_length, dtype = tf.float32
+        lengths=f0s_lengths, maxlen=max_length, dtype=tf.float32
     )
-    f0s_loss = mse(labels = f0s, predictions = f0_outputs, weights = mask)
+    f0s_loss = mse(labels=f0s, predictions=f0_outputs, weights=mask)
 
     loss = (
         duration_loss
@@ -275,11 +275,11 @@ def model_fn(features, labels, mode, params):
     )
 
     tf.identity(loss, 'loss')
-    tf.identity(duration_loss, name = 'duration_loss')
-    tf.identity(mel_loss_before, name = 'mel_loss_before')
-    tf.identity(mel_loss_after, name = 'mel_loss_after')
-    tf.identity(energies_loss, name = 'energies_loss')
-    tf.identity(f0s_loss, name = 'f0s_loss')
+    tf.identity(duration_loss, name='duration_loss')
+    tf.identity(mel_loss_before, name='mel_loss_before')
+    tf.identity(mel_loss_after, name='mel_loss_after')
+    tf.identity(energies_loss, name='energies_loss')
+    tf.identity(f0s_loss, name='f0s_loss')
 
     tf.summary.scalar('duration_loss', duration_loss)
     tf.summary.scalar('mel_loss_before', mel_loss_before)
@@ -290,24 +290,24 @@ def model_fn(features, labels, mode, params):
     if mode == tf.estimator.ModeKeys.TRAIN:
         train_op = train.optimizer.adamw.create_optimizer(
             loss,
-            init_lr = 0.001,
-            num_train_steps = total_steps,
-            num_warmup_steps = int(0.02 * total_steps),
-            end_learning_rate = 0.00005,
-            weight_decay_rate = 0.001,
-            beta_1 = 0.9,
-            beta_2 = 0.98,
-            epsilon = 1e-6,
-            clip_norm = 1.0,
+            init_lr=0.001,
+            num_train_steps=total_steps,
+            num_warmup_steps=int(0.02 * total_steps),
+            end_learning_rate=0.00005,
+            weight_decay_rate=0.001,
+            beta_1=0.9,
+            beta_2=0.98,
+            epsilon=1e-6,
+            clip_norm=1.0,
         )
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = mode, loss = loss, train_op = train_op
+            mode=mode, loss=loss, train_op=train_op
         )
 
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = tf.estimator.ModeKeys.EVAL, loss = loss
+            mode=tf.estimator.ModeKeys.EVAL, loss=loss
         )
 
     return estimator_spec
@@ -323,7 +323,7 @@ train_hooks = [
             'energies_loss',
             'f0s_loss',
         ],
-        every_n_iter = 1,
+        every_n_iter=1,
     )
 ]
 
@@ -331,13 +331,13 @@ train_dataset = get_dataset(files['train'])
 dev_dataset = get_dataset(files['test'])
 
 train.run_training(
-    train_fn = train_dataset,
-    model_fn = model_fn,
-    model_dir = 'fastspeech2-female',
-    num_gpus = 1,
-    log_step = 1,
-    save_checkpoint_step = 2000,
-    max_steps = total_steps,
-    eval_fn = dev_dataset,
-    train_hooks = train_hooks,
+    train_fn=train_dataset,
+    model_fn=model_fn,
+    model_dir='fastspeech2-female',
+    num_gpus=1,
+    log_step=1,
+    save_checkpoint_step=2000,
+    max_steps=total_steps,
+    eval_fn=dev_dataset,
+    train_hooks=train_hooks,
 )

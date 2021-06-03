@@ -62,3 +62,16 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
   - 16000 sample rate.
   - random length between 2 - 20 seconds, windowed using google VAD.
   - 768 over 57895 done, approximate 1.3 hours.
+
+## Citation
+
+```bibtex
+@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Semisupervised Speech Recognition from Malay Youtube Videos,
+  author = {Husein, Zolkepli},
+  title = {Malay-Dataset},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-malay}}
+}
+```

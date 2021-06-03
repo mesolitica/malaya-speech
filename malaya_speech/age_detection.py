@@ -36,7 +36,7 @@ def available_model():
 
     return describe_availability(
         _availability,
-        text = 'last accuracy during training session before early stopping.',
+        text='last accuracy during training session before early stopping.',
     )
 
 
@@ -53,7 +53,7 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
         * ``'vggvox-v2'`` - finetuned VGGVox V2.
         * ``'deep-speaker'`` - finetuned Deep Speaker.
     quantized : bool, optional (default=False)
-        if True, will load 8-bit quantized model. 
+        if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
 
     Returns
@@ -73,10 +73,10 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     }
 
     return classification.load(
-        model = model,
-        module = 'age-detection',
-        extra = settings[model],
-        label = labels,
-        quantized = quantized,
+        model=model,
+        module='age-detection',
+        extra=settings[model],
+        label=labels,
+        quantized=quantized,
         **kwargs
     )

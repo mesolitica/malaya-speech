@@ -31,7 +31,7 @@ class Stack:
             results.append(self._models[i].predict_proba(inputs))
 
         mode = aggregate
-        results = mode(np.array(results), axis = 0)
+        results = mode(np.array(results), axis=0)
         return results
 
     def predict(self, inputs, aggregate: Callable = gmean):
@@ -50,7 +50,7 @@ class Stack:
         """
 
         probs = np.argmax(
-            self.predict_proba(inputs, aggregate = aggregate), axis = 1
+            self.predict_proba(inputs, aggregate=aggregate), axis=1
         )
         return [self._models[0].labels[p] for p in probs]
 
@@ -74,7 +74,7 @@ def classification_stack(models):
 
     labels = None
     for i in range(len(models)):
-        if not 'predict_proba' in dir(models[i]):
+        if 'predict_proba' not in dir(models[i]):
             raise ValueError('all models must able to `predict_proba`')
         if labels is None:
             labels = models[i].labels

@@ -12,7 +12,7 @@ file_cycle = cycle(mels)
 import random
 
 
-def generate(batch_max_steps = 8192, hop_size = 256):
+def generate(batch_max_steps=8192, hop_size=256):
     while True:
         f = next(file_cycle)
         mel = np.load(f)
@@ -27,8 +27,8 @@ def generate(batch_max_steps = 8192, hop_size = 256):
             interval_end = len(mel) - batch_max_frames
             start_frame = random.randint(interval_start, interval_end)
             start_step = start_frame * hop_size
-            audio = audio[start_step : start_step + batch_max_steps]
-            mel = mel[start_frame : start_frame + batch_max_frames, :]
+            audio = audio[start_step: start_step + batch_max_steps]
+            mel = mel[start_frame: start_frame + batch_max_frames, :]
         else:
             audio = np.pad(audio, [[0, batch_max_steps - len(audio)]])
             mel = np.pad(mel, [[0, batch_max_frames - len(mel)], [0, 0]])
@@ -39,7 +39,7 @@ def generate(batch_max_steps = 8192, hop_size = 256):
 dataset = tf.data.Dataset.from_generator(
     generate,
     {'mel': tf.float32, 'audio': tf.float32},
-    output_shapes = {
+    output_shapes={
         'mel': tf.TensorShape([None, 80]),
         'audio': tf.TensorShape([None]),
     },
@@ -47,13 +47,13 @@ dataset = tf.data.Dataset.from_generator(
 dataset = dataset.shuffle(32)
 dataset = dataset.padded_batch(
     32,
-    padded_shapes = {
+    padded_shapes={
         'audio': tf.TensorShape([None]),
         'mel': tf.TensorShape([None, 80]),
     },
-    padding_values = {
-        'audio': tf.constant(0, dtype = tf.float32),
-        'mel': tf.constant(0, dtype = tf.float32),
+    padding_values={
+        'audio': tf.constant(0, dtype=tf.float32),
+        'mel': tf.constant(0, dtype=tf.float32),
     },
 )
 
@@ -70,12 +70,12 @@ from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 mb_melgan_config = malaya_speech.config.universal_mb_melgan_config
 generator = melgan.Generator(
     mb_melgan.GeneratorConfig(**mb_melgan_config['melgan_generator_params']),
-    name = 'mb_melgan-generator',
+    name='mb_melgan-generator',
 )
 pqmf = mb_melgan.PQMF(
     mb_melgan.GeneratorConfig(**mb_melgan_config['melgan_generator_params']),
-    dtype = tf.float32,
-    name = 'pqmf',
+    dtype=tf.float32,
+    name='pqmf',
 )
 discriminator = melgan.MultiScaleDiscriminator(
     melgan.WaveFormDiscriminatorConfig(
@@ -84,7 +84,7 @@ discriminator = melgan.MultiScaleDiscriminator(
     melgan.STFTDiscriminatorConfig(
         **melgan_config['melgan_stft_discriminator_params']
     ),
-    name = 'universalmelgan-discriminator',
+    name='universalmelgan-discriminator',
 )
 
 mels_loss = melgan.loss.TFMelSpectrogram()
@@ -104,7 +104,7 @@ full_band_stft_loss = stft.loss.MultiResolutionSTFT(
 
 
 def compute_per_example_generator_losses(features):
-    y_mb_hat = generator(features['mel'], training = True)
+    y_mb_hat = generator(features['mel'], training=True)
     audios = features['audio']
     y_hat = pqmf.synthesis(y_mb_hat)
 
@@ -138,7 +138,7 @@ def compute_per_example_generator_losses(features):
     adv_loss = 0.0
     for i in range(len(p_hat)):
         adv_loss += calculate_3d_loss(
-            tf.ones_like(p_hat[i][-1]), p_hat[i][-1], loss_fn = mse_loss
+            tf.ones_like(p_hat[i][-1]), p_hat[i][-1], loss_fn=mse_loss
         )
     adv_loss /= i + 1
 
@@ -146,7 +146,7 @@ def compute_per_example_generator_losses(features):
 
     per_example_losses = generator_loss
 
-    a = calculate_2d_loss(audios, tf.squeeze(y_hat, -1), loss_fn = mels_loss)
+    a = calculate_2d_loss(audios, tf.squeeze(y_hat, -1), loss_fn=mels_loss)
 
     dict_metrics_losses = {
         'adversarial_loss': adv_loss,
@@ -162,7 +162,7 @@ def compute_per_example_generator_losses(features):
 
 
 def compute_per_example_discriminator_losses(features):
-    y_mb_hat = generator(features['mel'], training = True)
+    y_mb_hat = generator(features['mel'], training=True)
     audios = features['audio']
     y_hat = pqmf.synthesis(y_mb_hat)
     y = tf.expand_dims(audios, 2)
@@ -173,10 +173,10 @@ def compute_per_example_discriminator_losses(features):
     fake_loss = 0.0
     for i in range(len(p)):
         real_loss += calculate_3d_loss(
-            tf.ones_like(p[i][-1]), p[i][-1], loss_fn = mse_loss
+            tf.ones_like(p[i][-1]), p[i][-1], loss_fn=mse_loss
         )
         fake_loss += calculate_3d_loss(
-            tf.zeros_like(p_hat[i][-1]), p_hat[i][-1], loss_fn = mse_loss
+            tf.zeros_like(p_hat[i][-1]), p_hat[i][-1], loss_fn=mse_loss
         )
     real_loss /= i + 1
     fake_loss /= i + 1
@@ -220,17 +220,17 @@ g_vars = [
     if var.name.startswith('mb_melgan-generator') or var.name.startswith('pqmf')
 ]
 
-d_optimizer = tf.train.AdamOptimizer(0.0001, beta1 = 0.5, beta2 = 0.9).minimize(
-    discriminator_loss, var_list = d_vars
+d_optimizer = tf.train.AdamOptimizer(0.0001, beta1=0.5, beta2=0.9).minimize(
+    discriminator_loss, var_list=d_vars
 )
-g_optimizer = tf.train.AdamOptimizer(0.0001, beta1 = 0.5, beta2 = 0.9).minimize(
-    generator_loss, var_list = g_vars
+g_optimizer = tf.train.AdamOptimizer(0.0001, beta1=0.5, beta2=0.9).minimize(
+    generator_loss, var_list=g_vars
 )
 
 sess = tf.InteractiveSession()
 sess.run(tf.global_variables_initializer())
 
-saver = tf.train.Saver(var_list = g_vars)
+saver = tf.train.Saver(var_list=g_vars)
 saver.restore(sess, tf.train.latest_checkpoint('mbmelgan-female'))
 
 saver = tf.train.Saver()
@@ -253,8 +253,8 @@ for i in range(0, epoch):
     writer.add_summary(s, i)
 
     if i % checkpoint == 0:
-        saver.save(sess, f'{path}/model.ckpt', global_step = i)
+        saver.save(sess, f'{path}/model.ckpt', global_step=i)
 
     print(i, g_loss, d_loss)
 
-saver.save(sess, f'{path}/model.ckpt', global_step = epoch)
+saver.save(sess, f'{path}/model.ckpt', global_step=epoch)

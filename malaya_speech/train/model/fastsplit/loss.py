@@ -7,13 +7,13 @@ EPS = 1e-8
 
 
 def cal_abs_with_pit(
-    source, estimate_source, source_lengths, C, method = tf.abs
+    source, estimate_source, source_lengths, C, method=tf.abs
 ):
     # estimate_source = B, T, S, D
     # source = B, S, T, D
 
     # estimate_source = B, S, T, D
-    estimate_source = tf.transpose(estimate_source, perm = [0, 2, 1, 3])
+    estimate_source = tf.transpose(estimate_source, perm=[0, 2, 1, 3])
 
     mask = tf.cast(
         tf.sequence_mask(source_lengths, tf.reduce_max(source_lengths)),
@@ -30,21 +30,21 @@ def cal_abs_with_pit(
 
     losses = pw_loss
     m = tf.expand_dims(mask, 1)
-    weights = tf.cast(m, dtype = tf.float32)
+    weights = tf.cast(m, dtype=tf.float32)
     weighted_losses = tf.multiply(losses, weights)
-    total_loss = tf.reduce_sum(weighted_losses, axis = [3, 4])
+    total_loss = tf.reduce_sum(weighted_losses, axis=[3, 4])
     present = tf.where(
         tf.equal(weights, 0.0), tf.zeros_like(weights), tf.ones_like(weights)
     )
     present = weights_broadcast_ops.broadcast_weights(present, losses)
-    present = tf.reduce_sum(present, axis = [3, 4])
+    present = tf.reduce_sum(present, axis=[3, 4])
     pair_wise_abs = tf.div_no_nan(total_loss, present)
 
     v_perms = tf.constant(list(permutations(range(C))))
     perms_one_hot = tf.one_hot(v_perms, C)
 
     abs_set = tf.einsum('bij,pij->bp', pair_wise_abs, perms_one_hot)
-    min_abs = tf.reduce_min(abs_set, axis = 1, keepdims = True)
+    min_abs = tf.reduce_min(abs_set, axis=1, keepdims=True)
 
     return min_abs, abs_set
 
@@ -54,11 +54,11 @@ def calculate_loss(
     estimate_source,
     source_lengths,
     C,
-    method = tf.abs,
-    return_set = False,
+    method=tf.abs,
+    return_set=False,
 ):
     min_abs, abs_set = cal_abs_with_pit(
-        source, estimate_source, source_lengths, C, method = method
+        source, estimate_source, source_lengths, C, method=method
     )
     if return_set:
         return tf.reduce_mean(min_abs), abs_set

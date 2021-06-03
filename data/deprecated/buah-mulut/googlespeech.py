@@ -20,13 +20,13 @@ def audiosegment_google_speech(audio, filename):
     if os.path.exists('output-wav/' + filename):
         return False
 
-    audio.export(filename, format = 'wav')
+    audio.export(filename, format='wav')
     try:
         with sr.AudioFile(filename) as source:
             audio = r.record(source)
 
-        text = r.recognize_google(audio, language = 'ms')
-    except:
+        text = r.recognize_google(audio, language='ms')
+    except BaseException:
         text = ''
 
     if len(text):
@@ -88,7 +88,7 @@ def frame_generator(frame_duration_ms, audio, sample_rate):
     timestamp = 0.0
     duration = (float(n) / sample_rate) / 2.0
     while offset + n < len(audio):
-        yield Frame(audio[offset : offset + n], timestamp, duration)
+        yield Frame(audio[offset: offset + n], timestamp, duration)
         timestamp += duration
         offset += n
 
@@ -121,7 +121,7 @@ def vad_collector(
     """
     num_padding_frames = int(padding_duration_ms / frame_duration_ms)
     # We use a deque for our sliding window/ring buffer.
-    ring_buffer = collections.deque(maxlen = num_padding_frames)
+    ring_buffer = collections.deque(maxlen=num_padding_frames)
     # We have two states: TRIGGERED and NOTTRIGGERED. We start in the
     # NOTTRIGGERED state.
     triggered = False
@@ -170,10 +170,10 @@ def vad_collector(
         yield b''.join([f.bytes for f in voiced_frames])
 
 
-def split(file, max_len = 5):
+def split(file, max_len=5):
     audio = AudioSegment.from_mp3(file)
     audio.set_frame_rate(32000).set_channels(1).export(
-        'test.wav', format = 'wav'
+        'test.wav', format='wav'
     )
     audio, sample_rate = read_wave('test.wav')
     frames = frame_generator(30, audio, sample_rate)

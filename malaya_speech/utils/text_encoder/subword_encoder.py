@@ -58,7 +58,7 @@ class SubwordTextEncoder(text_encoder.TextEncoder):
   ```
   """
 
-    def __init__(self, vocab_list = None):
+    def __init__(self, vocab_list=None):
         r"""Constructs a SubwordTextEncoder from a vocabulary list.
 
     Note: To generate a vocabulary from a corpus, use
@@ -83,7 +83,7 @@ class SubwordTextEncoder(text_encoder.TextEncoder):
             ids.extend(self._token_to_ids(token))
         return text_encoder.pad_incr(ids)
 
-    def decode(self, ids, get_index = False):
+    def decode(self, ids, get_index=False):
         """Decodes a list of integers into text."""
         ids = text_encoder.pad_decr(ids)
         subword_ids = ids
@@ -245,7 +245,7 @@ class SubwordTextEncoder(text_encoder.TextEncoder):
             if text_encoder.is_mixed_alphanum(t):
                 reserved_tokens.add(t)
         self._tokenizer = text_encoder.Tokenizer(
-            alphanum_only = False, reserved_tokens = reserved_tokens
+            alphanum_only=False, reserved_tokens=reserved_tokens
         )
 
     @classmethod
@@ -267,16 +267,16 @@ class SubwordTextEncoder(text_encoder.TextEncoder):
         lines, _ = cls._read_lines_from_file(filename)
         # Strip wrapping single quotes
         vocab_list = [line[1:-1] for line in lines]
-        return cls(vocab_list = vocab_list)
+        return cls(vocab_list=vocab_list)
 
     @classmethod
     def build_from_corpus(
         cls,
         corpus_generator,
         target_vocab_size,
-        max_subword_length = 20,
-        max_corpus_chars = None,
-        reserved_tokens = None,
+        max_subword_length=20,
+        max_corpus_chars=None,
+        reserved_tokens=None,
     ):
         """Builds a `SubwordTextEncoder` based on the `corpus_generator`.
 
@@ -298,14 +298,14 @@ class SubwordTextEncoder(text_encoder.TextEncoder):
     """
         reserved_tokens = reserved_tokens or []
         _validate_build_arguments(
-            max_subword_length = max_subword_length,
-            reserved_tokens = reserved_tokens,
-            target_vocab_size = target_vocab_size,
+            max_subword_length=max_subword_length,
+            reserved_tokens=reserved_tokens,
+            target_vocab_size=target_vocab_size,
         )
         token_counts = _token_counts_from_generator(
-            generator = corpus_generator,
-            max_chars = max_corpus_chars,
-            reserved_tokens = reserved_tokens,
+            generator=corpus_generator,
+            max_chars=max_corpus_chars,
+            reserved_tokens=reserved_tokens,
         )
 
         # Binary search on the minimum token count to build a vocabulary with
@@ -318,11 +318,11 @@ class SubwordTextEncoder(text_encoder.TextEncoder):
                 candidate_min,
             )
             encoder = cls._build_from_token_counts(
-                token_counts = token_counts,
-                min_token_count = candidate_min,
-                reserved_tokens = reserved_tokens,
-                num_iterations = 4,
-                max_subword_length = max_subword_length,
+                token_counts=token_counts,
+                min_token_count=candidate_min,
+                reserved_tokens=reserved_tokens,
+                num_iterations=4,
+                max_subword_length=max_subword_length,
             )
             vocab_size = encoder.vocab_size
 
@@ -376,7 +376,7 @@ class SubwordTextEncoder(text_encoder.TextEncoder):
         subwords = list(reserved_tokens)
 
         for _ in range(num_iterations):
-            encoder = cls(vocab_list = subwords)
+            encoder = cls(vocab_list=subwords)
             subword_counts = collections.defaultdict(int)
             for token, count in six.iteritems(token_counts):
                 start_idx = 0
@@ -414,17 +414,17 @@ class SubwordTextEncoder(text_encoder.TextEncoder):
 
             # Sort subwords by count in descending order, keeping reserved_tokens as
             # the beginning.
-            candidate_subwords.sort(reverse = True)
+            candidate_subwords.sort(reverse=True)
             subwords = reserved_tokens + [s for _, s in candidate_subwords]
 
-        return cls(vocab_list = subwords)
+        return cls(vocab_list=subwords)
 
 
 def _token_counts_from_generator(generator, max_chars, reserved_tokens):
     """Builds token counts from generator."""
     reserved_tokens = list(reserved_tokens) + [_UNDERSCORE_REPLACEMENT]
     tokenizer = text_encoder.Tokenizer(
-        alphanum_only = False, reserved_tokens = reserved_tokens
+        alphanum_only=False, reserved_tokens=reserved_tokens
     )
     num_chars = 0
     token_counts = collections.defaultdict(int)

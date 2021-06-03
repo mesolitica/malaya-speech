@@ -31,12 +31,12 @@ class Abstract:
 
     def _execute(self, inputs, input_labels, output_labels):
         return execute_graph(
-            inputs = inputs,
-            input_labels = input_labels,
-            output_labels = output_labels,
-            sess = self._sess,
-            input_nodes = self._input_nodes,
-            output_nodes = self._output_nodes,
+            inputs=inputs,
+            input_labels=input_labels,
+            output_labels=output_labels,
+            sess=self._sess,
+            input_nodes=self._input_nodes,
+            output_nodes=self._output_nodes,
         )
 
 
@@ -82,13 +82,13 @@ class Speakernet(Abstract):
 
         inputs = [self._vectorizer(input) for input in inputs]
         inputs, lengths = padding_sequence_nd(
-            inputs, dim = 0, return_len = True
+            inputs, dim=0, return_len=True
         )
 
         r = self._execute(
-            inputs = [inputs, lengths],
-            input_labels = ['Placeholder', 'Placeholder_1'],
-            output_labels = ['logits'],
+            inputs=[inputs, lengths],
+            input_labels=['Placeholder', 'Placeholder_1'],
+            output_labels=['logits'],
         )
         return r['logits']
 
@@ -142,13 +142,13 @@ class Speaker2Vec(Abstract):
             dim = 0
         else:
             dim = 1
-        inputs = padding_sequence_nd(inputs, dim = dim)
+        inputs = padding_sequence_nd(inputs, dim=dim)
         inputs = np.expand_dims(inputs, -1)
 
         r = self._execute(
-            inputs = [inputs],
-            input_labels = ['Placeholder'],
-            output_labels = ['logits'],
+            inputs=[inputs],
+            input_labels=['Placeholder'],
+            output_labels=['logits'],
         )
         return r['logits']
 
@@ -198,15 +198,15 @@ class SpeakernetClassification(Abstract):
 
         inputs = [self._vectorizer(input) for input in inputs]
         inputs, lengths = padding_sequence_nd(
-            inputs, dim = 0, return_len = True
+            inputs, dim=0, return_len=True
         )
 
         r = self._execute(
-            inputs = [inputs, lengths],
-            input_labels = ['Placeholder', 'Placeholder_1'],
-            output_labels = ['logits'],
+            inputs=[inputs, lengths],
+            input_labels=['Placeholder', 'Placeholder_1'],
+            output_labels=['logits'],
         )
-        return softmax(r['logits'], axis = -1)
+        return softmax(r['logits'], axis=-1)
 
     def predict(self, inputs):
         """
@@ -222,7 +222,7 @@ class SpeakernetClassification(Abstract):
         result: List[str]
             returned [B].
         """
-        probs = np.argmax(self.predict_proba(inputs), axis = 1)
+        probs = np.argmax(self.predict_proba(inputs), axis=1)
         return [self.labels[p] for p in probs]
 
     def __call__(self, input):
@@ -288,15 +288,15 @@ class Classification(Abstract):
         else:
             dim = 1
 
-        inputs = padding_sequence_nd(inputs, dim = dim)
+        inputs = padding_sequence_nd(inputs, dim=dim)
         inputs = np.expand_dims(inputs, -1)
 
         r = self._execute(
-            inputs = [inputs],
-            input_labels = ['Placeholder'],
-            output_labels = ['logits'],
+            inputs=[inputs],
+            input_labels=['Placeholder'],
+            output_labels=['logits'],
         )
-        return softmax(r['logits'], axis = -1)
+        return softmax(r['logits'], axis=-1)
 
     def predict(self, inputs):
         """
@@ -312,7 +312,7 @@ class Classification(Abstract):
         result: List[str]
             returned [B].
         """
-        probs = np.argmax(self.predict_proba(inputs), axis = 1)
+        probs = np.argmax(self.predict_proba(inputs), axis=1)
         return [self.labels[p] for p in probs]
 
     def __call__(self, input):
@@ -357,13 +357,13 @@ class UNET(Abstract):
         ]
         mels = [featurization.scale_mel(s).T for s in inputs]
         x, lens = padding_sequence_nd(
-            mels, maxlen = 256, dim = 0, return_len = True
+            mels, maxlen=256, dim=0, return_len=True
         )
 
         r = self._execute(
-            inputs = [x],
-            input_labels = ['Placeholder'],
-            output_labels = ['logits'],
+            inputs=[x],
+            input_labels=['Placeholder'],
+            output_labels=['logits'],
         )
         l = r['logits']
 
@@ -408,9 +408,9 @@ class UNETSTFT(Abstract):
             input = input.array
 
         r = self._execute(
-            inputs = [input],
-            input_labels = ['Placeholder'],
-            output_labels = list(self._output_nodes.keys()),
+            inputs=[input],
+            input_labels=['Placeholder'],
+            output_labels=list(self._output_nodes.keys()),
         )
         results = {}
         for no, instrument in enumerate(self._instruments):
@@ -458,9 +458,9 @@ class UNET1D(Abstract):
             input = input.array
 
         r = self._execute(
-            inputs = [input],
-            input_labels = ['Placeholder'],
-            output_labels = ['logits'],
+            inputs=[input],
+            input_labels=['Placeholder'],
+            output_labels=['logits'],
         )
         return r['logits']
 
@@ -517,14 +517,14 @@ class Transducer(Abstract):
             for input in inputs
         ]
 
-        padded, lens = sequence_1d(inputs, return_len = True)
-        zeros = np.zeros(shape = (len(inputs), self._pad_len))
-        padded = np.concatenate([padded, zeros], axis = -1)
+        padded, lens = sequence_1d(inputs, return_len=True)
+        zeros = np.zeros(shape=(len(inputs), self._pad_len))
+        padded = np.concatenate([padded, zeros], axis=-1)
         lens = [l + self._pad_len for l in lens]
         return padded, lens
 
     def _combined_indices(
-        self, subwords, ids, l, reduction_factor = 160, sample_rate = 16000
+        self, subwords, ids, l, reduction_factor=160, sample_rate=16000
     ):
         result, temp_l, temp_r = [], [], []
         for i in range(len(subwords)):
@@ -552,7 +552,7 @@ class Transducer(Abstract):
 
         return result
 
-    def predict_alignment(self, input, combined = True):
+    def predict_alignment(self, input, combined=True):
         """
         Transcribe input and get timestamp, only support greedy decoder.
 
@@ -569,21 +569,21 @@ class Transducer(Abstract):
         """
         padded, lens = self._get_inputs([input])
         r = self._execute(
-            inputs = [padded, lens],
-            input_labels = ['X_placeholder', 'X_len_placeholder'],
-            output_labels = ['non_blank_transcript', 'non_blank_stime'],
+            inputs=[padded, lens],
+            input_labels=['X_placeholder', 'X_len_placeholder'],
+            output_labels=['non_blank_transcript', 'non_blank_stime'],
         )
         non_blank_transcript = r['non_blank_transcript']
         non_blank_stime = r['non_blank_stime']
         if combined:
             words, indices = self._vocab.decode(
-                non_blank_transcript, get_index = True
+                non_blank_transcript, get_index=True
             )
         else:
             words, indices = [], []
             for no, ids in enumerate(non_blank_transcript):
                 w = self._vocab._id_to_subword(ids - 1)
-                if type(w) == bytes:
+                if isinstance(w, bytes):
                     w = w.decode()
                 words.extend([w, None])
                 indices.extend([no, None])
@@ -606,9 +606,9 @@ class Transducer(Abstract):
         padded, lens = self._get_inputs(inputs)
         results = []
         r = self._execute(
-            inputs = [padded, lens],
-            input_labels = ['X_placeholder', 'X_len_placeholder'],
-            output_labels = ['greedy_decoder'],
+            inputs=[padded, lens],
+            input_labels=['X_placeholder', 'X_len_placeholder'],
+            output_labels=['greedy_decoder'],
         )['greedy_decoder']
 
         for row in r:
@@ -617,11 +617,11 @@ class Transducer(Abstract):
         return results
 
     def _beam_decoder(
-        self, enc, total, initial_states, beam_width = 10, norm_score = True
+        self, enc, total, initial_states, beam_width=10, norm_score=True
     ):
         kept_hyps = [
             BeamHypothesis(
-                score = 0.0, prediction = [0], states = initial_states
+                score=0.0, prediction=[0], states=initial_states
             )
         ]
         B = kept_hyps
@@ -629,31 +629,31 @@ class Transducer(Abstract):
             A = B
             B = []
             while True:
-                y_hat = max(A, key = lambda x: x.score)
+                y_hat = max(A, key=lambda x: x.score)
                 A.remove(y_hat)
                 r = self._execute(
-                    inputs = [enc[i], y_hat.prediction[-1], y_hat.states],
-                    input_labels = [
+                    inputs=[enc[i], y_hat.prediction[-1], y_hat.states],
+                    input_labels=[
                         'encoded_placeholder',
                         'predicted_placeholder',
                         'states_placeholder',
                     ],
-                    output_labels = ['ytu', 'new_states'],
+                    output_labels=['ytu', 'new_states'],
                 )
                 ytu_, new_states_ = r['ytu'], r['new_states']
                 for k in range(ytu_.shape[0]):
                     beam_hyp = BeamHypothesis(
-                        score = (y_hat.score + float(ytu_[k])),
-                        prediction = y_hat.prediction,
-                        states = y_hat.states,
+                        score=(y_hat.score + float(ytu_[k])),
+                        prediction=y_hat.prediction,
+                        states=y_hat.states,
                     )
                     if k == 0:
                         B.append(beam_hyp)
                     else:
                         beam_hyp = BeamHypothesis(
-                            score = beam_hyp.score,
-                            prediction = (beam_hyp.prediction + [int(k)]),
-                            states = new_states_,
+                            score=beam_hyp.score,
+                            prediction=(beam_hyp.prediction + [int(k)]),
+                            states=new_states_,
                         )
                         A.append(beam_hyp)
                 if len(B) > beam_width:
@@ -661,10 +661,10 @@ class Transducer(Abstract):
 
         if norm_score:
             kept_hyps = sorted(
-                B, key = lambda x: x.score / len(x.prediction), reverse = True
+                B, key=lambda x: x.score / len(x.prediction), reverse=True
             )[:beam_width]
         else:
-            kept_hyps = sorted(B, key = lambda x: x.score, reverse = True)[
+            kept_hyps = sorted(B, key=lambda x: x.score, reverse=True)[
                 :beam_width
             ]
         return kept_hyps[0].prediction
@@ -688,9 +688,9 @@ class Transducer(Abstract):
         results = []
 
         r = self._execute(
-            inputs = [padded, lens],
-            input_labels = ['X_placeholder', 'X_len_placeholder'],
-            output_labels = ['encoded', 'padded_lens', 'initial_states'],
+            inputs=[padded, lens],
+            input_labels=['X_placeholder', 'X_len_placeholder'],
+            output_labels=['encoded', 'padded_lens', 'initial_states'],
         )
         encoded_, padded_lens_, s = (
             r['encoded'],
@@ -700,10 +700,10 @@ class Transducer(Abstract):
         padded_lens_ = padded_lens_ // self._time_reduction_factor
         for i in range(len(encoded_)):
             r = self._beam_decoder(
-                enc = encoded_[i],
-                total = padded_lens_[i],
-                initial_states = s,
-                beam_width = beam_size,
+                enc=encoded_[i],
+                total=padded_lens_[i],
+                initial_states=s,
+                beam_width=beam_size,
             )
             results.append(subword_decode(self._vocab, r))
         return results
@@ -734,7 +734,7 @@ class Transducer(Abstract):
         if decoder == 'greedy':
             return self.greedy_decoder(inputs)
         else:
-            return self.beam_decoder(inputs, beam_size = beam_size)
+            return self.beam_decoder(inputs, beam_size=beam_size)
 
     def __call__(self, input, decoder: str = 'greedy', **kwargs):
         """
@@ -755,7 +755,7 @@ class Transducer(Abstract):
         -------
         result: str
         """
-        return self.predict([input], decoder = decoder, **kwargs)[0]
+        return self.predict([input], decoder=decoder, **kwargs)[0]
 
 
 class Wav2Vec2_Transducer(Abstract):
@@ -783,9 +783,9 @@ class Wav2Vec2_Transducer(Abstract):
             for input in inputs
         ]
 
-        padded, lens = sequence_1d(inputs, return_len = True)
-        zeros = np.zeros(shape = (len(inputs), self._pad_len))
-        padded = np.concatenate([padded, zeros], axis = -1)
+        padded, lens = sequence_1d(inputs, return_len=True)
+        zeros = np.zeros(shape=(len(inputs), self._pad_len))
+        padded = np.concatenate([padded, zeros], axis=-1)
         lens = [l + self._pad_len for l in lens]
         return padded, lens
 
@@ -805,9 +805,9 @@ class Wav2Vec2_Transducer(Abstract):
         padded, lens = self._get_inputs(inputs)
         results = []
         r = self._execute(
-            inputs = [padded, lens],
-            input_labels = ['X_placeholder', 'X_len_placeholder'],
-            output_labels = ['greedy_decoder'],
+            inputs=[padded, lens],
+            input_labels=['X_placeholder', 'X_len_placeholder'],
+            output_labels=['greedy_decoder'],
         )['greedy_decoder']
 
         for row in r:
@@ -816,11 +816,11 @@ class Wav2Vec2_Transducer(Abstract):
         return results
 
     def _beam_decoder(
-        self, enc, total, initial_states, beam_width = 10, norm_score = True
+        self, enc, total, initial_states, beam_width=10, norm_score=True
     ):
         kept_hyps = [
             BeamHypothesis(
-                score = 0.0, prediction = [0], states = initial_states
+                score=0.0, prediction=[0], states=initial_states
             )
         ]
         B = kept_hyps
@@ -828,31 +828,31 @@ class Wav2Vec2_Transducer(Abstract):
             A = B
             B = []
             while True:
-                y_hat = max(A, key = lambda x: x.score)
+                y_hat = max(A, key=lambda x: x.score)
                 A.remove(y_hat)
                 r = self._execute(
-                    inputs = [enc[i], y_hat.prediction[-1], y_hat.states],
-                    input_labels = [
+                    inputs=[enc[i], y_hat.prediction[-1], y_hat.states],
+                    input_labels=[
                         'encoded_placeholder',
                         'predicted_placeholder',
                         'states_placeholder',
                     ],
-                    output_labels = ['ytu', 'new_states'],
+                    output_labels=['ytu', 'new_states'],
                 )
                 ytu_, new_states_ = r['ytu'], r['new_states']
                 for k in range(ytu_.shape[0]):
                     beam_hyp = BeamHypothesis(
-                        score = (y_hat.score + float(ytu_[k])),
-                        prediction = y_hat.prediction,
-                        states = y_hat.states,
+                        score=(y_hat.score + float(ytu_[k])),
+                        prediction=y_hat.prediction,
+                        states=y_hat.states,
                     )
                     if k == 0:
                         B.append(beam_hyp)
                     else:
                         beam_hyp = BeamHypothesis(
-                            score = beam_hyp.score,
-                            prediction = (beam_hyp.prediction + [int(k)]),
-                            states = new_states_,
+                            score=beam_hyp.score,
+                            prediction=(beam_hyp.prediction + [int(k)]),
+                            states=new_states_,
                         )
                         A.append(beam_hyp)
                 if len(B) > beam_width:
@@ -860,10 +860,10 @@ class Wav2Vec2_Transducer(Abstract):
 
         if norm_score:
             kept_hyps = sorted(
-                B, key = lambda x: x.score / len(x.prediction), reverse = True
+                B, key=lambda x: x.score / len(x.prediction), reverse=True
             )[:beam_width]
         else:
-            kept_hyps = sorted(B, key = lambda x: x.score, reverse = True)[
+            kept_hyps = sorted(B, key=lambda x: x.score, reverse=True)[
                 :beam_width
             ]
         return kept_hyps[0].prediction
@@ -887,9 +887,9 @@ class Wav2Vec2_Transducer(Abstract):
         results = []
 
         r = self._execute(
-            inputs = [padded, lens],
-            input_labels = ['X_placeholder', 'X_len_placeholder'],
-            output_labels = ['encoded', 'padded_lens', 'initial_states'],
+            inputs=[padded, lens],
+            input_labels=['X_placeholder', 'X_len_placeholder'],
+            output_labels=['encoded', 'padded_lens', 'initial_states'],
         )
         encoded_, padded_lens_, s = (
             r['encoded'],
@@ -898,10 +898,10 @@ class Wav2Vec2_Transducer(Abstract):
         )
         for i in range(len(encoded_)):
             r = self._beam_decoder(
-                enc = encoded_[i],
-                total = padded_lens_[i],
-                initial_states = s,
-                beam_width = beam_size,
+                enc=encoded_[i],
+                total=padded_lens_[i],
+                initial_states=s,
+                beam_width=beam_size,
             )
             results.append(subword_decode(self._vocab, r))
         return results
@@ -932,7 +932,7 @@ class Wav2Vec2_Transducer(Abstract):
         if decoder == 'greedy':
             return self.greedy_decoder(inputs)
         else:
-            return self.beam_decoder(inputs, beam_size = beam_size)
+            return self.beam_decoder(inputs, beam_size=beam_size)
 
     def __call__(self, input, decoder: str = 'greedy', **kwargs):
         """
@@ -953,7 +953,7 @@ class Wav2Vec2_Transducer(Abstract):
         -------
         result: str
         """
-        return self.predict([input], decoder = decoder, **kwargs)[0]
+        return self.predict([input], decoder=decoder, **kwargs)[0]
 
 
 class Vocoder(Abstract):
@@ -980,12 +980,12 @@ class Vocoder(Abstract):
             input.array if isinstance(input, Frame) else input
             for input in inputs
         ]
-        padded, lens = sequence_1d(inputs, return_len = True)
+        padded, lens = sequence_1d(inputs, return_len=True)
 
         r = self._execute(
-            inputs = [padded],
-            input_labels = ['Placeholder'],
-            output_labels = ['logits'],
+            inputs=[padded],
+            input_labels=['Placeholder'],
+            output_labels=['logits'],
         )
         return r['logits'][:, :, 0]
 
@@ -1020,9 +1020,9 @@ class Tacotron(Abstract):
 
         t, ids = self._normalizer.normalize(string, **kwargs)
         r = self._execute(
-            inputs = [[ids], [len(ids)]],
-            input_labels = ['Placeholder', 'Placeholder_1'],
-            output_labels = [
+            inputs=[[ids], [len(ids)]],
+            input_labels=['Placeholder', 'Placeholder_1'],
+            output_labels=[
                 'decoder_output',
                 'post_mel_outputs',
                 'alignment_histories',
@@ -1082,14 +1082,14 @@ class Fastspeech(Abstract):
         """
         t, ids = self._normalizer.normalize(string, **kwargs)
         r = self._execute(
-            inputs = [[ids], [speed_ratio], [f0_ratio], [energy_ratio]],
-            input_labels = [
+            inputs=[[ids], [speed_ratio], [f0_ratio], [energy_ratio]],
+            input_labels=[
                 'Placeholder',
                 'speed_ratios',
                 'f0_ratios',
                 'energy_ratios',
             ],
-            output_labels = ['decoder_output', 'post_mel_outputs'],
+            output_labels=['decoder_output', 'post_mel_outputs'],
         )
         v = r['post_mel_outputs'][0] * self._stats[1] + self._stats[0]
         v = (v - MEL_MEAN) / MEL_STD
@@ -1151,19 +1151,19 @@ class FastVC(Abstract):
         target_v = self._magnitude(self._speaker_vector([target_audio])[0])
 
         r = self._execute(
-            inputs = [
+            inputs=[
                 [original_mel],
                 [original_v],
                 [target_v],
                 [len(original_mel)],
             ],
-            input_labels = [
+            input_labels=[
                 'mel',
                 'ori_vector',
                 'target_vector',
                 'mel_lengths',
             ],
-            output_labels = ['mel_before', 'mel_after'],
+            output_labels=['mel_before', 'mel_after'],
         )
         return {
             'decoder-output': r['mel_before'][0],
@@ -1198,9 +1198,9 @@ class Split_Wav(Abstract):
             input = input.array
 
         r = self._execute(
-            inputs = [np.expand_dims([input], axis = -1)],
-            input_labels = ['Placeholder'],
-            output_labels = ['logits'],
+            inputs=[np.expand_dims([input], axis=-1)],
+            input_labels=['Placeholder'],
+            output_labels=['logits'],
         )
         r = r['logits']
         return r[:, 0, :, 0]
@@ -1240,9 +1240,9 @@ class Split_Mel(Abstract):
         input = self._to_mel(input)
 
         r = self._execute(
-            inputs = [input],
-            input_labels = ['Placeholder', 'Placeholder_1'],
-            output_labels = ['logits'],
+            inputs=[input],
+            input_labels=['Placeholder', 'Placeholder_1'],
+            output_labels=['logits'],
         )
         r = r['logits']
         return r[:, 0]
@@ -1271,9 +1271,9 @@ class Wav2Vec2_CTC(Abstract):
 
     def _get_logits(self, padded, lens):
         r = self._execute(
-            inputs = [padded, lens],
-            input_labels = ['X_placeholder', 'X_len_placeholder'],
-            output_labels = ['logits', 'seq_lens'],
+            inputs=[padded, lens],
+            input_labels=['X_placeholder', 'X_len_placeholder'],
+            output_labels=['logits', 'seq_lens'],
         )
         return r['logits'], r['seq_lens']
 
@@ -1283,9 +1283,9 @@ class Wav2Vec2_CTC(Abstract):
             decoded = tf.compat.v1.nn.ctc_beam_search_decoder(
                 logits,
                 seq_lens,
-                beam_width = beam_size,
-                top_paths = 1,
-                merge_repeated = True,
+                beam_width=beam_size,
+                top_paths=1,
+                merge_repeated=True,
                 **kwargs,
             )
             preds = tf.sparse.to_dense(tf.compat.v1.to_int32(decoded[0][0]))
@@ -1295,20 +1295,20 @@ class Wav2Vec2_CTC(Abstract):
                 self._decoded = tf.compat.v1.nn.ctc_beam_search_decoder(
                     self._output_nodes['logits'],
                     self._output_nodes['seq_lens'],
-                    beam_width = self._beam_size,
-                    top_paths = 1,
-                    merge_repeated = True,
+                    beam_width=self._beam_size,
+                    top_paths=1,
+                    merge_repeated=True,
                     **kwargs,
                 )[0][0]
 
             r = self._sess.run(
                 self._decoded,
-                feed_dict = {
+                feed_dict={
                     self._input_nodes['X_placeholder']: padded,
                     self._input_nodes['X_len_placeholder']: lens,
                 },
             )
-            preds = np.zeros(r.dense_shape, dtype = np.int32)
+            preds = np.zeros(r.dense_shape, dtype=np.int32)
             for i in range(r.values.shape[0]):
                 preds[r.indices[i][0], r.indices[i][1]] = r.values[i]
         return preds
@@ -1343,7 +1343,7 @@ class Wav2Vec2_CTC(Abstract):
             for input in inputs
         ]
 
-        padded, lens = sequence_1d(inputs, return_len = True)
+        padded, lens = sequence_1d(inputs, return_len=True)
 
         if decoder == 'greedy':
             beam_size = 1
@@ -1353,7 +1353,7 @@ class Wav2Vec2_CTC(Abstract):
         results = []
         for i in range(len(decoded)):
             results.append(
-                char_decode(decoded[i], lookup = self._vocab).replace(
+                char_decode(decoded[i], lookup=self._vocab).replace(
                     '<PAD>', ''
                 )
             )
@@ -1372,7 +1372,7 @@ class Wav2Vec2_CTC(Abstract):
             Returned from `malaya_speech.stt.language_model()`.
         beam_size: int, optional (default=100)
             beam size for beam decoder.
-        
+
 
         Returns
         -------
@@ -1380,7 +1380,7 @@ class Wav2Vec2_CTC(Abstract):
         """
         try:
             from ctc_decoders import ctc_beam_search_decoder
-        except:
+        except BaseException:
             raise ModuleNotFoundError(
                 'ctc_decoders not installed. Please install it by `pip install ctc-decoders` and try again.'
             )
@@ -1390,9 +1390,9 @@ class Wav2Vec2_CTC(Abstract):
             for input in inputs
         ]
 
-        padded, lens = sequence_1d(inputs, return_len = True)
+        padded, lens = sequence_1d(inputs, return_len=True)
         logits, seq_lens = self._get_logits(padded, lens)
-        logits = np.transpose(logits, axes = (1, 0, 2))
+        logits = np.transpose(logits, axes=(1, 0, 2))
         logits = softmax(logits)
         results = []
         for i in range(len(logits)):
@@ -1400,7 +1400,7 @@ class Wav2Vec2_CTC(Abstract):
                 logits[i][: seq_lens[i]],
                 self._vocab,
                 beam_size,
-                ext_scoring_func = lm,
+                ext_scoring_func=lm,
                 **kwargs,
             )
             results.append(d[0][1])
@@ -1432,7 +1432,7 @@ class Wav2Vec2_CTC(Abstract):
             method = self.predict_lm
         else:
             method = self.predict
-        return method([input], decoder = decoder, **kwargs)[0]
+        return method([input], decoder=decoder, **kwargs)[0]
 
 
 class CTC(Abstract):
@@ -1465,7 +1465,7 @@ class FastSpeechSplit(Abstract):
         self._modes = {'R', 'F', 'U', 'RF', 'RU', 'FU', 'RFU'}
         self._freqs = {'female': [100, 600], 'male': [50, 250]}
 
-    def _get_data(self, x, sr = 22050, target_sr = 16000):
+    def _get_data(self, x, sr=22050, target_sr=16000):
         x_16k = resample(x, sr, target_sr)
         if self._gender_model is not None:
             gender = self._gender_model(x_16k)
@@ -1486,7 +1486,7 @@ class FastSpeechSplit(Abstract):
         self,
         original_audio,
         target_audio,
-        modes = ['R', 'F', 'U', 'RF', 'RU', 'FU', 'RFU'],
+        modes=['R', 'F', 'U', 'RF', 'RU', 'FU', 'RFU'],
     ):
         """
         Change original voice audio to follow targeted voice.
@@ -1525,28 +1525,28 @@ class FastSpeechSplit(Abstract):
         wav, mel, f0, v = self._get_data(original_audio)
         wav_1, mel_1, f0_1, v_1 = self._get_data(target_audio)
         mels, mel_lens = padding_sequence_nd(
-            [mel, mel_1], dim = 0, return_len = True
+            [mel, mel_1], dim=0, return_len=True
         )
         f0s, f0_lens = padding_sequence_nd(
-            [f0, f0_1], dim = 0, return_len = True
+            [f0, f0_1], dim=0, return_len=True
         )
 
         f0_org_quantized = quantize_f0_numpy(f0s[0, :, 0])[0]
         f0_org_onehot = f0_org_quantized[np.newaxis, :, :]
-        uttr_f0_org = np.concatenate([mels[:1], f0_org_onehot], axis = -1)
+        uttr_f0_org = np.concatenate([mels[:1], f0_org_onehot], axis=-1)
         f0_trg_quantized = quantize_f0_numpy(f0s[1, :, 0])[0]
         f0_trg_onehot = f0_trg_quantized[np.newaxis, :, :]
 
         r = self._execute(
-            inputs = [mels[:1], f0_trg_onehot, [len(f0s[0])]],
-            input_labels = ['X', 'f0_onehot', 'len_X'],
-            output_labels = ['f0_target'],
+            inputs=[mels[:1], f0_trg_onehot, [len(f0s[0])]],
+            input_labels=['X', 'f0_onehot', 'len_X'],
+            output_labels=['f0_target'],
         )
         f0_pred = r['f0_target']
-        f0_pred_quantized = f0_pred.argmax(axis = -1).squeeze(0)
+        f0_pred_quantized = f0_pred.argmax(axis=-1).squeeze(0)
         f0_con_onehot = np.zeros_like(f0_pred)
         f0_con_onehot[0, np.arange(f0_pred.shape[1]), f0_pred_quantized] = 1
-        uttr_f0_trg = np.concatenate([mels[:1], f0_con_onehot], axis = -1)
+        uttr_f0_trg = np.concatenate([mels[:1], f0_con_onehot], axis=-1)
         results = {}
         for condition in modes:
             if condition == 'R':
@@ -1579,9 +1579,9 @@ class FastSpeechSplit(Abstract):
                 x_ = mels[:1]
 
             r = self._execute(
-                inputs = [uttr_f0_, x_, [v_], [len(f0s[0])]],
-                input_labels = ['uttr_f0', 'X', 'V', 'len_X'],
-                output_labels = ['mel_outputs'],
+                inputs=[uttr_f0_, x_, [v_], [len(f0s[0])]],
+                input_labels=['uttr_f0', 'X', 'V', 'len_X'],
+                output_labels=['mel_outputs'],
             )
             mel_outputs = r['mel_outputs'][0]
             if 'R' in condition:

@@ -33,38 +33,38 @@ class Conv1DTranspose(Conv1D):
         self,
         filters,
         kernel_size,
-        strides = 1,
-        padding = 'valid',
-        output_padding = None,
-        data_format = None,
-        dilation_rate = 1,
-        activation = None,
-        use_bias = True,
-        kernel_initializer = 'glorot_uniform',
-        bias_initializer = 'zeros',
-        kernel_regularizer = None,
-        bias_regularizer = None,
-        activity_regularizer = None,
-        kernel_constraint = None,
-        bias_constraint = None,
+        strides=1,
+        padding='valid',
+        output_padding=None,
+        data_format=None,
+        dilation_rate=1,
+        activation=None,
+        use_bias=True,
+        kernel_initializer='glorot_uniform',
+        bias_initializer='zeros',
+        kernel_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+        kernel_constraint=None,
+        bias_constraint=None,
         **kwargs
     ):
         super(Conv1DTranspose, self).__init__(
-            filters = filters,
-            kernel_size = kernel_size,
-            strides = strides,
-            padding = padding,
-            data_format = data_format,
-            dilation_rate = dilation_rate,
-            activation = activations.get(activation),
-            use_bias = use_bias,
-            kernel_initializer = initializers.get(kernel_initializer),
-            bias_initializer = initializers.get(bias_initializer),
-            kernel_regularizer = regularizers.get(kernel_regularizer),
-            bias_regularizer = regularizers.get(bias_regularizer),
-            activity_regularizer = regularizers.get(activity_regularizer),
-            kernel_constraint = constraints.get(kernel_constraint),
-            bias_constraint = constraints.get(bias_constraint),
+            filters=filters,
+            kernel_size=kernel_size,
+            strides=strides,
+            padding=padding,
+            data_format=data_format,
+            dilation_rate=dilation_rate,
+            activation=activations.get(activation),
+            use_bias=use_bias,
+            kernel_initializer=initializers.get(kernel_initializer),
+            bias_initializer=initializers.get(bias_initializer),
+            kernel_regularizer=regularizers.get(kernel_regularizer),
+            bias_regularizer=regularizers.get(bias_regularizer),
+            activity_regularizer=regularizers.get(activity_regularizer),
+            kernel_constraint=constraints.get(kernel_constraint),
+            bias_constraint=constraints.get(bias_constraint),
             **kwargs
         )
 
@@ -95,27 +95,27 @@ class Conv1DTranspose(Conv1D):
                 'should be defined. Found `None`.'
             )
         input_dim = int(input_shape[channel_axis])
-        self.input_spec = InputSpec(ndim = 3, axes = {channel_axis: input_dim})
+        self.input_spec = InputSpec(ndim=3, axes={channel_axis: input_dim})
         kernel_shape = self.kernel_size + (self.filters, input_dim)
 
         self.kernel = self.add_weight(
-            name = 'kernel',
-            shape = kernel_shape,
-            initializer = self.kernel_initializer,
-            regularizer = self.kernel_regularizer,
-            constraint = self.kernel_constraint,
-            trainable = True,
-            dtype = self.dtype,
+            name='kernel',
+            shape=kernel_shape,
+            initializer=self.kernel_initializer,
+            regularizer=self.kernel_regularizer,
+            constraint=self.kernel_constraint,
+            trainable=True,
+            dtype=self.dtype,
         )
         if self.use_bias:
             self.bias = self.add_weight(
-                name = 'bias',
-                shape = (self.filters,),
-                initializer = self.bias_initializer,
-                regularizer = self.bias_regularizer,
-                constraint = self.bias_constraint,
-                trainable = True,
-                dtype = self.dtype,
+                name='bias',
+                shape=(self.filters,),
+                initializer=self.bias_initializer,
+                regularizer=self.bias_regularizer,
+                constraint=self.bias_constraint,
+                trainable=True,
+                dtype=self.dtype,
             )
         else:
             self.bias = None
@@ -139,26 +139,26 @@ class Conv1DTranspose(Conv1D):
         out_length = conv_utils.deconv_output_length(
             length,
             self.kernel_size[0],
-            padding = self.padding,
-            output_padding = output_padding,
-            stride = self.strides[0],
-            dilation = self.dilation_rate[0],
+            padding=self.padding,
+            output_padding=output_padding,
+            stride=self.strides[0],
+            dilation=self.dilation_rate[0],
         )
         if self.data_format == 'channels_first':
             output_shape = (batch_size, self.filters, out_length)
         else:
             output_shape = (batch_size, out_length, self.filters)
-        data_format = conv_utils.convert_data_format(self.data_format, ndim = 3)
+        data_format = conv_utils.convert_data_format(self.data_format, ndim=3)
 
         output_shape_tensor = array_ops.stack(output_shape)
         outputs = nn_ops.conv1d_transpose(
             inputs,
             self.kernel,
             output_shape_tensor,
-            strides = self.strides,
-            padding = self.padding.upper(),
-            data_format = data_format,
-            dilations = self.dilation_rate,
+            strides=self.strides,
+            padding=self.padding.upper(),
+            data_format=data_format,
+            dilations=self.dilation_rate,
         )
 
         if not context.executing_eagerly():
@@ -167,7 +167,7 @@ class Conv1DTranspose(Conv1D):
             outputs.set_shape(out_shape)
 
         if self.use_bias:
-            outputs = nn.bias_add(outputs, self.bias, data_format = data_format)
+            outputs = nn.bias_add(outputs, self.bias, data_format=data_format)
 
         if self.activation is not None:
             return self.activation(outputs)

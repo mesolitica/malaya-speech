@@ -37,9 +37,9 @@ def deep_conversion(
 
         * ``'fastvc-32-vggvox-v2'`` - FastVC bottleneck size 32 with VGGVox-v2 Speaker Vector.
         * ``'fastvc-64-vggvox-v2'`` - FastVC bottleneck size 64 with VGGVox-v2 Speaker Vector.
-        
+
     quantized : bool, optional (default=False)
-        if True, will load 8-bit quantized model. 
+        if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
 
     Returns
@@ -53,8 +53,8 @@ def deep_conversion(
         )
 
     return voice_conversion.load(
-        model = model,
-        module = 'voice-conversion',
-        quantized = quantized,
+        model=model,
+        module='voice-conversion',
+        quantized=quantized,
         **kwargs
     )

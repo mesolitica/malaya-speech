@@ -60,10 +60,12 @@ import math
 dimension = 512
 
 # for VGGVox v1
+
+
 def round_half_up(number):
     return int(
         decimal.Decimal(number).quantize(
-            decimal.Decimal('1'), rounding = decimal.ROUND_HALF_UP
+            decimal.Decimal('1'), rounding=decimal.ROUND_HALF_UP
         )
     )
 
@@ -89,16 +91,16 @@ def remove_dc_and_dither(sin, sample_rate):
 
 
 # for VGGVox v1
-def preemphasis(signal, coeff = 0.95):
+def preemphasis(signal, coeff=0.95):
     return np.append(signal[0], signal[1:] - coeff * signal[:-1])
 
 
 # for VGGVox v1
-def rolling_window(a, window, step = 1):
+def rolling_window(a, window, step=1):
     # http://ellisvalentiner.com/post/2017-03-21-np-strides-trick
     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
     strides = a.strides + (a.strides[-1],)
-    return np.lib.stride_tricks.as_strided(a, shape = shape, strides = strides)[
+    return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)[
         ::step
     ]
 
@@ -108,8 +110,8 @@ def framesig(
     sig,
     frame_len,
     frame_step,
-    winfunc = lambda x: numpy.ones((x,)),
-    stride_trick = True,
+    winfunc=lambda x: numpy.ones((x,)),
+    stride_trick=True,
 ):
     slen = len(sig)
     frame_len = int(round_half_up(frame_len))
@@ -128,7 +130,7 @@ def framesig(
     if stride_trick:
         win = winfunc(frame_len)
         frames = rolling_window(
-            padsignal, window = frame_len, step = frame_step
+            padsignal, window=frame_len, step=frame_step
         )
     else:
         indices = (
@@ -138,7 +140,7 @@ def framesig(
                 (frame_len, 1),
             ).T
         )
-        indices = numpy.array(indices, dtype = numpy.int32)
+        indices = numpy.array(indices, dtype=numpy.int32)
         frames = padsignal[indices]
         win = numpy.tile(winfunc(frame_len), (numframes, 1))
 
@@ -146,38 +148,38 @@ def framesig(
 
 
 # for VGGVox v1
-def normalize_frames(m, epsilon = 1e-12):
+def normalize_frames(m, epsilon=1e-12):
     return np.array([(v - np.mean(v)) / max(np.std(v), epsilon) for v in m])
 
 
 # for VGGVox v1
 def vggvox_v1(
     signal,
-    sample_rate = 16000,
-    preemphasis_alpha = 0.97,
-    frame_len = 0.005,
-    frame_step = 0.0005,
-    num_fft = 512,
-    buckets = None,
+    sample_rate=16000,
+    preemphasis_alpha=0.97,
+    frame_len=0.005,
+    frame_step=0.0005,
+    num_fft=512,
+    buckets=None,
     **kwargs
 ):
     signal = signal.copy()
     signal *= 2 ** 15
     signal = remove_dc_and_dither(signal, sample_rate)
-    signal = preemphasis(signal, coeff = preemphasis_alpha)
+    signal = preemphasis(signal, coeff=preemphasis_alpha)
     frames = framesig(
         signal,
-        frame_len = frame_len * sample_rate,
-        frame_step = frame_step * sample_rate,
-        winfunc = np.hamming,
+        frame_len=frame_len * sample_rate,
+        frame_step=frame_step * sample_rate,
+        winfunc=np.hamming,
     )
-    fft = abs(np.fft.fft(frames, n = num_fft))
+    fft = abs(np.fft.fft(frames, n=num_fft))
     fft_norm = normalize_frames(fft.T)
 
     if buckets:
         rsize = max(k for k in buckets if k <= fft_norm.shape[1])
         rstart = int((fft_norm.shape[1] - rsize) / 2)
-        out = fft_norm[:, rstart : rstart + rsize]
+        out = fft_norm[:, rstart: rstart + rsize]
         return out
 
     else:
@@ -209,7 +211,7 @@ def parse(serialized_example):
         'targets': tf.VarLenFeature(tf.int64),
     }
     features = tf.parse_single_example(
-        serialized_example, features = data_fields
+        serialized_example, features=data_fields
     )
     for k in features.keys():
         features[k] = features[k].values
@@ -224,19 +226,19 @@ def parse(serialized_example):
     return features
 
 
-def get_dataset(files, batch_size = 16, shuffle_size = 5, thread_count = 24):
+def get_dataset(files, batch_size=16, shuffle_size=5, thread_count=24):
     def get():
         dataset = tf.data.TFRecordDataset(files)
-        dataset = dataset.map(parse, num_parallel_calls = thread_count)
+        dataset = dataset.map(parse, num_parallel_calls=thread_count)
         dataset = dataset.padded_batch(
             batch_size,
-            padded_shapes = {
+            padded_shapes={
                 'inputs': tf.TensorShape([dimension, None, 1]),
                 'targets': tf.TensorShape([None]),
             },
-            padding_values = {
-                'inputs': tf.constant(0, dtype = tf.float32),
-                'targets': tf.constant(0, dtype = tf.int64),
+            padding_values={
+                'inputs': tf.constant(0, dtype=tf.float32),
+                'targets': tf.constant(0, dtype=tf.int64),
             },
         )
         dataset = dataset.shuffle(shuffle_size)
@@ -267,36 +269,36 @@ def conv_bn_pool(
     conv_kernel_size,
     conv_strides,
     conv_pad,
-    pool = '',
-    pool_size = (2, 2),
-    pool_strides = None,
-    conv_layer_prefix = 'conv',
+    pool='',
+    pool_size=(2, 2),
+    pool_strides=None,
+    conv_layer_prefix='conv',
 ):
-    x = ZeroPadding2D(padding = conv_pad, name = 'pad{}'.format(layer_idx))(
+    x = ZeroPadding2D(padding=conv_pad, name='pad{}'.format(layer_idx))(
         inp_tensor
     )
     x = Conv2D(
-        filters = conv_filters,
-        kernel_size = conv_kernel_size,
-        strides = conv_strides,
-        padding = 'valid',
-        name = '{}{}'.format(conv_layer_prefix, layer_idx),
+        filters=conv_filters,
+        kernel_size=conv_kernel_size,
+        strides=conv_strides,
+        padding='valid',
+        name='{}{}'.format(conv_layer_prefix, layer_idx),
     )(x)
     x = BatchNormalization(
-        epsilon = 1e-5, momentum = 1.0, name = 'bn{}'.format(layer_idx)
+        epsilon=1e-5, momentum=1.0, name='bn{}'.format(layer_idx)
     )(x)
-    x = Activation('relu', name = 'relu{}'.format(layer_idx))(x)
+    x = Activation('relu', name='relu{}'.format(layer_idx))(x)
     if pool == 'max':
         x = MaxPooling2D(
-            pool_size = pool_size,
-            strides = pool_strides,
-            name = 'mpool{}'.format(layer_idx),
+            pool_size=pool_size,
+            strides=pool_strides,
+            name='mpool{}'.format(layer_idx),
         )(x)
     elif pool == 'avg':
         x = AveragePooling2D(
-            pool_size = pool_size,
-            strides = pool_strides,
-            name = 'apool{}'.format(layer_idx),
+            pool_size=pool_size,
+            strides=pool_strides,
+            name='apool{}'.format(layer_idx),
         )(x)
     return x
 
@@ -309,107 +311,107 @@ def conv_bn_dynamic_apool(
     conv_kernel_size,
     conv_strides,
     conv_pad,
-    conv_layer_prefix = 'conv',
+    conv_layer_prefix='conv',
 ):
-    x = ZeroPadding2D(padding = conv_pad, name = 'pad{}'.format(layer_idx))(
+    x = ZeroPadding2D(padding=conv_pad, name='pad{}'.format(layer_idx))(
         inp_tensor
     )
     x = Conv2D(
-        filters = conv_filters,
-        kernel_size = conv_kernel_size,
-        strides = conv_strides,
-        padding = 'valid',
-        name = '{}{}'.format(conv_layer_prefix, layer_idx),
+        filters=conv_filters,
+        kernel_size=conv_kernel_size,
+        strides=conv_strides,
+        padding='valid',
+        name='{}{}'.format(conv_layer_prefix, layer_idx),
     )(x)
     x = BatchNormalization(
-        epsilon = 1e-5, momentum = 1.0, name = 'bn{}'.format(layer_idx)
+        epsilon=1e-5, momentum=1.0, name='bn{}'.format(layer_idx)
     )(x)
-    x = Activation('relu', name = 'relu{}'.format(layer_idx))(x)
-    x = GlobalAveragePooling2D(name = 'gapool{}'.format(layer_idx))(x)
-    x = Reshape((1, 1, conv_filters), name = 'reshape{}'.format(layer_idx))(x)
+    x = Activation('relu', name='relu{}'.format(layer_idx))(x)
+    x = GlobalAveragePooling2D(name='gapool{}'.format(layer_idx))(x)
+    x = Reshape((1, 1, conv_filters), name='reshape{}'.format(layer_idx))(x)
     return x
 
 
 class Resnet1D(Model):
-    def __init__(self, params = None, is_training = False):
+    def __init__(self, params=None, is_training=False):
         super(Resnet1D, self).__init__()
 
-    def call(self, inputs, training = None, mask = None):
+    def call(self, inputs, training=None, mask=None):
         inp = inputs['features_input']
         x = conv_bn_pool(
             inp,
-            layer_idx = 1,
-            conv_filters = 96,
-            conv_kernel_size = (7, 7),
-            conv_strides = (2, 2),
-            conv_pad = (1, 1),
-            pool = 'max',
-            pool_size = (3, 3),
-            pool_strides = (2, 2),
+            layer_idx=1,
+            conv_filters=96,
+            conv_kernel_size=(7, 7),
+            conv_strides=(2, 2),
+            conv_pad=(1, 1),
+            pool='max',
+            pool_size=(3, 3),
+            pool_strides=(2, 2),
         )
         x = conv_bn_pool(
             x,
-            layer_idx = 2,
-            conv_filters = 256,
-            conv_kernel_size = (5, 5),
-            conv_strides = (2, 2),
-            conv_pad = (1, 1),
-            pool = 'max',
-            pool_size = (3, 3),
-            pool_strides = (2, 2),
+            layer_idx=2,
+            conv_filters=256,
+            conv_kernel_size=(5, 5),
+            conv_strides=(2, 2),
+            conv_pad=(1, 1),
+            pool='max',
+            pool_size=(3, 3),
+            pool_strides=(2, 2),
         )
         x = conv_bn_pool(
             x,
-            layer_idx = 3,
-            conv_filters = 384,
-            conv_kernel_size = (3, 3),
-            conv_strides = (1, 1),
-            conv_pad = (1, 1),
+            layer_idx=3,
+            conv_filters=384,
+            conv_kernel_size=(3, 3),
+            conv_strides=(1, 1),
+            conv_pad=(1, 1),
         )
         x = conv_bn_pool(
             x,
-            layer_idx = 4,
-            conv_filters = 256,
-            conv_kernel_size = (3, 3),
-            conv_strides = (1, 1),
-            conv_pad = (1, 1),
+            layer_idx=4,
+            conv_filters=256,
+            conv_kernel_size=(3, 3),
+            conv_strides=(1, 1),
+            conv_pad=(1, 1),
         )
         x = conv_bn_pool(
             x,
-            layer_idx = 5,
-            conv_filters = 256,
-            conv_kernel_size = (3, 3),
-            conv_strides = (1, 1),
-            conv_pad = (1, 1),
-            pool = 'max',
-            pool_size = (5, 3),
-            pool_strides = (3, 2),
+            layer_idx=5,
+            conv_filters=256,
+            conv_kernel_size=(3, 3),
+            conv_strides=(1, 1),
+            conv_pad=(1, 1),
+            pool='max',
+            pool_size=(5, 3),
+            pool_strides=(3, 2),
         )
         x = conv_bn_dynamic_apool(
             x,
-            layer_idx = 6,
-            conv_filters = 4096,
-            conv_kernel_size = (9, 1),
-            conv_strides = (1, 1),
-            conv_pad = (0, 0),
-            conv_layer_prefix = 'fc',
+            layer_idx=6,
+            conv_filters=4096,
+            conv_kernel_size=(9, 1),
+            conv_strides=(1, 1),
+            conv_pad=(0, 0),
+            conv_layer_prefix='fc',
         )
         x = conv_bn_pool(
             x,
-            layer_idx = 7,
-            conv_filters = 1024,
-            conv_kernel_size = (1, 1),
-            conv_strides = (1, 1),
-            conv_pad = (0, 0),
-            conv_layer_prefix = 'fc',
+            layer_idx=7,
+            conv_filters=1024,
+            conv_kernel_size=(1, 1),
+            conv_strides=(1, 1),
+            conv_pad=(0, 0),
+            conv_layer_prefix='fc',
         )
-        x = Lambda(lambda y: K.l2_normalize(y, axis = 3), name = 'norm')(x)
+        x = Lambda(lambda y: K.l2_normalize(y, axis=3), name='norm')(x)
         x = Conv2D(
-            filters = 1024,
-            kernel_size = (1, 1),
-            strides = (1, 1),
-            padding = 'valid',
-            name = 'fc8',
+            filters=1024,
+            kernel_size=(1, 1),
+            strides=(1, 1),
+            padding='valid',
+            name='fc8',
         )(x)
         return x
 
@@ -420,7 +422,7 @@ init_checkpoint = '../vggvox-speaker-identification/v1/vggvox.ckpt'
 
 def model_fn(features, labels, mode, params):
     Y = tf.cast(features['targets'][:, 0], tf.int32)
-    model = Resnet1D(is_training = True)
+    model = Resnet1D(is_training=True)
     inputs = {'features_input': features['inputs']}
 
     logits = model.call(inputs)
@@ -429,17 +431,17 @@ def model_fn(features, labels, mode, params):
 
     loss = tf.reduce_mean(
         tf.nn.sparse_softmax_cross_entropy_with_logits(
-            logits = logits, labels = Y
+            logits=logits, labels=Y
         )
     )
 
     tf.identity(loss, 'train_loss')
 
     accuracy = tf.metrics.accuracy(
-        labels = Y, predictions = tf.argmax(logits, axis = 1)
+        labels=Y, predictions=tf.argmax(logits, axis=1)
     )
 
-    tf.identity(accuracy[1], name = 'train_accuracy')
+    tf.identity(accuracy[1], name='train_accuracy')
 
     variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
     variables = [v for v in variables if 'prediction' not in v.name]
@@ -453,17 +455,17 @@ def model_fn(features, labels, mode, params):
     if mode == tf.estimator.ModeKeys.TRAIN:
         global_step = tf.train.get_or_create_global_step()
         optimizer = tf.train.AdamOptimizer(learning_rate)
-        train_op = optimizer.minimize(loss, global_step = global_step)
+        train_op = optimizer.minimize(loss, global_step=global_step)
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = mode, loss = loss, train_op = train_op
+            mode=mode, loss=loss, train_op=train_op
         )
 
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = tf.estimator.ModeKeys.EVAL,
-            loss = loss,
-            eval_metric_ops = {'accuracy': accuracy},
+            mode=tf.estimator.ModeKeys.EVAL,
+            loss=loss,
+            eval_metric_ops={'accuracy': accuracy},
         )
 
     return estimator_spec
@@ -471,28 +473,28 @@ def model_fn(features, labels, mode, params):
 
 train_hooks = [
     tf.train.LoggingTensorHook(
-        ['train_accuracy', 'train_loss'], every_n_iter = 1
+        ['train_accuracy', 'train_loss'], every_n_iter=1
     )
 ]
 
 train_files = glob('vad2/data/vad-train-*') + glob('noise/data/vad-train-*')
 random.shuffle(train_files)
-train_dataset = get_dataset(train_files, batch_size = 32)
+train_dataset = get_dataset(train_files, batch_size=32)
 
 dev_files = glob('vad2/data/vad-dev-*') + glob('noise/data/vad-dev-*')
 random.shuffle(dev_files)
-dev_dataset = get_dataset(dev_files, batch_size = 16)
+dev_dataset = get_dataset(dev_files, batch_size=16)
 
 save_directory = 'output-vggvox-v1-vad'
 
 train.run_training(
-    train_fn = train_dataset,
-    model_fn = model_fn,
-    model_dir = save_directory,
-    num_gpus = 1,
-    log_step = 1,
-    save_checkpoint_step = 10000,
-    max_steps = 300000,
-    eval_fn = dev_dataset,
-    train_hooks = train_hooks,
+    train_fn=train_dataset,
+    model_fn=model_fn,
+    model_dir=save_directory,
+    num_gpus=1,
+    log_step=1,
+    save_checkpoint_step=10000,
+    max_steps=300000,
+    eval_fn=dev_dataset,
+    train_hooks=train_hooks,
 )

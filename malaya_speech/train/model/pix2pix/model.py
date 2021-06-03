@@ -14,10 +14,10 @@ def create_model(
     generator,
     inputs,
     targets,
-    gan_weight = 1.0,
-    l1_weight = 100.0,
-    lr = 0.0002,
-    beta1 = 0.5,
+    gan_weight=1.0,
+    l1_weight=100.0,
+    lr=0.0002,
+    beta1=0.5,
     **kwargs
 ):
     with tf.variable_scope('generator'):
@@ -28,7 +28,7 @@ def create_model(
             predict_real = discriminator.Discriminator(inputs, targets).logits
 
     with tf.name_scope('fake_discriminator'):
-        with tf.variable_scope('discriminator', reuse = True):
+        with tf.variable_scope('discriminator', reuse=True):
             predict_fake = discriminator.Discriminator(inputs, outputs).logits
 
     with tf.name_scope('discriminator_loss'):
@@ -49,7 +49,7 @@ def create_model(
         ]
         discrim_optim = tf.train.AdamOptimizer(lr, beta1)
         discrim_grads_and_vars = discrim_optim.compute_gradients(
-            discrim_loss, var_list = discrim_tvars
+            discrim_loss, var_list=discrim_tvars
         )
         discrim_train = discrim_optim.apply_gradients(discrim_grads_and_vars)
 
@@ -62,27 +62,27 @@ def create_model(
             ]
             gen_optim = tf.train.AdamOptimizer(lr, beta1)
             gen_grads_and_vars = gen_optim.compute_gradients(
-                gen_loss, var_list = gen_tvars
+                gen_loss, var_list=gen_tvars
             )
             gen_train = gen_optim.apply_gradients(gen_grads_and_vars)
 
-    ema = tf.train.ExponentialMovingAverage(decay = 0.99)
+    ema = tf.train.ExponentialMovingAverage(decay=0.99)
     update_losses = ema.apply([discrim_loss, gen_loss_GAN, gen_loss_L1])
 
     global_step = tf.train.get_or_create_global_step()
     incr_global_step = tf.assign(global_step, global_step + 1)
 
     return Model_Template(
-        predict_real = predict_real,
-        predict_fake = predict_fake,
-        discrim_loss = ema.average(discrim_loss),
-        discrim_grads_and_vars = discrim_grads_and_vars,
-        gen_loss_GAN = ema.average(gen_loss_GAN),
-        gen_loss_L1 = ema.average(gen_loss_L1),
-        gen_grads_and_vars = gen_grads_and_vars,
-        outputs = outputs,
-        train = tf.group(update_losses, incr_global_step, gen_train),
-        global_step = global_step,
+        predict_real=predict_real,
+        predict_fake=predict_fake,
+        discrim_loss=ema.average(discrim_loss),
+        discrim_grads_and_vars=discrim_grads_and_vars,
+        gen_loss_GAN=ema.average(gen_loss_GAN),
+        gen_loss_L1=ema.average(gen_loss_L1),
+        gen_grads_and_vars=gen_grads_and_vars,
+        outputs=outputs,
+        train=tf.group(update_losses, incr_global_step, gen_train),
+        global_step=global_step,
     )
 
 

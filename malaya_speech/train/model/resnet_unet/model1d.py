@@ -47,47 +47,47 @@ class Model:
     def __init__(
         self,
         input_tensor,
-        cout = 1,
-        num_layers = 6,
-        num_initial_filters = 66,
-        output_mask_logit = False,
-        logging = False,
-        dropout = 0.5,
-        training = True,
+        cout=1,
+        num_layers=6,
+        num_initial_filters=66,
+        output_mask_logit=False,
+        logging=False,
+        dropout=0.5,
+        training=True,
     ):
         conv_activation_layer = _get_conv_activation_layer({})
         deconv_activation_layer = _get_deconv_activation_layer({})
-        kernel_initializer = he_uniform(seed = 50)
+        kernel_initializer = he_uniform(seed=50)
 
         conv1d_factory = partial(
             Conv1D,
-            strides = (2),
-            padding = 'same',
-            kernel_initializer = kernel_initializer,
+            strides=(2),
+            padding='same',
+            kernel_initializer=kernel_initializer,
         )
 
         conv2d_transpose_factory = partial(
             Conv2DTranspose,
-            strides = (2, 1),
-            padding = 'same',
-            kernel_initializer = kernel_initializer,
+            strides=(2, 1),
+            padding='same',
+            kernel_initializer=kernel_initializer,
         )
 
         def resnet_block(input_tensor, filter_size):
 
             res = conv1d_factory(
-                filter_size, (1), strides = (1), use_bias = False
+                filter_size, (1), strides=(1), use_bias=False
             )(input_tensor)
-            conv1 = conv1d_factory(filter_size, (5), strides = (1))(
+            conv1 = conv1d_factory(filter_size, (5), strides=(1))(
                 input_tensor
             )
-            batch1 = BatchNormalization(axis = -1)(conv1, training = training)
+            batch1 = BatchNormalization(axis=-1)(conv1, training=training)
             rel1 = conv_activation_layer(batch1)
-            conv2 = conv1d_factory(filter_size, (5), strides = (1))(rel1)
-            batch2 = BatchNormalization(axis = -1)(conv2, training = training)
+            conv2 = conv1d_factory(filter_size, (5), strides=(1))(rel1)
+            batch2 = BatchNormalization(axis=-1)(conv2, training=training)
             resconnection = Add()([res, batch2])
             rel2 = conv_activation_layer(resconnection)
-            return MaxPooling1D(padding = 'same')(rel2)
+            return MaxPooling1D(padding='same')(rel2)
 
         enc_outputs = []
         current_layer = input_tensor
@@ -112,35 +112,35 @@ class Model:
                 num_initial_filters * (2 ** (num_layers - i - 2)), (5, 1)
             )((tf.expand_dims(current_layer, 2)))[:, :, 0]
             current_layer = deconv_activation_layer(current_layer)
-            current_layer = BatchNormalization(axis = -1)(
-                current_layer, training = training
+            current_layer = BatchNormalization(axis=-1)(
+                current_layer, training=training
             )
             if i < 3:
                 current_layer = Dropout(dropout)(
-                    current_layer, training = training
+                    current_layer, training=training
                 )
-            current_layer = Concatenate(axis = -1)(
+            current_layer = Concatenate(axis=-1)(
                 [enc_outputs[-i - 1], current_layer]
             )
             if logging:
                 print(current_layer)
 
-        current_layer = conv2d_transpose_factory(1, (5, 1), strides = (2, 1))(
+        current_layer = conv2d_transpose_factory(1, (5, 1), strides=(2, 1))(
             (tf.expand_dims(current_layer, 2))
         )[:, :, 0]
         current_layer = deconv_activation_layer(current_layer)
-        current_layer = BatchNormalization(axis = -1)(
-            current_layer, training = training
+        current_layer = BatchNormalization(axis=-1)(
+            current_layer, training=training
         )
 
         if not output_mask_logit:
             last = Conv1D(
                 cout,
                 (4),
-                dilation_rate = (2),
-                activation = None,
-                padding = 'same',
-                kernel_initializer = kernel_initializer,
+                dilation_rate=(2),
+                activation=None,
+                padding='same',
+                kernel_initializer=kernel_initializer,
             )((current_layer))
             output = Multiply()([last, input_tensor])
             self.logits = output
@@ -149,7 +149,7 @@ class Model:
             self.logits = Conv1D(
                 cout,
                 (4),
-                dilation_rate = (2),
-                padding = 'same',
-                kernel_initializer = kernel_initializer,
+                dilation_rate=(2),
+                padding='same',
+                kernel_initializer=kernel_initializer,
             )((current_layer))

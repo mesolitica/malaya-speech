@@ -35,9 +35,9 @@ from scipy.io.wavfile import write
 
 p = Pipeline()
 
-model_v2 = malaya_speech.vad.deep_model(model = 'vggvox-v2')
+model_v2 = malaya_speech.vad.deep_model(model='vggvox-v2')
 pipeline = (
-    p.map(malaya_speech.utils.generator.frames, frame_duration_ms = 30)
+    p.map(malaya_speech.utils.generator.frames, frame_duration_ms=30)
     .batching(20)
     .foreach_map(model_v2.predict)
     .flatten()
@@ -67,7 +67,7 @@ for file in mp3s:
             (frame, result['flatten'][no]) for no, frame in enumerate(frames)
         ]
         results = malaya_speech.split.split_vad(
-            frames_deep_v2_batch, n = 5, negative_threshold = 0.1
+            frames_deep_v2_batch, n=5, negative_threshold=0.1
         )
 
         for no in tqdm(range(len(results))):
@@ -80,7 +80,7 @@ for file in mp3s:
                 with sr.AudioFile('test.wav') as source:
                     a = r.record(source)
 
-                text = r.recognize_google(a, language = 'ms')
+                text = r.recognize_google(a, language='ms')
                 filename = f'{file}-{no}.wav'
                 if len(text):
                     text_filename = (

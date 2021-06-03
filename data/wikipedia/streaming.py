@@ -13,7 +13,7 @@ len(combined_wiki)
 length = 4
 texts = []
 for i in range(0, len(combined_wiki), length):
-    texts.append(' '.join(combined_wiki[i : i + length]))
+    texts.append(' '.join(combined_wiki[i: i + length]))
 
 r = sr.Recognizer()
 r.energy_threshold = 1000
@@ -25,7 +25,7 @@ try:
     print('Set minimum energy threshold to {}'.format(r.energy_threshold))
     print('Adjusting minimum energy...')
     with m as source:
-        r.adjust_for_ambient_noise(source, duration = 3)
+        r.adjust_for_ambient_noise(source, duration=3)
     print('Now set minimum energy threshold to {}'.format(r.energy_threshold))
     for _ in range(50):
         time.sleep(0.1)

@@ -56,7 +56,7 @@ def to_byte(array):
     return array
 
 
-def float_to_int(array, type = np.int16):
+def float_to_int(array, type=np.int16):
     """
     Change np.array float32 / float64 into np.int16
 
@@ -84,7 +84,7 @@ def float_to_int(array, type = np.int16):
     return array
 
 
-def int_to_float(array, type = np.float32):
+def int_to_float(array, type=np.float32):
     """
     Change np.array int16 into np.float32
 

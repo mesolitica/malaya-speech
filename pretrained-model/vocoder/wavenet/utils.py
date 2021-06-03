@@ -44,7 +44,7 @@ def get_module(module_path):
     return module
 
 
-def load_audio(path, sample_length = 64000, sr = 16000):
+def load_audio(path, sample_length=64000, sr=16000):
     """Loading of a wave file.
 
   Args:
@@ -55,12 +55,12 @@ def load_audio(path, sample_length = 64000, sr = 16000):
   Returns:
     out: The audio in samples from -1.0 to 1.0
   """
-    audio, _ = librosa.load(path, sr = sr)
+    audio, _ = librosa.load(path, sr=sr)
     audio = audio[:sample_length]
     return audio
 
 
-def mu_law(x, mu = 255, int8 = False):
+def mu_law(x, mu=255, int8=False):
     """A TF implementation of Mu-Law encoding.
 
   Args:
@@ -79,7 +79,7 @@ def mu_law(x, mu = 255, int8 = False):
     return out
 
 
-def inv_mu_law(x, mu = 255):
+def inv_mu_law(x, mu=255):
     """A TF implementation of inverse Mu-Law.
 
   Args:
@@ -96,7 +96,7 @@ def inv_mu_law(x, mu = 255):
     return out
 
 
-def inv_mu_law_numpy(x, mu = 255.0):
+def inv_mu_law_numpy(x, mu=255.0):
     """A numpy implementation of inverse Mu-Law.
 
   Args:
@@ -113,7 +113,7 @@ def inv_mu_law_numpy(x, mu = 255.0):
     return out
 
 
-def trim_for_encoding(wav_data, sample_length, hop_length = 512):
+def trim_for_encoding(wav_data, sample_length, hop_length=512):
     """Make sure audio is a even multiple of hop_size.
 
   Args:
@@ -166,30 +166,30 @@ def get_optimizer(learning_rate, hparams):
     return {
         'rmsprop': tf.RMSPropOptimizer(
             learning_rate,
-            decay = 0.95,
-            momentum = hparams.momentum,
-            epsilon = 1e-4,
+            decay=0.95,
+            momentum=hparams.momentum,
+            epsilon=1e-4,
         ),
         'adam': tf.AdamOptimizer(
-            learning_rate, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8
+            learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-8
         ),
         'adagrad': tf.AdagradOptimizer(
-            learning_rate, initial_accumulator_value = 1.0
+            learning_rate, initial_accumulator_value=1.0
         ),
-        'mom': tf.MomentumOptimizer(learning_rate, momentum = hparams.momentum),
+        'mom': tf.MomentumOptimizer(learning_rate, momentum=hparams.momentum),
         'sgd': tf.GradientDescentOptimizer(learning_rate),
     }.get(hparams.optimizer)
 
 
 def specgram(
     audio,
-    n_fft = 512,
-    hop_length = None,
-    mask = True,
-    log_mag = True,
-    re_im = False,
-    dphase = True,
-    mag_only = False,
+    n_fft=512,
+    hop_length=None,
+    mask=True,
+    log_mag=True,
+    re_im=False,
+    dphase=True,
+    mag_only=False,
 ):
     """Spectrogram using librosa.
 
@@ -211,10 +211,10 @@ def specgram(
         hop_length = int(n_fft / 2.0)
 
     fft_config = dict(
-        n_fft = n_fft,
-        win_length = n_fft,
-        hop_length = hop_length,
-        center = True,
+        n_fft=n_fft,
+        win_length=n_fft,
+        hop_length=hop_length,
+        center=True,
     )
 
     spec = librosa.stft(audio, **fft_config)
@@ -222,7 +222,7 @@ def specgram(
     if re_im:
         re = spec.real[:, :, np.newaxis]
         im = spec.imag[:, :, np.newaxis]
-        spec_real = np.concatenate((re, im), axis = 2)
+        spec_real = np.concatenate((re, im), axis=2)
 
     else:
         mag, phase = librosa.core.magphase(spec)
@@ -232,7 +232,7 @@ def specgram(
         if log_mag:
             mag = (
                 librosa.power_to_db(
-                    mag ** 2, amin = 1e-13, top_db = 120.0, ref = np.max
+                    mag ** 2, amin=1e-13, top_db=120.0, ref=np.max
                 )
                 / 120.0
             ) + 1
@@ -243,7 +243,7 @@ def specgram(
             #  Derivative of phase
             phase_unwrapped = np.unwrap(phase_angle)
             p = phase_unwrapped[:, 1:] - phase_unwrapped[:, :-1]
-            p = np.concatenate([phase_unwrapped[:, 0:1], p], axis = 1) / np.pi
+            p = np.concatenate([phase_unwrapped[:, 0:1], p], axis=1) / np.pi
         else:
             # Normal phase
             p = phase_angle / np.pi
@@ -256,7 +256,7 @@ def specgram(
         if mag_only:
             spec_real = mag[:, :, np.newaxis]
         else:
-            spec_real = np.concatenate((mag, p), axis = 2)
+            spec_real = np.concatenate((mag, p), axis=2)
     return spec_real
 
 
@@ -279,9 +279,9 @@ def griffin_lim(mag, phase_angle, n_fft, hop, num_iters):
     audio: 1-D array of float32 sound samples.
   """
     fft_config = dict(
-        n_fft = n_fft, win_length = n_fft, hop_length = hop, center = True
+        n_fft=n_fft, win_length=n_fft, hop_length=hop, center=True
     )
-    ifft_config = dict(win_length = n_fft, hop_length = hop, center = True)
+    ifft_config = dict(win_length=n_fft, hop_length=hop, center=True)
     complex_specgram = inv_magphase(mag, phase_angle)
     for i in range(num_iters):
         audio = librosa.istft(complex_specgram, **ifft_config)
@@ -295,14 +295,14 @@ def griffin_lim(mag, phase_angle, n_fft, hop, num_iters):
 
 def ispecgram(
     spec,
-    n_fft = 512,
-    hop_length = None,
-    mask = True,
-    log_mag = True,
-    re_im = False,
-    dphase = True,
-    mag_only = True,
-    num_iters = 1000,
+    n_fft=512,
+    hop_length=None,
+    mask=True,
+    log_mag=True,
+    re_im=False,
+    dphase=True,
+    mag_only=True,
+    num_iters=1000,
 ):
     """Inverse Spectrogram using librosa.
 
@@ -324,7 +324,7 @@ def ispecgram(
         hop_length = n_fft // 2
 
     ifft_config = dict(
-        win_length = n_fft, hop_length = hop_length, center = True
+        win_length=n_fft, hop_length=hop_length, center=True
     )
 
     if mag_only:
@@ -338,7 +338,7 @@ def ispecgram(
             p /= mag + 1e-13 * np.random.randn(*mag.shape)
         if dphase:
             # Roll up phase
-            phase_angle = np.cumsum(p * np.pi, axis = 1)
+            phase_angle = np.cumsum(p * np.pi, axis=1)
         else:
             phase_angle = p * np.pi
 
@@ -351,7 +351,7 @@ def ispecgram(
 
     if mag_only:
         audio = griffin_lim(
-            mag, phase_angle, n_fft, hop_length, num_iters = num_iters
+            mag, phase_angle, n_fft, hop_length, num_iters=num_iters
         )
     else:
         audio = librosa.core.istft(spec_real, **ifft_config)
@@ -360,13 +360,13 @@ def ispecgram(
 
 def batch_specgram(
     audio,
-    n_fft = 512,
-    hop_length = None,
-    mask = True,
-    log_mag = True,
-    re_im = False,
-    dphase = True,
-    mag_only = False,
+    n_fft=512,
+    hop_length=None,
+    mask=True,
+    log_mag=True,
+    re_im=False,
+    dphase=True,
+    mag_only=False,
 ):
     """Computes specgram in a batch."""
     assert len(audio.shape) == 2
@@ -390,14 +390,14 @@ def batch_specgram(
 
 def batch_ispecgram(
     spec,
-    n_fft = 512,
-    hop_length = None,
-    mask = True,
-    log_mag = True,
-    re_im = False,
-    dphase = True,
-    mag_only = False,
-    num_iters = 1000,
+    n_fft=512,
+    hop_length=None,
+    mask=True,
+    log_mag=True,
+    re_im=False,
+    dphase=True,
+    mag_only=False,
+    num_iters=1000,
 ):
     """Computes inverse specgram in a batch."""
     assert len(spec.shape) == 4
@@ -422,13 +422,13 @@ def batch_ispecgram(
 
 def tf_specgram(
     audio,
-    n_fft = 512,
-    hop_length = None,
-    mask = True,
-    log_mag = True,
-    re_im = False,
-    dphase = True,
-    mag_only = False,
+    n_fft=512,
+    hop_length=None,
+    mask=True,
+    log_mag=True,
+    re_im=False,
+    dphase=True,
+    mag_only=False,
 ):
     """Specgram tensorflow op (uses pyfunc)."""
     return tf.py_func(
@@ -440,15 +440,15 @@ def tf_specgram(
 
 def tf_ispecgram(
     spec,
-    n_fft = 512,
-    hop_length = None,
-    mask = True,
-    pad = True,
-    log_mag = True,
-    re_im = False,
-    dphase = True,
-    mag_only = False,
-    num_iters = 1000,
+    n_fft=512,
+    hop_length=None,
+    mask=True,
+    pad=True,
+    log_mag=True,
+    re_im=False,
+    dphase=True,
+    mag_only=False,
+    num_iters=1000,
 ):
     """Inverted Specgram tensorflow op (uses pyfunc)."""
     dims = spec.get_shape().as_list()
@@ -540,11 +540,11 @@ def specgram_summaries(
     spec,
     name,
     hparams,
-    rows = 4,
-    columns = 4,
-    image = True,
-    phase = True,
-    audio = True,
+    rows=4,
+    columns=4,
+    image=True,
+    phase=True,
+    audio=True,
 ):
     """Post summaries of a specgram (Image and Audio).
 
@@ -567,9 +567,9 @@ def specgram_summaries(
 
     if hparams.raw_audio:
         spec = tf.squeeze(spec)
-        spec /= tf.expand_dims(tf.reduce_max(spec, axis = 1), axis = 1)
+        spec /= tf.expand_dims(tf.reduce_max(spec, axis=1), axis=1)
         tf.summary.audio(
-            name, tf.squeeze(spec), hparams.samples_per_second, max_outputs = b
+            name, tf.squeeze(spec), hparams.samples_per_second, max_outputs=b
         )
     else:
         if image:
@@ -596,17 +596,17 @@ def specgram_summaries(
                 name,
                 tf_ispecgram(
                     spec,
-                    n_fft = hparams.n_fft,
-                    hop_length = hparams.hop_length,
-                    mask = hparams.mask,
-                    log_mag = hparams.log_mag,
-                    pad = hparams.pad,
-                    re_im = hparams.re_im,
-                    dphase = hparams.dphase,
-                    mag_only = hparams.mag_only,
+                    n_fft=hparams.n_fft,
+                    hop_length=hparams.hop_length,
+                    mask=hparams.mask,
+                    log_mag=hparams.log_mag,
+                    pad=hparams.pad,
+                    re_im=hparams.re_im,
+                    dphase=hparams.dphase,
+                    mag_only=hparams.mag_only,
                 ),
                 hparams.samples_per_second,
-                max_outputs = b,
+                max_outputs=b,
             )
 
 
@@ -624,7 +624,7 @@ def calculate_softmax_and_summaries(logits, one_hot_labels, name):
       log-probability of the true class.
   """
     loss = tf.nn.softmax_cross_entropy_with_logits(
-        logits = logits, labels = one_hot_labels
+        logits=logits, labels=one_hot_labels
     )
     loss = tf.reduce_mean(loss)
     softmax_summaries(loss, logits, one_hot_labels, name)
@@ -645,14 +645,14 @@ def calculate_sparse_softmax_and_summaries(logits, labels, name):
       log-probability of the true class.
   """
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
-        logits = logits, labels = labels
+        logits=logits, labels=labels
     )
     loss = tf.reduce_mean(loss)
     softmax_summaries(loss, logits, labels, name)
     return loss
 
 
-def softmax_summaries(loss, logits, one_hot_labels, name = 'softmax'):
+def softmax_summaries(loss, logits, one_hot_labels, name='softmax'):
     """Create the softmax summaries for this cross entropy loss.
 
   Args:
@@ -706,7 +706,7 @@ def calculate_l2_and_summaries(predicted_vectors, true_vectors, name):
 
 
 def frequency_weighted_cost_mask(
-    peak = 10.0, hz_flat = 1000, sr = 16000, n_fft = 512
+    peak=10.0, hz_flat=1000, sr=16000, n_fft=512
 ):
     """Calculates a mask to weight lower frequencies higher.
 
@@ -722,17 +722,17 @@ def frequency_weighted_cost_mask(
   """
     n = int(n_fft / 2)
     cutoff = np.where(
-        librosa.core.fft_frequencies(sr = sr, n_fft = n_fft) >= hz_flat
+        librosa.core.fft_frequencies(sr=sr, n_fft=n_fft) >= hz_flat
     )[0][0]
     mask = np.concatenate([np.linspace(peak, 1.0, cutoff), np.ones(n - cutoff)])
-    return tf.constant(mask[np.newaxis, :, np.newaxis], dtype = tf.float32)
+    return tf.constant(mask[np.newaxis, :, np.newaxis], dtype=tf.float32)
 
 
 # ---------------------------------------------------
 # Neural Nets
 # ---------------------------------------------------
 def pitch_embeddings(
-    batch, timesteps = 1, n_pitches = 128, dim_embedding = 128, reuse = False
+    batch, timesteps=1, n_pitches=128, dim_embedding=128, reuse=False
 ):
     """Get a embedding of each pitch note.
 
@@ -747,14 +747,14 @@ def pitch_embeddings(
     embedding: A tensor of shape [batch_size, 1, timesteps, dim_embedding].
   """
     batch_size = batch['pitch'].get_shape().as_list()[0]
-    with tf.variable_scope('PitchEmbedding', reuse = reuse):
+    with tf.variable_scope('PitchEmbedding', reuse=reuse):
         w = tf.get_variable(
-            name = 'embedding_weights',
-            shape = [n_pitches, dim_embedding],
-            initializer = tf.random_normal_initializer(),
+            name='embedding_weights',
+            shape=[n_pitches, dim_embedding],
+            initializer=tf.random_normal_initializer(),
         )
         one_hot_pitch = tf.reshape(batch['pitch'], [batch_size])
-        one_hot_pitch = tf.one_hot(one_hot_pitch, depth = n_pitches)
+        one_hot_pitch = tf.one_hot(one_hot_pitch, depth=n_pitches)
         embedding = tf.matmul(one_hot_pitch, w)
         embedding = tf.reshape(embedding, [batch_size, 1, 1, dim_embedding])
         if timesteps > 1:
@@ -762,7 +762,7 @@ def pitch_embeddings(
         return embedding
 
 
-def slim_batchnorm_arg_scope(is_training, activation_fn = None):
+def slim_batchnorm_arg_scope(is_training, activation_fn=None):
     """Create a scope for applying BatchNorm in slim.
 
   This scope also applies Glorot initializiation to convolutional weights.
@@ -788,10 +788,10 @@ def slim_batchnorm_arg_scope(is_training, activation_fn = None):
 
     with slim.arg_scope(
         [slim.conv2d, slim.fully_connected, slim.conv2d_transpose],
-        weights_initializer = slim.initializers.xavier_initializer(),
-        activation_fn = activation_fn,
-        normalizer_fn = slim.batch_norm,
-        normalizer_params = batch_norm_params,
+        weights_initializer=slim.initializers.xavier_initializer(),
+        activation_fn=activation_fn,
+        normalizer_fn=slim.batch_norm,
+        normalizer_params=batch_norm_params,
     ) as scope:
         return scope
 
@@ -802,14 +802,14 @@ def conv2d(
     stride,
     channels,
     is_training,
-    scope = 'conv2d',
-    batch_norm = False,
-    residual = False,
-    gated = False,
-    activation_fn = tf.nn.relu,
-    resize = False,
-    transpose = False,
-    stacked_layers = 1,
+    scope='conv2d',
+    batch_norm=False,
+    residual=False,
+    gated=False,
+    activation_fn=tf.nn.relu,
+    resize=False,
+    transpose=False,
+    stacked_layers=1,
 ):
     """2D-Conv with optional batch_norm, gating, residual.
 
@@ -843,26 +843,26 @@ def conv2d(
         # Apply a stack of convolutions Before adding residual
         for layer_idx in range(stacked_layers):
             with slim.arg_scope(
-                slim_batchnorm_arg_scope(is_training, activation_fn = None)
+                slim_batchnorm_arg_scope(is_training, activation_fn=None)
             ):
                 # Use interpolation to upsample instead of conv_transpose
                 if transpose and resize:
                     unused_mb, h, w, unused_ch = x.get_shape().as_list()
                     x = tf.image.resize_images(
-                        x, size = [h * stride[0], w * stride[1]], method = 0
+                        x, size=[h * stride[0], w * stride[1]], method=0
                     )
                     stride_conv = [1, 1]
                 else:
                     stride_conv = stride
 
                 x = conv_fn(
-                    inputs = x,
-                    stride = stride_conv,
-                    kernel_size = kernel_size,
-                    num_outputs = num_outputs,
-                    normalizer_fn = normalizer_fn,
-                    biases_initializer = tf.zeros_initializer(),
-                    scope = scope,
+                    inputs=x,
+                    stride=stride_conv,
+                    kernel_size=kernel_size,
+                    num_outputs=num_outputs,
+                    normalizer_fn=normalizer_fn,
+                    biases_initializer=tf.zeros_initializer(),
+                    scope=scope,
                 )
 
                 if gated:
@@ -883,14 +883,14 @@ def conv2d(
                             # Make n_channels match for residual
                             if channels != channels_in:
                                 x0 = slim.conv2d(
-                                    inputs = x0,
-                                    stride = [1, 1],
-                                    kernel_size = [1, 1],
-                                    num_outputs = channels,
-                                    normalizer_fn = None,
-                                    activation_fn = None,
-                                    biases_initializer = tf.zeros_initializer,
-                                    scope = scope + '_residual',
+                                    inputs=x0,
+                                    stride=[1, 1],
+                                    kernel_size=[1, 1],
+                                    num_outputs=channels,
+                                    normalizer_fn=None,
+                                    activation_fn=None,
+                                    biases_initializer=tf.zeros_initializer,
+                                    scope=scope + '_residual',
                                 )
                                 x += x0
                             else:
@@ -900,7 +900,7 @@ def conv2d(
         return x
 
 
-def leaky_relu(leak = 0.1):
+def leaky_relu(leak=0.1):
     """Leaky ReLU activation function.
 
   Args:
@@ -938,10 +938,10 @@ def causal_linear(
 
     # create queue
     q_1 = tf.FIFOQueue(
-        rate, dtypes = tf.float32, shapes = (batch_size, 1, n_inputs)
+        rate, dtypes=tf.float32, shapes=(batch_size, 1, n_inputs)
     )
     q_2 = tf.FIFOQueue(
-        rate, dtypes = tf.float32, shapes = (batch_size, 1, n_inputs)
+        rate, dtypes=tf.float32, shapes=(batch_size, 1, n_inputs)
     )
     init_1 = q_1.enqueue_many(tf.zeros((rate, batch_size, 1, n_inputs)))
     init_2 = q_2.enqueue_many(tf.zeros((rate, batch_size, 1, n_inputs)))
@@ -952,12 +952,12 @@ def causal_linear(
 
     # get pretrained weights
     w = tf.get_variable(
-        name = name + '/W',
-        shape = [1, filter_length, n_inputs, n_outputs],
-        dtype = tf.float32,
+        name=name + '/W',
+        shape=[1, filter_length, n_inputs, n_outputs],
+        dtype=tf.float32,
     )
     b = tf.get_variable(
-        name = name + '/biases', shape = [n_outputs], dtype = tf.float32
+        name=name + '/biases', shape=[n_outputs], dtype=tf.float32
     )
     w_q_2 = tf.slice(w, [0, 0, 0, 0], [-1, 1, -1, -1])
     w_q_1 = tf.slice(w, [0, 1, 0, 0], [-1, 1, -1, -1])
@@ -988,12 +988,12 @@ def linear(x, n_inputs, n_outputs, name):
     y: The output of the operation.
   """
     w = tf.get_variable(
-        name = name + '/W',
-        shape = [1, 1, n_inputs, n_outputs],
-        dtype = tf.float32,
+        name=name + '/W',
+        shape=[1, 1, n_inputs, n_outputs],
+        dtype=tf.float32,
     )
     b = tf.get_variable(
-        name = name + '/biases', shape = [n_outputs], dtype = tf.float32
+        name=name + '/biases', shape=[n_outputs], dtype=tf.float32
     )
     y = tf.nn.bias_add(tf.matmul(x[:, 0, :], w[0][0]), b)
     y = tf.expand_dims(y, 1)

@@ -20,10 +20,10 @@ import random
 
 def chunks(l, n):
     for i in range(0, len(l), n):
-        yield (l[i : i + n], i // n)
+        yield (l[i: i + n], i // n)
 
 
-def multiprocessing(strings, function, cores = 6, returned = True):
+def multiprocessing(strings, function, cores=6, returned=True):
     df_split = chunks(strings, len(strings) // cores)
     pool = Pool(cores)
     print('initiate pool map')
@@ -48,7 +48,7 @@ speakers = defaultdict(list)
 for f in librispeech:
     speakers[get_speaker_librispeech(f)].append(f)
 
-vctk = glob('vtck/**/*.flac', recursive = True)
+vctk = glob('vtck/**/*.flac', recursive=True)
 vctk_speakers = defaultdict(list)
 for f in vctk:
     s = f.split('/')[-1].split('_')[0]
@@ -82,8 +82,8 @@ speakers_malay['husein'] = husein
 
 df_nepali = pd.read_csv(
     '/home/husein/speech-bahasa/nepali_0/asr_nepali/utt_spk_text.tsv',
-    sep = '\t',
-    header = None,
+    sep='\t',
+    header=None,
 )
 asr_nepali = glob('/home/husein/speech-bahasa/*/asr_nepali/data/*/*.flac')
 asr_nepali_replaced = {
@@ -119,18 +119,18 @@ def random_speakers(n):
 
 
 def read_wav(f):
-    return malaya_speech.load(f, sr = sr)
+    return malaya_speech.load(f, sr=sr)
 
 
 def random_sampling(s, length):
-    return augmentation.random_sampling(s, sr = sr, length = length)
+    return augmentation.random_sampling(s, sr=sr, length=length)
 
 
-def combine_speakers(files, n = 5):
+def combine_speakers(files, n=5):
     w_samples = random.sample(files, n)
     w_samples = [
         random_sampling(
-            read_wav(f)[0], length = random.randint(500, max(10000 // n, 5000))
+            read_wav(f)[0], length=random.randint(500, max(10000 // n, 5000))
         )
         for f in w_samples
     ]
@@ -200,10 +200,10 @@ def loop(files):
     return results
 
 
-def generate(batch_size = 10, repeat = 6):
+def generate(batch_size=10, repeat=6):
     fs = [i for i in range(batch_size)]
     while True:
-        results = multiprocessing(fs, loop, cores = len(fs))
+        results = multiprocessing(fs, loop, cores=len(fs))
         for _ in range(repeat):
             random.shuffle(results)
             for r in results:
@@ -237,31 +237,31 @@ def preprocess_inputs(example):
     return example
 
 
-def get_dataset(batch_size = 32, shuffle_size = 256, thread_count = 6):
+def get_dataset(batch_size=32, shuffle_size=256, thread_count=6):
     def get():
         dataset = tf.data.Dataset.from_generator(
             generate,
             {'inputs': tf.float32, 'targets': tf.int32},
-            output_shapes = {
+            output_shapes={
                 'inputs': tf.TensorShape([None]),
                 'targets': tf.TensorShape([None]),
             },
         )
         dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
         dataset = dataset.map(
-            preprocess_inputs, num_parallel_calls = thread_count
+            preprocess_inputs, num_parallel_calls=thread_count
         )
         dataset = dataset.padded_batch(
             batch_size,
-            padded_shapes = {
+            padded_shapes={
                 'inputs': tf.TensorShape([None, DIMENSION]),
                 'inputs_length': tf.TensorShape([None]),
                 'targets': tf.TensorShape([None]),
             },
-            padding_values = {
-                'inputs': tf.constant(0, dtype = tf.float32),
-                'inputs_length': tf.constant(0, dtype = tf.int32),
-                'targets': tf.constant(0, dtype = tf.int32),
+            padding_values={
+                'inputs': tf.constant(0, dtype=tf.float32),
+                'inputs_length': tf.constant(0, dtype=tf.int32),
+                'targets': tf.constant(0, dtype=tf.int32),
             },
         )
         return dataset
@@ -277,24 +277,24 @@ def model_fn(features, labels, mode, params):
     model = speakernet.Model(
         features['inputs'],
         features['inputs_length'][:, 0],
-        num_class = len(labels),
-        mode = 'train',
+        num_class=len(labels),
+        mode='train',
     )
     logits = model.logits
 
     loss = tf.reduce_mean(
         tf.nn.sparse_softmax_cross_entropy_with_logits(
-            logits = logits, labels = Y
+            logits=logits, labels=Y
         )
     )
 
     tf.identity(loss, 'train_loss')
 
     accuracy = tf.metrics.accuracy(
-        labels = Y, predictions = tf.argmax(logits, axis = 1)
+        labels=Y, predictions=tf.argmax(logits, axis=1)
     )
 
-    tf.identity(accuracy[1], name = 'train_accuracy')
+    tf.identity(accuracy[1], name='train_accuracy')
 
     variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
     variables = [v for v in variables if 'dense_2' not in v.name]
@@ -308,17 +308,17 @@ def model_fn(features, labels, mode, params):
     if mode == tf.estimator.ModeKeys.TRAIN:
         global_step = tf.train.get_or_create_global_step()
         optimizer = tf.train.AdamOptimizer(learning_rate)
-        train_op = optimizer.minimize(loss, global_step = global_step)
+        train_op = optimizer.minimize(loss, global_step=global_step)
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = mode, loss = loss, train_op = train_op
+            mode=mode, loss=loss, train_op=train_op
         )
 
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = tf.estimator.ModeKeys.EVAL,
-            loss = loss,
-            eval_metric_ops = {'accuracy': accuracy},
+            mode=tf.estimator.ModeKeys.EVAL,
+            loss=loss,
+            eval_metric_ops={'accuracy': accuracy},
         )
 
     return estimator_spec
@@ -326,7 +326,7 @@ def model_fn(features, labels, mode, params):
 
 train_hooks = [
     tf.train.LoggingTensorHook(
-        ['train_accuracy', 'train_loss'], every_n_iter = 1
+        ['train_accuracy', 'train_loss'], every_n_iter=1
     )
 ]
 
@@ -336,12 +336,12 @@ train_dataset = get_dataset()
 save_directory = 'output-speakernet-speaker-count'
 
 train.run_training(
-    train_fn = train_dataset,
-    model_fn = model_fn,
-    model_dir = save_directory,
-    num_gpus = 1,
-    log_step = 1,
-    save_checkpoint_step = 25000,
-    max_steps = 300_000,
-    train_hooks = train_hooks,
+    train_fn=train_dataset,
+    model_fn=model_fn,
+    model_dir=save_directory,
+    num_gpus=1,
+    log_step=1,
+    save_checkpoint_step=25000,
+    max_steps=300_000,
+    train_hooks=train_hooks,
 )

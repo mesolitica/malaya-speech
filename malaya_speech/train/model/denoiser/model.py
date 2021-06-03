@@ -15,26 +15,26 @@ class Model:
     def __init__(
         self,
         inputs,
-        y = None,
-        chin = 1,
-        chout = 1,
-        hidden = 48,
-        depth = 5,
-        use_glu = True,
-        kernel_size = 8,
-        stride = 4,
-        causal = True,
-        resample = 4,
-        growth = 2,
-        max_hidden = 10000,
-        normalize = True,
-        rescale = 0.1,
-        floor = 1e-3,
-        lstm_layers = 2,
-        partition_length = 44100 * 2,
-        norm_after_partition = False,
-        logging = False,
-        kernel_initializer = ConvScaling,
+        y=None,
+        chin=1,
+        chout=1,
+        hidden=48,
+        depth=5,
+        use_glu=True,
+        kernel_size=8,
+        stride=4,
+        causal=True,
+        resample=4,
+        growth=2,
+        max_hidden=10000,
+        normalize=True,
+        rescale=0.1,
+        floor=1e-3,
+        lstm_layers=2,
+        partition_length=44100 * 2,
+        norm_after_partition=False,
+        logging=False,
+        kernel_initializer=ConvScaling,
     ):
         self.depth = depth
         self.kernel_size = kernel_size
@@ -64,16 +64,16 @@ class Model:
                     hidden,
                     kernel_size,
                     stride,
-                    activation = tf.nn.relu,
-                    kernel_initializer = kernel_initializer,
+                    activation=tf.nn.relu,
+                    kernel_initializer=kernel_initializer,
                 )
             )
             encoder.add(
                 tf.keras.layers.Conv1D(
                     ch_scale * hidden,
                     1,
-                    activation = activation,
-                    kernel_initializer = kernel_initializer,
+                    activation=activation,
+                    kernel_initializer=kernel_initializer,
                 )
             )
             self.encoder.append(encoder)
@@ -83,8 +83,8 @@ class Model:
                 tf.keras.layers.Conv1D(
                     ch_scale * hidden,
                     1,
-                    activation = activation,
-                    kernel_initializer = kernel_initializer,
+                    activation=activation,
+                    kernel_initializer=kernel_initializer,
                 )
             )
             if index > 0:
@@ -96,8 +96,8 @@ class Model:
                     chout,
                     kernel_size,
                     stride,
-                    activation = a,
-                    kernel_initializer = kernel_initializer,
+                    activation=a,
+                    kernel_initializer=kernel_initializer,
                 )
             )
             self.decoder.insert(0, decoder)
@@ -105,19 +105,19 @@ class Model:
             chin = hidden
             hidden = min(int(growth * hidden), max_hidden)
 
-        self.lstm = BLSTM(chin, bi = not causal)
+        self.lstm = BLSTM(chin, bi=not causal)
 
         if self.normalize:
-            mono = tf.reduce_mean(inputs, axis = 1, keepdims = True)
-            self.std = tf.math.reduce_std(mono, axis = 0, keepdims = True)
+            mono = tf.reduce_mean(inputs, axis=1, keepdims=True)
+            self.std = tf.math.reduce_std(mono, axis=0, keepdims=True)
             inputs = inputs / (self.floor + self.std)
         else:
             self.std = 1.0
 
         partitioned = pad_and_partition(inputs, self.partition_length)
         if norm_after_partition:
-            mean = tf.reduce_mean(partitioned, axis = 0)
-            std = tf.math.reduce_std(partitioned, axis = 0)
+            mean = tf.reduce_mean(partitioned, axis=0)
+            std = tf.math.reduce_std(partitioned, axis=0)
             partitioned = (partitioned - mean) / std
 
         valid_length = self.valid_length(self.partition_length)

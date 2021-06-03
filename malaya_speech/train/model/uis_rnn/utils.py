@@ -19,7 +19,7 @@ import string
 import numpy as np
 
 
-def generate_random_string(length = 6):
+def generate_random_string(length=6):
     """Generate a random string of upper case letters and digits.
   Args:
     length: length of the generated string
@@ -59,7 +59,7 @@ def enforce_cluster_id_uniqueness(cluster_ids):
     return new_cluster_ids
 
 
-def estimate_transition_bias(cluster_ids, smooth = 1):
+def estimate_transition_bias(cluster_ids, smooth=1):
     """Estimate the transition bias.
   Args:
     cluster_id: Either a list of cluster indicator sequences, or a single
@@ -88,8 +88,8 @@ def estimate_transition_bias(cluster_ids, smooth = 1):
 def concatenate_training_data(
     train_sequences,
     train_cluster_ids,
-    enforce_uniqueness = True,
-    shuffle = True,
+    enforce_uniqueness=True,
+    shuffle=True,
 ):
     """Concatenate training data.
   Args:
@@ -149,7 +149,7 @@ def concatenate_training_data(
         train_sequences, train_cluster_ids = zip(*zipped_input)
 
     # concatenate
-    concatenated_train_sequence = np.concatenate(train_sequences, axis = 0)
+    concatenated_train_sequence = np.concatenate(train_sequences, axis=0)
     concatenated_train_cluster_id = [
         x for train_cluster_id in train_cluster_ids for x in train_cluster_id
     ]
@@ -185,7 +185,7 @@ def sample_permuted_segments(index_sequence, number_samples):
         prev = 0
         for i in range(len(index_sequence) - 1):
             if index_sequence[i + 1] != index_sequence[i] + 1:
-                segments.append(index_sequence[prev : (i + 1)])
+                segments.append(index_sequence[prev: (i + 1)])
                 prev = i + 1
             if i + 1 == len(index_sequence) - 1:
                 segments.append(index_sequence[prev:])
@@ -200,7 +200,7 @@ def sample_permuted_segments(index_sequence, number_samples):
     return sampled_index_sequences
 
 
-def resize_sequence(sequence, cluster_id, num_permutations = None):
+def resize_sequence(sequence, cluster_id, num_permutations=None):
     """Resize sequences for packing and batching.
   Args:
     sequence: (real numpy matrix, size: seq_len*obs_size) - observed sequence
@@ -254,7 +254,7 @@ def pack_sequence(sub_sequences, seq_lengths, batch_size, observation_dim):
             (sorted_seq_lengths[0], num_clusters, observation_dim)
         )
         for i in range(num_clusters):
-            rnn_input[1 : sorted_seq_lengths[i], i, :] = sub_sequences[
+            rnn_input[1: sorted_seq_lengths[i], i, :] = sub_sequences[
                 permute_index[i]
             ]
         packed_rnn_input = rnn_input
@@ -265,7 +265,7 @@ def pack_sequence(sub_sequences, seq_lengths, batch_size, observation_dim):
         )
         for i in range(batch_size):
             rnn_input[
-                1 : sorted_seq_lengths[mini_batch[i]], i, :
+                1: sorted_seq_lengths[mini_batch[i]], i, :
             ] = sub_sequences[permute_index[mini_batch[i]]]
         packed_rnn_input = rnn_input
     # ground truth is the shifted input

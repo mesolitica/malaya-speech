@@ -16,7 +16,7 @@ def get_padding_bias(padding):
 
         attention_bias = padding * _NEG_INF
         attention_bias = tf.expand_dims(
-            tf.expand_dims(attention_bias, axis = 1), axis = 1
+            tf.expand_dims(attention_bias, axis=1), axis=1
         )
     return attention_bias
 
@@ -25,11 +25,11 @@ class Encoder(tf.keras.layers.Layer):
     def __init__(
         self, dim_neck, dim_speaker, dim_input, skip, params, train, **kwargs
     ):
-        super(Encoder, self).__init__(name = 'Encoder', **kwargs)
+        super(Encoder, self).__init__(name='Encoder', **kwargs)
         self.params = params
         self.encoder_stack = EncoderStack(params, train)
         self.encoder_dense = tf.keras.layers.Dense(
-            units = dim_neck, dtype = tf.float32, name = 'encoder_dense'
+            units=dim_neck, dtype=tf.float32, name='encoder_dense'
         )
 
         a = []
@@ -42,19 +42,19 @@ class Encoder(tf.keras.layers.Layer):
             a.extend(n)
         self.indices = a
 
-    def call(self, x, c_org, attention_mask, training = True):
+    def call(self, x, c_org, attention_mask, training=True):
         c_org = tf.tile(tf.expand_dims(c_org, 1), (1, tf.shape(x)[1], 1))
-        x = tf.concat([x, c_org], axis = -1)
-        x = tf.gather(x, self.indices, axis = -1)
+        x = tf.concat([x, c_org], axis=-1)
+        x = tf.gather(x, self.indices, axis=-1)
         initializer = tf.variance_scaling_initializer(
             self.params['initializer_gain'],
-            mode = 'fan_avg',
-            distribution = 'uniform',
+            mode='fan_avg',
+            distribution='uniform',
         )
         inputs_padding = tf.cast(
             tf.logical_not(tf.cast(attention_mask, tf.bool)), tf.float32
         )
-        with tf.variable_scope('Transformer', initializer = initializer):
+        with tf.variable_scope('Transformer', initializer=initializer):
             attention_bias = get_padding_bias(inputs_padding)
 
             with tf.name_scope('encode'):
@@ -77,25 +77,25 @@ class Encoder(tf.keras.layers.Layer):
 
 class Decoder(tf.keras.layers.Layer):
     def __init__(self, params, train, **kwargs):
-        super(Decoder, self).__init__(name = 'Decoder', **kwargs)
+        super(Decoder, self).__init__(name='Decoder', **kwargs)
         self.decoder_stack = DecoderStack(params, train)
         self.params = params
 
-    def call(self, x, attention_mask, encoder_outputs, training = True):
+    def call(self, x, attention_mask, encoder_outputs, training=True):
         input_shape = tf.shape(x)
         seq_length = input_shape[1]
 
         initializer = tf.variance_scaling_initializer(
             self.params['initializer_gain'],
-            mode = 'fan_avg',
-            distribution = 'uniform',
+            mode='fan_avg',
+            distribution='uniform',
         )
 
         inputs_padding = tf.cast(
             tf.logical_not(tf.cast(attention_mask, tf.bool)), tf.float32
         )
 
-        with tf.variable_scope('Transformer', initializer = initializer):
+        with tf.variable_scope('Transformer', initializer=initializer):
             attention_bias = get_padding_bias(inputs_padding)
 
             with tf.name_scope('decode'):
@@ -125,27 +125,27 @@ class Model(tf.keras.Model):
         params_encoder,
         params_decoder,
         config,
-        dim_input = 80,
-        dim_speaker = 512,
-        skip = 4,
-        train = True,
+        dim_input=80,
+        dim_speaker=512,
+        skip=4,
+        train=True,
         **kwargs,
     ):
-        super(Model, self).__init__(name = 'fastvc', **kwargs)
+        super(Model, self).__init__(name='fastvc', **kwargs)
         self.encoder = Encoder(
             dim_neck,
             dim_speaker,
             dim_input,
             skip,
             params_encoder,
-            train = train,
+            train=train,
         )
-        self.decoder = Decoder(params_decoder, train = train)
+        self.decoder = Decoder(params_decoder, train=train)
         self.mel_dense = tf.keras.layers.Dense(
-            units = config.num_mels, dtype = tf.float32, name = 'mel_before'
+            units=config.num_mels, dtype=tf.float32, name='mel_before'
         )
         self.postnet = TFTacotronPostnet(
-            config = config, dtype = tf.float32, name = 'postnet'
+            config=config, dtype=tf.float32, name='postnet'
         )
 
         a = []
@@ -158,32 +158,32 @@ class Model(tf.keras.Model):
             a.extend(n)
         self.indices = a
 
-    def call_second(self, x, c_org, mel_lengths, training = True):
+    def call_second(self, x, c_org, mel_lengths, training=True):
         max_length = tf.cast(tf.reduce_max(mel_lengths), tf.int32)
         attention_mask = tf.sequence_mask(
-            lengths = mel_lengths, maxlen = max_length, dtype = tf.float32
+            lengths=mel_lengths, maxlen=max_length, dtype=tf.float32
         )
         attention_mask.set_shape((None, None))
-        code_exp = self.encoder(x, c_org, attention_mask, training = training)
+        code_exp = self.encoder(x, c_org, attention_mask, training=training)
         return code_exp
 
-    def call(self, x, c_org, c_trg, mel_lengths, training = True, **kwargs):
+    def call(self, x, c_org, c_trg, mel_lengths, training=True, **kwargs):
 
         max_length = tf.cast(tf.reduce_max(mel_lengths), tf.int32)
         attention_mask = tf.sequence_mask(
-            lengths = mel_lengths, maxlen = max_length, dtype = tf.float32
+            lengths=mel_lengths, maxlen=max_length, dtype=tf.float32
         )
         attention_mask.set_shape((None, None))
-        code_exp = self.encoder(x, c_org, attention_mask, training = training)
+        code_exp = self.encoder(x, c_org, attention_mask, training=training)
         c_trg = tf.tile(tf.expand_dims(c_trg, 1), (1, tf.shape(x)[1], 1))
-        encoder_outputs = tf.concat([code_exp, c_trg], axis = -1)
-        encoder_outputs = tf.gather(encoder_outputs, self.indices, axis = -1)
+        encoder_outputs = tf.concat([code_exp, c_trg], axis=-1)
+        encoder_outputs = tf.gather(encoder_outputs, self.indices, axis=-1)
         decoder_output = self.decoder(
-            encoder_outputs, attention_mask, code_exp, training = training
+            encoder_outputs, attention_mask, code_exp, training=training
         )
         mel_before = self.mel_dense(decoder_output)
         mel_after = (
-            self.postnet([mel_before, attention_mask], training = training)
+            self.postnet([mel_before, attention_mask], training=training)
             + mel_before
         )
 

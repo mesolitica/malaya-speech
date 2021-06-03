@@ -10,10 +10,10 @@ class Attention(tf.layers.Layer):
         num_heads,
         attention_dropout,
         train,
-        mode = 'loung',
-        regularizer = None,
-        window_size = None,
-        back_step_size = None,
+        mode='loung',
+        regularizer=None,
+        window_size=None,
+        back_step_size=None,
     ):
         if hidden_size % num_heads != 0:
             raise ValueError(
@@ -35,27 +35,27 @@ class Attention(tf.layers.Layer):
         # Layers for linearly projecting the queries, keys, and values.
         self.q_dense_layer = tf.layers.Dense(
             hidden_size,
-            use_bias = False,
-            name = 'q',
-            kernel_regularizer = regularizer,
+            use_bias=False,
+            name='q',
+            kernel_regularizer=regularizer,
         )
         self.k_dense_layer = tf.layers.Dense(
             hidden_size,
-            use_bias = False,
-            name = 'k',
-            kernel_regularizer = regularizer,
+            use_bias=False,
+            name='k',
+            kernel_regularizer=regularizer,
         )
         self.v_dense_layer = tf.layers.Dense(
             hidden_size,
-            use_bias = False,
-            name = 'v',
-            kernel_regularizer = regularizer,
+            use_bias=False,
+            name='v',
+            kernel_regularizer=regularizer,
         )
         self.output_dense_layer = tf.layers.Dense(
             hidden_size,
-            use_bias = False,
-            name = 'output_transform',
-            kernel_regularizer = regularizer,
+            use_bias=False,
+            name='output_transform',
+            kernel_regularizer=regularizer,
         )
 
     def split_heads(self, x):
@@ -95,7 +95,7 @@ class Attention(tf.layers.Layer):
             )  # --> [batch, length, num_heads, depth]
             return tf.reshape(x, [batch_size, length, self.hidden_size])
 
-    def call(self, x, y, bias, cache = None, positions = None):
+    def call(self, x, y, bias, cache=None, positions=None):
         """Apply attention mechanism to x and y.
     Args:
       x: a tensor with shape [batch_size, length_x, hidden_size]
@@ -120,8 +120,8 @@ class Attention(tf.layers.Layer):
 
         if cache is not None:
             # Combine cached keys and values with new keys and values.
-            k = tf.concat([cache['k'], k], axis = 1)
-            v = tf.concat([cache['v'], v], axis = 1)
+            k = tf.concat([cache['k'], k], axis=1)
+            v = tf.concat([cache['v'], v], axis=1)
 
             # Update cache
             cache['k'] = k
@@ -141,15 +141,15 @@ class Attention(tf.layers.Layer):
             # logits = tf.matmul(q, k, transpose_b=True)
             # logits += bias
             # weights = tf.nn.softmax(logits, name="attention_weights")
-            logits = tf.matmul(q, k, transpose_b = True)
+            logits = tf.matmul(q, k, transpose_b=True)
             dtype = logits.dtype
             if dtype != tf.float32:
                 # upcast softmax inputs
-                logits = tf.cast(x = logits, dtype = tf.float32)
+                logits = tf.cast(x=logits, dtype=tf.float32)
                 logits += bias
-                weights = tf.nn.softmax(logits, name = 'attention_weights')
+                weights = tf.nn.softmax(logits, name='attention_weights')
                 # downcast softmax output
-                weights = tf.cast(weights, dtype = dtype)
+                weights = tf.cast(weights, dtype=dtype)
             else:
                 # Logits shape: [batch, head, decoder, encoder]
                 # Bias shape:   [batch, 1, 1, encoder]
@@ -168,11 +168,11 @@ class Attention(tf.layers.Layer):
 
                     # Create attention mask
                     mask_large = tf.sequence_mask(
-                        window_pos + self.window_size, maxlen = max_length
+                        window_pos + self.window_size, maxlen=max_length
                     )
                     mask_large = tf.cast(mask_large, tf.float32)
                     mask_small = tf.sequence_mask(
-                        window_pos, maxlen = max_length
+                        window_pos, maxlen=max_length
                     )
                     mask_small = tf.cast(mask_small, tf.float32)
                     mask = mask_large - mask_small
@@ -184,12 +184,12 @@ class Attention(tf.layers.Layer):
                     bias = tf.maximum(bias, -1e9)
 
                 logits += bias
-                weights = tf.nn.softmax(logits, name = 'attention_weights')
+                weights = tf.nn.softmax(logits, name='attention_weights')
         elif self.mode == 'bahdanau':
             att_v = tf.get_variable(
                 'attention_v',
                 [self.hidden_size // self.num_heads],
-                dtype = q.dtype,
+                dtype=q.dtype,
             )
 
             # Compute the attention score
@@ -211,7 +211,7 @@ class Attention(tf.layers.Layer):
 
         if self.train:
             weights = tf.nn.dropout(
-                weights, keep_prob = 1 - self.attention_dropout
+                weights, keep_prob=1 - self.attention_dropout
             )
         attention_output = tf.matmul(weights, v)
 
@@ -226,5 +226,5 @@ class Attention(tf.layers.Layer):
 class SelfAttention(Attention):
     """Multiheaded self-attention layer."""
 
-    def call(self, x, bias, cache = None):
+    def call(self, x, bias, cache=None):
         return super(SelfAttention, self).call(x, x, bias, cache)

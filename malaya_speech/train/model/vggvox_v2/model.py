@@ -15,7 +15,7 @@ weight_decay = 1e-4
 
 
 def identity_block_2D(
-    input_tensor, kernel_size, filters, stage, block, trainable = True
+    input_tensor, kernel_size, filters, stage, block, trainable=True
 ):
     """The identity block is the block that has no conv layer at shortcut.
     # Arguments
@@ -35,14 +35,14 @@ def identity_block_2D(
     x = Conv2D(
         filters1,
         (1, 1),
-        kernel_initializer = 'orthogonal',
-        use_bias = False,
-        trainable = trainable,
-        kernel_regularizer = l2(weight_decay),
-        name = conv_name_1,
+        kernel_initializer='orthogonal',
+        use_bias=False,
+        trainable=trainable,
+        kernel_regularizer=l2(weight_decay),
+        name=conv_name_1,
     )(input_tensor)
     x = BatchNormalization(
-        axis = bn_axis, trainable = trainable, name = bn_name_1
+        axis=bn_axis, trainable=trainable, name=bn_name_1
     )(x)
     x = Activation('relu')(x)
 
@@ -51,15 +51,15 @@ def identity_block_2D(
     x = Conv2D(
         filters2,
         kernel_size,
-        padding = 'same',
-        kernel_initializer = 'orthogonal',
-        use_bias = False,
-        trainable = trainable,
-        kernel_regularizer = l2(weight_decay),
-        name = conv_name_2,
+        padding='same',
+        kernel_initializer='orthogonal',
+        use_bias=False,
+        trainable=trainable,
+        kernel_regularizer=l2(weight_decay),
+        name=conv_name_2,
     )(x)
     x = BatchNormalization(
-        axis = bn_axis, trainable = trainable, name = bn_name_2
+        axis=bn_axis, trainable=trainable, name=bn_name_2
     )(x)
     x = Activation('relu')(x)
 
@@ -68,14 +68,14 @@ def identity_block_2D(
     x = Conv2D(
         filters3,
         (1, 1),
-        kernel_initializer = 'orthogonal',
-        use_bias = False,
-        trainable = trainable,
-        kernel_regularizer = l2(weight_decay),
-        name = conv_name_3,
+        kernel_initializer='orthogonal',
+        use_bias=False,
+        trainable=trainable,
+        kernel_regularizer=l2(weight_decay),
+        name=conv_name_3,
     )(x)
     x = BatchNormalization(
-        axis = bn_axis, trainable = trainable, name = bn_name_3
+        axis=bn_axis, trainable=trainable, name=bn_name_3
     )(x)
 
     x = layers.add([x, input_tensor])
@@ -89,8 +89,8 @@ def conv_block_2D(
     filters,
     stage,
     block,
-    strides = (2, 2),
-    trainable = True,
+    strides=(2, 2),
+    trainable=True,
 ):
     """A block that has a conv layer at shortcut.
     # Arguments
@@ -112,15 +112,15 @@ def conv_block_2D(
     x = Conv2D(
         filters1,
         (1, 1),
-        strides = strides,
-        kernel_initializer = 'orthogonal',
-        use_bias = False,
-        trainable = trainable,
-        kernel_regularizer = l2(weight_decay),
-        name = conv_name_1,
+        strides=strides,
+        kernel_initializer='orthogonal',
+        use_bias=False,
+        trainable=trainable,
+        kernel_regularizer=l2(weight_decay),
+        name=conv_name_1,
     )(input_tensor)
     x = BatchNormalization(
-        axis = bn_axis, trainable = trainable, name = bn_name_1
+        axis=bn_axis, trainable=trainable, name=bn_name_1
     )(x)
     x = Activation('relu')(x)
 
@@ -129,15 +129,15 @@ def conv_block_2D(
     x = Conv2D(
         filters2,
         kernel_size,
-        padding = 'same',
-        kernel_initializer = 'orthogonal',
-        use_bias = False,
-        trainable = trainable,
-        kernel_regularizer = l2(weight_decay),
-        name = conv_name_2,
+        padding='same',
+        kernel_initializer='orthogonal',
+        use_bias=False,
+        trainable=trainable,
+        kernel_regularizer=l2(weight_decay),
+        name=conv_name_2,
     )(x)
     x = BatchNormalization(
-        axis = bn_axis, trainable = trainable, name = bn_name_2
+        axis=bn_axis, trainable=trainable, name=bn_name_2
     )(x)
     x = Activation('relu')(x)
 
@@ -146,14 +146,14 @@ def conv_block_2D(
     x = Conv2D(
         filters3,
         (1, 1),
-        kernel_initializer = 'orthogonal',
-        use_bias = False,
-        trainable = trainable,
-        kernel_regularizer = l2(weight_decay),
-        name = conv_name_3,
+        kernel_initializer='orthogonal',
+        use_bias=False,
+        trainable=trainable,
+        kernel_regularizer=l2(weight_decay),
+        name=conv_name_3,
     )(x)
     x = BatchNormalization(
-        axis = bn_axis, trainable = trainable, name = bn_name_3
+        axis=bn_axis, trainable=trainable, name=bn_name_3
     )(x)
 
     conv_name_4 = 'conv' + str(stage) + '_' + str(block) + '_1x1_proj'
@@ -161,15 +161,15 @@ def conv_block_2D(
     shortcut = Conv2D(
         filters3,
         (1, 1),
-        strides = strides,
-        kernel_initializer = 'orthogonal',
-        use_bias = False,
-        trainable = trainable,
-        kernel_regularizer = l2(weight_decay),
-        name = conv_name_4,
+        strides=strides,
+        kernel_initializer='orthogonal',
+        use_bias=False,
+        trainable=trainable,
+        kernel_regularizer=l2(weight_decay),
+        name=conv_name_4,
     )(input_tensor)
     shortcut = BatchNormalization(
-        axis = bn_axis, trainable = trainable, name = bn_name_4
+        axis=bn_axis, trainable=trainable, name=bn_name_4
     )(shortcut)
 
     x = layers.add([x, shortcut])
@@ -177,7 +177,7 @@ def conv_block_2D(
     return x
 
 
-def resnet_2D_v1(inputs, mode = 'train'):
+def resnet_2D_v1(inputs, mode='train'):
     bn_axis = 3
     #     if mode == 'train':
     #         inputs = Input(shape=input_dim, name='input')
@@ -189,19 +189,19 @@ def resnet_2D_v1(inputs, mode = 'train'):
     x1 = Conv2D(
         64,
         (7, 7),
-        kernel_initializer = 'orthogonal',
-        use_bias = False,
-        trainable = True,
-        kernel_regularizer = l2(weight_decay),
-        padding = 'same',
-        name = 'conv1_1/3x3_s1',
+        kernel_initializer='orthogonal',
+        use_bias=False,
+        trainable=True,
+        kernel_regularizer=l2(weight_decay),
+        padding='same',
+        name='conv1_1/3x3_s1',
     )(inputs)
 
     x1 = BatchNormalization(
-        axis = bn_axis, name = 'conv1_1/3x3_s1/bn', trainable = True
+        axis=bn_axis, name='conv1_1/3x3_s1/bn', trainable=True
     )(x1)
     x1 = Activation('relu')(x1)
-    x1 = MaxPooling2D((2, 2), strides = (2, 2))(x1)
+    x1 = MaxPooling2D((2, 2), strides=(2, 2))(x1)
 
     # ===============================================
     #            Convolution Section 2
@@ -210,56 +210,56 @@ def resnet_2D_v1(inputs, mode = 'train'):
         x1,
         3,
         [48, 48, 96],
-        stage = 2,
-        block = 'a',
-        strides = (1, 1),
-        trainable = True,
+        stage=2,
+        block='a',
+        strides=(1, 1),
+        trainable=True,
     )
     x2 = identity_block_2D(
-        x2, 3, [48, 48, 96], stage = 2, block = 'b', trainable = True
+        x2, 3, [48, 48, 96], stage=2, block='b', trainable=True
     )
 
     # ===============================================
     #            Convolution Section 3
     # ===============================================
     x3 = conv_block_2D(
-        x2, 3, [96, 96, 128], stage = 3, block = 'a', trainable = True
+        x2, 3, [96, 96, 128], stage=3, block='a', trainable=True
     )
     x3 = identity_block_2D(
-        x3, 3, [96, 96, 128], stage = 3, block = 'b', trainable = True
+        x3, 3, [96, 96, 128], stage=3, block='b', trainable=True
     )
     x3 = identity_block_2D(
-        x3, 3, [96, 96, 128], stage = 3, block = 'c', trainable = True
+        x3, 3, [96, 96, 128], stage=3, block='c', trainable=True
     )
     # ===============================================
     #            Convolution Section 4
     # ===============================================
     x4 = conv_block_2D(
-        x3, 3, [128, 128, 256], stage = 4, block = 'a', trainable = True
+        x3, 3, [128, 128, 256], stage=4, block='a', trainable=True
     )
     x4 = identity_block_2D(
-        x4, 3, [128, 128, 256], stage = 4, block = 'b', trainable = True
+        x4, 3, [128, 128, 256], stage=4, block='b', trainable=True
     )
     x4 = identity_block_2D(
-        x4, 3, [128, 128, 256], stage = 4, block = 'c', trainable = True
+        x4, 3, [128, 128, 256], stage=4, block='c', trainable=True
     )
     # ===============================================
     #            Convolution Section 5
     # ===============================================
     x5 = conv_block_2D(
-        x4, 3, [256, 256, 512], stage = 5, block = 'a', trainable = True
+        x4, 3, [256, 256, 512], stage=5, block='a', trainable=True
     )
     x5 = identity_block_2D(
-        x5, 3, [256, 256, 512], stage = 5, block = 'b', trainable = True
+        x5, 3, [256, 256, 512], stage=5, block='b', trainable=True
     )
     x5 = identity_block_2D(
-        x5, 3, [256, 256, 512], stage = 5, block = 'c', trainable = True
+        x5, 3, [256, 256, 512], stage=5, block='c', trainable=True
     )
-    y = MaxPooling2D((3, 1), strides = (2, 1), name = 'mpool2')(x5)
+    y = MaxPooling2D((3, 1), strides=(2, 1), name='mpool2')(x5)
     return inputs, y
 
 
-def resnet_2D_v2(inputs, mode = 'train'):
+def resnet_2D_v2(inputs, mode='train'):
     bn_axis = 3
     #     if mode == 'train':
     #         inputs = Input(shape=input_dim, name='input')
@@ -271,20 +271,20 @@ def resnet_2D_v2(inputs, mode = 'train'):
     x1 = Conv2D(
         64,
         (7, 7),
-        strides = (2, 2),
-        kernel_initializer = 'orthogonal',
-        use_bias = False,
-        trainable = True,
-        kernel_regularizer = l2(weight_decay),
-        padding = 'same',
-        name = 'conv1_1/3x3_s1',
+        strides=(2, 2),
+        kernel_initializer='orthogonal',
+        use_bias=False,
+        trainable=True,
+        kernel_regularizer=l2(weight_decay),
+        padding='same',
+        name='conv1_1/3x3_s1',
     )(inputs)
 
     x1 = BatchNormalization(
-        axis = bn_axis, name = 'conv1_1/3x3_s1/bn', trainable = True
+        axis=bn_axis, name='conv1_1/3x3_s1/bn', trainable=True
     )(x1)
     x1 = Activation('relu')(x1)
-    x1 = MaxPooling2D((2, 2), strides = (2, 2))(x1)
+    x1 = MaxPooling2D((2, 2), strides=(2, 2))(x1)
 
     # ===============================================
     #            Convolution Section 2
@@ -293,28 +293,28 @@ def resnet_2D_v2(inputs, mode = 'train'):
         x1,
         3,
         [64, 64, 256],
-        stage = 2,
-        block = 'a',
-        strides = (1, 1),
-        trainable = True,
+        stage=2,
+        block='a',
+        strides=(1, 1),
+        trainable=True,
     )
     x2 = identity_block_2D(
-        x2, 3, [64, 64, 256], stage = 2, block = 'b', trainable = True
+        x2, 3, [64, 64, 256], stage=2, block='b', trainable=True
     )
     x2 = identity_block_2D(
-        x2, 3, [64, 64, 256], stage = 2, block = 'c', trainable = True
+        x2, 3, [64, 64, 256], stage=2, block='c', trainable=True
     )
     # ===============================================
     #            Convolution Section 3
     # ===============================================
     x3 = conv_block_2D(
-        x2, 3, [128, 128, 512], stage = 3, block = 'a', trainable = True
+        x2, 3, [128, 128, 512], stage=3, block='a', trainable=True
     )
     x3 = identity_block_2D(
-        x3, 3, [128, 128, 512], stage = 3, block = 'b', trainable = True
+        x3, 3, [128, 128, 512], stage=3, block='b', trainable=True
     )
     x3 = identity_block_2D(
-        x3, 3, [128, 128, 512], stage = 3, block = 'c', trainable = True
+        x3, 3, [128, 128, 512], stage=3, block='c', trainable=True
     )
     # ===============================================
     #            Convolution Section 4
@@ -323,30 +323,30 @@ def resnet_2D_v2(inputs, mode = 'train'):
         x3,
         3,
         [256, 256, 1024],
-        stage = 4,
-        block = 'a',
-        strides = (1, 1),
-        trainable = True,
+        stage=4,
+        block='a',
+        strides=(1, 1),
+        trainable=True,
     )
     x4 = identity_block_2D(
-        x4, 3, [256, 256, 1024], stage = 4, block = 'b', trainable = True
+        x4, 3, [256, 256, 1024], stage=4, block='b', trainable=True
     )
     x4 = identity_block_2D(
-        x4, 3, [256, 256, 1024], stage = 4, block = 'c', trainable = True
+        x4, 3, [256, 256, 1024], stage=4, block='c', trainable=True
     )
     # ===============================================
     #            Convolution Section 5
     # ===============================================
     x5 = conv_block_2D(
-        x4, 3, [512, 512, 2048], stage = 5, block = 'a', trainable = True
+        x4, 3, [512, 512, 2048], stage=5, block='a', trainable=True
     )
     x5 = identity_block_2D(
-        x5, 3, [512, 512, 2048], stage = 5, block = 'b', trainable = True
+        x5, 3, [512, 512, 2048], stage=5, block='b', trainable=True
     )
     x5 = identity_block_2D(
-        x5, 3, [512, 512, 2048], stage = 5, block = 'c', trainable = True
+        x5, 3, [512, 512, 2048], stage=5, block='c', trainable=True
     )
-    y = MaxPooling2D((3, 1), strides = (2, 1), name = 'mpool2')(x5)
+    y = MaxPooling2D((3, 1), strides=(2, 1), name='mpool2')(x5)
     return inputs, y
 
 
@@ -355,7 +355,7 @@ class VladPooling(keras.layers.Layer):
     This layer follows the NetVlad, GhostVlad
     """
 
-    def __init__(self, mode, k_centers, g_centers = 0, **kwargs):
+    def __init__(self, mode, k_centers, g_centers=0, **kwargs):
         self.k_centers = k_centers
         self.g_centers = g_centers
         self.mode = mode
@@ -363,9 +363,9 @@ class VladPooling(keras.layers.Layer):
 
     def build(self, input_shape):
         self.cluster = self.add_weight(
-            shape = [self.k_centers + self.g_centers, input_shape[0][-1]],
-            name = 'centers',
-            initializer = 'orthogonal',
+            shape=[self.k_centers + self.g_centers, input_shape[0][-1]],
+            name='centers',
+            initializer='orthogonal',
         )
         self.built = True
 
@@ -380,10 +380,10 @@ class VladPooling(keras.layers.Layer):
 
         # softmax normalization to get soft-assignment.
         # A : bz x W x H x clusters
-        max_cluster_score = K.max(cluster_score, -1, keepdims = True)
+        max_cluster_score = K.max(cluster_score, -1, keepdims=True)
         exp_cluster_score = K.exp(cluster_score - max_cluster_score)
         A = exp_cluster_score / K.sum(
-            exp_cluster_score, axis = -1, keepdims = True
+            exp_cluster_score, axis=-1, keepdims=True
         )
 
         # Now, need to compute the residual, self.cluster: clusters x D
@@ -409,14 +409,14 @@ class VladPooling(keras.layers.Layer):
         return outputs
 
 
-def amsoftmax_loss(y_true, y_pred, scale = 30, margin = 0.35):
+def amsoftmax_loss(y_true, y_pred, scale=30, margin=0.35):
     y_pred = y_true * (y_pred - margin) + (1 - y_true) * y_pred
     y_pred *= scale
-    return K.categorical_crossentropy(y_true, y_pred, from_logits = True)
+    return K.categorical_crossentropy(y_true, y_pred, from_logits=True)
 
 
 def vggvox_resnet2d_icassp(
-    inputs, num_class = 8631, mode = 'train', args = None
+    inputs, num_class=8631, mode='train', args=None
 ):
 
     net = 'resnet34s'
@@ -428,21 +428,21 @@ def vggvox_resnet2d_icassp(
     mgpu = 0
 
     if net == 'resnet34s':
-        inputs, x = resnet_2D_v1(inputs, mode = mode)
+        inputs, x = resnet_2D_v1(inputs, mode=mode)
     else:
-        inputs, x = resnet_2D_v2(inputs, mode = mode)
+        inputs, x = resnet_2D_v2(inputs, mode=mode)
 
     x_fc = keras.layers.Conv2D(
         bottleneck_dim,
         (7, 1),
-        strides = (1, 1),
-        activation = 'relu',
-        kernel_initializer = 'orthogonal',
-        use_bias = True,
-        trainable = True,
-        kernel_regularizer = keras.regularizers.l2(weight_decay),
-        bias_regularizer = keras.regularizers.l2(weight_decay),
-        name = 'x_fc',
+        strides=(1, 1),
+        activation='relu',
+        kernel_initializer='orthogonal',
+        use_bias=True,
+        trainable=True,
+        kernel_regularizer=keras.regularizers.l2(weight_decay),
+        bias_regularizer=keras.regularizers.l2(weight_decay),
+        name='x_fc',
     )(x)
 
     # ===============================================
@@ -451,70 +451,70 @@ def vggvox_resnet2d_icassp(
     if aggregation == 'avg':
         if mode == 'train':
             x = keras.layers.AveragePooling2D(
-                (1, 5), strides = (1, 1), name = 'avg_pool'
+                (1, 5), strides=(1, 1), name='avg_pool'
             )(x)
             x = keras.layers.Reshape((-1, bottleneck_dim))(x)
         else:
-            x = keras.layers.GlobalAveragePooling2D(name = 'avg_pool')(x)
+            x = keras.layers.GlobalAveragePooling2D(name='avg_pool')(x)
             x = keras.layers.Reshape((1, bottleneck_dim))(x)
 
     elif aggregation == 'vlad':
         x_k_center = keras.layers.Conv2D(
             vlad_clusters,
             (7, 1),
-            strides = (1, 1),
-            kernel_initializer = 'orthogonal',
-            use_bias = True,
-            trainable = True,
-            kernel_regularizer = keras.regularizers.l2(weight_decay),
-            bias_regularizer = keras.regularizers.l2(weight_decay),
-            name = 'vlad_center_assignment',
+            strides=(1, 1),
+            kernel_initializer='orthogonal',
+            use_bias=True,
+            trainable=True,
+            kernel_regularizer=keras.regularizers.l2(weight_decay),
+            bias_regularizer=keras.regularizers.l2(weight_decay),
+            name='vlad_center_assignment',
         )(x)
         x = VladPooling(
-            k_centers = vlad_clusters, mode = 'vlad', name = 'vlad_pool'
+            k_centers=vlad_clusters, mode='vlad', name='vlad_pool'
         )([x_fc, x_k_center])
 
     elif aggregation == 'gvlad':
         x_k_center = keras.layers.Conv2D(
             vlad_clusters + ghost_clusters,
             (7, 1),
-            strides = (1, 1),
-            kernel_initializer = 'orthogonal',
-            use_bias = True,
-            trainable = True,
-            kernel_regularizer = keras.regularizers.l2(weight_decay),
-            bias_regularizer = keras.regularizers.l2(weight_decay),
-            name = 'gvlad_center_assignment',
+            strides=(1, 1),
+            kernel_initializer='orthogonal',
+            use_bias=True,
+            trainable=True,
+            kernel_regularizer=keras.regularizers.l2(weight_decay),
+            bias_regularizer=keras.regularizers.l2(weight_decay),
+            name='gvlad_center_assignment',
         )(x)
         x = VladPooling(
-            k_centers = vlad_clusters,
-            g_centers = ghost_clusters,
-            mode = 'gvlad',
-            name = 'gvlad_pool',
+            k_centers=vlad_clusters,
+            g_centers=ghost_clusters,
+            mode='gvlad',
+            name='gvlad_pool',
         )([x_fc, x_k_center])
 
     else:
         raise IOError('==> unknown aggregation mode')
     x = keras.layers.Dense(
         bottleneck_dim,
-        activation = 'relu',
-        kernel_initializer = 'orthogonal',
-        use_bias = True,
-        trainable = True,
-        kernel_regularizer = keras.regularizers.l2(weight_decay),
-        bias_regularizer = keras.regularizers.l2(weight_decay),
-        name = 'fc6',
+        activation='relu',
+        kernel_initializer='orthogonal',
+        use_bias=True,
+        trainable=True,
+        kernel_regularizer=keras.regularizers.l2(weight_decay),
+        bias_regularizer=keras.regularizers.l2(weight_decay),
+        name='fc6',
     )(x)
     if loss == 'softmax':
         y = keras.layers.Dense(
             num_class,
-            activation = None,
-            kernel_initializer = 'orthogonal',
-            use_bias = False,
-            trainable = True,
-            kernel_regularizer = keras.regularizers.l2(weight_decay),
-            bias_regularizer = keras.regularizers.l2(weight_decay),
-            name = 'prediction',
+            activation=None,
+            kernel_initializer='orthogonal',
+            use_bias=False,
+            trainable=True,
+            kernel_regularizer=keras.regularizers.l2(weight_decay),
+            bias_regularizer=keras.regularizers.l2(weight_decay),
+            name='prediction',
         )(x)
         trnloss = 'categorical_crossentropy'
 
@@ -522,13 +522,13 @@ def vggvox_resnet2d_icassp(
         x_l2 = keras.layers.Lambda(lambda x: K.l2_normalize(x, 1))(x)
         y = keras.layers.Dense(
             num_class,
-            kernel_initializer = 'orthogonal',
-            use_bias = False,
-            trainable = True,
-            kernel_constraint = keras.constraints.unit_norm(),
-            kernel_regularizer = keras.regularizers.l2(weight_decay),
-            bias_regularizer = keras.regularizers.l2(weight_decay),
-            name = 'prediction',
+            kernel_initializer='orthogonal',
+            use_bias=False,
+            trainable=True,
+            kernel_constraint=keras.constraints.unit_norm(),
+            kernel_regularizer=keras.regularizers.l2(weight_decay),
+            bias_regularizer=keras.regularizers.l2(weight_decay),
+            name='prediction',
         )(x_l2)
         trnloss = amsoftmax_loss
 
@@ -539,8 +539,8 @@ def vggvox_resnet2d_icassp(
 
 
 class Model:
-    def __init__(self, inputs, num_class, mode = 'train'):
+    def __init__(self, inputs, num_class, mode='train'):
 
         self.logits = vggvox_resnet2d_icassp(
-            inputs, num_class = num_class, mode = mode
+            inputs, num_class=num_class, mode=mode
         )

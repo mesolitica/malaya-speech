@@ -5,9 +5,9 @@ import numpy as np
 
 class Encoder(tf.keras.layers.Layer):
     def __init__(self, L, N, **kwargs):
-        super(Encoder, self).__init__(name = 'Encoder', **kwargs)
+        super(Encoder, self).__init__(name='Encoder', **kwargs)
         self.conv = tf.keras.layers.Conv1D(
-            N, kernel_size = L, strides = L // 2, use_bias = False
+            N, kernel_size=L, strides=L // 2, use_bias=False
         )
 
     def call(self, mixture):
@@ -18,7 +18,7 @@ class Encoder(tf.keras.layers.Layer):
 
 class Decoder(tf.keras.layers.Layer):
     def __init__(self, L, **kwargs):
-        super(Decoder, self).__init__(name = 'Decoder', **kwargs)
+        super(Decoder, self).__init__(name='Decoder', **kwargs)
         self.L = L
 
     def call(self, est_source):
@@ -26,7 +26,7 @@ class Decoder(tf.keras.layers.Layer):
         # pt (1, 2, 128, 22521), tf (1, 22521, 2, 128)
         est_source = tf.transpose(est_source, (0, 1, 3, 2))
         est_source = tf.compat.v1.layers.average_pooling2d(
-            est_source, 1, (1, 8), padding = 'SAME'
+            est_source, 1, (1, 8), padding='SAME'
         )
         est_source = tf.signal.overlap_and_add(
             tf.transpose(est_source, (0, 3, 1, 2)), self.L // 2
@@ -40,11 +40,11 @@ class MulCatBlock(tf.keras.layers.Layer):
         self,
         input_size,
         hidden_size,
-        dropout = 0,
-        bidirectional = False,
+        dropout=0,
+        bidirectional=False,
         **kwargs
     ):
-        super(MulCatBlock, self).__init__(name = 'MulCatBlock', **kwargs)
+        super(MulCatBlock, self).__init__(name='MulCatBlock', **kwargs)
 
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -52,17 +52,17 @@ class MulCatBlock(tf.keras.layers.Layer):
 
         if bidirectional:
             self.rnn = tf.keras.layers.Bidirectional(
-                tf.keras.layers.LSTM(hidden_size, return_sequences = True)
+                tf.keras.layers.LSTM(hidden_size, return_sequences=True)
             )
             self.gate_rnn = tf.keras.layers.Bidirectional(
-                tf.keras.layers.LSTM(hidden_size, return_sequences = True)
+                tf.keras.layers.LSTM(hidden_size, return_sequences=True)
             )
         else:
             self.rnn = tf.keras.layers.LSTM(
-                hidden_size, return_sequences = True
+                hidden_size, return_sequences=True
             )
             self.gate_rnn = tf.keras.layers.LSTM(
-                hidden_size, return_sequences = True
+                hidden_size, return_sequences=True
             )
 
         self.rnn_proj = tf.keras.layers.Dense(input_size)
@@ -83,15 +83,15 @@ class MulCatBlock(tf.keras.layers.Layer):
 
 class GroupNorm(tf.keras.layers.Layer):
     def __init__(self, **kwargs):
-        super(DPMulCat, self).__init__(name = 'GroupNorm', **kwargs)
+        super(DPMulCat, self).__init__(name='GroupNorm', **kwargs)
 
     def call(self, input):
-        return tf.contrib.layers.group_norm(x_tf, groups = 1, epsilon = 1e-8)
+        return tf.contrib.layers.group_norm(x_tf, groups=1, epsilon=1e-8)
 
 
 class ByPass(tf.keras.layers.Layer):
     def __init__(self, **kwargs):
-        super(ByPass, self).__init__(name = 'ByPass', **kwargs)
+        super(ByPass, self).__init__(name='ByPass', **kwargs)
 
     def call(self, input):
         return input
@@ -104,13 +104,13 @@ class DPMulCat(tf.keras.layers.Layer):
         hidden_size,
         output_size,
         num_spk,
-        dropout = 0,
-        num_layers = 1,
-        bidirectional = True,
-        input_normalize = False,
+        dropout=0,
+        num_layers=1,
+        bidirectional=True,
+        input_normalize=False,
         **kwargs
     ):
-        super(DPMulCat, self).__init__(name = 'DPMulCat', **kwargs)
+        super(DPMulCat, self).__init__(name='DPMulCat', **kwargs)
 
         self.input_size = input_size
         self.output_size = output_size
@@ -129,7 +129,7 @@ class DPMulCat(tf.keras.layers.Layer):
                     input_size,
                     hidden_size,
                     dropout,
-                    bidirectional = bidirectional,
+                    bidirectional=bidirectional,
                 )
             )
             self.cols_grnn.append(
@@ -137,7 +137,7 @@ class DPMulCat(tf.keras.layers.Layer):
                     input_size,
                     hidden_size,
                     dropout,
-                    bidirectional = bidirectional,
+                    bidirectional=bidirectional,
                 )
             )
             if self.in_norm:
@@ -149,7 +149,7 @@ class DPMulCat(tf.keras.layers.Layer):
                 self.cols_normalization.append(ByPass())
 
         self.outputs = tf.keras.layers.Conv2D(
-            output_size * num_spk, 1, padding = 'SAME'
+            output_size * num_spk, 1, padding='SAME'
         )
 
     def call(self, input):
@@ -179,7 +179,7 @@ class DPMulCat(tf.keras.layers.Layer):
             # torch.Size([1, 128, 126, 360]
             t = tf.transpose(output, [0, 2, 3, 1])
             output_i = self.outputs(
-                tf.keras.layers.PReLU(shared_axes = [1, 2])(t)
+                tf.keras.layers.PReLU(shared_axes=[1, 2])(t)
             )
             output_all.append(output_i)
         return output_all
@@ -192,14 +192,14 @@ class Separator(tf.keras.layers.Layer):
         feature_dim,
         hidden_dim,
         output_dim,
-        num_spk = 2,
-        layer = 4,
-        segment_size = 100,
-        input_normalize = False,
-        bidirectional = True,
+        num_spk=2,
+        layer=4,
+        segment_size=100,
+        input_normalize=False,
+        bidirectional=True,
         **kwargs
     ):
-        super(Separator, self).__init__(name = 'Separator', **kwargs)
+        super(Separator, self).__init__(name='Separator', **kwargs)
         self.input_dim = input_dim
         self.feature_dim = feature_dim
         self.hidden_dim = hidden_dim
@@ -215,9 +215,9 @@ class Separator(tf.keras.layers.Layer):
             self.hidden_dim,
             self.feature_dim,
             self.num_spk,
-            num_layers = layer,
-            bidirectional = bidirectional,
-            input_normalize = input_normalize,
+            num_layers=layer,
+            bidirectional=bidirectional,
+            input_normalize=input_normalize,
         )
 
     def pad_segment(self, input, segment_size):
@@ -231,13 +231,13 @@ class Separator(tf.keras.layers.Layer):
         )
 
         def f1():
-            pad = tf.zeros(shape = (batch_size, rest, dim))
+            pad = tf.zeros(shape=(batch_size, rest, dim))
             i = tf.concat([input, pad], 1)
             return i
 
         input = tf.cond(rest > 0, f1, lambda: input)
 
-        pad_aux = tf.zeros(shape = (batch_size, segment_stride, dim))
+        pad_aux = tf.zeros(shape=(batch_size, segment_stride, dim))
         input = tf.concat([pad_aux, input, pad_aux], 1)
         return input, rest
 
@@ -252,20 +252,20 @@ class Separator(tf.keras.layers.Layer):
         segments2 = tf.reshape(
             input[:, segment_stride:], (batch_size, -1, dim, segment_size)
         )
-        segments = tf.concat([segments1, segments2], axis = 3)
+        segments = tf.concat([segments1, segments2], axis=3)
         segments = tf.reshape(segments, (batch_size, -1, dim, segment_size))
-        segments = tf.transpose(segments, perm = [0, 3, 2, 1])
+        segments = tf.transpose(segments, perm=[0, 3, 2, 1])
         return segments, rest
 
     def merge_chuncks(self, input, rest):
         # original, [b, dim, segment_size, _]
         # torch.Size([1, 256, 126, 360])
         # (1, 126, 360, 256)
-        input = tf.transpose(input, perm = [0, 3, 1, 2])
+        input = tf.transpose(input, perm=[0, 3, 1, 2])
         batch_size, dim, segment_size, _ = shape_list(input)
         segment_stride = segment_size // 2
         # original, [b, dim, _, segment_size]
-        input = tf.transpose(input, perm = [0, 1, 3, 2])
+        input = tf.transpose(input, perm=[0, 1, 3, 2])
         input = tf.reshape(input, (batch_size, dim, -1, segment_size * 2))
 
         input1 = tf.reshape(
@@ -279,7 +279,7 @@ class Separator(tf.keras.layers.Layer):
         if rest > 0:
             output = output[:, :, :-rest]
 
-        return tf.transpose(output, perm = [0, 2, 1])
+        return tf.transpose(output, perm=[0, 2, 1])
 
     def call(self, input):
         # create chunks
@@ -295,17 +295,17 @@ class Separator(tf.keras.layers.Layer):
 class Model(tf.keras.Model):
     def __init__(
         self,
-        N = 128,
-        L = 8,
-        H = 128,
-        R = 6,
-        C = 2,
-        input_normalize = False,
-        sample_rate = 8000,
-        segment = 4,
+        N=128,
+        L=8,
+        H=128,
+        R=6,
+        C=2,
+        input_normalize=False,
+        sample_rate=8000,
+        segment=4,
         **kwargs
     ):
-        super(Model, self).__init__(name = 'swave', **kwargs)
+        super(Model, self).__init__(name='swave', **kwargs)
         sr = sample_rate
         context_len = 2 * sr / 1000
         context = int(sr * context_len / 1000)

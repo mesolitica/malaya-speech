@@ -37,7 +37,7 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
         * ``'vggvox-v2'`` - finetuned VGGVox V2.
         * ``'speakernet'`` - finetuned SpeakerNet.
     quantized : bool, optional (default=False)
-        if True, will load 8-bit quantized model. 
+        if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
 
     Returns
@@ -56,10 +56,10 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     }
 
     return classification.load(
-        model = model,
-        module = 'speaker-overlap',
-        extra = settings[model],
-        label = [False, True],
-        quantized = quantized,
+        model=model,
+        module='speaker-overlap',
+        extra=settings[model],
+        label=[False, True],
+        quantized=quantized,
         **kwargs
     )

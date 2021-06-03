@@ -39,7 +39,7 @@ class WeightNormalization(tf.keras.layers.Wrapper):
          https://arxiv.org/abs/1602.07868
     """
 
-    def __init__(self, layer, data_init = True, **kwargs):
+    def __init__(self, layer, data_init=True, **kwargs):
         """Initialize WeightNorm wrapper.
         Args:
           layer: A `tf.keras.layers.Layer` instance. Supported layer types are
@@ -53,7 +53,7 @@ class WeightNormalization(tf.keras.layers.Wrapper):
         if not isinstance(layer, tf.keras.layers.Layer):
             raise ValueError(
                 'Please initialize `WeightNorm` layer with a `tf.keras.layers.Layer` '
-                'instance. You passed: {input}'.format(input = layer)
+                'instance. You passed: {input}'.format(input=layer)
             )
 
         layer_type = type(layer).__name__
@@ -74,7 +74,7 @@ class WeightNormalization(tf.keras.layers.Wrapper):
         super().__init__(layer, **kwargs)
 
         self.data_init = data_init
-        self._track_trackable(layer, name = 'layer')
+        self._track_trackable(layer, name='layer')
         self.filter_axis = -2 if layer_type == 'Conv2DTranspose' else -1
 
     def _compute_weights(self):
@@ -84,13 +84,13 @@ class WeightNormalization(tf.keras.layers.Wrapper):
         new_axis = -self.filter_axis - 3
 
         self.layer.kernel = tf.nn.l2_normalize(
-            self.v, axis = self.kernel_norm_axes
+            self.v, axis=self.kernel_norm_axes
         ) * tf.expand_dims(self.g, new_axis)
 
     def _init_norm(self):
         """Set the norm of the weight vector."""
         kernel_norm = tf.sqrt(
-            tf.reduce_sum(tf.square(self.v), axis = self.kernel_norm_axes)
+            tf.reduce_sum(tf.square(self.v), axis=self.kernel_norm_axes)
         )
         self.g.assign(kernel_norm)
 
@@ -122,7 +122,7 @@ class WeightNormalization(tf.keras.layers.Wrapper):
             self.layer.bias.assign(-m_init * scale_init)
         self.layer.activation = activation
 
-    def build(self, input_shape = None):
+    def build(self, input_shape=None):
         """Build `Layer`.
         Args:
           input_shape: The shape of the input to `self.layer`.
@@ -146,14 +146,14 @@ class WeightNormalization(tf.keras.layers.Wrapper):
             # to avoid a duplicate `kernel` variable after `build` is called
             self.layer.kernel = None
             self.g = self.add_weight(
-                name = 'g',
-                shape = (int(self.v.shape[self.filter_axis]),),
-                initializer = 'ones',
-                dtype = self.v.dtype,
-                trainable = True,
+                name='g',
+                shape=(int(self.v.shape[self.filter_axis]),),
+                initializer='ones',
+                dtype=self.v.dtype,
+                trainable=True,
             )
             self.initialized = self.add_weight(
-                name = 'initialized', dtype = tf.bool, trainable = False
+                name='initialized', dtype=tf.bool, trainable=False
             )
             self.initialized.assign(False)
 
@@ -200,10 +200,10 @@ class Convolution(object):
         input_shape,
         filter_shape,
         padding,
-        strides = None,
-        dilation_rate = None,
-        name = None,
-        data_format = None,
+        strides=None,
+        dilation_rate=None,
+        name=None,
+        data_format=None,
     ):
         """Helper function for convolution."""
         num_total_dims = filter_shape.ndims
@@ -261,22 +261,22 @@ class Convolution(object):
         self.dilation_rate = dilation_rate
         self.conv_op = nn_ops._WithSpaceToBatch(
             input_shape,
-            dilation_rate = dilation_rate,
-            padding = padding,
-            build_op = self._build_op,
-            filter_shape = filter_shape,
-            spatial_dims = spatial_dims,
-            data_format = data_format,
+            dilation_rate=dilation_rate,
+            padding=padding,
+            build_op=self._build_op,
+            filter_shape=filter_shape,
+            spatial_dims=spatial_dims,
+            data_format=data_format,
         )
 
     def _build_op(self, _, padding):
         return nn_ops._NonAtrousConvolution(
             self.input_shape,
-            filter_shape = self.filter_shape,
-            padding = padding,
-            data_format = self.data_format,
-            strides = self.strides,
-            name = self.name,
+            filter_shape=self.filter_shape,
+            padding=padding,
+            data_format=self.data_format,
+            strides=self.strides,
+            name=self.name,
         )
 
     def __call__(self, inp, filter):
@@ -349,28 +349,28 @@ class Conv(Layer):
         rank,
         filters,
         kernel_size,
-        strides = 1,
-        padding = 'valid',
-        data_format = None,
-        dilation_rate = 1,
-        groups = 1,
-        activation = None,
-        use_bias = True,
-        kernel_initializer = 'glorot_uniform',
-        bias_initializer = 'zeros',
-        kernel_regularizer = None,
-        bias_regularizer = None,
-        activity_regularizer = None,
-        kernel_constraint = None,
-        bias_constraint = None,
-        trainable = True,
-        name = None,
+        strides=1,
+        padding='valid',
+        data_format=None,
+        dilation_rate=1,
+        groups=1,
+        activation=None,
+        use_bias=True,
+        kernel_initializer='glorot_uniform',
+        bias_initializer='zeros',
+        kernel_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+        kernel_constraint=None,
+        bias_constraint=None,
+        trainable=True,
+        name=None,
         **kwargs
     ):
         super(Conv, self).__init__(
-            trainable = trainable,
-            name = name,
-            activity_regularizer = regularizers.get(activity_regularizer),
+            trainable=trainable,
+            name=name,
+            activity_regularizer=regularizers.get(activity_regularizer),
             **kwargs
         )
         self.rank = rank
@@ -414,7 +414,7 @@ class Conv(Layer):
         self.bias_regularizer = regularizers.get(bias_regularizer)
         self.kernel_constraint = constraints.get(kernel_constraint)
         self.bias_constraint = constraints.get(bias_constraint)
-        self.input_spec = InputSpec(ndim = self.rank + 2)
+        self.input_spec = InputSpec(ndim=self.rank + 2)
 
     def build(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape)
@@ -433,29 +433,29 @@ class Conv(Layer):
         )
 
         self.kernel = self.add_weight(
-            name = 'kernel',
-            shape = kernel_shape,
-            initializer = self.kernel_initializer,
-            regularizer = self.kernel_regularizer,
-            constraint = self.kernel_constraint,
-            trainable = True,
-            dtype = self.dtype,
+            name='kernel',
+            shape=kernel_shape,
+            initializer=self.kernel_initializer,
+            regularizer=self.kernel_regularizer,
+            constraint=self.kernel_constraint,
+            trainable=True,
+            dtype=self.dtype,
         )
         if self.use_bias:
             self.bias = self.add_weight(
-                name = 'bias',
-                shape = (self.filters,),
-                initializer = self.bias_initializer,
-                regularizer = self.bias_regularizer,
-                constraint = self.bias_constraint,
-                trainable = True,
-                dtype = self.dtype,
+                name='bias',
+                shape=(self.filters,),
+                initializer=self.bias_initializer,
+                regularizer=self.bias_regularizer,
+                constraint=self.bias_constraint,
+                trainable=True,
+                dtype=self.dtype,
             )
         else:
             self.bias = None
         channel_axis = self._get_channel_axis()
         self.input_spec = InputSpec(
-            ndim = self.rank + 2, axes = {channel_axis: input_channel}
+            ndim=self.rank + 2, axes={channel_axis: input_channel}
         )
 
         self._build_conv_op_input_shape = input_shape
@@ -466,11 +466,11 @@ class Conv(Layer):
         )
         self._convolution_op = Convolution(
             input_shape,
-            filter_shape = self.kernel.shape,
-            dilation_rate = self.dilation_rate,
-            strides = self.strides,
-            padding = self._padding_op,
-            data_format = self._conv_op_data_format,
+            filter_shape=self.kernel.shape,
+            dilation_rate=self.dilation_rate,
+            strides=self.strides,
+            padding=self._padding_op,
+            data_format=self._conv_op_data_format,
         )
         self.built = True
 
@@ -478,11 +478,11 @@ class Conv(Layer):
         if self._recreate_conv_op(inputs):
             self._convolution_op = Convolution(
                 inputs.get_shape(),
-                filter_shape = self.kernel.shape,
-                dilation_rate = self.dilation_rate,
-                strides = self.strides,
-                padding = self._padding_op,
-                data_format = self._conv_op_data_format,
+                filter_shape=self.kernel.shape,
+                dilation_rate=self.dilation_rate,
+                strides=self.strides,
+                padding=self._padding_op,
+                data_format=self._conv_op_data_format,
             )
             self._build_conv_op_input_shape = inputs.get_shape()
 
@@ -500,10 +500,10 @@ class Conv(Layer):
                     outputs += bias
                 else:
                     outputs = nn.bias_add(
-                        outputs, self.bias, data_format = 'NCHW'
+                        outputs, self.bias, data_format='NCHW'
                     )
             else:
-                outputs = nn.bias_add(outputs, self.bias, data_format = 'NHWC')
+                outputs = nn.bias_add(outputs, self.bias, data_format='NHWC')
 
         if self.activation is not None:
             return self.activation(outputs)
@@ -518,9 +518,9 @@ class Conv(Layer):
                 new_dim = conv_utils.conv_output_length(
                     space[i],
                     self.kernel_size[i],
-                    padding = self.padding,
-                    stride = self.strides[i],
-                    dilation = self.dilation_rate[i],
+                    padding=self.padding,
+                    stride=self.strides[i],
+                    dilation=self.dilation_rate[i],
                 )
                 new_space.append(new_dim)
             return tensor_shape.TensorShape(
@@ -533,9 +533,9 @@ class Conv(Layer):
                 new_dim = conv_utils.conv_output_length(
                     space[i],
                     self.kernel_size[i],
-                    padding = self.padding,
-                    stride = self.strides[i],
-                    dilation = self.dilation_rate[i],
+                    padding=self.padding,
+                    stride=self.strides[i],
+                    dilation=self.dilation_rate[i],
                 )
                 new_space.append(new_dim)
             return tensor_shape.TensorShape(
@@ -713,39 +713,39 @@ class GroupConv1D(Conv):
         self,
         filters,
         kernel_size,
-        strides = 1,
-        padding = 'valid',
-        data_format = 'channels_last',
-        dilation_rate = 1,
-        groups = 1,
-        activation = None,
-        use_bias = True,
-        kernel_initializer = 'glorot_uniform',
-        bias_initializer = 'zeros',
-        kernel_regularizer = None,
-        bias_regularizer = None,
-        activity_regularizer = None,
-        kernel_constraint = None,
-        bias_constraint = None,
+        strides=1,
+        padding='valid',
+        data_format='channels_last',
+        dilation_rate=1,
+        groups=1,
+        activation=None,
+        use_bias=True,
+        kernel_initializer='glorot_uniform',
+        bias_initializer='zeros',
+        kernel_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+        kernel_constraint=None,
+        bias_constraint=None,
         **kwargs
     ):
         super().__init__(
-            rank = 1,
-            filters = filters,
-            kernel_size = kernel_size,
-            strides = strides,
-            padding = padding,
-            data_format = data_format,
-            dilation_rate = dilation_rate,
-            groups = groups,
-            activation = activations.get(activation),
-            use_bias = use_bias,
-            kernel_initializer = initializers.get(kernel_initializer),
-            bias_initializer = initializers.get(bias_initializer),
-            kernel_regularizer = regularizers.get(kernel_regularizer),
-            bias_regularizer = regularizers.get(bias_regularizer),
-            activity_regularizer = regularizers.get(activity_regularizer),
-            kernel_constraint = constraints.get(kernel_constraint),
-            bias_constraint = constraints.get(bias_constraint),
+            rank=1,
+            filters=filters,
+            kernel_size=kernel_size,
+            strides=strides,
+            padding=padding,
+            data_format=data_format,
+            dilation_rate=dilation_rate,
+            groups=groups,
+            activation=activations.get(activation),
+            use_bias=use_bias,
+            kernel_initializer=initializers.get(kernel_initializer),
+            bias_initializer=initializers.get(bias_initializer),
+            kernel_regularizer=regularizers.get(kernel_regularizer),
+            bias_regularizer=regularizers.get(bias_regularizer),
+            activity_regularizer=regularizers.get(activity_regularizer),
+            kernel_constraint=constraints.get(kernel_constraint),
+            bias_constraint=constraints.get(bias_constraint),
             **kwargs
         )

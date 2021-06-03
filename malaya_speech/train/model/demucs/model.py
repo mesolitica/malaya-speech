@@ -15,23 +15,23 @@ class Model:
     def __init__(
         self,
         inputs,
-        sources = 4,
-        audio_channels = 1,
-        channels = 64,
-        depth = 6,
-        rewrite = True,
-        use_glu = True,
-        rescale = 0.1,
-        kernel_size = 8,
-        stride = 4,
-        growth = 2.0,
-        lstm_layers = 2,
-        context = 3,
-        partition_length = 44100 * 2,
-        norm_after_partition = False,
-        output_shape_same_as_input = False,
-        logging = False,
-        kernel_initializer = ConvScaling,
+        sources=4,
+        audio_channels=1,
+        channels=64,
+        depth=6,
+        rewrite=True,
+        use_glu=True,
+        rescale=0.1,
+        kernel_size=8,
+        stride=4,
+        growth=2.0,
+        lstm_layers=2,
+        context=3,
+        partition_length=44100 * 2,
+        norm_after_partition=False,
+        output_shape_same_as_input=False,
+        logging=False,
+        kernel_initializer=ConvScaling,
     ):
         self.audio_channels = audio_channels
         self.sources = sources
@@ -59,8 +59,8 @@ class Model:
                     channels,
                     kernel_size,
                     stride,
-                    activation = tf.nn.relu,
-                    kernel_initializer = kernel_initializer,
+                    activation=tf.nn.relu,
+                    kernel_initializer=kernel_initializer,
                 )
             )
             if rewrite:
@@ -68,8 +68,8 @@ class Model:
                     tf.keras.layers.Conv1D(
                         ch_scale * channels,
                         1,
-                        activation = activation,
-                        kernel_initializer = kernel_initializer,
+                        activation=activation,
+                        kernel_initializer=kernel_initializer,
                     )
                 )
             self.encoder.append(encoder)
@@ -85,8 +85,8 @@ class Model:
                     tf.keras.layers.Conv1D(
                         ch_scale * channels,
                         context,
-                        activation = activation,
-                        kernel_initializer = kernel_initializer,
+                        activation=activation,
+                        kernel_initializer=kernel_initializer,
                     )
                 )
 
@@ -100,8 +100,8 @@ class Model:
                     out_channels,
                     kernel_size,
                     stride,
-                    activation = a,
-                    kernel_initializer = kernel_initializer,
+                    activation=a,
+                    kernel_initializer=kernel_initializer,
                 )
             )
             self.decoder.insert(0, decoder)
@@ -112,8 +112,8 @@ class Model:
         if partition_length:
             partitioned = pad_and_partition(inputs, self.partition_length)
             if norm_after_partition:
-                mean = tf.reduce_mean(partitioned, axis = 0)
-                std = tf.math.reduce_std(partitioned, axis = 0)
+                mean = tf.reduce_mean(partitioned, axis=0)
+                std = tf.math.reduce_std(partitioned, axis=0)
                 partitioned = (partitioned - mean) / std
 
         valid_length = self.valid_length(partitioned.shape.as_list()[1])

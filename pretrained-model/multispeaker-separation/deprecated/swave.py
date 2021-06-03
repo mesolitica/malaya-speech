@@ -24,10 +24,10 @@ import pandas as pd
 
 def chunks(l, n):
     for i in range(0, len(l), n):
-        yield (l[i : i + n], i // n)
+        yield (l[i: i + n], i // n)
 
 
-def multiprocessing(strings, function, cores = 6, returned = True):
+def multiprocessing(strings, function, cores=6, returned=True):
     df_split = chunks(strings, len(strings) // cores)
     pool = Pool(cores)
     print('initiate pool map')
@@ -65,7 +65,7 @@ for f in es_ar_male:
 len(speakers_es_ar_male)
 
 df_nepali = pd.read_csv(
-    '../speech-bahasa/asr_nepali/utt_spk_text.tsv', sep = '\t', header = None
+    '../speech-bahasa/asr_nepali/utt_spk_text.tsv', sep='\t', header=None
 )
 asr_nepali = glob('../speech-bahasa/asr_nepali/data/*/*.flac')
 asr_nepali.extend(glob('../speech-bahasa/nepali_1/asr_nepali/data/*/*.flac'))
@@ -84,8 +84,8 @@ len(speakers_nepali)
 
 df_sinhala = pd.read_csv(
     '../speech-bahasa/sinhala_0/asr_sinhala/utt_spk_text.tsv',
-    sep = '\t',
-    header = None,
+    sep='\t',
+    header=None,
 )
 asr_sinhala = glob('../speech-bahasa/sinhala_0/asr_sinhala/data/*/*.flac')
 asr_sinhala.extend(glob('../speech-bahasa/sinhala_1/asr_sinhala/data/*/*.flac'))
@@ -119,9 +119,9 @@ speakers_malay['dari-pasentran-ke-istana'] = glob(
 )
 
 noises = glob('../noise-44k/noise/*.wav') + glob('../noise-44k/clean-wav/*.wav')
-basses = glob('HHDS/Sources/**/*bass.wav', recursive = True)
-drums = glob('HHDS/Sources/**/*drums.wav', recursive = True)
-others = glob('HHDS/Sources/**/*other.wav', recursive = True)
+basses = glob('HHDS/Sources/**/*bass.wav', recursive=True)
+drums = glob('HHDS/Sources/**/*drums.wav', recursive=True)
+others = glob('HHDS/Sources/**/*other.wav', recursive=True)
 noises = noises + basses + drums + others
 random.shuffle(noises)
 sr = 8000
@@ -148,19 +148,19 @@ def random_speakers(n):
 
 
 def read_wav(f):
-    return malaya_speech.load(f, sr = sr)
+    return malaya_speech.load(f, sr=sr)
 
 
 def random_sampling(s, length):
-    return augmentation.random_sampling(s, sr = sr, length = length)
+    return augmentation.random_sampling(s, sr=sr, length=length)
 
 
-def combine_speakers(files, n = 5, limit = 4):
+def combine_speakers(files, n=5, limit=4):
     w_samples = random.sample(files, n)
     w_samples = [
         random_sampling(
             read_wav(f)[0],
-            length = min(random.randint(10000 // n, 20000 // n), 10000),
+            length=min(random.randint(10000 // n, 20000 // n), 10000),
         )
         for f in w_samples
     ]
@@ -217,7 +217,7 @@ def parallel(f):
 
             if 2 < (len(combined) / sr):
                 break
-        except:
+        except BaseException:
             pass
 
     while len(y) < 4:
@@ -236,10 +236,10 @@ def loop(files):
     return results
 
 
-def generate(batch_size = 10, repeat = 20):
+def generate(batch_size=10, repeat=20):
     fs = [i for i in range(batch_size)]
     while True:
-        results = multiprocessing(fs, loop, cores = len(fs))
+        results = multiprocessing(fs, loop, cores=len(fs))
         for _ in range(repeat):
             random.shuffle(results)
             for r in results:
@@ -247,12 +247,12 @@ def generate(batch_size = 10, repeat = 20):
                     yield {'combined': r[0], 'y': r[1], 'length': r[2]}
 
 
-def get_dataset(batch_size = 2):
+def get_dataset(batch_size=2):
     def get():
         dataset = tf.data.Dataset.from_generator(
             generate,
             {'combined': tf.float32, 'y': tf.float32, 'length': tf.int32},
-            output_shapes = {
+            output_shapes={
                 'combined': tf.TensorShape([None]),
                 'y': tf.TensorShape([speakers_size, None]),
                 'length': tf.TensorShape([None]),
@@ -260,15 +260,15 @@ def get_dataset(batch_size = 2):
         )
         dataset = dataset.padded_batch(
             batch_size,
-            padded_shapes = {
+            padded_shapes={
                 'combined': tf.TensorShape([None]),
                 'y': tf.TensorShape([speakers_size, None]),
                 'length': tf.TensorShape([None]),
             },
-            padding_values = {
-                'combined': tf.constant(0, dtype = tf.float32),
-                'y': tf.constant(0, dtype = tf.float32),
-                'length': tf.constant(0, dtype = tf.int32),
+            padding_values={
+                'combined': tf.constant(0, dtype=tf.float32),
+                'y': tf.constant(0, dtype=tf.float32),
+                'length': tf.constant(0, dtype=tf.int32),
             },
         )
         return dataset
@@ -282,7 +282,7 @@ epochs = 100_000
 
 def model_fn(features, labels, mode, params):
     lengths = features['length'][:, 0]
-    model = swave.Model(C = speakers_size, sample_rate = sr)
+    model = swave.Model(C=speakers_size, sample_rate=sr)
     outputs, output_all = model(features['combined'])
 
     loss = 0
@@ -290,7 +290,7 @@ def model_fn(features, labels, mode, params):
         coeff = (c_idx + 1) * (1 / len(outputs))
         print(c_idx, est_src, coeff)
         sisnr_loss, snr, est_src = swave.calculate_loss(
-            features['y'], est_src, lengths, C = speakers_size
+            features['y'], est_src, lengths, C=speakers_size
         )
         loss += coeff * sisnr_loss
 
@@ -299,48 +299,48 @@ def model_fn(features, labels, mode, params):
     tf.summary.scalar('total_loss', loss)
 
     global_step = tf.train.get_or_create_global_step()
-    learning_rate = tf.constant(value = init_lr, shape = [], dtype = tf.float32)
+    learning_rate = tf.constant(value=init_lr, shape=[], dtype=tf.float32)
     learning_rate = tf.train.polynomial_decay(
         learning_rate,
         global_step,
         epochs,
-        end_learning_rate = 1e-6,
-        power = 1.0,
-        cycle = False,
+        end_learning_rate=1e-6,
+        power=1.0,
+        cycle=False,
     )
     tf.summary.scalar('learning_rate', learning_rate)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
 
-        optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
+        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 
-        train_op = optimizer.minimize(loss, global_step = global_step)
+        train_op = optimizer.minimize(loss, global_step=global_step)
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = mode, loss = loss, train_op = train_op
+            mode=mode, loss=loss, train_op=train_op
         )
 
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode = tf.estimator.ModeKeys.EVAL, loss = loss
+            mode=tf.estimator.ModeKeys.EVAL, loss=loss
         )
 
     return estimator_spec
 
 
-train_hooks = [tf.train.LoggingTensorHook(['total_loss'], every_n_iter = 1)]
+train_hooks = [tf.train.LoggingTensorHook(['total_loss'], every_n_iter=1)]
 train_dataset = get_dataset()
 
 save_directory = 'speaker-split-swave'
 
 train.run_training(
-    train_fn = train_dataset,
-    model_fn = model_fn,
-    model_dir = save_directory,
-    num_gpus = 1,
-    log_step = 1,
-    save_checkpoint_step = 3000,
-    max_steps = epochs,
-    train_hooks = train_hooks,
-    eval_step = 0,
+    train_fn=train_dataset,
+    model_fn=model_fn,
+    model_dir=save_directory,
+    num_gpus=1,
+    log_step=1,
+    save_checkpoint_step=3000,
+    max_steps=epochs,
+    train_hooks=train_hooks,
+    eval_step=0,
 )

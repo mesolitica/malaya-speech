@@ -7,17 +7,17 @@ from itertools import groupby
 
 
 def get_ax(
-    ax = None,
-    xlim = (0, 1000),
-    ylim = (0, 1),
-    yaxis = False,
-    time = True,
+    ax=None,
+    xlim=(0, 1000),
+    ylim=(0, 1),
+    yaxis=False,
+    time=True,
     **kwargs
 ):
     try:
         import seaborn as sns
         import matplotlib.pyplot as plt
-    except:
+    except BaseException:
         raise ValueError(
             'seaborn and matplotlib not installed. Please install it by `pip install matplotlib seaborn` and try again.'
         )
@@ -37,7 +37,7 @@ def get_ax(
 def get_styles(size):
     try:
         from matplotlib.cm import get_cmap
-    except:
+    except BaseException:
         raise ValueError(
             'matplotlib not installed. Please install it by `pip install matplotlib` and try again.'
         )
@@ -58,7 +58,7 @@ def visualize_vad(
     preds: List[Tuple[Frame, bool]],
     sample_rate: int = 16000,
     figsize: Tuple[int, int] = (15, 3),
-    ax = None,
+    ax=None,
     **kwargs
 ):
     """
@@ -77,14 +77,14 @@ def visualize_vad(
     try:
         import seaborn as sns
         import matplotlib.pyplot as plt
-    except:
+    except BaseException:
         raise ValueError(
             'seaborn and matplotlib not installed. Please install it by `pip install matplotlib seaborn` and try again.'
         )
 
     if ax is None:
         sns.set()
-        fig = plt.figure(figsize = figsize)
+        fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(1, 1, 1)
         plot = True
     else:
@@ -93,8 +93,8 @@ def visualize_vad(
 
         ax = get_ax(
             ax,
-            xlim = (min_timestamp, max_timestamp),
-            ylim = (np.min(signal), np.max(signal)),
+            xlim=(min_timestamp, max_timestamp),
+            ylim=(np.min(signal), np.max(signal)),
             **kwargs
         )
         plot = False
@@ -103,30 +103,30 @@ def visualize_vad(
         color = 'g' if predictions[1] else 'r'
         p = predictions[0]
         ax.axvspan(
-            p.timestamp, p.timestamp + p.duration, alpha = 0.5, color = color
+            p.timestamp, p.timestamp + p.duration, alpha=0.5, color=color
         )
     if plot:
-        plt.xlabel('Time (s)', size = 20)
-        plt.ylabel('Amplitude', size = 20)
-        plt.xticks(size = 15)
-        plt.yticks(size = 15)
+        plt.xlabel('Time (s)', size=20)
+        plt.ylabel('Amplitude', size=20)
+        plt.xticks(size=15)
+        plt.yticks(size=15)
         plt.show()
 
 
 def plot_classification(
     preds,
     description,
-    ax = None,
-    fontsize_text = 14,
-    x_text = 0.05,
-    y_text = 0.2,
-    ylim = (0.1, 0.9),
+    ax=None,
+    fontsize_text=14,
+    x_text=0.05,
+    y_text=0.2,
+    ylim=(0.1, 0.9),
     figsize: Tuple[int, int] = (15, 3),
     **kwargs
 ):
     """
     Visualize probability / boolean.
-    
+
     Parameters
     -----------
     preds: List[Tuple[Frame, label]]
@@ -140,13 +140,13 @@ def plot_classification(
     try:
         import seaborn as sns
         import matplotlib.pyplot as plt
-    except:
+    except BaseException:
         raise ValueError(
             'seaborn and matplotlib not installed. Please install it by `pip install matplotlib seaborn` and try again.'
         )
 
     if ax is None:
-        fig = plt.figure(figsize = figsize)
+        fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(1, 1, 1)
 
     if isinstance(preds[0][1], float) or isinstance(preds[0][1], np.float32):
@@ -156,7 +156,7 @@ def plot_classification(
 
     min_timestamp = min([i[0].timestamp for i in preds])
     max_timestamp = max([i[0].timestamp + i[0].duration for i in preds])
-    ax = get_ax(ax, xlim = (min_timestamp, max_timestamp), **kwargs)
+    ax = get_ax(ax, xlim=(min_timestamp, max_timestamp), **kwargs)
 
     if hline:
         x = [i[1] for i in preds]
@@ -175,41 +175,41 @@ def plot_classification(
                 preds[i][0].timestamp,
                 preds[i][0].timestamp + preds[i][0].duration,
                 color,
-                linewidth = linewidth,
-                linestyle = linestyle,
-                label = x[i],
+                linewidth=linewidth,
+                linestyle=linestyle,
+                label=x[i],
             )
             ax.vlines(
                 preds[i][0].timestamp,
                 scaled[i] + 0.05,
                 scaled[i] - 0.05,
                 color,
-                linewidth = 1,
-                linestyle = 'solid',
+                linewidth=1,
+                linestyle='solid',
             )
             ax.vlines(
                 preds[i][0].timestamp + preds[i][0].duration,
                 scaled[i] + 0.05,
                 scaled[i] - 0.05,
                 color,
-                linewidth = 1,
-                linestyle = 'solid',
+                linewidth=1,
+                linestyle='solid',
             )
         H, L = ax.get_legend_handles_labels()
 
         HL = groupby(
-            sorted(zip(H, L), key = lambda h_l: h_l[1]),
-            key = lambda h_l: h_l[1],
+            sorted(zip(H, L), key=lambda h_l: h_l[1]),
+            key=lambda h_l: h_l[1],
         )
         H, L = zip(*list((next(h_l)[0], l) for l, h_l in HL))
         ax.legend(
             H,
             L,
-            bbox_to_anchor = (0, 1),
-            loc = 3,
-            ncol = 5,
-            borderaxespad = 0.0,
-            frameon = False,
+            bbox_to_anchor=(0, 1),
+            loc=3,
+            ncol=5,
+            borderaxespad=0.0,
+            frameon=False,
         )
 
     else:
@@ -220,7 +220,7 @@ def plot_classification(
     x = [i[0].timestamp for i in preds]
 
     ax.text(
-        x[int(len(x) * x_text)], y_text, description, fontsize = fontsize_text
+        x[int(len(x) * x_text)], y_text, description, fontsize=fontsize_text
     )
 
     return ax

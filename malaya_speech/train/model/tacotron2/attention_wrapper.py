@@ -45,9 +45,9 @@ class AttentionMechanism(tf.keras.layers.Layer):
         self,
         memory,
         probability_fn: callable,
-        query_layer = None,
-        memory_layer = None,
-        memory_sequence_length = None,
+        query_layer=None,
+        memory_layer=None,
+        memory_sequence_length=None,
         **kwargs,
     ):
         """Construct base AttentionMechanism class.
@@ -93,7 +93,7 @@ class AttentionMechanism(tf.keras.layers.Layer):
             else:
                 inputs = [memory, memory_sequence_length]
 
-            self.values = super().__call__(inputs, setup_memory = True)
+            self.values = super().__call__(inputs, setup_memory=True)
 
     @property
     def memory_initialized(self):
@@ -152,7 +152,7 @@ class AttentionMechanism(tf.keras.layers.Layer):
 
         return super().__call__(inputs, **kwargs)
 
-    def call(self, inputs, mask = None, setup_memory = False, **kwargs):
+    def call(self, inputs, mask=None, setup_memory=False, **kwargs):
         """Setup the memory or query the attention.
         There are two case here, one for setup memory, and the second is query
         the attention score. `setup_memory` is the flag to indicate which mode
@@ -216,7 +216,7 @@ class AttentionMechanism(tf.keras.layers.Layer):
             return self._calculate_attention(query, state)
 
     def setup_memory(
-        self, memory, memory_sequence_length = None, memory_mask = None
+        self, memory, memory_sequence_length=None, memory_mask=None
     ):
         """Pre-process the memory before actually query the memory.
         This should only be called once at the first invocation of `call()`.
@@ -238,9 +238,9 @@ class AttentionMechanism(tf.keras.layers.Layer):
         with tf.name_scope(self.name or 'BaseAttentionMechanismInit'):
             self.values = _prepare_memory(
                 memory,
-                memory_sequence_length = memory_sequence_length,
-                memory_mask = memory_mask,
-                check_inner_dims_defined = self._check_inner_dims_defined,
+                memory_sequence_length=memory_sequence_length,
+                memory_mask=memory_mask,
+                check_inner_dims_defined=self._check_inner_dims_defined,
             )
             # Mark the value as check since the memory and memory mask might not
             # passed from __call__(), which does not have proper keras metadata.
@@ -260,9 +260,9 @@ class AttentionMechanism(tf.keras.layers.Layer):
                     return unwrapped_probability_fn(
                         _maybe_mask_score(
                             score,
-                            memory_mask = memory_mask,
-                            memory_sequence_length = memory_sequence_length,
-                            score_mask_value = score.dtype.min,
+                            memory_mask=memory_mask,
+                            memory_sequence_length=memory_sequence_length,
+                            score_mask_value=score.dtype.min,
                         ),
                         prev,
                     )
@@ -275,7 +275,7 @@ class AttentionMechanism(tf.keras.layers.Layer):
             '_calculate_attention need to be implemented by subclasses.'
         )
 
-    def compute_mask(self, inputs, mask = None):
+    def compute_mask(self, inputs, mask=None):
         # There real input of the attention is query and state, and the memory
         # layer mask shouldn't be pass down. Returning None for all output mask
         # here.
@@ -333,13 +333,13 @@ class AttentionMechanism(tf.keras.layers.Layer):
         query_layer_config = config.pop('query_layer', None)
         if query_layer_config:
             query_layer = tf.keras.layers.deserialize(
-                query_layer_config, custom_objects = custom_objects
+                query_layer_config, custom_objects=custom_objects
             )
             config['query_layer'] = query_layer
         memory_layer_config = config.pop('memory_layer', None)
         if memory_layer_config:
             memory_layer = tf.keras.layers.deserialize(
-                memory_layer_config, custom_objects = custom_objects
+                memory_layer_config, custom_objects=custom_objects
             )
             config['memory_layer'] = memory_layer
         return config
@@ -369,7 +369,7 @@ class AttentionMechanism(tf.keras.layers.Layer):
           A `dtype` tensor shaped `[batch_size, alignments_size]`
           (`alignments_size` is the values' `max_time`).
         """
-        return tf.zeros([batch_size, self._alignments_size], dtype = dtype)
+        return tf.zeros([batch_size, self._alignments_size], dtype=dtype)
 
     def initial_state(self, batch_size, dtype):
         """Creates the initial state values for the `tfa.seq2seq.AttentionWrapper` class.
@@ -389,7 +389,7 @@ class AttentionMechanism(tf.keras.layers.Layer):
 
 
 def _bahdanau_score(
-    processed_query, keys, attention_v, attention_g = None, attention_b = None
+    processed_query, keys, attention_v, attention_g=None, attention_b=None
 ):
     """Implements Bahdanau-style (additive) scoring function.
     This attention has two forms.  The first is Bhandanau attention,
@@ -449,12 +449,12 @@ class BahdanauAttention(AttentionMechanism):
     def __init__(
         self,
         units,
-        memory = None,
-        memory_sequence_length = None,
+        memory=None,
+        memory_sequence_length=None,
         normalize: bool = False,
         probability_fn: str = 'softmax',
-        kernel_initializer = 'glorot_uniform',
-        dtype = None,
+        kernel_initializer='glorot_uniform',
+        dtype=None,
         name: str = 'BahdanauAttention',
         **kwargs,
     ):
@@ -489,12 +489,12 @@ class BahdanauAttention(AttentionMechanism):
         query_layer = kwargs.pop('query_layer', None)
         if not query_layer:
             query_layer = tf.keras.layers.Dense(
-                units, name = 'query_layer', use_bias = False, dtype = dtype
+                units, name='query_layer', use_bias=False, dtype=dtype
             )
         memory_layer = kwargs.pop('memory_layer', None)
         if not memory_layer:
             memory_layer = tf.keras.layers.Dense(
-                units, name = 'memory_layer', use_bias = False, dtype = dtype
+                units, name='memory_layer', use_bias=False, dtype=dtype
             )
         self.units = units
         self.normalize = normalize
@@ -503,13 +503,13 @@ class BahdanauAttention(AttentionMechanism):
         self.attention_g = None
         self.attention_b = None
         super().__init__(
-            memory = memory,
-            memory_sequence_length = memory_sequence_length,
-            query_layer = query_layer,
-            memory_layer = memory_layer,
-            probability_fn = wrapped_probability_fn,
-            name = name,
-            dtype = dtype,
+            memory=memory,
+            memory_sequence_length=memory_sequence_length,
+            query_layer=query_layer,
+            memory_layer=memory_layer,
+            probability_fn=wrapped_probability_fn,
+            name=name,
+            dtype=dtype,
             **kwargs,
         )
 
@@ -519,8 +519,8 @@ class BahdanauAttention(AttentionMechanism):
             self.attention_v = tf.get_variable(
                 'attention_v',
                 [self.units],
-                dtype = self.dtype,
-                initializer = self.kernel_initializer,
+                dtype=self.dtype,
+                initializer=self.kernel_initializer,
             )
         if (
             self.normalize
@@ -529,15 +529,15 @@ class BahdanauAttention(AttentionMechanism):
         ):
             self.attention_g = tf.get_variable(
                 'attention_g',
-                initializer = tf.constant_initializer(
+                initializer=tf.constant_initializer(
                     math.sqrt(1.0 / self.units)
                 ),
-                shape = (),
+                shape=(),
             )
             self.attention_b = tf.get_variable(
                 'attention_b',
-                shape = [self.units],
-                initializer = tf.zeros_initializer(),
+                shape=[self.units],
+                initializer=tf.zeros_initializer(),
             )
         self.built = True
 
@@ -560,8 +560,8 @@ class BahdanauAttention(AttentionMechanism):
             processed_query,
             self.keys,
             self.attention_v,
-            attention_g = self.attention_g,
-            attention_b = self.attention_b,
+            attention_g=self.attention_g,
+            attention_b=self.attention_b,
         )
         alignments = self.probability_fn(score, state)
         next_state = alignments
@@ -582,18 +582,18 @@ class BahdanauAttention(AttentionMechanism):
         return {**base_config, **config}
 
     @classmethod
-    def from_config(cls, config, custom_objects = None):
+    def from_config(cls, config, custom_objects=None):
         config = AttentionMechanism.deserialize_inner_layer_from_config(
-            config, custom_objects = custom_objects
+            config, custom_objects=custom_objects
         )
         return cls(**config)
 
 
 def _prepare_memory(
     memory,
-    memory_sequence_length = None,
-    memory_mask = None,
-    check_inner_dims_defined = True,
+    memory_sequence_length=None,
+    memory_mask=None,
+    check_inner_dims_defined=True,
 ):
     """Convert to tensor and possibly mask `memory`.
     Args:
@@ -611,7 +611,7 @@ def _prepare_memory(
         `memory.shape[2:].is_fully_defined()`.
     """
     memory = tf.nest.map_structure(
-        lambda m: tf.convert_to_tensor(m, name = 'memory'), memory
+        lambda m: tf.convert_to_tensor(m, name='memory'), memory
     )
     if memory_sequence_length is not None and memory_mask is not None:
         raise ValueError(
@@ -619,7 +619,7 @@ def _prepare_memory(
         )
     if memory_sequence_length is not None:
         memory_sequence_length = tf.convert_to_tensor(
-            memory_sequence_length, name = 'memory_sequence_length'
+            memory_sequence_length, name='memory_sequence_length'
         )
     if check_inner_dims_defined:
 
@@ -636,20 +636,20 @@ def _prepare_memory(
     elif memory_sequence_length is not None:
         seq_len_mask = tf.sequence_mask(
             memory_sequence_length,
-            maxlen = tf.shape(tf.nest.flatten(memory)[0])[1],
-            dtype = tf.nest.flatten(memory)[0].dtype,
+            maxlen=tf.shape(tf.nest.flatten(memory)[0])[1],
+            dtype=tf.nest.flatten(memory)[0].dtype,
         )
     else:
         # For memory_mask is not None
         seq_len_mask = tf.cast(
-            memory_mask, dtype = tf.nest.flatten(memory)[0].dtype
+            memory_mask, dtype=tf.nest.flatten(memory)[0].dtype
         )
 
     def _maybe_mask(m, seq_len_mask):
         """Mask the memory based on the memory mask."""
         rank = m.shape.ndims
         rank = rank if rank is not None else tf.rank(m)
-        extra_ones = tf.ones(rank - 2, dtype = tf.int32)
+        extra_ones = tf.ones(rank - 2, dtype=tf.int32)
         seq_len_mask = tf.reshape(
             seq_len_mask, tf.concat((tf.shape(seq_len_mask), extra_ones), 0)
         )
@@ -660,9 +660,9 @@ def _prepare_memory(
 
 def _maybe_mask_score(
     score,
-    memory_sequence_length = None,
-    memory_mask = None,
-    score_mask_value = None,
+    memory_sequence_length=None,
+    memory_mask=None,
+    score_mask_value=None,
 ):
     """Mask the attention score based on the masks."""
     if memory_sequence_length is None and memory_mask is None:
@@ -676,12 +676,12 @@ def _maybe_mask_score(
         with tf.control_dependencies(
             [
                 tf.debugging.assert_positive(  # pylint: disable=bad-continuation
-                    memory_sequence_length, message = message
+                    memory_sequence_length, message=message
                 )
             ]
         ):
             memory_mask = tf.sequence_mask(
-                memory_sequence_length, maxlen = tf.shape(score)[1]
+                memory_sequence_length, maxlen=tf.shape(score)[1]
             )
     score_mask_values = score_mask_value * tf.ones_like(score)
     return tf.where(memory_mask, score, score_mask_values)

@@ -32,8 +32,8 @@ class TFSpectralConvergence(tf.keras.layers.Layer):
         Returns:
             Tensor: Spectral convergence loss value.
         """
-        return tf.norm(y_mag - x_mag, ord = 'fro', axis = (-2, -1)) / tf.norm(
-            y_mag, ord = 'fro', axis = (-2, -1)
+        return tf.norm(y_mag - x_mag, ord='fro', axis=(-2, -1)) / tf.norm(
+            y_mag, ord='fro', axis=(-2, -1)
         )
 
 
@@ -58,7 +58,7 @@ class TFLogSTFTMagnitude(tf.keras.layers.Layer):
 class TFSTFT(tf.keras.layers.Layer):
     """STFT loss module."""
 
-    def __init__(self, frame_length = 600, frame_step = 120, fft_length = 1024):
+    def __init__(self, frame_length=600, frame_step=120, fft_length=1024):
         """Initialize."""
         super().__init__()
         self.frame_length = frame_length
@@ -78,18 +78,18 @@ class TFSTFT(tf.keras.layers.Layer):
         """
         x_mag = tf.abs(
             tf.signal.stft(
-                signals = x,
-                frame_length = self.frame_length,
-                frame_step = self.frame_step,
-                fft_length = self.fft_length,
+                signals=x,
+                frame_length=self.frame_length,
+                frame_step=self.frame_step,
+                fft_length=self.fft_length,
             )
         )
         y_mag = tf.abs(
             tf.signal.stft(
-                signals = y,
-                frame_length = self.frame_length,
-                frame_step = self.frame_step,
-                fft_length = self.fft_length,
+                signals=y,
+                frame_length=self.frame_length,
+                frame_step=self.frame_step,
+                fft_length=self.fft_length,
             )
         )
 
@@ -109,11 +109,11 @@ class MultiResolutionSTFT(tf.keras.layers.Layer):
 
     def __init__(
         self,
-        fft_lengths = [1024, 2048, 512],
-        frame_lengths = [600, 1200, 240],
-        frame_steps = [120, 240, 50],
-        factor_sc = 1.0,
-        factor_mag = 1.0,
+        fft_lengths=[1024, 2048, 512],
+        frame_lengths=[600, 1200, 240],
+        frame_steps=[120, 240, 50],
+        factor_sc=1.0,
+        factor_mag=1.0,
     ):
         """Initialize Multi resolution STFT loss module.
         Args:
@@ -147,10 +147,10 @@ class MultiResolutionSTFT(tf.keras.layers.Layer):
         for f in self.stft_losses:
             sc_l, mag_l = f(y, x)
             sc_loss += tf.reduce_mean(
-                sc_l, axis = list(range(1, len(sc_l.shape)))
+                sc_l, axis=list(range(1, len(sc_l.shape)))
             )
             mag_loss += tf.reduce_mean(
-                mag_l, axis = list(range(1, len(mag_l.shape)))
+                mag_l, axis=list(range(1, len(mag_l.shape)))
             )
 
         sc_loss /= len(self.stft_losses)

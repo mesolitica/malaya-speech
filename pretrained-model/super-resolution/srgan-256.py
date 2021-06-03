@@ -17,15 +17,15 @@ from itertools import cycle
 import itertools
 import tensorflow as tf
 
-np.seterr(all = 'raise')
+np.seterr(all='raise')
 
 
 def chunks(l, n):
     for i in range(0, len(l), n):
-        yield (l[i : i + n], i // n)
+        yield (l[i: i + n], i // n)
 
 
-def multiprocessing(strings, function, cores = 6, returned = True):
+def multiprocessing(strings, function, cores=6, returned=True):
     df_split = chunks(strings, len(strings) // cores)
     pool = Pool(cores)
     print('initiate pool map')
@@ -49,11 +49,11 @@ reduction_factor = 4
 
 
 def read_wav(f):
-    return malaya_speech.load(f, sr = sr)
+    return malaya_speech.load(f, sr=sr)
 
 
 def random_sampling(s, length):
-    return augmentation.random_sampling(s, sr = sr, length = length)
+    return augmentation.random_sampling(s, sr=sr, length=length)
 
 
 def downsample(y, sr, down_sr):
@@ -63,7 +63,7 @@ def downsample(y, sr, down_sr):
 
 def parallel(f):
     y = read_wav(f)[0]
-    y = random_sampling(y, length = 1500)
+    y = random_sampling(y, length=1500)
     y_ = malaya_speech.resample(y, sr, sr // reduction_factor)
     return y_, y
 
@@ -76,10 +76,10 @@ def loop(files):
     return results
 
 
-def generate(batch_size = 10, repeat = 5):
+def generate(batch_size=10, repeat=5):
     while True:
         fs = [next(file_cycle) for _ in range(batch_size)]
-        results = multiprocessing(fs, loop, cores = len(fs))
+        results = multiprocessing(fs, loop, cores=len(fs))
         for _ in range(repeat):
             random.shuffle(results)
             for r in results:
@@ -90,7 +90,7 @@ def generate(batch_size = 10, repeat = 5):
 dataset = tf.data.Dataset.from_generator(
     generate,
     {'combined': tf.float32, 'y': tf.float32},
-    output_shapes = {
+    output_shapes={
         'combined': tf.TensorShape([None]),
         'y': tf.TensorShape([None]),
     },
@@ -107,22 +107,22 @@ partitioned_y = malaya_speech.tf_featurization.pad_and_partition(
 )
 
 with tf.variable_scope('generator') as gen:
-    generator = srgan.Model(partitioned_x, training = True)
+    generator = srgan.Model(partitioned_x, training=True)
     gen_out = generator.logits
     gen_out.set_shape((None, partition_size, 1))
 
 with tf.variable_scope('discriminator') as dis:
     discriminator = srgan.Discriminator(
-        partition_size, num_filters = 24, training = True
+        partition_size, num_filters=24, training=True
     )
 
-hr_output = discriminator.model(partitioned_y, training = True)
-sr_output = discriminator.model(gen_out, training = True)
+hr_output = discriminator.model(partitioned_y, training=True)
+sr_output = discriminator.model(gen_out, training=True)
 
 mae = tf.losses.absolute_difference
-binary_cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits = False)
+binary_cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=False)
 
-con_loss = mae(labels = partitioned_y, predictions = gen_out)
+con_loss = mae(labels=partitioned_y, predictions=gen_out)
 gen_loss = binary_cross_entropy(tf.ones_like(sr_output), sr_output)
 perc_loss = con_loss + 0.001 * gen_loss
 
@@ -147,10 +147,10 @@ d_vars = [var for var in t_vars if var.name.startswith('discriminator')]
 g_vars = [var for var in t_vars if var.name.startswith('generator')]
 
 d_optimizer = tf.train.AdamOptimizer(0.0001).minimize(
-    discriminator_loss, var_list = d_vars
+    discriminator_loss, var_list=d_vars
 )
 g_optimizer = tf.train.AdamOptimizer(0.0001).minimize(
-    perc_loss, var_list = g_vars
+    perc_loss, var_list=g_vars
 )
 
 sess = tf.InteractiveSession()
@@ -174,7 +174,7 @@ for i in range(epoch):
     s = sess.run(summaries)
 
     if i % checkpoint == 0:
-        saver.save(sess, f'{path}/model.ckpt', global_step = i)
+        saver.save(sess, f'{path}/model.ckpt', global_step=i)
 
     if i % write_tensorboard == 0:
         writer.add_summary(s, i)

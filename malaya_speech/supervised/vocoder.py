@@ -7,13 +7,13 @@ from malaya_speech.utils import (
 from malaya_speech.model.tf import Vocoder
 
 
-def load(model, module, quantized = False, **kwargs):
+def load(model, module, quantized=False, **kwargs):
 
     path = check_file(
-        file = model,
-        module = module,
-        keys = {'model': 'model.pb'},
-        quantized = quantized,
+        file=model,
+        module=module,
+        keys={'model': 'model.pb'},
+        quantized=quantized,
         **kwargs,
     )
     g = load_graph(path['model'], **kwargs)
@@ -23,9 +23,9 @@ def load(model, module, quantized = False, **kwargs):
     input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
     return Vocoder(
-        input_nodes = input_nodes,
-        output_nodes = output_nodes,
-        sess = generate_session(graph = g, **kwargs),
-        model = model,
-        name = module,
+        input_nodes=input_nodes,
+        output_nodes=output_nodes,
+        sess=generate_session(graph=g, **kwargs),
+        model=model,
+        name=module,
     )

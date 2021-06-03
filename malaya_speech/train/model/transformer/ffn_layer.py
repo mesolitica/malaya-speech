@@ -47,7 +47,7 @@ class FeedFowardNetwork(tf.layers.Layer):
         relu_dropout,
         train,
         allow_pad,
-        activation = 'relu',
+        activation='relu',
     ):
         super(FeedFowardNetwork, self).__init__()
         self.hidden_size = hidden_size
@@ -58,15 +58,15 @@ class FeedFowardNetwork(tf.layers.Layer):
 
         self.filter_dense_layer = tf.layers.Dense(
             filter_size,
-            use_bias = True,
-            activation = activations[activation],
-            name = 'filter_layer',
+            use_bias=True,
+            activation=activations[activation],
+            name='filter_layer',
         )
         self.output_dense_layer = tf.layers.Dense(
-            hidden_size, use_bias = True, name = 'output_layer'
+            hidden_size, use_bias=True, name='output_layer'
         )
 
-    def call(self, x, padding = None):
+    def call(self, x, padding=None):
         """Return outputs of the feedforward network.
 
     Args:
@@ -95,24 +95,24 @@ class FeedFowardNetwork(tf.layers.Layer):
 
                 # Reshape x to [batch_size*length, hidden_size] to remove padding
                 x = tf.reshape(x, [-1, self.hidden_size])
-                x = tf.gather_nd(x, indices = nonpad_ids)
+                x = tf.gather_nd(x, indices=nonpad_ids)
 
                 # Reshape x from 2 dimensions to 3 dimensions.
                 x.set_shape([None, self.hidden_size])
-                x = tf.expand_dims(x, axis = 0)
+                x = tf.expand_dims(x, axis=0)
 
         output = self.filter_dense_layer(x)
         if self.train:
-            output = tf.nn.dropout(output, rate = self.relu_dropout)
+            output = tf.nn.dropout(output, rate=self.relu_dropout)
         output = self.output_dense_layer(output)
 
         if padding is not None:
             with tf.name_scope('re_add_padding'):
-                output = tf.squeeze(output, axis = 0)
+                output = tf.squeeze(output, axis=0)
                 output = tf.scatter_nd(
-                    indices = nonpad_ids,
-                    updates = output,
-                    shape = [batch_size * length, self.hidden_size],
+                    indices=nonpad_ids,
+                    updates=output,
+                    shape=[batch_size * length, self.hidden_size],
                 )
                 output = tf.reshape(
                     output, [batch_size, length, self.hidden_size]
