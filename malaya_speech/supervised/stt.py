@@ -4,11 +4,13 @@ from malaya_speech.utils import (
     generate_session,
     nodes_session,
 )
+from malaya_speech.utils.read import load as load_wav
 from malaya_speech.utils.tf_featurization import STTFeaturizer
 from malaya_speech.utils.subword import load as subword_load
-from malaya_speech.model.tf import Transducer, Wav2Vec2_Transducer, Wav2Vec2_CTC
+from malaya_speech.model.tf import Transducer, Wav2Vec2_CTC
 from malaya_speech.path import TRANSDUCER_VOCABS, CTC_VOCABS
 import json
+import os
 
 
 def get_vocab(language):
@@ -58,6 +60,9 @@ def transducer_load(model, module, quantized=False, **kwargs):
         'non_blank_stime',
     ]
     input_nodes, output_nodes = nodes_session(g, inputs, outputs)
+    this_dir = os.path.dirname(__file__)
+    wav1, _ = load_wav(os.path.join(this_dir, 'speech', '1.wav'))
+    wav2, _ = load_wav(os.path.join(this_dir, 'speech', '2.wav'))
 
     return Transducer(
         input_nodes=input_nodes,
@@ -68,6 +73,7 @@ def transducer_load(model, module, quantized=False, **kwargs):
         sess=generate_session(graph=g, **kwargs),
         model=model,
         name=module,
+        wavs=[wav1, wav2]
     )
 
 

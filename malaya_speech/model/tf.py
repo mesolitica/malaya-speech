@@ -491,10 +491,12 @@ class Transducer(Abstract):
         sess,
         model,
         name,
+        wavs,
     ):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
-        self._pad_len = 6000
+        self._back_pad = 2000
+        self._front_pad = 200
 
         self._featurizer = featurizer
         self._vocab = vocab
@@ -502,6 +504,7 @@ class Transducer(Abstract):
         self._sess = sess
         self.__model__ = model
         self.__name__ = name
+        self._wavs = wavs
 
     def _check_decoder(self, decoder, beam_size):
         decoder = decoder.lower()
@@ -517,11 +520,16 @@ class Transducer(Abstract):
             for input in inputs
         ]
 
+        index = len(inputs)
+        if len(inputs) < len(self._wavs) + 1:
+            inputs = inputs + self._wavs[:(len(self._wavs) + 1) - len(inputs)]
+
         padded, lens = sequence_1d(inputs, return_len=True)
-        zeros = np.zeros(shape=(len(inputs), self._pad_len))
-        padded = np.concatenate([padded, zeros], axis=-1)
-        lens = [l + self._pad_len for l in lens]
-        return padded, lens
+        back = np.zeros(shape=(len(inputs), self._back_pad))
+        front = np.zeros(shape=(len(inputs), self._front_pad))
+        padded = np.concatenate([front, padded, back], axis=-1)
+        lens = [l + self._back_pad + self._front_pad for l in lens]
+        return padded, lens, index
 
     def _combined_indices(
         self, subwords, ids, l, reduction_factor=160, sample_rate=16000
@@ -567,7 +575,7 @@ class Transducer(Abstract):
         -------
         result: List[Dict[text, start, end]]
         """
-        padded, lens = self._get_inputs([input])
+        padded, lens, index = self._get_inputs([input])
         r = self._execute(
             inputs=[padded, lens],
             input_labels=['X_placeholder', 'X_len_placeholder'],
@@ -603,7 +611,7 @@ class Transducer(Abstract):
         -------
         result: List[str]
         """
-        padded, lens = self._get_inputs(inputs)
+        padded, lens, index = self._get_inputs(inputs)
         results = []
         r = self._execute(
             inputs=[padded, lens],
@@ -611,7 +619,7 @@ class Transducer(Abstract):
             output_labels=['greedy_decoder'],
         )['greedy_decoder']
 
-        for row in r:
+        for row in r[:index]:
             results.append(subword_decode(self._vocab, row[row > 0]))
 
         return results
@@ -684,7 +692,7 @@ class Transducer(Abstract):
         -------
         result: List[str]
         """
-        padded, lens = self._get_inputs(inputs)
+        padded, lens, index = self._get_inputs(inputs)
         results = []
 
         r = self._execute(
@@ -698,205 +706,7 @@ class Transducer(Abstract):
             r['initial_states'],
         )
         padded_lens_ = padded_lens_ // self._time_reduction_factor
-        for i in range(len(encoded_)):
-            r = self._beam_decoder(
-                enc=encoded_[i],
-                total=padded_lens_[i],
-                initial_states=s,
-                beam_width=beam_size,
-            )
-            results.append(subword_decode(self._vocab, r))
-        return results
-
-    def predict(
-        self, inputs, decoder: str = 'greedy', beam_size: int = 5, **kwargs
-    ):
-        """
-        Transcribe inputs, will return list of strings.
-
-        Parameters
-        ----------
-        inputs: List[np.array]
-            List[np.array] or List[malaya_speech.model.frame.Frame].
-        decoder: str, optional (default='greedy')
-            decoder mode, allowed values:
-
-            * ``'greedy'`` - will call self.greedy_decoder
-            * ``'beam'`` - will call self.beam_decoder
-        beam_size: int, optional (default=5)
-            beam size for beam decoder.
-
-        Returns
-        -------
-        result: List[str]
-        """
-        decoder = self._check_decoder(decoder, beam_size)
-        if decoder == 'greedy':
-            return self.greedy_decoder(inputs)
-        else:
-            return self.beam_decoder(inputs, beam_size=beam_size)
-
-    def __call__(self, input, decoder: str = 'greedy', **kwargs):
-        """
-        Transcribe input, will return a string.
-
-        Parameters
-        ----------
-        input: np.array
-            np.array or malaya_speech.model.frame.Frame.
-        decoder: str, optional (default='beam')
-            decoder mode, allowed values:
-
-            * ``'greedy'`` - greedy decoder.
-            * ``'beam'`` - beam decoder.
-        **kwargs: keyword arguments passed to `predict`.
-
-        Returns
-        -------
-        result: str
-        """
-        return self.predict([input], decoder=decoder, **kwargs)[0]
-
-
-class Wav2Vec2_Transducer(Abstract):
-    def __init__(self, input_nodes, output_nodes, vocab, sess, model, name):
-        self._input_nodes = input_nodes
-        self._output_nodes = output_nodes
-        self._pad_len = 6000
-
-        self._vocab = vocab
-        self._sess = sess
-        self.__model__ = model
-        self.__name__ = name
-
-    def _check_decoder(self, decoder, beam_size):
-        decoder = decoder.lower()
-        if decoder not in ['greedy', 'beam']:
-            raise ValueError('mode only supports [`greedy`, `beam`]')
-        if beam_size < 1:
-            raise ValueError('beam_size must bigger than 0')
-        return decoder
-
-    def _get_inputs(self, inputs):
-        inputs = [
-            input.array if isinstance(input, Frame) else input
-            for input in inputs
-        ]
-
-        padded, lens = sequence_1d(inputs, return_len=True)
-        zeros = np.zeros(shape=(len(inputs), self._pad_len))
-        padded = np.concatenate([padded, zeros], axis=-1)
-        lens = [l + self._pad_len for l in lens]
-        return padded, lens
-
-    def greedy_decoder(self, inputs):
-        """
-        Transcribe inputs, will return list of strings.
-
-        Parameters
-        ----------
-        inputs: List[np.array]
-            List[np.array] or List[malaya_speech.model.frame.Frame].
-
-        Returns
-        -------
-        result: List[str]
-        """
-        padded, lens = self._get_inputs(inputs)
-        results = []
-        r = self._execute(
-            inputs=[padded, lens],
-            input_labels=['X_placeholder', 'X_len_placeholder'],
-            output_labels=['greedy_decoder'],
-        )['greedy_decoder']
-
-        for row in r:
-            results.append(subword_decode(self._vocab, row[row > 0]))
-
-        return results
-
-    def _beam_decoder(
-        self, enc, total, initial_states, beam_width=10, norm_score=True
-    ):
-        kept_hyps = [
-            BeamHypothesis(
-                score=0.0, prediction=[0], states=initial_states
-            )
-        ]
-        B = kept_hyps
-        for i in range(total):
-            A = B
-            B = []
-            while True:
-                y_hat = max(A, key=lambda x: x.score)
-                A.remove(y_hat)
-                r = self._execute(
-                    inputs=[enc[i], y_hat.prediction[-1], y_hat.states],
-                    input_labels=[
-                        'encoded_placeholder',
-                        'predicted_placeholder',
-                        'states_placeholder',
-                    ],
-                    output_labels=['ytu', 'new_states'],
-                )
-                ytu_, new_states_ = r['ytu'], r['new_states']
-                for k in range(ytu_.shape[0]):
-                    beam_hyp = BeamHypothesis(
-                        score=(y_hat.score + float(ytu_[k])),
-                        prediction=y_hat.prediction,
-                        states=y_hat.states,
-                    )
-                    if k == 0:
-                        B.append(beam_hyp)
-                    else:
-                        beam_hyp = BeamHypothesis(
-                            score=beam_hyp.score,
-                            prediction=(beam_hyp.prediction + [int(k)]),
-                            states=new_states_,
-                        )
-                        A.append(beam_hyp)
-                if len(B) > beam_width:
-                    break
-
-        if norm_score:
-            kept_hyps = sorted(
-                B, key=lambda x: x.score / len(x.prediction), reverse=True
-            )[:beam_width]
-        else:
-            kept_hyps = sorted(B, key=lambda x: x.score, reverse=True)[
-                :beam_width
-            ]
-        return kept_hyps[0].prediction
-
-    def beam_decoder(self, inputs, beam_size: int = 5):
-        """
-        Transcribe inputs, will return list of strings.
-
-        Parameters
-        ----------
-        inputs: List[np.array]
-            List[np.array] or List[malaya_speech.model.frame.Frame].
-        beam_size: int, optional (default=5)
-            beam size for beam decoder.
-
-        Returns
-        -------
-        result: List[str]
-        """
-        padded, lens = self._get_inputs(inputs)
-        results = []
-
-        r = self._execute(
-            inputs=[padded, lens],
-            input_labels=['X_placeholder', 'X_len_placeholder'],
-            output_labels=['encoded', 'padded_lens', 'initial_states'],
-        )
-        encoded_, padded_lens_, s = (
-            r['encoded'],
-            r['padded_lens'],
-            r['initial_states'],
-        )
-        for i in range(len(encoded_)):
+        for i in range(index):
             r = self._beam_decoder(
                 enc=encoded_[i],
                 total=padded_lens_[i],

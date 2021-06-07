@@ -47,6 +47,7 @@ Contents:
    ctc-language-model
    load-stt-ctc-model
    realtime-asr
+   realtime-asr-rubberband
 
 .. toctree::
    :maxdepth: 2

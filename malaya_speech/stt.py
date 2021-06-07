@@ -239,14 +239,9 @@ def deep_transducer(
             'model not supported, please check supported models from `malaya_speech.stt.available_transducer()`.'
         )
 
-    if 'wav2vec2' in model:
-        interface = stt.wav2vec_transducer_load
-    else:
-        interface = stt.transducer_load
-
-    return interface(
+    return stt.transducer_load(
         model=model,
-        module='speech-to-text',
+        module='speech-to-text-transducer',
         quantized=quantized,
         **kwargs
     )
