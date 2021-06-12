@@ -6,50 +6,51 @@ _transducer_availability = {
     'small-conformer': {
         'Size (MB)': 49.2,
         'Quantized Size (MB)': 18.1,
-        'WER': 0.23582,
-        'CER': 0.08771,
+        'WER': 0.20599,
+        'CER': 0.08933,
+        'Language': ['malay'],
     },
     'conformer': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 37.1,
-        'WER': 0.21718,
-        'CER': 0.07562,
+        'WER': 0.16547,
+        'CER': 0.06410,
+        'Language': ['malay'],
     },
     'large-conformer': {
         'Size (MB)': 404,
         'Quantized Size (MB)': 107,
         'WER': 0.21938,
         'CER': 0.07306,
-    },
-    'small-alconformer': {
-        'Size (MB)': 18.8,
-        'Quantized Size (MB)': 10.1,
-        'WER': 0.30373,
-        'CER': 0.12471,
+        'Language': ['malay'],
     },
     'alconformer': {
         'Size (MB)': 38,
         'Quantized Size (MB)': 14.9,
         'WER': 0.25611,
         'CER': 0.09726,
+        'Language': ['malay'],
     },
     'small-conformer-mixed': {
         'Size (MB)': 49.2,
         'Quantized Size (MB)': 18.1,
         'WER': 0.43149,
         'CER': 0.29467,
+        'Language': ['malay', 'singlish'],
     },
     'conformer-mixed': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 37.1,
         'WER': 0.35191,
         'CER': 0.23667,
+        'Language': ['malay', 'singlish'],
     },
     'large-conformer-mixed': {
         'Size (MB)': 404,
         'Quantized Size (MB)': 107,
         'WER': 0.3359,
         'CER': 0.1989,
+        'Language': ['malay', 'singlish'],
     },
 }
 
@@ -59,13 +60,22 @@ _ctc_availability = {
         'Quantized Size (MB)': 31.1,
         'WER': 0.30463,
         'CER': 0.07633,
+        'Language': ['malay'],
     },
     'wav2vec2-conformer-large': {
         'Size (MB)': 392,
         'Quantized Size (MB)': 100,
         'WER': 0.2765,
         'CER': 0.0705,
+        'Language': ['malay'],
     },
+}
+
+google_accuracy = {
+    'malay': {
+        'WER': 0.164775,
+        'CER': 0.0597320
+    }
 }
 
 _language_model_availability = {
@@ -216,14 +226,14 @@ def deep_transducer(
     model : str, optional (default='conformer')
         Model architecture supported. Allowed values:
 
-        * ``'small-conformer'`` - SMALL size Google Conformer with Pretrained LM Malay language.
-        * ``'conformer'`` - BASE size Google Conformer with Pretrained LM Malay language.
-        * ``'large-conformer'`` - LARGE size Google Conformer with Pretrained LM Malay language.
-        * ``'small-alconformer'`` - SMALL size A-Lite Google Conformer with Pretrained LM Malay language.
-        * ``'alconformer'`` - BASE size A-Lite Google Conformer with Pretrained LM Malay language.
-        * ``'small-conformer-mixed'`` - SMALL size Google Conformer with Pretrained LM Mixed (Malay + Singlish) languages.
-        * ``'conformer-mixed'`` - BASE size Google Conformer with Pretrained LM Mixed (Malay + Singlish) languages.
-        * ``'large-conformer-mixed'`` - LARGE size Google Conformer with Pretrained LM Mixed (Malay + Singlish) languages.
+        * ``'small-conformer'`` - SMALL size Google Conformer.
+        * ``'conformer'`` - BASE size Google Conformer.
+        * ``'large-conformer'`` - LARGE size Google Conformer.
+        * ``'small-alconformer'`` - SMALL size A-Lite Google Conformer.
+        * ``'alconformer'`` - BASE size A-Lite Google Conformer.
+        * ``'small-conformer-mixed'`` - SMALL size Google Conformer for (Malay + Singlish) languages.
+        * ``'conformer-mixed'`` - BASE size Google Conformer for (Malay + Singlish) languages.
+        * ``'large-conformer-mixed'`` - LARGE size Google Conformer for (Malay + Singlish) languages.
 
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.

@@ -48,6 +48,7 @@ Contents:
    load-stt-ctc-model
    realtime-asr
    realtime-asr-rubberband
+   realtime-force-alignment
 
 .. toctree::
    :maxdepth: 2

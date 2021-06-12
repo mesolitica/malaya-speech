@@ -521,6 +521,9 @@ class Transducer(Abstract):
         ]
 
         index = len(inputs)
+
+        # pretty hacky, result from single batch is not good caused by batchnorm.
+        # have to append extra random wavs
         if len(inputs) < len(self._wavs) + 1:
             inputs = inputs + self._wavs[:(len(self._wavs) + 1) - len(inputs)]
 
