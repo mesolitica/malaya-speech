@@ -20,23 +20,16 @@ _transducer_availability = {
     'large-conformer': {
         'Size (MB)': 404,
         'Quantized Size (MB)': 107,
-        'WER': 0.21938,
-        'CER': 0.07306,
+        'WER': 0.15986,
+        'CER': 0.05937,
         'Language': ['malay'],
     },
     'alconformer': {
-        'Size (MB)': 38,
-        'Quantized Size (MB)': 14.9,
-        'WER': 0.25611,
-        'CER': 0.09726,
+        'Size (MB)': 38.1,
+        'Quantized Size (MB)': 15.1,
+        'WER': 0.20703,
+        'CER': 0.08533,
         'Language': ['malay'],
-    },
-    'small-conformer-mixed': {
-        'Size (MB)': 49.2,
-        'Quantized Size (MB)': 18.1,
-        'WER': 0.43149,
-        'CER': 0.29467,
-        'Language': ['malay', 'singlish'],
     },
     'conformer-mixed': {
         'Size (MB)': 125,
@@ -65,7 +58,7 @@ _ctc_availability = {
     'wav2vec2-conformer-large': {
         'Size (MB)': 392,
         'Quantized Size (MB)': 100,
-        'WER': 0.2765,
+        'WER': 0.26517,
         'CER': 0.0705,
         'Language': ['malay'],
     },
@@ -88,7 +81,7 @@ _language_model_availability = {
         ],
     },
     'bahasa-news': {
-        'Size (MB)': 26,
+        'Size (MB)': 24,
         'Description': 'Gathered from malaya-speech bahasa ASR transcript + News (Random sample 300k sentences)',
         'Command': [
             './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
@@ -96,10 +89,10 @@ _language_model_availability = {
         ],
     },
     'bahasa-combined': {
-        'Size (MB)': 64,
-        'Description': 'Gathered from malaya-speech bahasa ASR transcript + Bahasa News + Bahasa Wikipedia',
+        'Size (MB)': 29,
+        'Description': 'Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences) + Bahasa Wikipedia (Random sample 150k sentences).',
         'Command': [
-            './lmplz --text text.txt --arpa out.arpa -o 2 --prune 0 1',
+            './lmplz --text text.txt --arpa out.arpa -o 2 --prune 0 1 1',
             './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
         ],
     },
@@ -147,7 +140,7 @@ def language_model(
 
         * ``'bahasa'`` - Gathered from malaya-speech ASR bahasa transcript.
         * ``'bahasa-news'`` - Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences).
-        * ``'bahasa-combined'`` - Gathered from malaya-speech ASR bahasa transcript + Bahasa News + Bahasa Wikipedia.
+        * ``'bahasa-combined'`` - Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences) + Bahasa Wikipedia (Random sample 150k sentences).
 
     alpha: float, optional (default=2.5)
         score = alpha * np.log(lm) + beta * np.log(word_cnt),

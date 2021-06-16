@@ -33,6 +33,7 @@ import tensorflow as tf
 from ..loss import AutomaticLossScaler
 from ..utils import mask_nans, check_params
 from . import adamw
+from . import gradient
 
 OPTIMIZER_CLS_NAMES = {
     'Adagrad': tf.train.AdagradOptimizer,

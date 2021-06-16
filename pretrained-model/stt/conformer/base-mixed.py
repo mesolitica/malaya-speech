@@ -1,29 +1,29 @@
+import pyroomacoustics as pra
+import numpy as np
+from pydub import AudioSegment
+from sklearn.utils import shuffle
+from glob import glob
+import random
+import json
+import malaya_speech.train as train
+import malaya_speech.config
+import malaya_speech.train.model.transducer as transducer
+import malaya_speech.train.model.conformer as conformer
+import malaya_speech.augmentation.spectrogram as mask_augmentation
+import malaya_speech.augmentation.waveform as augmentation
+import malaya_speech
+import tensorflow as tf
 import os
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
-import tensorflow as tf
-import malaya_speech
-import malaya_speech.augmentation.waveform as augmentation
-import malaya_speech.augmentation.spectrogram as mask_augmentation
-import malaya_speech.train.model.conformer as conformer
-import malaya_speech.train.model.transducer as transducer
-import malaya_speech.config
-import malaya_speech.train as train
-import json
-import numpy as np
-import random
-from glob import glob
-from sklearn.utils import shuffle
-from pydub import AudioSegment
-import numpy as np
-import pyroomacoustics as pra
 
 subwords = malaya_speech.subword.load('transducer-mixed.subword')
 config = malaya_speech.config.conformer_base_encoder_config
 sr = 16000
 maxlen = 18
 minlen_text = 1
+prob_aug = 0.85
 
 parameters = {
     'optimizer_params': {'beta1': 0.9, 'beta2': 0.98, 'epsilon': 10e-9},
@@ -84,12 +84,119 @@ def augment_room(y, scale=1.0):
     return room.mic_array.signals[0]
 
 
+def random_amplitude_threshold(sample, low=1, high=2, threshold=0.4):
+    y_aug = sample.copy()
+    dyn_change = np.random.uniform(low=low, high=high)
+    y_aug[np.abs(y_aug) >= threshold] = (
+        y_aug[np.abs(y_aug) >= threshold] * dyn_change
+    )
+    return np.clip(y_aug, -1, 1)
+
+
+def add_uniform_noise(
+    sample, power=0.01, return_noise=False, scale=False
+):
+    y_noise = sample.copy()
+    noise_amp = power * np.random.uniform() * np.amax(y_noise)
+    noise = noise_amp * np.random.normal(size=y_noise.shape[0])
+    y_noise = y_noise + noise
+    if scale:
+        y_noise = y_noise / (np.max(np.abs(y_noise)) + 1e-9)
+    if return_noise:
+        if scale:
+            noise = noise / (np.max(np.abs(y_noise)) + 1e-9)
+        return y_noise, noise
+    else:
+        return y_noise
+
+
+def calc(signal, add_uniform=True):
+    choice = random.randint(0, 10)
+    print('choice', choice)
+    if choice == 0:
+        x = augmentation.sox_augment_high(
+            signal,
+            min_bass_gain=random.randint(25, 50),
+            reverberance=random.randint(0, 80),
+            hf_damping=10,
+            room_scale=random.randint(0, 50),
+            negate=1,
+        )
+    if choice == 1:
+        x = augmentation.sox_augment_high(
+            signal,
+            min_bass_gain=random.randint(25, 70),
+            reverberance=random.randint(0, 80),
+            hf_damping=10,
+            room_scale=random.randint(0, 50),
+            negate=0,
+        )
+    if choice == 2:
+        x = augmentation.sox_augment_low(
+            signal,
+            min_bass_gain=random.randint(5, 30),
+            reverberance=random.randint(0, 80),
+            hf_damping=10,
+            room_scale=random.randint(0, 50),
+            negate=random.randint(0, 1),
+        )
+    if choice == 3:
+        x = augmentation.sox_augment_combine(
+            signal,
+            min_bass_gain_high=random.randint(25, 70),
+            min_bass_gain_low=random.randint(5, 30),
+            reverberance=random.randint(0, 80),
+            hf_damping=10,
+            room_scale=random.randint(0, 90),
+        )
+    if choice == 4:
+        x = augmentation.sox_reverb(
+            signal,
+            reverberance=random.randint(10, 80),
+            hf_damping=10,
+            room_scale=random.randint(10, 90),
+        )
+    if choice == 5:
+        x = random_amplitude_threshold(
+            signal, threshold=random.uniform(0.35, 0.8)
+        )
+    if choice == 6:
+        x = augmentation.lowpass_filter(
+            signal, sr=sr, cutoff=random.randint(200, 551)
+        )
+    if choice == 7:
+        x = augmentation.highpass_filter(
+            signal, sr=sr, cutoff=random.randint(551, 1653)
+        )
+    if choice == 8:
+        x = augmentation.bandpass_filter(
+            signal,
+            sr=sr,
+            cutoff_low=random.randint(200, 551),
+            cutoff_high=random.randint(551, 1653),
+        )
+    if choice == 9:
+        x = augment_room(signal)
+    if choice == 10:
+        x = signal
+
+    if choice not in [5] and random.gauss(0.5, 0.14) > 0.6:
+        x = random_amplitude_threshold(
+            x, low=1.0, high=2.0, threshold=random.uniform(0.6, 0.9)
+        )
+
+    if random.gauss(0.5, 0.14) > 0.6 and add_uniform:
+        x = add_uniform_noise(x, power=random.uniform(0.005, 0.015))
+
+    return x
+
+
 def mel_augmentation(features):
 
     features = mask_augmentation.warp_time_pil(features)
-    features = mask_augmentation.mask_frequency(features, width_freq_mask=8)
+    features = mask_augmentation.mask_frequency(features, width_freq_mask=12)
     features = mask_augmentation.mask_time(
-        features, width_time_mask=int(features.shape[0] * 0.02)
+        features, width_time_mask=int(features.shape[0] * 0.05)
     )
     return features
 
@@ -127,8 +234,12 @@ def generate(file):
                     subwords, cleaned_texts[i], add_blank=False
                 )
 
-                if random.random() > 0.9:
-                    wav_data = augment_room(wav_data)
+                if random.random() > prob_aug:
+                    wav_data = calc(wav_data)
+
+                back = np.zeros(shape=(2000,))
+                front = np.zeros(shape=(200,))
+                wav_data = np.concatenate([front, wav_data, back], axis=-1)
 
                 yield {
                     'waveforms': wav_data,
@@ -155,7 +266,7 @@ def preprocess_inputs(example):
 def get_dataset(
     file,
     batch_size=16,
-    shuffle_size=20,
+    shuffle_size=16,
     thread_count=24,
     maxlen_feature=1800,
 ):
@@ -226,6 +337,16 @@ def model_fn(features, labels, mode, params):
 
     tf.identity(loss, 'train_loss')
 
+    # variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+    # variables = [v for v in variables if 'transducer_prediction' in v.name]
+    # init_checkpoint = 'transducer-rnn-base/model-rename.ckpt'
+
+    # assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
+    #     variables, init_checkpoint
+    # )
+
+    # tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
+
     if mode == tf.estimator.ModeKeys.TRAIN:
         train_op = train.optimizer.optimize_loss(
             loss,
@@ -257,11 +378,11 @@ dev_dataset = get_dataset('mixed-asr-test.json')
 train.run_training(
     train_fn=train_dataset,
     model_fn=model_fn,
-    model_dir='asr-base-conformer-transducer-mixed',
+    model_dir='asr-base-mixed-conformer-transducer-v2',
     num_gpus=1,
     log_step=1,
-    save_checkpoint_step=5000,
-    max_steps=1_000_000,
+    save_checkpoint_step=25000,
+    max_steps=1000_000,
     eval_fn=dev_dataset,
     train_hooks=train_hooks,
 )
