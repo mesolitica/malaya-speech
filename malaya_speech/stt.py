@@ -58,8 +58,8 @@ _ctc_availability = {
     'wav2vec2-conformer-large': {
         'Size (MB)': 392,
         'Quantized Size (MB)': 100,
-        'WER': 0.26517,
-        'CER': 0.0705,
+        'WER': 0.23997,
+        'CER': 0.05827,
         'Language': ['malay'],
     },
 }
@@ -194,7 +194,7 @@ def deep_ctc(
     result : malaya_speech.model.tf.CTC class
     """
     model = model.lower()
-    if model not in _transducer_availability:
+    if model not in _ctc_availability:
         raise ValueError(
             'model not supported, please check supported models from `malaya_speech.stt.available_ctc()`.'
         )
