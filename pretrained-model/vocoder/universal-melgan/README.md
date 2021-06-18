@@ -15,7 +15,7 @@ python3 universal-melgan.py
 Smaller size parameters,
 
 ```bash
-universal-melgan-1024.py
+python3 universal-melgan-1024.py
 ```
 
 ## download
@@ -24,6 +24,6 @@ universal-melgan-1024.py
 
 Tensorboard, https://tensorboard.dev/experiment/0I9fv7nyTnS4HZGa1f2mAg/
 
-2. Male speaker, last update 23th February 2021, [universal-melgan-1024-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/universal-melgan-1024-output.tar.gz)
+2. Original 1024, last update 23th February 2021, [output-universal-melgan-1024.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-universal-melgan-1024.tar.gz)
 
 Tensorboard, https://tensorboard.dev/experiment/yL9aaiWVTry6CJ2QHeAY0A/
