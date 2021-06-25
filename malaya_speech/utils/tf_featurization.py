@@ -418,3 +418,14 @@ def istft(
     if time_crop is None:
         time_crop = tf.shape(y)[0]
     return reshaped[frame_length: frame_length + time_crop, :]
+
+
+def deltas(x, win_length=5, mode='symmetric'):
+    n = (win_length - 1) // 2
+    denom = 2 * sum([_n ** 2 for _n in range(1, n + 1, 1)])
+    kernel = tf.range(-n, n + 1, 1, dtype=tf.float32)
+    kernel = tf.reshape(kernel, (-1, 1, 1, 1))
+    conv = tf.nn.conv2d(tf.expand_dims(tf.expand_dims(x, 0), -1),
+                        filters=kernel, strides=1, padding='SAME')
+    conv = conv / denom
+    return conv[0, :, :, 0]

@@ -15,7 +15,7 @@ import malaya_speech
 import tensorflow as tf
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 
 subwords = malaya_speech.subword.load('transducer-mixed.subword')
@@ -23,7 +23,7 @@ config = malaya_speech.config.conformer_base_encoder_config
 sr = 16000
 maxlen = 18
 minlen_text = 1
-prob_aug = 0.85
+prob_aug = 0.9
 
 parameters = {
     'optimizer_params': {'beta1': 0.9, 'beta2': 0.98, 'epsilon': 10e-9},
@@ -216,6 +216,8 @@ def generate(file):
         audios, cleaned_texts = shuffle(audios, cleaned_texts)
         for i in range(len(audios)):
             try:
+                if not os.path.exists(audios[i]):
+                    continue
                 if audios[i].endswith('.mp3'):
                     # print('found mp3', audios[i])
                     wav_data, _ = mp3_to_wav(audios[i])
@@ -382,7 +384,7 @@ train.run_training(
     num_gpus=1,
     log_step=1,
     save_checkpoint_step=25000,
-    max_steps=1000_000,
+    max_steps=2000_000,
     eval_fn=dev_dataset,
     train_hooks=train_hooks,
 )

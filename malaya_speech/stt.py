@@ -34,15 +34,15 @@ _transducer_availability = {
     'conformer-mixed': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 37.1,
-        'WER': 0.35191,
-        'CER': 0.23667,
+        'WER': 0.350939,
+        'CER': 0.22329,
         'Language': ['malay', 'singlish'],
     },
     'large-conformer-mixed': {
         'Size (MB)': 404,
         'Quantized Size (MB)': 107,
-        'WER': 0.3359,
-        'CER': 0.1989,
+        'WER': 0.366535,
+        'CER': 0.24802,
         'Language': ['malay', 'singlish'],
     },
 }
@@ -51,8 +51,8 @@ _ctc_availability = {
     'wav2vec2-conformer': {
         'Size (MB)': 115,
         'Quantized Size (MB)': 31.1,
-        'WER': 0.30463,
-        'CER': 0.07633,
+        'WER': 0.25899,
+        'CER': 0.06350,
         'Language': ['malay'],
     },
     'wav2vec2-conformer-large': {
