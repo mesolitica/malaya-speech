@@ -6,50 +6,44 @@ _transducer_availability = {
     'small-conformer': {
         'Size (MB)': 49.2,
         'Quantized Size (MB)': 18.1,
-        'WER': 0.23582,
-        'CER': 0.08771,
+        'WER': 0.20599,
+        'CER': 0.08933,
+        'Language': ['malay'],
     },
     'conformer': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 37.1,
-        'WER': 0.21718,
-        'CER': 0.07562,
+        'WER': 0.16547,
+        'CER': 0.06410,
+        'Language': ['malay'],
     },
     'large-conformer': {
         'Size (MB)': 404,
         'Quantized Size (MB)': 107,
-        'WER': 0.21938,
-        'CER': 0.07306,
-    },
-    'small-alconformer': {
-        'Size (MB)': 18.8,
-        'Quantized Size (MB)': 10.1,
-        'WER': 0.30373,
-        'CER': 0.12471,
+        'WER': 0.15986,
+        'CER': 0.05937,
+        'Language': ['malay'],
     },
     'alconformer': {
-        'Size (MB)': 38,
-        'Quantized Size (MB)': 14.9,
-        'WER': 0.25611,
-        'CER': 0.09726,
-    },
-    'small-conformer-mixed': {
-        'Size (MB)': 49.2,
-        'Quantized Size (MB)': 18.1,
-        'WER': 0.43149,
-        'CER': 0.29467,
+        'Size (MB)': 38.1,
+        'Quantized Size (MB)': 15.1,
+        'WER': 0.20703,
+        'CER': 0.08533,
+        'Language': ['malay'],
     },
     'conformer-mixed': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 37.1,
-        'WER': 0.35191,
-        'CER': 0.23667,
+        'WER': 0.31215,
+        'CER': 0.20003,
+        'Language': ['malay', 'singlish'],
     },
     'large-conformer-mixed': {
         'Size (MB)': 404,
         'Quantized Size (MB)': 107,
-        'WER': 0.3359,
-        'CER': 0.1989,
+        'WER': 0.28276,
+        'CER': 0.18404,
+        'Language': ['malay', 'singlish'],
     },
 }
 
@@ -57,15 +51,24 @@ _ctc_availability = {
     'wav2vec2-conformer': {
         'Size (MB)': 115,
         'Quantized Size (MB)': 31.1,
-        'WER': 0.30463,
-        'CER': 0.07633,
+        'WER': 0.25899,
+        'CER': 0.06350,
+        'Language': ['malay'],
     },
     'wav2vec2-conformer-large': {
         'Size (MB)': 392,
         'Quantized Size (MB)': 100,
-        'WER': 0.2765,
-        'CER': 0.0705,
+        'WER': 0.23997,
+        'CER': 0.05827,
+        'Language': ['malay'],
     },
+}
+
+google_accuracy = {
+    'malay': {
+        'WER': 0.164775,
+        'CER': 0.0597320
+    }
 }
 
 _language_model_availability = {
@@ -78,7 +81,7 @@ _language_model_availability = {
         ],
     },
     'bahasa-news': {
-        'Size (MB)': 26,
+        'Size (MB)': 24,
         'Description': 'Gathered from malaya-speech bahasa ASR transcript + News (Random sample 300k sentences)',
         'Command': [
             './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
@@ -86,10 +89,10 @@ _language_model_availability = {
         ],
     },
     'bahasa-combined': {
-        'Size (MB)': 64,
-        'Description': 'Gathered from malaya-speech bahasa ASR transcript + Bahasa News + Bahasa Wikipedia',
+        'Size (MB)': 29,
+        'Description': 'Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences) + Bahasa Wikipedia (Random sample 150k sentences).',
         'Command': [
-            './lmplz --text text.txt --arpa out.arpa -o 2 --prune 0 1',
+            './lmplz --text text.txt --arpa out.arpa -o 2 --prune 0 1 1',
             './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
         ],
     },
@@ -137,7 +140,7 @@ def language_model(
 
         * ``'bahasa'`` - Gathered from malaya-speech ASR bahasa transcript.
         * ``'bahasa-news'`` - Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences).
-        * ``'bahasa-combined'`` - Gathered from malaya-speech ASR bahasa transcript + Bahasa News + Bahasa Wikipedia.
+        * ``'bahasa-combined'`` - Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences) + Bahasa Wikipedia (Random sample 150k sentences).
 
     alpha: float, optional (default=2.5)
         score = alpha * np.log(lm) + beta * np.log(word_cnt),
@@ -191,7 +194,7 @@ def deep_ctc(
     result : malaya_speech.model.tf.CTC class
     """
     model = model.lower()
-    if model not in _transducer_availability:
+    if model not in _ctc_availability:
         raise ValueError(
             'model not supported, please check supported models from `malaya_speech.stt.available_ctc()`.'
         )
@@ -216,14 +219,14 @@ def deep_transducer(
     model : str, optional (default='conformer')
         Model architecture supported. Allowed values:
 
-        * ``'small-conformer'`` - SMALL size Google Conformer with Pretrained LM Malay language.
-        * ``'conformer'`` - BASE size Google Conformer with Pretrained LM Malay language.
-        * ``'large-conformer'`` - LARGE size Google Conformer with Pretrained LM Malay language.
-        * ``'small-alconformer'`` - SMALL size A-Lite Google Conformer with Pretrained LM Malay language.
-        * ``'alconformer'`` - BASE size A-Lite Google Conformer with Pretrained LM Malay language.
-        * ``'small-conformer-mixed'`` - SMALL size Google Conformer with Pretrained LM Mixed (Malay + Singlish) languages.
-        * ``'conformer-mixed'`` - BASE size Google Conformer with Pretrained LM Mixed (Malay + Singlish) languages.
-        * ``'large-conformer-mixed'`` - LARGE size Google Conformer with Pretrained LM Mixed (Malay + Singlish) languages.
+        * ``'small-conformer'`` - SMALL size Google Conformer.
+        * ``'conformer'`` - BASE size Google Conformer.
+        * ``'large-conformer'`` - LARGE size Google Conformer.
+        * ``'small-alconformer'`` - SMALL size A-Lite Google Conformer.
+        * ``'alconformer'`` - BASE size A-Lite Google Conformer.
+        * ``'small-conformer-mixed'`` - SMALL size Google Conformer for (Malay + Singlish) languages.
+        * ``'conformer-mixed'`` - BASE size Google Conformer for (Malay + Singlish) languages.
+        * ``'large-conformer-mixed'`` - LARGE size Google Conformer for (Malay + Singlish) languages.
 
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
@@ -239,14 +242,9 @@ def deep_transducer(
             'model not supported, please check supported models from `malaya_speech.stt.available_transducer()`.'
         )
 
-    if 'wav2vec2' in model:
-        interface = stt.wav2vec_transducer_load
-    else:
-        interface = stt.transducer_load
-
-    return interface(
+    return stt.transducer_load(
         model=model,
-        module='speech-to-text',
+        module='speech-to-text-transducer',
         quantized=quantized,
         **kwargs
     )

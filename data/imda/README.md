@@ -14,7 +14,4 @@
 
 1048 hours.
 
-6. PART 3 - Separate, splitted using [process-part3-separate.ipynb](process-part3-separate.ipynb), https://f000.backblazeb2.com/file/malay-dataset/speech/imda/part3-separate-splitted.tar
-
-978 hours.
-
+6. PART 1, https://f000.backblazeb2.com/file/malay-dataset/speech/imda/part1.tar, https://f000.backblazeb2.com/file/malay-dataset/speech/imda/SCRIPT.zip

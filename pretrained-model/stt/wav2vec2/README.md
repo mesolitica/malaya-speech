@@ -25,3 +25,7 @@ python3 conformer-base.py
 4. Wav2vec2 + Conformer BASE + CTC, last update 4th May 2021, [output-wav2vec2-conformer-base-ctc.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-wav2vec2-conformer-base-ctc.tar.gz).
 
 5. Wav2vec2 + Conformer LARGE + CTC, last update 8th May 2021, [output-wav2vec2-conformer-large-ctc.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-wav2vec2-conformer-large-ctc.tar.gz).
+
+6. Wav2vec2 + Conformer BASE + CTC V2, last update 18th June 2021, [output-wav2vec2-conformer-base-ctc-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-wav2vec2-conformer-base-ctc-v2.tar.gz).
+
+7. Wav2vec2 + Conformer LARGE + CTC V2, last update 18th June 2021, [output-wav2vec2-conformer-large-ctc-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-wav2vec2-conformer-large-ctc-v2.tar.gz).

@@ -94,6 +94,7 @@ Malaya-Speech also released pretrained models, simply check at `malaya-speech/pr
 -  **FastSpeechSplit**, Unsupervised Speech Decomposition Via Triple Information Bottleneck using Transformer, no paper produced.
 -  **Sepformer**, Attention is All You Need in Speech Separation, https://arxiv.org/abs/2010.13154
 -  **FastSpeechSplit**, Faster and Accurate Speech Split Conversion using Transformer, no paper produced.
+-  **HuBERT**, Self-Supervised Speech Representation Learning by Masked Prediction of Hidden Units, https://arxiv.org/pdf/2106.07447v1.pdf
 
 References
 -----------

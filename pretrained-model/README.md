@@ -15,6 +15,7 @@ This directory to save pretrained checkpoints and steps to reproduce.
   * [Speech-to-Text](stt)
     * [ALConformer](stt/alconformer)
     * [Conformer](stt/conformer)
+    * [HuBERT](stt/hubert)
     * [Jasper](stt/jasper)
     * [QuartzNet](stt/quartznet)
     * [Transducer-RNN LM](stt/transducer-rnn-lm)

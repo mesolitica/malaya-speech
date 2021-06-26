@@ -32,4 +32,8 @@ setuptools.setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
     ],
+    package_data={
+        'malaya_speech': [
+            'supervised/speech/*.wav',
+        ]},
 )
