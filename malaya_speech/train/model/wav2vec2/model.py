@@ -228,6 +228,7 @@ class Model(tf.keras.Model):
         return negs, neg_idxs
 
     def compute_preds(self, x, y, negatives):
+        print(x, y, negatives)
         tiled = tf.tile(tf.expand_dims(y, 0), (tf.shape(negatives)[0], 1, 1, 1))
         neg_is_pos = tf.reduce_all(tf.equal(tiled, negatives), axis=-1)
         y = tf.expand_dims(y, 0)
@@ -243,6 +244,7 @@ class Model(tf.keras.Model):
             - 1
         )
         logits = logits[:, :, :, 0]
+        print(logits, neg_is_pos)
         logits = logits / self.logit_temp
         left, right = logits[:1], logits[1:]
         right = tf.cond(

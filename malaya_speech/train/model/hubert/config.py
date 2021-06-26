@@ -172,11 +172,11 @@ class HuBERTConfig(Dataclass):
             "help": "if set, normalizes input to have 0 mean and unit variance"
         },
     )
-    max_sample_size: Optional[int] = field(
+    max_sample_size: int = field(
         default=250000,
         metadata={"help": "max sample size to crop to for batching"},
     )
-    min_sample_size: Optional[int] = field(
+    min_sample_size: int = field(
         default=32000,
         metadata={"help": "min sample size to crop to for batching"},
     )

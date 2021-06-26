@@ -3,10 +3,11 @@ from dataclasses import dataclass, field
 from .layer import gelu, glu, ConvFeatureExtractionModel
 from .masking import compute_mask_indices, index_put, index_put_constant
 from ..utils import shape_list
+import numpy as np
 
 
 class Model(tf.keras.Model):
-    def __init__(self, cfg, encoder, dictionaries, **kwargs):
+    def __init__(self, cfg, encoder, dictionary=None, **kwargs):
         super(Model, self).__init__(name='hubert', **kwargs)
         self.cfg = cfg
 
@@ -25,7 +26,7 @@ class Model(tf.keras.Model):
 
         self.post_extract_proj = (
             tf.keras.layers.Dense(cfg.encoder_embed_dim)
-            if self.embed != cfg.encoder_embed_dim and not cfg.quantize_input
+            if self.embed != cfg.encoder_embed_dim
             else None
         )
 
@@ -73,15 +74,15 @@ class Model(tf.keras.Model):
         else:
             self.final_proj = tf.keras.layers.Dense(final_dim)
 
-        if any([d is None for d in dictionaries]):
-            print('cannot find dictionary. assume will be used for fine-tuning')
-        else:
-            self.num_classes = [len(d) for d in dictionaries]
+        if dictionary is not None:
+            self.num_classes = len(dictionary)
             self.label_embs_concat = tf.get_variable(
                 name='label_embs_concat',
-                shape=[sum(self.num_classes), final_dim],
+                shape=[self.num_classes, final_dim],
                 initializer=tf.truncated_normal_initializer(),
             )
+        else:
+            print('cannot find dictionary. assume will be used for fine-tuning')
 
     def _get_feat_extract_output_lengths(self, input_lengths):
         def _conv_out_length(input_length, kernel_size, stride):
@@ -145,12 +146,12 @@ class Model(tf.keras.Model):
             x = index_put_constant(x, mask_channel_indices, 0.0)
         return x, mask_indices
 
-    def compute_preds(self, x, y, negatives):
-        tiled = tf.tile(tf.expand_dims(y, 0), (tf.shape(negatives)[0], 1, 1, 1))
-        neg_is_pos = tf.reduce_all(tf.equal(tiled, negatives), axis=-1)
-        y = tf.expand_dims(y, 0)
-        targets = tf.concat([y, negatives], axis=0)
-        x = tf.tile(tf.expand_dims(x, 0), (tf.shape(targets)[0], 1, 1, 1))
+    def compute_nce(self, x, pos, negs):
+        tiled = tf.tile(tf.expand_dims(pos, 0), (tf.shape(negs)[0], 1, 1))
+        neg_is_pos = tf.reduce_all(tf.equal(tiled, negs), axis=-1)
+        pos = tf.expand_dims(pos, 0)
+        targets = tf.concat([pos, negs], axis=0)
+        x = tf.tile(tf.expand_dims(x, 0), (tf.shape(targets)[0], 1, 1,))
         logits = -(
             tf.losses.cosine_distance(
                 tf.nn.l2_normalize(x, -1),
@@ -160,7 +161,7 @@ class Model(tf.keras.Model):
             )
             - 1
         )
-        logits = logits[:, :, :, 0]
+        logits = logits[:, :, 0]
         logits = logits / self.logit_temp
         left, right = logits[:1], logits[1:]
         right = tf.cond(
@@ -169,7 +170,23 @@ class Model(tf.keras.Model):
             lambda: right,
         )
         logits = tf.concat([left, right], axis=0)
-        return logits
+        return tf.transpose(logits, [1, 0])
+
+    def forward_targets(self, features, target_list):
+        feat_tsz = tf.shape(features)[1]
+        targ_tsz = tf.shape(target_list)[1]
+
+        def f1():
+            feat_tsz = tf.cast(targ_tsz / self.feat2tar_ratio, tf.int32)
+            return features[:, :feat_tsz], feat_tsz
+
+        features, feat_tsz = tf.cond(
+            self.feat2tar_ratio * feat_tsz > targ_tsz, f1, lambda: (features, feat_tsz)
+        )
+        target_inds = tf.cast(tf.range(feat_tsz), tf.float32) * self.feat2tar_ratio
+        target_inds = tf.cast(target_inds, tf.int32)
+        target_list = tf.gather(target_list, target_inds, axis=1)
+        return features, target_list
 
     def call(
         self,
@@ -184,6 +201,9 @@ class Model(tf.keras.Model):
         features = self.feature_extractor(source, training=training)
         if self.feature_grad_mult <= 0:
             features = tf.stop_gradient(features)
+
+        # if target_list is not None:
+        #     features, target_list = self.forward_targets(features, target_list)
 
         features_pen = tf.reduce_mean(tf.math.pow(features, 2))
         features = self.layer_norm(features, training=training)
@@ -226,42 +246,38 @@ class Model(tf.keras.Model):
             return {'x': x, 'padding_mask': padding_mask}
 
         def compute_pred(proj_x, target, label_embs):
-            y = torch.index_select(label_embs, 0, target.long())
+            y = tf.gather(label_embs, target, axis=0)
+            negs = tf.expand_dims(label_embs, 1)
+            negs = tf.tile(negs, [1, tf.shape(proj_x)[0], 1])
+            if self.target_glu:
+                y = self.target_glu(y)
+                negs = self.target_glu(negs)
+            return self.compute_nce(proj_x, y, negs)
 
-        if self.quantizer:
-            q = self.quantizer(y, produce_targets=False, training=training)
-            y = q['x']
-            num_vars = q['num_vars']
-            code_ppl = q['code_perplexity']
-            prob_ppl = q['prob_perplexity']
-            curr_temp = q['temp']
+        label_embs_list = self.label_embs_concat
 
-            y = self.project_q(y)
-
-            negs, _ = self.sample_negatives(
-                y, tf.shape(y)[1], padding_count=padding_count
-            )
+        if not self.skip_masked:
+            masked_indices = tf.math.logical_and(tf.math.logical_not(padding_mask), mask_indices)
+            proj_x_m = self.final_proj(tf.boolean_mask(x, masked_indices))
+            masked_target_list = tf.boolean_mask(target_list, masked_indices)
+            logit_m_list = compute_pred(proj_x_m, masked_target_list, label_embs_list)
 
         else:
-            y = self.project_q(y)
-            negs, _ = self.sample_negatives(
-                y, tf.shape(y)[1], padding_count=padding_count
-            )
+            logit_m_list = None
 
-        if self.target_glu:
-            y = self.target_glu(y)
-            negs = self.target_glu(negs)
+        if not self.skip_nomask:
+            masked_indices = tf.math.logical_and(tf.math.logical_not(padding_mask),
+                                                 tf.math.logical_not(mask_indices))
+            proj_x_m = self.final_proj(tf.boolean_mask(x, masked_indices))
+            masked_target_list = tf.boolean_mask(target_list, masked_indices)
+            logit_u_list = compute_pred(proj_x_m, masked_target_list, label_embs_list)
+        else:
+            logit_u_list = None
 
-        x = self.final_proj(x)
-        x = self.compute_preds(x, y, negs)
         result = {
-            'x': x,
-            'padding_mask': padding_mask,
-            'features_pen': features_pen,
+            "logit_m_list": logit_m_list,
+            "logit_u_list": logit_u_list,
+            "padding_mask": padding_mask,
+            "features_pen": features_pen,
         }
-
-        if prob_ppl is not None:
-            result['prob_perplexity'] = prob_ppl
-            result['code_perplexity'] = code_ppl
-
-        return result, float(num_vars), curr_temp
+        return result
