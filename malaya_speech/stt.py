@@ -34,15 +34,15 @@ _transducer_availability = {
     'conformer-mixed': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 37.1,
-        'WER': 0.31215,
-        'CER': 0.20003,
+        'WER': 0.25314,
+        'CER': 0.15836,
         'Language': ['malay', 'singlish'],
     },
     'large-conformer-mixed': {
         'Size (MB)': 404,
         'Quantized Size (MB)': 107,
-        'WER': 0.28276,
-        'CER': 0.18404,
+        'WER': 0.24829,
+        'CER': 0.16606,
         'Language': ['malay', 'singlish'],
     },
 }
