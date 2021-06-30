@@ -18,5 +18,4 @@ Prepare ASR dataset for ASR models.
 
 ## Download
 
-1. Train set strong semisupervised audiobook, https://f000.backblazeb2.com/file/malaya-speech-model/data/trainset-audiobook.tar.gz
-2. cleaned transcript, https://f000.backblazeb2.com/file/malaya-speech-model/collections/malaya-speech-transcript.txt
+1. Test set, audio files, [bahasa-asr-testset.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/bahasa-asr-testset.tar.gz), transcript, [bahasa-asr-testset.json](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/bahasa-asr-testset.json).
