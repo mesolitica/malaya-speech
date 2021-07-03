@@ -34,7 +34,7 @@ def load(model, module, quantized=False, **kwargs):
         input_nodes=input_nodes,
         output_nodes=output_nodes,
         speaker_vector=speaker_model,
-        magnitude=magnitude[speaker_vector_model],
+        magnitude=magnitudes[speaker_vector_model],
         sess=generate_session(graph=g, **kwargs),
         model=model,
         name=module,
