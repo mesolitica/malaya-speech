@@ -6,8 +6,8 @@
 # URL: <https://malaya-speech.readthedocs.io/>
 # For license information, see https://github.com/huseinzol05/malaya-speech/blob/master/LICENSE
 
-version = '1.1.1'
-bump_version = '1.1.1'
+version = '1.1.1.1'
+bump_version = '1.1.1.1'
 __version__ = bump_version
 
 import malaya_boilerplate
