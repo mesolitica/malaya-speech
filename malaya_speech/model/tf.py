@@ -495,8 +495,8 @@ class Transducer(Abstract):
     ):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
-        self._back_pad = 2000
-        self._front_pad = 200
+        self._back_pad = np.zeros(shape=(2000,))
+        self._front_pad = np.zeros(shape=(200,))
 
         self._featurizer = featurizer
         self._vocab = vocab
@@ -527,11 +527,13 @@ class Transducer(Abstract):
         if len(inputs) < len(self._wavs) + 1:
             inputs = inputs + self._wavs[:(len(self._wavs) + 1) - len(inputs)]
 
+        # padded, lens = sequence_1d(inputs, return_len=True)
+        # padded = np.concatenate([self._front_pad, padded, self._back_pad], axis=-1)
+        # lens = [l + len(self._back_pad) + len(self._front_pad) for l in lens]
+
+        inputs = [np.concatenate([self._front_pad, wav, self._back_pad], axis=-1) for wav in inputs]
         padded, lens = sequence_1d(inputs, return_len=True)
-        back = np.zeros(shape=(len(inputs), self._back_pad))
-        front = np.zeros(shape=(len(inputs), self._front_pad))
-        padded = np.concatenate([front, padded, back], axis=-1)
-        lens = [l + self._back_pad + self._front_pad for l in lens]
+
         return padded, lens, index
 
     def _combined_indices(
