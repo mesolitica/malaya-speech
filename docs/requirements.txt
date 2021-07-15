@@ -8,6 +8,7 @@ dataclasses
 python_speech_features
 soundfile
 tqdm
+malaya-boilerplate
 nbconvert==5.6.1
 nbformat==5.0.7
 nbsphinx==0.8.0
@@ -22,7 +23,6 @@ sphinxcontrib-htmlhelp==1.0.3
 sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.4
-tornado==6.0.4
 docutils==0.16
 Jinja2==2.11.2
-malaya-boilerplate
+jupyter-core
