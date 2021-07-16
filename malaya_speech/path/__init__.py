@@ -1,6 +1,7 @@
 from malaya_boilerplate.utils import _get_home
+from malaya_speech import __package__
 
-home, _ = _get_home()
+home, _ = _get_home(package=__package__)
 
 TRANSDUCER_VOCAB = 'vocab/transducer.subword.subwords'
 TRANSDUCER_MIXED_VOCAB = 'vocab/transducer-mixed.subword.subwords'

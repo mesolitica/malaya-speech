@@ -8,4 +8,4 @@ python_speech_features
 unidecode
 tqdm
 tornado
-malaya-boilerplate
+malaya-boilerplate>=0.0.10

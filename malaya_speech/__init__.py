@@ -6,20 +6,16 @@
 # URL: <https://malaya-speech.readthedocs.io/>
 # For license information, see https://github.com/huseinzol05/malaya-speech/blob/master/LICENSE
 
-version = '1.1'
-bump_version = '1.1.2'
-__version__ = bump_version
-
-import malaya_boilerplate
-
-malaya_boilerplate.__package__ = 'malaya-speech'
-malaya_boilerplate.__url__ = 'https://f000.backblazeb2.com/file/malaya-speech-model/'
-malaya_boilerplate.__package_version__ = version
-
 from malaya_boilerplate.utils import get_home
 
-__home__, _ = get_home()
+version = '1.1'
+bump_version = '1.1.3'
+__version__ = bump_version
 
+package = 'malaya-speech'
+url = 'https://f000.backblazeb2.com/file/malaya-speech-model/'
+
+__home__, _ = get_home(package=package, package_version=version)
 
 from . import augmentation
 from . import config
@@ -47,5 +43,6 @@ from . import voice_conversion
 from . import utils
 
 from .pipeline import Pipeline
-from .streaming import *
-from .utils import *
+from .streaming import record
+from .utils import astype
+from .utils.read import load, resample
