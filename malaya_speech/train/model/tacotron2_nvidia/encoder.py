@@ -167,7 +167,7 @@ class Tacotron2Encoder(Encoder):
                             tf.contrib.cudnn_rnn, inspect.isclass
                         )
                     ]
-                    if rnn_type not in all_cudnn_classes:
+                    if not rnn_type in all_cudnn_classes:
                         raise TypeError('rnn_type must be a Cudnn RNN class')
                     if zoneout_prob != 0.0:
                         raise ValueError(

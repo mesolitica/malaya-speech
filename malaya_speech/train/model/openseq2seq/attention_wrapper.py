@@ -1695,7 +1695,7 @@ class AttentionWrapper(rnn_cell_impl.RNNCell):
 
     @property
     def output_size(self):
-        if self._output_attention:
+        if self._output_attention == True:
             return self._attention_layer_size
         elif self._output_attention == False:
             return self._cell.output_size
@@ -1898,7 +1898,7 @@ class AttentionWrapper(rnn_cell_impl.RNNCell):
             alignment_history=self._item_or_tuple(maybe_all_histories),
         )
 
-        if self._output_attention:
+        if self._output_attention == True:
             return attention, next_state
         elif self._output_attention == False:
             return cell_output, next_state
