@@ -94,6 +94,7 @@ Malaya-Speech also released pretrained models, simply check at `malaya-speech/pr
 -  **Sepformer**, Attention is All You Need in Speech Separation, https://arxiv.org/abs/2010.13154
 -  **FastSpeechSplit**, Faster and Accurate Speech Split Conversion using Transformer, no paper produced.
 -  **HuBERT**, Self-Supervised Speech Representation Learning by Masked Prediction of Hidden Units, https://arxiv.org/pdf/2106.07447v1.pdf
+-  **FastPitch**, Parallel Text-to-speech with Pitch Prediction, https://arxiv.org/abs/2006.06873
 
 References
 -----------

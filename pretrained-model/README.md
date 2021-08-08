@@ -23,6 +23,7 @@ This directory to save pretrained checkpoints and steps to reproduce.
   * [Text-to-Speech](tts)
     * [Fastspeech2](tts/fastspeech2)
     * [Tacotron2](tts/tacotron2)
+    * [Fastpitch](tts/fastpitch)
   * [Vocoder](vocoder)
     * [HifiGAN](hifigan)
     * [MBMelGAN](mbmelgan)

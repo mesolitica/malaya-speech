@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import tensorflow as tf
 import numpy as np
@@ -16,10 +16,10 @@ from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 import json
 import re
 
-files = glob('../speech-bahasa/output-husein/mels/*.npy')
+files = glob('../speech-bahasa/output-husein-v2/mels/*.npy')
 
 reduction_factor = 1
-maxlen = 1008
+maxlen = 904
 minlen = 32
 pad_to = 8
 data_min = 1e-2
@@ -30,7 +30,6 @@ _eos = 'eos'
 _punctuation = "!'(),.:;? "
 _special = '-'
 _letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-_rejected = '\'():;"'
 
 MALAYA_SPEECH_SYMBOLS = (
     [_pad, _start, _eos] + list(_special) + list(_punctuation) + list(_letters)
@@ -43,8 +42,8 @@ parameters = {
         'decay_steps': 20000,
         'decay_rate': 0.1,
         'use_staircase_decay': False,
-        'begin_decay_at': 45000,
-        'min_lr': 1e-5,
+        'begin_decay_at': 42500,
+        'min_lr': 5e-5,
     },
     'max_grad_norm': 1.0,
 }
@@ -93,13 +92,7 @@ def generate(files):
         text_ids = np.load(f.replace('mels', 'text_ids'), allow_pickle=True)[
             0
         ]
-        text_ids = ''.join(
-            [
-                c
-                for c in text_ids
-                if c in MALAYA_SPEECH_SYMBOLS and c not in _rejected
-            ]
-        )
+        text_ids = ''.join([c for c in text_ids if c in MALAYA_SPEECH_SYMBOLS])
         text_ids = re.sub(r'[ ]+', ' ', text_ids).strip()
         text_input = np.array(
             [MALAYA_SPEECH_SYMBOLS.index(c) for c in text_ids]

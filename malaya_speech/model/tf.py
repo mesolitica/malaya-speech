@@ -1407,3 +1407,66 @@ class FastSpeechSplit(Abstract):
             results[condition] = mel_outputs
 
         return results
+
+
+class Fastpitch(Abstract):
+    def __init__(
+        self, input_nodes, output_nodes, normalizer, stats, sess, model, name
+    ):
+        self._input_nodes = input_nodes
+        self._output_nodes = output_nodes
+        self._normalizer = normalizer
+        self._stats = stats
+        self._sess = sess
+        self.__model__ = model
+        self.__name__ = name
+
+    def predict(
+        self,
+        string,
+        speed_ratio: float = 1.0,
+        pitch_ratio: float = 1.0,
+        pitch_addition: float = 0.0,
+        **kwargs,
+    ):
+        """
+        Change string to Mel.
+
+        Parameters
+        ----------
+        string: str
+        speed_ratio: float, optional (default=1.0)
+            Increase this variable will increase time voice generated.
+        pitch_ratio: float, optional (default=1.0)
+            pitch = pitch * pitch_ratio, amplify existing pitch contour.
+        pitch_addition: float, optional (default=0.0)
+            pitch = pitch + pitch_addition, change pitch contour.
+
+        Returns
+        -------
+        result: Dict[string, decoder-output, postnet-output, pitch-output, universal-output]
+        """
+        t, ids = self._normalizer.normalize(string, **kwargs)
+        r = self._execute(
+            inputs=[[ids], [speed_ratio], [pitch_ratio], [pitch_addition]],
+            input_labels=[
+                'Placeholder',
+                'speed_ratios',
+                'pitch_ratios',
+                'pitch_addition',
+            ],
+            output_labels=['decoder_output', 'post_mel_outputs', 'pitch_outputs'],
+        )
+        v = r['post_mel_outputs'][0] * self._stats[1] + self._stats[0]
+        v = (v - MEL_MEAN) / MEL_STD
+        return {
+            'string': t,
+            'ids': ids,
+            'decoder-output': r['decoder_output'][0],
+            'postnet-output': r['post_mel_outputs'][0],
+            'pitch-output': r['pitch_outputs'][0],
+            'universal-output': v,
+        }
+
+    def __call__(self, input, **kwargs):
+        return self.predict(input, **kwargs)

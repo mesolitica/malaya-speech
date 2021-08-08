@@ -3,6 +3,8 @@ from malaya_speech.path import (
     S3_PATH_TTS_TACOTRON2,
     PATH_TTS_FASTSPEECH2,
     S3_PATH_TTS_FASTSPEECH2,
+    PATH_TTS_FASTPITCH,
+    S3_PATH_TTS_FASTPITCH,
 )
 from malaya_speech.utils.text import (
     convert_to_ascii,
@@ -19,31 +21,26 @@ _tacotron2_availability = {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
         'Combined loss': 0.1733,
-        'understand punctuations': False,
     },
     'female': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
         'Combined loss': 0.1733,
-        'understand punctuations': False,
     },
     'husein': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
         'Combined loss': 0.1165,
-        'understand punctuations': False,
     },
     'haqkiem': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
         'Combined loss': 0.1375,
-        'understand punctuations': True,
     },
     'female-singlish': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
         'Combined loss': 0.0923,
-        'understand punctuations': True,
     },
 }
 _fastspeech2_availability = {
@@ -51,49 +48,39 @@ _fastspeech2_availability = {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
         'Combined loss': 1.846,
-        'understand punctuations': False,
-    },
-    'male-v2': {
-        'Size (MB)': 65.5,
-        'Quantized Size (MB)': 16.7,
-        'Combined loss': 1.886,
-        'understand punctuations': False,
     },
     'female': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
         'Combined loss': 1.744,
-        'understand punctuations': False,
-    },
-    'female-v2': {
-        'Size (MB)': 65.5,
-        'Quantized Size (MB)': 16.7,
-        'Combined loss': 1.804,
-        'understand punctuations': False,
     },
     'husein': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
         'Combined loss': 0.6411,
-        'understand punctuations': False,
-    },
-    'husein-v2': {
-        'Size (MB)': 65.5,
-        'Quantized Size (MB)': 16.7,
-        'Combined loss': 0.7712,
-        'understand punctuations': False,
     },
     'haqkiem': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
         'Combined loss': 0.5663,
-        'understand punctuations': True,
     },
     'female-singlish': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
         'Combined loss': 0.5112,
-        'understand punctuations': True,
+    },
+}
+
+_fastpitch_availability = {
+    'haqkiem': {
+        'Size (MB)': 125,
+        'Quantized Size (MB)': 31.7,
+        'Combined loss': 0.5186,
+    },
+    'female-singlish': {
+        'Size (MB)': 125,
+        'Quantized Size (MB)': 31.7,
+        'Combined loss': 0.4083,
     },
 }
 
@@ -119,7 +106,7 @@ class TextIDS:
         pad_to,
         sentence_tokenizer,
         true_case,
-        understand_punct=False,
+        understand_punct=True,
     ):
         self.normalizer = normalizer
         self.pad_to = pad_to
@@ -197,9 +184,9 @@ class TextIDS:
 
 def load_text_ids(
     pad_to: int = 8,
-    understand_punct=False,
     true_case=None,
     quantized=False,
+    understand_punct=True,
     **kwargs
 ):
     try:
@@ -233,7 +220,7 @@ def available_tacotron2():
 
     return describe_availability(
         _tacotron2_availability,
-        text='`husein` and `haqkiem` combined loss from training set.',
+        text='`husein`, `haqkiem` and `female-singlish` combined loss from training set',
     )
 
 
@@ -245,7 +232,19 @@ def available_fastspeech2():
 
     return describe_availability(
         _fastspeech2_availability,
-        text='`husein` and `haqkiem` combined loss from training set',
+        text='`husein`, `haqkiem` and `female-singlish` combined loss from training set',
+    )
+
+
+def available_fastpitch():
+    """
+    List available FastPitch, Text to Mel models.
+    """
+    from malaya_speech.utils import describe_availability
+
+    return describe_availability(
+        _fastpitch_availability,
+        text='`husein`, `haqkiem` and `female-singlish` combined loss from training set',
     )
 
 
@@ -298,9 +297,6 @@ def tacotron2(
 
     text_ids = load_text_ids(
         pad_to=pad_to,
-        understand_punct=_tacotron2_availability[model][
-            'understand punctuations'
-        ],
         true_case=true_case,
         quantized=quantized,
         **kwargs
@@ -333,11 +329,8 @@ def fastspeech2(
         Model architecture supported. Allowed values:
 
         * ``'female'`` - Fastspeech2 trained on female voice.
-        * ``'female-v2'`` - Fastspeech2 V2 trained on female voice.
         * ``'male'`` - Fastspeech2 trained on male voice.
-        * ``'male-v2'`` - Fastspeech2 V2 trained on male voice.
         * ``'husein'`` - Fastspeech2 trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
-        * ``'husein-v2'`` - Fastspeech2 V2 trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
         * ``'haqkiem'`` - Fastspeech2 trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
         * ``'female-singlish'`` - Fastspeech2 trained on female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
 
@@ -370,9 +363,6 @@ def fastspeech2(
 
     text_ids = load_text_ids(
         pad_to=pad_to,
-        understand_punct=_fastspeech2_availability[model][
-            'understand punctuations'
-        ],
         true_case=true_case,
         quantized=quantized,
         **kwargs
@@ -380,6 +370,71 @@ def fastspeech2(
     return tts.fastspeech_load(
         path=PATH_TTS_FASTSPEECH2,
         s3_path=S3_PATH_TTS_FASTSPEECH2,
+        model=model,
+        name='text-to-speech',
+        normalizer=text_ids,
+        quantized=quantized,
+        **kwargs
+    )
+
+
+def fastpitch(
+    model: str = 'male',
+    quantized: bool = False,
+    pad_to: int = 8,
+    true_case: str = None,
+    **kwargs
+):
+    """
+    Load Fastspitch TTS model.
+
+    Parameters
+    ----------
+    model : str, optional (default='male')
+        Model architecture supported. Allowed values:
+
+        * ``'female'`` - Fastpitch trained on female voice.
+        * ``'male'`` - Fastpitch trained on male voice.
+        * ``'husein'`` - Fastpitch trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
+        * ``'haqkiem'`` - Fastpitch trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
+        * ``'female-singlish'`` - Fastpitch trained on female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
+
+    quantized : bool, optional (default=False)
+        if True, will load 8-bit quantized model.
+        Quantized model not necessary faster, totally depends on the machine.
+
+    pad_to : int, optional (default=8)
+        size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
+
+    true_case: str, optional (default=None)
+        Load True Case model from https://malaya.readthedocs.io/en/latest/load-true-case.html,
+        to fix case sensitive and punctuation errors. Allowed values:
+
+        * ``'small'`` - Small size True Case model.
+        * ``'base'`` - Base size True Case model.
+        * ``None`` - no True Case model.
+
+    Returns
+    -------
+    result : malaya_speech.model.tf.Fastpitch class
+    """
+
+    model = model.lower()
+
+    if model not in _fastpitch_availability:
+        raise ValueError(
+            'model not supported, please check supported models from `malaya_speech.tts.available_fastpitch()`.'
+        )
+
+    text_ids = load_text_ids(
+        pad_to=pad_to,
+        true_case=true_case,
+        quantized=quantized,
+        **kwargs
+    )
+    return tts.fastpitch_load(
+        path=PATH_TTS_FASTPITCH,
+        s3_path=S3_PATH_TTS_FASTPITCH,
         model=model,
         name='text-to-speech',
         normalizer=text_ids,

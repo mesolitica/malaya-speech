@@ -111,24 +111,6 @@ PATH_TTS_FASTSPEECH2 = {
         'stats': home + '/tts/stats/female-singlish.npy',
         'version': 'v2',
     },
-    'female-v2': {
-        'model': home + '/tts/fastspeech2-female-v2/model.pb',
-        'quantized': home + '/tts/fastspeech2-female-v2/quantized/model.pb',
-        'stats': home + '/tts/stats/female.npy',
-        'version': 'v1',
-    },
-    'male-v2': {
-        'model': home + '/tts/fastspeech2-male-v2/model.pb',
-        'quantized': home + '/tts/fastspeech2-male-v2/quantized/model.pb',
-        'stats': home + '/tts/stats/male.npy',
-        'version': 'v1',
-    },
-    'husein-v2': {
-        'model': home + '/tts/fastspeech2-husein-v2/model.pb',
-        'quantized': home + '/tts/fastspeech2-husein-v2/quantized/model.pb',
-        'stats': home + '/tts/stats/husein.npy',
-        'version': 'v1',
-    },
 }
 
 S3_PATH_TTS_FASTSPEECH2 = {
@@ -157,19 +139,94 @@ S3_PATH_TTS_FASTSPEECH2 = {
         'quantized': 'v2/tts/fastspeech2-female-singlish.pb.quantized',
         'stats': 'v1/vocoder-stats/female-singlish.npy',
     },
-    'female-v2': {
-        'model': 'v1/tts/fastspeech2-female-v2.pb',
-        'quantized': 'v1/tts/fastspeech2-female-v2.pb.quantized',
+}
+
+S3_PATH_TTS_TACOTRON2 = {
+    'female': {
+        'model': 'v1/tts/tacotron2-female.pb',
+        'quantized': 'v1/tts/tacotron2-female.pb.quantized',
         'stats': 'v1/vocoder-stats/female.npy',
     },
-    'male-v2': {
-        'model': 'v1/tts/fastspeech2-male-v2.pb',
-        'quantized': 'v1/tts/fastspeech2-male-v2.pb.quantized',
+    'male': {
+        'model': 'v1/tts/tacotron2-male.pb',
+        'quantized': 'v1/tts/tacotron2-male.pb.quantized',
         'stats': 'v1/vocoder-stats/male.npy',
     },
-    'husein-v2': {
-        'model': 'v1/tts/fastspeech2-husein-v2.pb',
-        'quantized': 'v1/tts/fastspeech2-husein-v2.pb.quantized',
+    'husein': {
+        'model': 'v1/tts/tacotron2-husein.pb',
+        'quantized': 'v1/tts/tacotron2-husein.pb.quantized',
         'stats': 'v1/vocoder-stats/husein.npy',
+    },
+    'haqkiem': {
+        'model': 'v2/tts/tacotron2-haqkiem.pb',
+        'quantized': 'v2/tts/tacotron2-haqkiem.pb.quantized',
+        'stats': 'v1/vocoder-stats/haqkiem.npy',
+    },
+    'female-singlish': {
+        'model': 'v2/tts/tacotron2-female-singlish.pb',
+        'quantized': 'v2/tts/tacotron2-female-singlish.pb.quantized',
+        'stats': 'v1/vocoder-stats/female-singlish.npy',
+    },
+}
+
+PATH_TTS_FASTPITCH = {
+    'female': {
+        'model': home + '/tts/fastpitch-female/model.pb',
+        'quantized': home + '/tts/fastpitch-female/quantized/model.pb',
+        'stats': home + '/tts/stats/female.npy',
+        'version': 'v1',
+    },
+    'male': {
+        'model': home + '/tts/fastpitch-male/model.pb',
+        'quantized': home + '/tts/fastpitch-male/quantized/model.pb',
+        'stats': home + '/tts/stats/male.npy',
+        'version': 'v1',
+    },
+    'husein': {
+        'model': home + '/tts/fastpitch-husein/model.pb',
+        'quantized': home + '/tts/fastpitch-husein/quantized/model.pb',
+        'stats': home + '/tts/stats/husein.npy',
+        'version': 'v1',
+    },
+    'haqkiem': {
+        'model': home + '/tts/fastpitch-haqkiem/model.pb',
+        'quantized': home + '/tts/fastpitch-haqkiem/quantized/model.pb',
+        'stats': home + '/tts/stats/haqkiem.npy',
+        'version': 'v1',
+    },
+    'female-singlish': {
+        'model': home + '/tts/fastpitch-female-singlish/model.pb',
+        'quantized': home
+        + '/tts/fastpitch-female-singlish/quantized/model.pb',
+        'stats': home + '/tts/stats/female-singlish.npy',
+        'version': 'v1',
+    },
+}
+
+S3_PATH_TTS_FASTPITCH = {
+    'female': {
+        'model': 'v1/tts/fastpitch-female.pb',
+        'quantized': 'v1/tts/fastpitch-female.pb.quantized',
+        'stats': 'v2/vocoder-stats/female.npy',
+    },
+    'male': {
+        'model': 'v1/tts/fastpitch-male.pb',
+        'quantized': 'v1/tts/fastpitch-male.pb.quantized',
+        'stats': 'v2/vocoder-stats/male.npy',
+    },
+    'husein': {
+        'model': 'v1/tts/fastpitch-husein.pb',
+        'quantized': 'v1/tts/fastpitch-husein.pb.quantized',
+        'stats': 'v2/vocoder-stats/husein.npy',
+    },
+    'haqkiem': {
+        'model': 'v1/tts/fastpitch-haqkiem.pb',
+        'quantized': 'v1/tts/fastpitch-haqkiem.pb.quantized',
+        'stats': 'v1/vocoder-stats/haqkiem.npy',
+    },
+    'female-singlish': {
+        'model': 'v1/tts/fastpitch-female-singlish.pb',
+        'quantized': 'v1/tts/fastpitch-female-singlish.pb.quantized',
+        'stats': 'v1/vocoder-stats/female-singlish.npy',
     },
 }

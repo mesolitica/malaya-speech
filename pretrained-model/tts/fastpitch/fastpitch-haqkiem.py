@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import tensorflow as tf
 import numpy as np
@@ -11,16 +11,46 @@ import malaya_speech
 import malaya_speech.train
 import malaya_speech.config
 import malaya_speech.train as train
-from malaya_speech.train.model import tacotron2_nvidia as tacotron2
+from malaya_speech.train.model import fastpitch
 from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
+from functools import partial
 import json
 import re
 
-with open('mels-female.json') as fopen:
-    files = json.load(fopen)
+files = glob('../speech-bahasa/output-haqkiem/mels/*.npy')
+
+
+def norm_mean_std(x, mean, std):
+    zero_idxs = np.where(x == 0.0)[0]
+    x = (x - mean) / std
+    x[zero_idxs] = 0.0
+    return x
+
+
+def average_by_duration(x, durs):
+    mel_len = durs.sum()
+    durs_cum = np.cumsum(np.pad(durs, (1, 0)))
+
+    x_char = np.zeros((durs.shape[0],), dtype=np.float32)
+    for idx, start, end in zip(range(mel_len), durs_cum[:-1], durs_cum[1:]):
+        values = x[start:end][np.where(x[start:end] != 0.0)[0]]
+        x_char[idx] = np.mean(values) if len(values) > 0 else 0.0
+
+    return x_char.astype(np.float32)
+
+
+def get_alignment(f):
+    f = f"tacotron2-haqkiem-alignment/{f.split('/')[-1]}"
+    if os.path.exists(f):
+        return np.load(f)
+    else:
+        return None
+
+
+pitch_stat = np.load('../speech-bahasa/haqkiem-stats/stats_pitch.npy')
 
 reduction_factor = 1
-maxlen = 904
+maxlen = 1008
 minlen = 32
 pad_to = 8
 data_min = 1e-2
@@ -37,47 +67,7 @@ MALAYA_SPEECH_SYMBOLS = (
     [_pad, _start, _eos] + list(_special) + list(_punctuation) + list(_letters)
 )
 
-parameters = {
-    'optimizer_params': {},
-    'lr_policy_params': {
-        'learning_rate': 1e-3,
-        'decay_steps': 20000,
-        'decay_rate': 0.4,
-        'use_staircase_decay': False,
-        'begin_decay_at': 45000,
-        'min_lr': 1e-5,
-    },
-    'max_grad_norm': 1.0,
-}
-
-
-def exp_decay(
-    global_step,
-    learning_rate,
-    decay_steps,
-    decay_rate,
-    use_staircase_decay,
-    begin_decay_at=0,
-    min_lr=0.0,
-):
-    new_lr = tf.cond(
-        global_step < begin_decay_at,
-        lambda: learning_rate,
-        lambda: tf.train.exponential_decay(
-            learning_rate=learning_rate,
-            global_step=global_step - begin_decay_at,
-            decay_steps=decay_steps,
-            decay_rate=decay_rate,
-            staircase=use_staircase_decay,
-        ),
-        name='learning_rate',
-    )
-    final_lr = tf.maximum(min_lr, new_lr)
-    return final_lr
-
-
-def learning_rate_scheduler(global_step):
-    return exp_decay(global_step, **parameters['lr_policy_params'])
+total_steps = 200_000
 
 
 def generate(files):
@@ -89,12 +79,22 @@ def generate(files):
         if mel_length > maxlen or mel_length < minlen:
             continue
 
+        alignment = get_alignment(f)
+        if alignment is None:
+            continue
+
         stop_token_target = np.zeros([len(mel)], dtype=np.float32)
 
         text_ids = np.load(f.replace('mels', 'text_ids'), allow_pickle=True)[
             0
         ]
-        text_ids = ''.join([c for c in text_ids if c in MALAYA_SPEECH_SYMBOLS and c not in _rejected])
+        text_ids = ''.join(
+            [
+                c
+                for c in text_ids
+                if c in MALAYA_SPEECH_SYMBOLS and c not in _rejected
+            ]
+        )
         text_ids = re.sub(r'[ ]+', ' ', text_ids).strip()
         text_input = np.array(
             [MALAYA_SPEECH_SYMBOLS.index(c) for c in text_ids]
@@ -120,23 +120,22 @@ def generate(files):
         len_mel = [len(mel)]
         len_text_ids = [len(text_input)]
 
+        pitch = np.load(f.replace('mels', 'pitches'))
+        pitch = norm_mean_std(pitch, pitch_stat[0], pitch_stat[1])
+        pitch = average_by_duration(pitch, alignment)
+        len_pitch = [len(pitch)]
+
         yield {
             'mel': mel,
             'text_ids': text_input,
             'len_mel': len_mel,
             'len_text_ids': len_text_ids,
             'stop_token_target': stop_token_target,
+            'pitch': pitch,
+            'len_pitch': len_pitch,
+            'f': [f],
+            'alignment': alignment,
         }
-
-
-def parse(example):
-    mel_len = example['len_mel'][0]
-    input_len = example['len_text_ids'][0]
-    g = tacotron2.generate_guided_attention(
-        mel_len, input_len, reduction_factor=reduction_factor
-    )
-    example['g'] = g
-    return example
 
 
 def get_dataset(files, batch_size=32, shuffle_size=32, thread_count=24):
@@ -149,6 +148,10 @@ def get_dataset(files, batch_size=32, shuffle_size=32, thread_count=24):
                 'len_mel': tf.int32,
                 'len_text_ids': tf.int32,
                 'stop_token_target': tf.float32,
+                'pitch': tf.float32,
+                'len_pitch': tf.int32,
+                'f': tf.string,
+                'alignment': tf.int32,
             },
             output_shapes={
                 'mel': tf.TensorShape([None, 80]),
@@ -156,11 +159,13 @@ def get_dataset(files, batch_size=32, shuffle_size=32, thread_count=24):
                 'len_mel': tf.TensorShape([1]),
                 'len_text_ids': tf.TensorShape([1]),
                 'stop_token_target': tf.TensorShape([None]),
+                'pitch': tf.TensorShape([None]),
+                'len_pitch': tf.TensorShape([1]),
+                'f': tf.TensorShape([1]),
+                'alignment': tf.TensorShape([None]),
             },
             args=(files,),
         )
-        dataset = dataset.map(parse, num_parallel_calls=thread_count)
-        dataset = dataset.shuffle(batch_size)
         dataset = dataset.padded_batch(
             shuffle_size,
             padded_shapes={
@@ -168,16 +173,22 @@ def get_dataset(files, batch_size=32, shuffle_size=32, thread_count=24):
                 'text_ids': tf.TensorShape([None]),
                 'len_mel': tf.TensorShape([1]),
                 'len_text_ids': tf.TensorShape([1]),
-                'g': tf.TensorShape([None, None]),
                 'stop_token_target': tf.TensorShape([None]),
+                'pitch': tf.TensorShape([None]),
+                'len_pitch': tf.TensorShape([1]),
+                'f': tf.TensorShape([1]),
+                'alignment': tf.TensorShape([None]),
             },
             padding_values={
                 'mel': tf.constant(0, dtype=tf.float32),
                 'text_ids': tf.constant(0, dtype=tf.int32),
                 'len_mel': tf.constant(0, dtype=tf.int32),
                 'len_text_ids': tf.constant(0, dtype=tf.int32),
-                'g': tf.constant(-1.0, dtype=tf.float32),
                 'stop_token_target': tf.constant(0, dtype=tf.float32),
+                'pitch': tf.constant(0, dtype=tf.float32),
+                'len_pitch': tf.constant(0, dtype=tf.int32),
+                'f': tf.constant('', dtype=tf.string),
+                'alignment': tf.constant(0, dtype=tf.int32),
             },
         )
         return dataset
@@ -188,74 +199,78 @@ def get_dataset(files, batch_size=32, shuffle_size=32, thread_count=24):
 def model_fn(features, labels, mode, params):
     input_ids = features['text_ids']
     input_lengths = features['len_text_ids'][:, 0]
-    speaker_ids = tf.constant([0], dtype=tf.int32)
     mel_outputs = features['mel']
     mel_lengths = features['len_mel'][:, 0]
-    guided = features['g']
-    stop_token_target = features['stop_token_target']
-    batch_size = tf.shape(guided)[0]
+    pitches = features['pitch']
+    pitches_lengths = features['len_pitch'][:, 0]
+    batch_size = tf.shape(pitches)[0]
+    alignment = features['alignment']
 
-    model = tacotron2.Model(
-        [input_ids, input_lengths],
-        [mel_outputs, mel_lengths],
-        len(MALAYA_SPEECH_SYMBOLS),
+    config = malaya_speech.config.fastspeech2_config
+    config = fastpitch.Config(
+        vocab_size=len(MALAYA_SPEECH_SYMBOLS), **config
     )
-    r = model.decoder_logits['outputs']
-    decoder_output, post_mel_outputs, alignment_histories, _, _, _ = r
-    stop_token_predictions = model.decoder_logits['stop_token_prediction']
+    model = fastpitch.Model(config)
 
-    stop_token = tf.expand_dims(stop_token_target, -1)
-    max_length = tf.cast(tf.shape(decoder_output)[1], tf.int32)
+    mel_before, mel_after, duration_outputs, pitch_outputs = model(
+        input_ids, alignment, pitches, training=True
+    )
+    mse = tf.losses.mean_squared_error
+    mae = tf.losses.absolute_difference
 
-    loss_f = tf.losses.mean_squared_error
+    log_duration = tf.math.log(tf.cast(tf.math.add(alignment, 1), tf.float32))
+    duration_loss = mse(log_duration, duration_outputs)
+    max_length = tf.cast(tf.reduce_max(mel_lengths), tf.int32)
+
     mask = tf.sequence_mask(
         lengths=mel_lengths, maxlen=max_length, dtype=tf.float32
     )
     mask = tf.expand_dims(mask, axis=-1)
+    mel_loss_before = mae(
+        labels=mel_outputs, predictions=mel_before, weights=mask
+    )
+    mel_loss_after = mae(
+        labels=mel_outputs, predictions=mel_after, weights=mask
+    )
 
-    mel_loss_before = loss_f(
-        labels=mel_outputs, predictions=decoder_output, weights=mask
+    max_length = tf.cast(tf.reduce_max(pitches_lengths), tf.int32)
+    mask = tf.sequence_mask(
+        lengths=pitches_lengths, maxlen=max_length, dtype=tf.float32
     )
-    mel_loss_after = loss_f(
-        labels=mel_outputs, predictions=post_mel_outputs, weights=mask
+    pitches_loss = mse(
+        labels=pitches, predictions=pitch_outputs, weights=mask
     )
-    stop_token_loss = tf.nn.sigmoid_cross_entropy_with_logits(
-        labels=stop_token, logits=stop_token_predictions
-    )
-    stop_token_loss = stop_token_loss * mask
-    stop_token_loss = tf.reduce_sum(stop_token_loss) / tf.reduce_sum(mask)
 
-    attention_masks = tf.cast(tf.math.not_equal(guided, -1.0), tf.float32)
-    loss_att = tf.reduce_sum(
-        tf.abs(alignment_histories * guided) * attention_masks, axis=[1, 2]
+    loss = (
+        duration_loss
+        + mel_loss_before
+        + mel_loss_after
+        + pitches_loss
     )
-    loss_att /= tf.reduce_sum(attention_masks, axis=[1, 2])
-    loss_att = tf.reduce_mean(loss_att)
-
-    loss = stop_token_loss + mel_loss_before + mel_loss_after + loss_att
 
     tf.identity(loss, 'loss')
-    tf.identity(stop_token_loss, name='stop_token_loss')
+    tf.identity(duration_loss, name='duration_loss')
     tf.identity(mel_loss_before, name='mel_loss_before')
     tf.identity(mel_loss_after, name='mel_loss_after')
-    tf.identity(loss_att, name='loss_att')
+    tf.identity(pitches_loss, name='pitches_loss')
 
-    tf.summary.scalar('stop_token_loss', stop_token_loss)
+    tf.summary.scalar('duration_loss', duration_loss)
     tf.summary.scalar('mel_loss_before', mel_loss_before)
     tf.summary.scalar('mel_loss_after', mel_loss_after)
-    tf.summary.scalar('loss_att', loss_att)
+    tf.summary.scalar('pitches_loss', pitches_loss)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
-        train_op = train.optimizer.optimize_loss(
+        train_op = train.optimizer.adamw.create_optimizer(
             loss,
-            tf.train.AdamOptimizer,
-            parameters['optimizer_params'],
-            learning_rate_scheduler,
-            summaries=['learning_rate'],
-            larc_params=parameters.get('larc_params', None),
-            loss_scaling=parameters.get('loss_scaling', 1.0),
-            loss_scaling_params=parameters.get('loss_scaling_params', None),
-            clip_gradients=parameters.get('max_grad_norm', None),
+            init_lr=0.001,
+            num_train_steps=total_steps,
+            num_warmup_steps=int(0.02 * total_steps),
+            end_learning_rate=0.00005,
+            weight_decay_rate=0.001,
+            beta_1=0.9,
+            beta_2=0.98,
+            epsilon=1e-6,
+            clip_norm=1.0,
         )
         estimator_spec = tf.estimator.EstimatorSpec(
             mode=mode, loss=loss, train_op=train_op
@@ -274,26 +289,25 @@ train_hooks = [
     tf.train.LoggingTensorHook(
         [
             'loss',
-            'stop_token_loss',
+            'duration_loss',
             'mel_loss_before',
             'mel_loss_after',
-            'loss_att',
+            'pitches_loss',
         ],
         every_n_iter=1,
     )
 ]
 
-train_dataset = get_dataset(files['train'])
-dev_dataset = get_dataset(files['test'])
+train_dataset = get_dataset(files)
 
 train.run_training(
     train_fn=train_dataset,
     model_fn=model_fn,
-    model_dir='tacotron2-case-female',
+    model_dir='fastpitch-haqkiem',
     num_gpus=1,
     log_step=1,
     save_checkpoint_step=2000,
-    max_steps=100000,
-    eval_fn=dev_dataset,
+    max_steps=total_steps,
+    eval_fn=None,
     train_hooks=train_hooks,
 )

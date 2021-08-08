@@ -4,7 +4,7 @@ from malaya_speech.utils import (
     generate_session,
     nodes_session,
 )
-from malaya_speech.model.tf import Tacotron, Fastspeech
+from malaya_speech.model.tf import Tacotron, Fastspeech, Fastpitch
 import numpy as np
 
 
@@ -52,6 +52,33 @@ def fastspeech_load(
     stats = np.load(path[model]['stats'])
 
     return Fastspeech(
+        input_nodes=input_nodes,
+        output_nodes=output_nodes,
+        normalizer=normalizer,
+        stats=stats,
+        sess=generate_session(graph=g, **kwargs),
+        model=model,
+        name=name,
+    )
+
+
+def fastpitch_load(
+    path, s3_path, model, name, normalizer, quantized=False, **kwargs
+):
+    check_file(path[model], s3_path[model], quantized=quantized, **kwargs)
+    if quantized:
+        model_path = 'quantized'
+    else:
+        model_path = 'model'
+
+    g = load_graph(path[model][model_path], **kwargs)
+    inputs = ['Placeholder', 'speed_ratios', 'pitch_ratios', 'pitch_addition']
+    outputs = ['decoder_output', 'post_mel_outputs', 'pitch_outputs']
+    input_nodes, output_nodes = nodes_session(g, inputs, outputs)
+
+    stats = np.load(path[model]['stats'])
+
+    return Fastpitch(
         input_nodes=input_nodes,
         output_nodes=output_nodes,
         normalizer=normalizer,

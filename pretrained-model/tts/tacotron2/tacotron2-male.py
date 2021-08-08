@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 import tensorflow as tf
 import numpy as np
@@ -97,16 +97,13 @@ def generate(files):
         text_ids = np.load(f.replace('mels', 'text_ids'), allow_pickle=True)[
             0
         ]
-        text_ids = ''.join(
-            [
-                c
-                for c in text_ids
-                if c in MALAYA_SPEECH_SYMBOLS and c not in _rejected
-            ]
-        )
+        text_ids = ''.join([c for c in text_ids if c in MALAYA_SPEECH_SYMBOLS and c not in _rejected])
         text_ids = re.sub(r'[ ]+', ' ', text_ids).strip()
         text_input = np.array(
-            [MALAYA_SPEECH_SYMBOLS.index(c) for c in text_ids]
+            [
+                MALAYA_SPEECH_SYMBOLS.index(c)
+                for c in text_ids
+            ]
         )
         num_pad = pad_to - ((len(text_input) + 2) % pad_to)
         text_input = np.pad(

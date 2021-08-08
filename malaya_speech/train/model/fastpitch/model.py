@@ -186,7 +186,7 @@ class Model(FastSpeech):
         return outputs
 
     def inference(
-        self, input_ids, speed_ratios, pitch_ratios, pitch_transform=None, **kwargs
+        self, input_ids, speed_ratios, pitch_ratios, pitch_addition, **kwargs
     ):
         speaker_ids = tf.convert_to_tensor([0], tf.int32)
         attention_mask = tf.math.not_equal(input_ids, 0)
@@ -200,7 +200,8 @@ class Model(FastSpeech):
 
         # expand ratios
         speed_ratios = tf.expand_dims(speed_ratios, 1)  # [B, 1]
-        pitch_ratios = tf.expand_dims(pitch_ratios, 1)  # [B, 1]
+        pitch_ratios = tf.expand_dims(pitch_ratios, 1)
+        pitch_addition = tf.expand_dims(pitch_addition, 1)
 
         # energy predictor, here use last_encoder_hidden_states, u can use more hidden_states layers
         # rather than just use last_hidden_states of encoder for energy_predictor.
@@ -216,9 +217,9 @@ class Model(FastSpeech):
             [last_encoder_hidden_states, speaker_ids, attention_mask],
             training=False,
         )
-        if pitch_transform:
-            pitch_outputs = pitch_transform(pitch_outputs, attention_mask)
-        pitch_outputs *= pitch_ratios
+        pitch_outputs = pitch_outputs + pitch_addition
+        pitch_outputs = pitch_outputs * pitch_ratios
+
         pitch_embedding = self.pitch_embeddings(tf.expand_dims(pitch_outputs, 2))
 
         # sum features
