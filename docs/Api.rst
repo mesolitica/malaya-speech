@@ -124,6 +124,12 @@ malaya_speech.model.tf.FastSpeechSplit
 .. autoclass:: malaya_speech.model.tf.FastSpeechSplit()
     :members:
 
+malaya_speech.model.tf.Fastpitch
+----------------------------------
+
+.. autoclass:: malaya_speech.model.tf.Fastpitch()
+    :members:
+
 malaya_speech.model.webrtc.WebRTC
 ----------------------------------
 
