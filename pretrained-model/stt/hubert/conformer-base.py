@@ -92,8 +92,10 @@ def preprocess_inputs(example):
     deltas = malaya_speech.utils.tf_featurization.deltas(v)
     ddeltas = malaya_speech.utils.tf_featurization.deltas(deltas)
     concated = tf.concat([v, deltas, ddeltas], axis=1)
-    kmean_tf = kmean(concated)
-    example['targets'] = mel_fbanks
+    s = tf.compat.v1.numpy_function(kmean, [concated], tf.int64)
+    s = tf.cast(s, tf.int32)
+    kmean_tf = tf.reshape(s, (-1,)) + 3
+    example['targets'] = kmean_tf
     return example
 
 

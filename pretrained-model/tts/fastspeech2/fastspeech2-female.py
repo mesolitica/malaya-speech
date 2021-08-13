@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 import tensorflow as tf
 import numpy as np
@@ -48,8 +48,8 @@ def get_alignment(f):
         return None
 
 
-f0_stat = np.load('../speech-bahasa/female-stats-v2/stats_f0.npy')
-energy_stat = np.load('../speech-bahasa/female-stats-v2/stats_energy.npy')
+f0_stat = np.load('../speech-bahasa/female-stats-v3/stats_f0.npy')
+energy_stat = np.load('../speech-bahasa/female-stats-v3/stats_energy.npy')
 
 reduction_factor = 1
 maxlen = 1008

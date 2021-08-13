@@ -20,21 +20,18 @@ Female speaker,
 
 ```bash
 python3 fastspeech2-female.py
-python3 fastspeech2-female-v2.py
 ```
 
 Male speaker,
 
 ```bash
 python3 fastspeech2-male.py
-python3 fastspeech2-male-v2.py
 ```
 
 Husein speaker,
 
 ```bash
 python3 fastspeech2-husein.py
-python3 fastspeech2-husein-v2.py
 ```
 
 ## download
@@ -75,5 +72,17 @@ python3 fastspeech2-husein-v2.py
   - Lower case, understand `.,?!` punctuations.
 
 8. Female Singlish speaker, last update 9th April 2021, [fastspeech2-female-singlish-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeech2-female-singlish-output.tar.gz)
+
+  - Lower case, understand `.,?!` punctuations.
+
+9. Male speaker, last update 10th August 2021, [fastspeech2-male-output-2021-08-10.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeech2-male-output-2021-08-10.tar.gz)
+
+  - Lower case, understand `.,?!` punctuations.
+
+10. Female speaker, last update 10th August 2021, [fastspeech2-female-output-2021-08-10.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeech2-female-output-2021-08-10.tar.gz)
+
+  - Lower case, understand `.,?!` punctuations.
+
+11. Husein speaker, last update 10th August 2021, [fastspeech2-husein-output-2021-08-10.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeech2-husein-output-2021-08-10.tar.gz)
 
   - Lower case, understand `.,?!` punctuations.

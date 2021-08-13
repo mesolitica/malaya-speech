@@ -67,7 +67,7 @@ MALAYA_SPEECH_SYMBOLS = (
     [_pad, _start, _eos] + list(_special) + list(_punctuation) + list(_letters)
 )
 
-total_steps = 200_000
+total_steps = 120_000
 
 
 def generate(files):

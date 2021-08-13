@@ -20,12 +20,12 @@ _tacotron2_availability = {
     'male': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
-        'Combined loss': 0.1733,
+        'Combined loss': 0.1838,
     },
     'female': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
-        'Combined loss': 0.1733,
+        'Combined loss': 0.1887,
     },
     'husein': {
         'Size (MB)': 104,
@@ -47,17 +47,17 @@ _fastspeech2_availability = {
     'male': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
-        'Combined loss': 1.846,
+        'Combined loss': 1.8,
     },
     'female': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
-        'Combined loss': 1.744,
+        'Combined loss': 1.932,
     },
     'husein': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
-        'Combined loss': 0.6411,
+        'Combined loss': 0.5832,
     },
     'haqkiem': {
         'Size (MB)': 125,
@@ -72,14 +72,29 @@ _fastspeech2_availability = {
 }
 
 _fastpitch_availability = {
+    'male': {
+        'Size (MB)': 123,
+        'Quantized Size (MB)': 31.1,
+        'Combined loss': 1.614,
+    },
+    'female': {
+        'Size (MB)': 123,
+        'Quantized Size (MB)': 31.1,
+        'Combined loss': 1.669,
+    },
+    'husein': {
+        'Size (MB)': 123,
+        'Quantized Size (MB)': 31.1,
+        'Combined loss': 0.52515,
+    },
     'haqkiem': {
-        'Size (MB)': 125,
-        'Quantized Size (MB)': 31.7,
+        'Size (MB)': 123,
+        'Quantized Size (MB)': 31.1,
         'Combined loss': 0.5186,
     },
     'female-singlish': {
-        'Size (MB)': 125,
-        'Quantized Size (MB)': 31.7,
+        'Size (MB)': 123,
+        'Quantized Size (MB)': 31.1,
         'Combined loss': 0.4083,
     },
 }

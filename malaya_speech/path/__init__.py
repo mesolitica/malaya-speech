@@ -1,7 +1,7 @@
 from malaya_boilerplate.utils import _get_home
-from malaya_speech import __package__
+from malaya_speech import package
 
-home, _ = _get_home(package=__package__)
+home, _ = _get_home(package=package)
 
 TRANSDUCER_VOCAB = 'vocab/transducer.subword.subwords'
 TRANSDUCER_MIXED_VOCAB = 'vocab/transducer-mixed.subword.subwords'
@@ -23,7 +23,7 @@ PATH_TTS_TACOTRON2 = {
         'model': home + '/tts/tacotron2-female/model.pb',
         'quantized': home + '/tts/tacotron2-female/quantized/model.pb',
         'stats': home + '/tts/stats/female.npy',
-        'version': 'v1',
+        'version': 'v2',
     },
     'male': {
         'model': home + '/tts/tacotron2-male/model.pb',
@@ -35,7 +35,7 @@ PATH_TTS_TACOTRON2 = {
         'model': home + '/tts/tacotron2-husein/model.pb',
         'quantized': home + '/tts/tacotron2-husein/quantized/model.pb',
         'stats': home + '/tts/stats/husein.npy',
-        'version': 'v1',
+        'version': 'v2',
     },
     'haqkiem': {
         'model': home + '/tts/tacotron2-haqkiem/model.pb',
@@ -53,19 +53,19 @@ PATH_TTS_TACOTRON2 = {
 
 S3_PATH_TTS_TACOTRON2 = {
     'female': {
-        'model': 'v1/tts/tacotron2-female.pb',
-        'quantized': 'v1/tts/tacotron2-female.pb.quantized',
-        'stats': 'v1/vocoder-stats/female.npy',
+        'model': 'v2/tts/tacotron2-female.pb',
+        'quantized': 'v2/tts/tacotron2-female.pb.quantized',
+        'stats': 'v2/vocoder-stats/female.npy',
     },
     'male': {
-        'model': 'v1/tts/tacotron2-male.pb',
-        'quantized': 'v1/tts/tacotron2-male.pb.quantized',
-        'stats': 'v1/vocoder-stats/male.npy',
+        'model': 'v2/tts/tacotron2-male.pb',
+        'quantized': 'v2/tts/tacotron2-male.pb.quantized',
+        'stats': 'v2/vocoder-stats/male.npy',
     },
     'husein': {
-        'model': 'v1/tts/tacotron2-husein.pb',
-        'quantized': 'v1/tts/tacotron2-husein.pb.quantized',
-        'stats': 'v1/vocoder-stats/husein.npy',
+        'model': 'v2/tts/tacotron2-husein.pb',
+        'quantized': 'v2/tts/tacotron2-husein.pb.quantized',
+        'stats': 'v2/vocoder-stats/husein.npy',
     },
     'haqkiem': {
         'model': 'v2/tts/tacotron2-haqkiem.pb',
@@ -84,19 +84,19 @@ PATH_TTS_FASTSPEECH2 = {
         'model': home + '/tts/fastspeech2-female/model.pb',
         'quantized': home + '/tts/fastspeech2-female/quantized/model.pb',
         'stats': home + '/tts/stats/female.npy',
-        'version': 'v1',
+        'version': 'v2',
     },
     'male': {
         'model': home + '/tts/fastspeech2-male/model.pb',
         'quantized': home + '/tts/fastspeech2-male/quantized/model.pb',
         'stats': home + '/tts/stats/male.npy',
-        'version': 'v1',
+        'version': 'v2',
     },
     'husein': {
         'model': home + '/tts/fastspeech2-husein/model.pb',
         'quantized': home + '/tts/fastspeech2-husein/quantized/model.pb',
         'stats': home + '/tts/stats/husein.npy',
-        'version': 'v1',
+        'version': 'v2',
     },
     'haqkiem': {
         'model': home + '/tts/fastspeech2-haqkiem/model.pb',
@@ -115,19 +115,19 @@ PATH_TTS_FASTSPEECH2 = {
 
 S3_PATH_TTS_FASTSPEECH2 = {
     'female': {
-        'model': 'v1/tts/fastspeech2-female.pb',
-        'quantized': 'v1/tts/fastspeech2-female.pb.quantized',
-        'stats': 'v1/vocoder-stats/female.npy',
+        'model': 'v2/tts/fastspeech2-female.pb',
+        'quantized': 'v2/tts/fastspeech2-female.pb.quantized',
+        'stats': 'v2/vocoder-stats/female.npy',
     },
     'male': {
-        'model': 'v1/tts/fastspeech2-male.pb',
-        'quantized': 'v1/tts/fastspeech2-male.pb.quantized',
-        'stats': 'v1/vocoder-stats/male.npy',
+        'model': 'v2/tts/fastspeech2-male.pb',
+        'quantized': 'v2/tts/fastspeech2-male.pb.quantized',
+        'stats': 'v2/vocoder-stats/male.npy',
     },
     'husein': {
-        'model': 'v1/tts/fastspeech2-husein.pb',
-        'quantized': 'v1/tts/fastspeech2-husein.pb.quantized',
-        'stats': 'v1/vocoder-stats/husein.npy',
+        'model': 'v2/tts/fastspeech2-husein.pb',
+        'quantized': 'v2/tts/fastspeech2-husein.pb.quantized',
+        'stats': 'v2/vocoder-stats/husein.npy',
     },
     'haqkiem': {
         'model': 'v2/tts/fastspeech2-haqkiem.pb',
@@ -137,34 +137,6 @@ S3_PATH_TTS_FASTSPEECH2 = {
     'female-singlish': {
         'model': 'v2/tts/fastspeech2-female-singlish.pb',
         'quantized': 'v2/tts/fastspeech2-female-singlish.pb.quantized',
-        'stats': 'v1/vocoder-stats/female-singlish.npy',
-    },
-}
-
-S3_PATH_TTS_TACOTRON2 = {
-    'female': {
-        'model': 'v1/tts/tacotron2-female.pb',
-        'quantized': 'v1/tts/tacotron2-female.pb.quantized',
-        'stats': 'v1/vocoder-stats/female.npy',
-    },
-    'male': {
-        'model': 'v1/tts/tacotron2-male.pb',
-        'quantized': 'v1/tts/tacotron2-male.pb.quantized',
-        'stats': 'v1/vocoder-stats/male.npy',
-    },
-    'husein': {
-        'model': 'v1/tts/tacotron2-husein.pb',
-        'quantized': 'v1/tts/tacotron2-husein.pb.quantized',
-        'stats': 'v1/vocoder-stats/husein.npy',
-    },
-    'haqkiem': {
-        'model': 'v2/tts/tacotron2-haqkiem.pb',
-        'quantized': 'v2/tts/tacotron2-haqkiem.pb.quantized',
-        'stats': 'v1/vocoder-stats/haqkiem.npy',
-    },
-    'female-singlish': {
-        'model': 'v2/tts/tacotron2-female-singlish.pb',
-        'quantized': 'v2/tts/tacotron2-female-singlish.pb.quantized',
         'stats': 'v1/vocoder-stats/female-singlish.npy',
     },
 }
