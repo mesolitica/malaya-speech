@@ -1,5 +1,5 @@
 from malaya_speech.utils import check_file
-from malaya_speech.path import TRANSDUCER_VOCABS, CTC_VOCABS
+from malaya_speech.path import CTC_VOCABS
 import json
 
 
@@ -8,6 +8,7 @@ def get_vocab_ctc(language):
 
 
 def load(model, module, alpha, beta, **kwargs):
+
     path = check_file(
         file=model,
         module=module,

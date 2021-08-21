@@ -22,7 +22,6 @@ def get_vocab_ctc(language):
 
 
 def transducer_load(model, module, quantized=False, **kwargs):
-
     path = check_file(
         file=model,
         module=module,
@@ -117,21 +116,29 @@ def wav2vec_transducer_load(model, module, quantized=False, **kwargs):
     )
 
 
-def wav2vec2_ctc_load(model, module, quantized=False, **kwargs):
+def wav2vec2_ctc_load(model, module, quantized=False, mode='char', **kwargs):
+    if mode == 'char':
+        load_vocab = get_vocab_ctc
+    else:
+        load_vocab = get_vocab
+
     path = check_file(
         file=model,
         module=module,
         keys={
             'model': 'model.pb',
-            'vocab': get_vocab_ctc(model.split('-')[-1]),
+            'vocab': load_vocab(model.split('-')[-1]),
         },
         quantized=quantized,
         **kwargs,
     )
     g = load_graph(path['model'], **kwargs)
 
-    with open(path['vocab']) as fopen:
-        vocab = json.load(fopen) + ['{', '}', '[']
+    if mode == 'char':
+        with open(path['vocab']) as fopen:
+            vocab = json.load(fopen) + ['{', '}', '[']
+    else:
+        vocab = subword_load(path['vocab'].replace('.subwords', ''))
 
     inputs = ['X_placeholder', 'X_len_placeholder']
     outputs = ['logits', 'seq_lens']
@@ -142,6 +149,7 @@ def wav2vec2_ctc_load(model, module, quantized=False, **kwargs):
         output_nodes=output_nodes,
         vocab=vocab,
         sess=generate_session(graph=g, **kwargs),
+        mode=mode,
         model=model,
         name=module,
     )

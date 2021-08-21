@@ -54,6 +54,7 @@ _ctc_availability = {
         'WER': 0.25899,
         'CER': 0.06350,
         'Language': ['malay'],
+        'mode': 'char',
     },
     'wav2vec2-conformer-large': {
         'Size (MB)': 392,
@@ -61,6 +62,39 @@ _ctc_availability = {
         'WER': 0.23997,
         'CER': 0.05827,
         'Language': ['malay'],
+        'mode': 'char',
+    },
+    'hubert-conformer': {
+        'Size (MB)': 115,
+        'Quantized Size (MB)': 31.1,
+        'WER': 0.25899,
+        'CER': 0.06350,
+        'Language': ['malay'],
+        'mode': 'char',
+    },
+    'hubert-conformer-subword': {
+        'Size (MB)': 116,
+        'Quantized Size (MB)': 31.1,
+        'WER': 0.308862,
+        'CER': 0.09865,
+        'Language': ['malay'],
+        'mode': 'subword',
+    },
+    'hubert-conformer-large': {
+        'Size (MB)': 392,
+        'Quantized Size (MB)': 100,
+        'WER': 0.23997,
+        'CER': 0.05827,
+        'Language': ['malay'],
+        'mode': 'char',
+    },
+    'hubert-conformer-large-subword': {
+        'Size (MB)': 392,
+        'Quantized Size (MB)': 100,
+        'WER': 0.239554,
+        'CER': 0.078788,
+        'Language': ['malay'],
+        'mode': 'subword',
     },
 }
 
@@ -96,6 +130,11 @@ _language_model_availability = {
             './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
         ],
     },
+    'redape-community': {
+        'Size (MB)': 887.1,
+        'Description': 'Mirror for https://github.com/redapesolutions/suara-kami-community',
+        'Command': [''],
+    }
 }
 
 
@@ -128,7 +167,7 @@ def available_transducer():
 
 @check_type
 def language_model(
-    model: str = 'bahasa', alpha: float = 2.5, beta: float = 0.3, **kwargs
+    model: str = 'bahasa', alpha: float = 0.5, beta: float = 1.0, **kwargs
 ):
     """
     Load KenLM language model.
@@ -141,18 +180,18 @@ def language_model(
         * ``'bahasa'`` - Gathered from malaya-speech ASR bahasa transcript.
         * ``'bahasa-news'`` - Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences).
         * ``'bahasa-combined'`` - Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences) + Bahasa Wikipedia (Random sample 150k sentences).
+        * ``'redape-community'`` - Mirror for https://github.com/redapesolutions/suara-kami-community
 
-    alpha: float, optional (default=2.5)
+    alpha: float, optional (default=0.5)
         score = alpha * np.log(lm) + beta * np.log(word_cnt),
         increase will put more bias on lm score computed by kenlm.
-    beta: float, optional (beta=0.3)
+    beta: float, optional (beta=1.0)
         score = alpha * np.log(lm) + beta * np.log(word_cnt),
         increase will put more bias on word count.
 
     Returns
     -------
-    result : Tuple[ctc_decoders.Scorer, List[str]]
-        Tuple of ctc_decoders.Scorer and vocab.
+    result : ctc_decoders.Scorer
     """
     model = model.lower()
     if model not in _language_model_availability:
@@ -184,6 +223,10 @@ def deep_ctc(
 
         * ``'wav2vec2-conformer'`` - Finetuned Wav2Vec2 Conformer.
         * ``'wav2vec2-conformer-large'`` - Finetuned Wav2Vec2 Conformer LARGE.
+        * ``'hubert-conformer'`` - Finetuned HuBERT Conformer.
+        * ``'hubert-conformer-subword'`` - Finetuned HuBERT Conformer with Subword vocab.
+        * ``'hubert-conformer-large'`` - Finetuned HuBERT Conformer LARGE.
+        * ``'hubert-conformer-large-subword'`` - Finetuned HuBERT Conformer LARGE with Subword vocab.
 
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
@@ -191,7 +234,7 @@ def deep_ctc(
 
     Returns
     -------
-    result : malaya_speech.model.tf.CTC class
+    result : malaya_speech.model.tf.Wav2Vec2_CTC class
     """
     model = model.lower()
     if model not in _ctc_availability:
@@ -203,6 +246,7 @@ def deep_ctc(
         model=model,
         module='speech-to-text-ctc',
         quantized=quantized,
+        mode=_ctc_availability[model]['mode'],
         **kwargs
     )
 

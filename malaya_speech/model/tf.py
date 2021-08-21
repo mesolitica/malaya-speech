@@ -1067,11 +1067,12 @@ class Split_Mel(Abstract):
 
 
 class Wav2Vec2_CTC(Abstract):
-    def __init__(self, input_nodes, output_nodes, vocab, sess, model, name):
+    def __init__(self, input_nodes, output_nodes, vocab, sess, mode, model, name):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
         self._vocab = vocab
         self._sess = sess
+        self._mode = mode
         self.__model__ = model
         self.__name__ = name
         self._beam_size = 1
@@ -1167,11 +1168,13 @@ class Wav2Vec2_CTC(Abstract):
 
         results = []
         for i in range(len(decoded)):
-            results.append(
-                char_decode(decoded[i], lookup=self._vocab).replace(
+            if self._mode == 'char':
+                r = char_decode(decoded[i], lookup=self._vocab).replace(
                     '<PAD>', ''
                 )
-            )
+            else:
+                r = subword_decode(self._vocab, decoded[i][decoded[i] > 0])
+            results.append(r)
         return results
 
     def predict_lm(self, inputs, lm, beam_size: int = 100, **kwargs):
@@ -1193,6 +1196,9 @@ class Wav2Vec2_CTC(Abstract):
         -------
         result: List[str]
         """
+        if self._mode != 'char':
+            raise ValueError('Model is not character based, not able to use `predict_lm`.')
+
         try:
             from ctc_decoders import ctc_beam_search_decoder
         except BaseException:

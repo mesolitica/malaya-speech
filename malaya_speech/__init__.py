@@ -9,7 +9,7 @@
 from malaya_boilerplate.utils import get_home
 
 version = '1.1'
-bump_version = '1.1.3'
+bump_version = '1.2'
 __version__ = bump_version
 
 package = 'malaya-speech'
@@ -44,5 +44,5 @@ from . import utils
 
 from .pipeline import Pipeline
 from .streaming import record
-from .utils import astype, featurization, generator, group, padding, split, subword
+from .utils import astype, featurization, generator, group, metrics, padding, split, subword
 from .utils.read import load, resample

@@ -1,0 +1,20 @@
+config = {
+    'hidden_channels': 192,
+    'filter_channels': 768,
+    'filter_channels_dp': 256,
+    'kernel_size': 3,
+    'p_dropout': 0.1,
+    'n_blocks_dec': 12,
+    'n_layers_enc': 6,
+    'n_heads': 2,
+    'p_dropout_dec': 0.05,
+    'dilation_rate': 1,
+    'kernel_size_dec': 5,
+    'n_block_layers': 4,
+    'n_sqz': 2,
+    'prenet': True,
+    'mean_only': True,
+    'hidden_channels_enc': 192,
+    'hidden_channels_dec': 192,
+    'window_size': 4
+}
