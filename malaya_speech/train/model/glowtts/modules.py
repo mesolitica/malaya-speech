@@ -1,20 +1,20 @@
 import tensorflow as tf
 import numpy as np
-from ..utils import WeightNormalization, shape_list
+from ..utils import WeightNormalization, shape_list, logdet as logdet_f
 
 
 def fused_add_tanh_sigmoid_multiply(input_a, input_b, n_channels):
     n_channels_int = n_channels[0]
     in_act = input_a + input_b
-    t_act = tf.tanh(in_act[:, :n_channels_int, :])
-    s_act = tf.sigmoid(in_act[:, n_channels_int:, :])
+    t_act = tf.tanh(in_act[:, :, :n_channels_int])
+    s_act = tf.sigmoid(in_act[:, :, n_channels_int:])
     acts = t_act * s_act
     return acts
 
 
 class ConvReluNorm(tf.keras.layers.Layer):
-    def __init__(self, hidden_channels, out_channels, kernel_size, n_layers, p_dropout, **kwargs):
-        super(ConvReluNorm, self).__init__(name='ConvReluNorm', **kwargs)
+    def __init__(self, hidden_channels, out_channels, kernel_size, n_layers, p_dropout, name=0, **kwargs):
+        super(ConvReluNorm, self).__init__(name=f'ConvReluNorm_{name}', **kwargs)
 
         self.hidden_channels = hidden_channels
         self.out_channels = out_channels
@@ -58,17 +58,18 @@ class ConvReluNorm(tf.keras.layers.Layer):
 
 
 class WN(tf.keras.layers.Layer):
-    def __init__(self, config, **kwargs):
-        super(WN, self).__init__(name='WN', **kwargs)
+    def __init__(self, in_channels, hidden_channels, kernel_size, dilation_rate, n_layers, gin_channels=0, p_dropout=0, name=0, **kwargs):
+        super(WN, self).__init__(name=f'WN_{name}', **kwargs)
 
-        assert(config.kernel_size % 2 == 1)
-        assert(config.hidden_channels % 2 == 0)
-        self.hidden_channels = config.hidden_channels
-        self.kernel_size = config.kernel_size,
-        self.dilation_rate = config.dilation_rate
-        self.n_layers = config.n_layers
-        self.gin_channels = config.gin_channels
-        self.p_dropout = config.p_dropout
+        assert(kernel_size % 2 == 1)
+        assert(hidden_channels % 2 == 0)
+        self.in_channels = in_channels
+        self.hidden_channels = hidden_channels
+        self.kernel_size = kernel_size,
+        self.dilation_rate = dilation_rate
+        self.n_layers = n_layers
+        self.gin_channels = gin_channels
+        self.p_dropout = p_dropout
 
         self.in_layers = []
         self.res_skip_layers = []
@@ -106,7 +107,7 @@ class WN(tf.keras.layers.Layer):
             x_in = self.drop(x_in, training=training)
             if g is not None:
                 cond_offset = i * 2 * self.hidden_channels
-                g_l = g[:, cond_offset:cond_offset+2*self.hidden_channels, :]
+                g_l = g[:, :, cond_offset:cond_offset+2*self.hidden_channels]
             else:
                 g_l = tf.zeros_like(x_in)
 
@@ -117,8 +118,8 @@ class WN(tf.keras.layers.Layer):
 
             res_skip_acts = self.res_skip_layers[i](acts, training=training)
             if i < self.n_layers - 1:
-                x = (x + res_skip_acts[:, :self.hidden_channels, :]) * x_mask
-                output = output + res_skip_acts[:, self.hidden_channels:, :]
+                x = (x + res_skip_acts[:, :, :self.hidden_channels]) * x_mask
+                output = output + res_skip_acts[:, :, self.hidden_channels:]
             else:
                 output = output + res_skip_acts
 
@@ -126,8 +127,8 @@ class WN(tf.keras.layers.Layer):
 
 
 class ActNorm(tf.keras.layers.Layer):
-    def __init__(self, channels, ddi=False, **kwargs):
-        super(ActNorm, self).__init__(name='ActNorm', **kwargs)
+    def __init__(self, channels, ddi=False, name=0, **kwargs):
+        super(ActNorm, self).__init__(name=f'ActNorm_{name}', **kwargs)
         self.channels = channels
         self.initialized = not ddi
 
@@ -142,7 +143,7 @@ class ActNorm(tf.keras.layers.Layer):
             initializer=tf.zeros_initializer(),
         )
 
-    def forward(self, x, x_mask=None, reverse=False, **kwargs):
+    def call(self, x, x_mask=None, reverse=False, **kwargs):
         if x_mask is None:
             x_mask = tf.ones((tf.shape(x)[0], tf.shape(x)[1], 1), dtype=x.dtype)
 
@@ -158,33 +159,34 @@ class ActNorm(tf.keras.layers.Layer):
 
 
 class InvConvNear(tf.keras.layers.Layer):
-    def __init__(self, channels, n_split=4, no_jacobian=False, **kwargs):
-        super(InvConvNear, self).__init__(name='InvConvNear', **kwargs)
+    def __init__(self, channels, n_split=4, no_jacobian=False, name=0, **kwargs):
+        super(InvConvNear, self).__init__(name=f'InvConvNear_{name}', **kwargs)
         self.channels = channels
         self.n_split = n_split
         self.no_jacobian = no_jacobian
 
-        w_init = tf.linalg.qr(tf.random.normal(shape=(self.n_split, self.n_split)))[0]
-        w_init = tf.cond(tf.linalg.det(w_init) < 0, lambda: -1 * w_init[:, 0], lambda: w_init)
+        w_init = np.random.normal(size=(self.n_split, self.n_split))
+        w_init = np.linalg.qr(w_init)[0]
+        if np.linalg.det(w_init) < 0:
+            w_init[:, 0] = -1 * w_init[:, 0]
+        w_init = tf.convert_to_tensor(w_init.astype(np.float32))
         self.weight = tf.Variable(w_init, name='w_init')
 
-    def forward(self, x, x_mask=None, reverse=False, **kwargs):
-        # B, C, T -> B, T, C
-        b, t, c = shape_list(x)
+    def call(self, x, x_mask=None, reverse=False, **kwargs):
+        x = tf.transpose(x, [0, 2, 1])
+        b, c, t = shape_list(x)
 
         if x_mask is None:
             x_mask = 1.0
             x_len = tf.ones((b,), dtype=x.dtype) * t
         else:
-            x_len = torch.sum(x_mask, [2, 1])
+            x_len = tf.reduce_sum(x_mask, [2, 1])
 
-        # B, 2, C // N, N // 2, T -> B, T, 2, C // N, N // 2
-        x = tf.reshape(x, (b, t, 2, c // self.n_split, self.n_split // 2))
+        x = tf.reshape(x, (b, 2, c // self.n_split, self.n_split // 2, t))
+        x = tf.transpose(x, (0, 1, 3, 2, 4))
 
-        # B, 2, N // 2, C // N, T -> B, T, 2, N // 2, C // N
-        x = tf.transpose(x, [0, 1, 2, 4, 3])
-
-        x = tf.reshape(x, (b, t, self.n_split, c // self.n_split))
+        # [B, C, H, W]
+        x = tf.reshape(x, (b, self.n_split, c // self.n_split, t))
 
         if reverse:
             weight = tf.linalg.inv(self.weight)
@@ -192,13 +194,19 @@ class InvConvNear(tf.keras.layers.Layer):
         else:
             weight = self.weight
             if self.no_jacobian:
-                logdet = 1
+                logdet = 0
             else:
-                logdet = tf.exp(tf.linalg.logdet(self.weight)) / (c / self.n_split) * x_len
+                logdet = logdet_f(self.weight) / (c / self.n_split) * x_len
 
         weight = tf.reshape(weight, (1, 1, self.n_split, self.n_split))
+
+        # [B, H, W, C]
+        x = tf.transpose(x, (0, 2, 3, 1))
         z = tf.nn.conv2d(x, weight, 1, padding='SAME')
-        z = tf.reshape(z, (b, t, 2, self.n_split // 2, c // self.n_split))
-        z = tf.transpose(z, [0, 1, 2, 4, 3])
-        z = tf.reshape(z, (b, t, c)) * x_mask
-        return z
+        # [B, C, H, W]
+        z = tf.transpose(z, (0, 3, 1, 2))
+        z = tf.reshape(z, (b, 2, self.n_split // 2, c // self.n_split, t))
+        z = tf.transpose(z, (0, 1, 3, 2, 4))
+        z = tf.reshape(z, (b, c, t))
+        z = tf.transpose(z, (0, 2, 1))
+        return z * x_mask, logdet

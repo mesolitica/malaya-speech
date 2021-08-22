@@ -35,10 +35,11 @@ def maximum_path_c(paths, values, t_xs, t_ys, max_neg_val=-1e9):
 def maximum_path(value, mask):
 
     value = value * mask
+    dtype = value.dtype
     value = value.astype(np.float32)
     path = np.zeros_like(value).astype(np.int32)
 
     t_x_max = mask.sum(1)[:, 0].astype(np.int32)
     t_y_max = mask.sum(2)[:, 0].astype(np.int32)
     maximum_path_c(path, value, t_x_max, t_y_max)
-    return path
+    return path.astype(dtype)

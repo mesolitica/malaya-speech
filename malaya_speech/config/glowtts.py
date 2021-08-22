@@ -16,5 +16,10 @@ config = {
     'mean_only': True,
     'hidden_channels_enc': 192,
     'hidden_channels_dec': 192,
-    'window_size': 4
+    'window_size': 4,
+    'sigmoid_scale': False,
+    'gin_channels': 0,
+    'n_split': 4,
+    'dilation_rate': 5,
+    'p_dropout_dec': 0.0,
 }

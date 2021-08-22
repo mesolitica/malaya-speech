@@ -10,7 +10,6 @@ def maximum_path(value, mask, max_neg_val=-np.inf):
     """
     value = value * mask
 
-    device = value.device
     dtype = value.dtype
     mask = mask.astype(np.bool)
 
@@ -59,10 +58,38 @@ def generate_path(duration, mask):
 
     cum_duration = tf.math.cumsum(duration, 1)
     path = tf.zeros((b, t_x, t_y), dtype=mask.dtype)
-    cum_duration_flat = tf.reshape(cum_duration, (b * t_x))
-
-    path = sequence_mask(cum_duration_flat, t_y).to(mask.dtype)
+    cum_duration_flat = tf.reshape(cum_duration, (b * t_x,))
+    path = tf.sequence_mask(cum_duration_flat, t_y)
+    path = tf.cast(path, mask.dtype)
     path = tf.reshape(path, (b, t_x, t_y))
     path = path - tf.pad(path, [[0, 0], [1, 0], [0, 0]])[:, :-1]
     path = path * mask
     return path
+
+
+def squeeze(x, x_mask=None, n_sqz=2):
+    b, t, c = shape_list(x)
+    t = (t // n_sqz) * n_sqz
+    x = x[:, :t]
+    x_sqz = tf.reshape(x, (b, t//n_sqz, n_sqz, c))
+    x_sqz = tf.reshape(x_sqz, (b, t//n_sqz, c * n_sqz))
+    if x_mask is not None:
+        x_mask = x_mask[:, n_sqz-1::n_sqz]
+    else:
+        x_mask = tf.ones((b, t // n_sqz, 1), dtype=x.dtype)
+    return x_sqz * x_mask, x_mask
+
+
+def unsqueeze(x, x_mask=None, n_sqz=2):
+    b, t, c = shape_list(x)
+
+    x_unsqz = tf.reshape(x, (b, t, n_sqz, c//n_sqz))
+    x_unsqz = tf.reshape(x_unsqz, (b, t*n_sqz, c//n_sqz))
+
+    if x_mask is not None:
+        x_mask = tf.expand_dims(x_mask, 2)
+        x_mask = tf.tile(x_mask, (1, 1, n_sqz, 1))
+        x_mask = tf.reshape(x_mask, (b, t*n_sqz, 1))
+    else:
+        x_mask = tf.ones((b, t*n_sqz, 1), dtype=x.dtype)
+    return x_unsqz * x_mask, x_mask

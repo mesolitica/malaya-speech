@@ -5,27 +5,29 @@ from ..utils import WeightNormalization, shape_list
 
 
 class CouplingBlock(tf.keras.layers.Layer):
-    def __init__(self, config, **kwargs):
-        super(CouplingBlock, self).__init__(name='CouplingBlock', **kwargs)
-        self.in_channels = config.in_channels
-        self.hidden_channels = config.hidden_channels
-        self.kernel_size = config.kernel_size
-        self.dilation_rate = config.dilation_rate
-        self.n_layers = config.n_layers
-        self.gin_channels = config.gin_channels
-        self.p_dropout = config.p_dropout
-        self.sigmoid_scale = config.sigmoid_scale
+    def __init__(self, in_channels, hidden_channels, kernel_size, dilation_rate, n_layers, gin_channels=0, p_dropout=0, sigmoid_scale=False,
+                 name=0, **kwargs):
+        super(CouplingBlock, self).__init__(name=f'CouplingBlock_{name}', **kwargs)
+        self.in_channels = in_channels
+        self.hidden_channels = hidden_channels
+        self.kernel_size = kernel_size
+        self.dilation_rate = dilation_rate
+        self.n_layers = n_layers
+        self.gin_channels = gin_channels
+        self.p_dropout = p_dropout
+        self.sigmoid_scale = sigmoid_scale
 
         start = tf.keras.layers.Conv1D(self.hidden_channels, 1, padding='same')
         self.start = WeightNormalization(start, data_init=False)
 
-        self.end = tf.keras.layers.Conv1D(self.hidden_channels, 1,
+        self.end = tf.keras.layers.Conv1D(self.in_channels, 1,
                                           kernel_initializer='zeros', bias_initializer='zeros',
                                           padding='same')
 
-        self.wn = modules.WN(config)
+        self.wn = modules.WN(in_channels, hidden_channels, kernel_size,
+                             dilation_rate, n_layers, gin_channels, p_dropout)
 
-    def forward(self, x, x_mask=None, reverse=False, g=None, training=True):
+    def call(self, x, x_mask=None, reverse=False, g=None, training=True):
         b, t, c = shape_list(x)
         if x_mask is None:
             x_mask = 1.0
@@ -34,7 +36,7 @@ class CouplingBlock(tf.keras.layers.Layer):
         x = self.wn(x, x_mask, g, training=training)
         out = self.end(x, training=training)
 
-        _0 = x_0
+        z_0 = x_0
         m = out[:, :, :self.in_channels//2]
         logs = out[:, :, self.in_channels//2:]
         if self.sigmoid_scale:
@@ -47,5 +49,5 @@ class CouplingBlock(tf.keras.layers.Layer):
             z_1 = (m + tf.math.exp(logs) * x_1) * x_mask
             logdet = tf.reduce_sum(logs * x_mask, [2, 1])
 
-        z = tf.concat([z_0, z_1], 1)
+        z = tf.concat([z_0, z_1], 2)
         return z, logdet
