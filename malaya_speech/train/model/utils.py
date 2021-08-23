@@ -69,6 +69,7 @@ def py_func(func, inp, Tout, stateful=True, name=None, grad=None):
     g = tf.get_default_graph()
     with g.gradient_override_map({"PyFunc": rnd_name}):
         return tf.py_func(func, inp, Tout, stateful=stateful, name=name)
+
 # from https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/ops/linalg_grad.py
 # Gradient for logdet
 
@@ -78,6 +79,7 @@ def logdet_grad(op, grad):
     a_adj_inv = tf.matrix_inverse(a, adjoint=True)
     out_shape = tf.concat([tf.shape(a)[:-2], [1, 1]], axis=0)
     return tf.reshape(grad, out_shape) * a_adj_inv
+
 # define logdet by calling numpy.linalg.slogdet
 
 

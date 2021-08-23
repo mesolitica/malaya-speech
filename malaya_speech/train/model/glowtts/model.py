@@ -153,8 +153,9 @@ class Model(tf.keras.Model):
         z_mask = tf.expand_dims(z_mask, 1)
         z_mask = tf.cast(z_mask, x_mask.dtype)
 
-        # [B, xt, 1], [B, 1, 1, yt]
-        attn_mask = x_mask * tf.expand_dims(z_mask, 2)
+        # [B, xt, 1] * [B, 1, 1, yt] = [B, 1, xt, yt]
+        attn_mask = tf.expand_dims(tf.transpose(x_mask, [0, 2, 1]), -1) * tf.expand_dims(z_mask, 2)
+        # [B, yt, 1]
         z_mask = tf.transpose(z_mask, [0, 2, 1])
 
         if gen:
@@ -176,7 +177,7 @@ class Model(tf.keras.Model):
             y, logdet = self.decoder(z, z_mask, reverse=True, training=training)
             return (y, z_m, z_logs, logdet, z_mask), (x_m, x_logs, x_mask), (attn, logw, logw_)
         else:
-            z, logdet = self.decoder(y, z_mask, reverse=False)
+            z, logdet = self.decoder(y, z_mask, reverse=False, training=training)
             x_s_sq_r = tf.stop_gradient(tf.math.exp(-2 * x_logs))
             logp1 = tf.stop_gradient(tf.reduce_sum(-0.5 * math.log(2 * math.pi) - x_logs, [2]))
             logp1 = tf.stop_gradient(tf.expand_dims(logp1, -1))

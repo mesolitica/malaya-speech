@@ -163,7 +163,7 @@ class InvConvNear(tf.keras.layers.Layer):
         super(InvConvNear, self).__init__(name=f'InvConvNear_{name}', **kwargs)
         self.channels = channels
         self.n_split = n_split
-        self.no_jacobian = no_jacobian
+        self.no_jacobian = no_jacobian and not tf.executing_eagerly()
 
         w_init = np.random.normal(size=(self.n_split, self.n_split))
         w_init = np.linalg.qr(w_init)[0]
