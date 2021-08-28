@@ -25,7 +25,7 @@ from ..utils import shape_list
 import collections
 
 Hypothesis = collections.namedtuple(
-    'Hypothesis', ('index', 'prediction', 'states')
+    'Hypothesis', ('index', 'prediction', 'lang', 'states')
 )
 Hypothesis_Alignment = collections.namedtuple(
     'Hypothesis', ('index', 'prediction', 'states', 'alignment')
@@ -217,10 +217,7 @@ class TransducerJoint(tf.keras.Model):
         outputs = tf.nn.tanh(enc_out + pred_out)  # => [B, T, U, V]
         gathered = tf.gather(self.embeddings, language_out)
         outputs = tf.matmul(outputs, gathered)
-        if self.training_mode:
-            return outputs, outputs_language
-        else:
-            return outputs
+        return outputs, outputs_language
 
     def get_config(self):
         conf = self.ffn_enc.get_config()
@@ -319,11 +316,11 @@ class Model(tf.keras.Model):
         y, new_states = self.predict_net.recognize(
             predicted, states, training=training
         )
-        ytu = tf.nn.log_softmax(
-            self.joint_net([encoded, y], training=training)
-        )
+        ytu, lang = self.joint_net([encoded, y], training=training)
+        ytu = tf.nn.log_softmax(ytu)
         ytu = tf.squeeze(ytu, axis=None)
-        return ytu, new_states
+        lang = tf.squeeze(lang, axis=None)
+        return ytu, lang, new_states
 
     def get_config(self):
         conf = self.encoder.get_config()
@@ -357,11 +354,12 @@ class Model(tf.keras.Model):
         total = tf.shape(features)[0]
         batch = tf.constant(0, dtype=tf.int32)
         decoded = tf.zeros(shape=(0, tf.shape(features)[1]), dtype=tf.int32)
+        lang = tf.zeros(shape=(0, tf.shape(features)[1]), dtype=tf.int32)
 
-        def condition(batch, decoded):
+        def condition(batch, decoded, lang):
             return tf.less(batch, total)
 
-        def body(batch, decoded):
+        def body(batch, decoded, lang):
             hypothesis = self._perform_greedy(
                 encoded=encoded[batch],
                 encoded_length=encoded_length[batch],
@@ -374,22 +372,29 @@ class Model(tf.keras.Model):
             padding = [[0, 0], [0, tf.shape(features)[1] - tf.shape(yseq)[1]]]
             yseq = tf.pad(yseq, padding, 'CONSTANT')
             decoded = tf.concat([decoded, yseq], axis=0)
-            return batch + 1, decoded
 
-        batch, decoded = tf.while_loop(
+            ylang = tf.expand_dims(hypothesis.lang, axis=0)
+            padding = [[0, 0], [0, tf.shape(features)[1] - tf.shape(ylang)[1]]]
+            ylang = tf.pad(ylang, padding, 'CONSTANT')
+            lang = tf.concat([lang, ylang], axis=0)
+
+            return batch + 1, decoded, lang
+
+        batch, decoded, lang = tf.while_loop(
             condition,
             body,
-            loop_vars=(batch, decoded),
+            loop_vars=(batch, decoded, lang),
             parallel_iterations=parallel_iterations,
             swap_memory=True,
             shape_invariants=(
                 batch.get_shape(),
                 tf.TensorShape([None, None]),
+                tf.TensorShape([None, None]),
             ),
             back_prop=False,
         )
 
-        return decoded
+        return decoded, lang
 
     def _perform_greedy(
         self,
@@ -412,6 +417,13 @@ class Model(tf.keras.Model):
                 clear_after_read=False,
                 element_shape=tf.TensorShape([]),
             ),
+            lang=tf.TensorArray(
+                dtype=tf.int32,
+                size=total,
+                dynamic_size=False,
+                clear_after_read=False,
+                element_shape=tf.TensorShape([]),
+            ),
             states=states,
         )
 
@@ -419,7 +431,7 @@ class Model(tf.keras.Model):
             return tf.less(_time, total)
 
         def body(_time, _hypothesis):
-            ytu, _states = self.decoder_inference(
+            ytu, lang, _states = self.decoder_inference(
                 encoded=tf.gather_nd(
                     encoded, tf.expand_dims(_time, axis=-1)
                 ),
@@ -432,8 +444,11 @@ class Model(tf.keras.Model):
             _states = tf.where(_equal, _hypothesis.states, _states)
 
             _prediction = _hypothesis.prediction.write(_time, _predict)
+
+            _predict = tf.argmax(lang, axis=-1, output_type=tf.int32)
+            _lang = _hypothesis.lang.write(_time, _predict)
             _hypothesis = Hypothesis(
-                index=_index, prediction=_prediction, states=_states
+                index=_index, prediction=_prediction, lang=_lang, states=_states
             )
 
             return _time + 1, _hypothesis
@@ -449,6 +464,7 @@ class Model(tf.keras.Model):
         return Hypothesis(
             index=hypothesis.index,
             prediction=hypothesis.prediction.stack(),
+            lang=hypothesis.lang.stack(),
             states=hypothesis.states,
         )
 
