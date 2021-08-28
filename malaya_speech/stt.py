@@ -67,8 +67,8 @@ _ctc_availability = {
     'hubert-conformer': {
         'Size (MB)': 115,
         'Quantized Size (MB)': 31.1,
-        'WER': 0.25899,
-        'CER': 0.06350,
+        'WER': 0.255762,
+        'CER': 0.061953,
         'Language': ['malay'],
         'mode': 'char',
     },
