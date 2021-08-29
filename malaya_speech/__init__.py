@@ -44,5 +44,5 @@ from . import utils
 
 from .pipeline import Pipeline
 from .streaming import record
-from .utils import astype, char, combine, featurization, generator, group, metrics, padding, split, subword
+from .utils import astype, char, combine, featurization, generator, group, metrics, padding, split, subword, tf_featurization
 from .utils.read import load, resample
