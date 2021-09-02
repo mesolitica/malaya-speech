@@ -1,7 +1,7 @@
 import math
 import tensorflow as tf
-from ..utils import shape_list
 from . import alignment, attention, common, modules
+from ..utils import shape_list
 from ..fastspeech.model import TFFastSpeechEmbeddings, TFFastSpeechEncoder, TFTacotronPostnet
 from ..fastspeech2.model import FastSpeechVariantPredictor
 import logging
@@ -78,7 +78,8 @@ class FlowSpecDecoder(tf.keras.layers.Layer):
         self.flows = []
         for b in range(self.n_blocks):
             with tf.variable_scope(f'n_blocks_{b + 1}') as vs:
-                self.flows.append(modules.ActNorm(channels=self.in_channels * self.n_sqz, name=b))
+                self.flows.append(modules.ActNorm(channels=self.in_channels *
+                                  self.n_sqz, ddi=config_glowtts.ddi, name=b,))
                 self.flows.append(modules.InvConvNear(channels=self.in_channels *
                                   self.n_sqz, n_split=self.n_split, name=b))
                 self.flows.append(attention.CouplingBlock(
@@ -90,6 +91,10 @@ class FlowSpecDecoder(tf.keras.layers.Layer):
                     gin_channels=self.gin_channels,
                     p_dropout=self.p_dropout,
                     sigmoid_scale=self.sigmoid_scale, name=b))
+
+    def store_inverse(self):
+        for f in self.flows:
+            f.store_inverse()
 
     def call(self, x, x_mask, g=None, reverse=False, training=True, **kwargs):
         if not reverse:
@@ -134,6 +139,8 @@ class Model(tf.keras.Model):
 
     def call(self, x, y=None, y_lengths=None, training=True, gen=False,
              noise_scale=1., length_scale=1., **kwargs):
+
+        # [B, xt, C], [B, xt, C], [B, xt, 1], [B, xt, 1]
         x_m, x_logs, logw, x_mask = self.encoder(x, training=training)
         if gen:
             w = tf.math.exp(logw) * x_mask * length_scale
@@ -151,9 +158,10 @@ class Model(tf.keras.Model):
         z_mask = tf.sequence_mask(y_lengths, y_max_length)
         # [B, 1, yt]
         z_mask = tf.expand_dims(z_mask, 1)
+        # [B, 1, yt]
         z_mask = tf.cast(z_mask, x_mask.dtype)
 
-        # [B, xt, 1] * [B, 1, 1, yt] = [B, 1, xt, yt]
+        # [B, 1, xt, 1] * [B, 1, 1, yt] = [B, 1, xt, yt]
         attn_mask = tf.expand_dims(tf.transpose(x_mask, [0, 2, 1]), -1) * tf.expand_dims(z_mask, 2)
         # [B, yt, 1]
         z_mask = tf.transpose(z_mask, [0, 2, 1])
@@ -177,6 +185,7 @@ class Model(tf.keras.Model):
             y, logdet = self.decoder(z, z_mask, reverse=True, training=training)
             return (y, z_m, z_logs, logdet, z_mask), (x_m, x_logs, x_mask), (attn, logw, logw_)
         else:
+            # [B, ty, C]
             z, logdet = self.decoder(y, z_mask, reverse=False, training=training)
             x_s_sq_r = tf.stop_gradient(tf.math.exp(-2 * x_logs))
             logp1 = tf.stop_gradient(tf.reduce_sum(-0.5 * math.log(2 * math.pi) - x_logs, [2]))
@@ -188,6 +197,7 @@ class Model(tf.keras.Model):
 
             # attn = tf.compat.v1.numpy_function(common.maximum_path,
             #                                    [logp, tf.squeeze(attn_mask, 1)], tf.float32)
+            print(logp, attn_mask)
             attn = tf.compat.v1.numpy_function(alignment.maximum_path,
                                                [logp, tf.squeeze(attn_mask, 1)], tf.float32)
             attn.set_shape((None, None, None))

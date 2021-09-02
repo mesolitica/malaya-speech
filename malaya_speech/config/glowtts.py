@@ -22,4 +22,5 @@ config = {
     'n_split': 4,
     'dilation_rate': 5,
     'p_dropout_dec': 0.0,
+    'ddi': False
 }

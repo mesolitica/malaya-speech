@@ -190,39 +190,34 @@ class TransducerJoint(tf.keras.Model):
         )
         self.embeddings = tf.get_variable(
             f'{name}/language_embeddings',
-            [language_size, vocabulary_size],
+            [language_size, joint_dim, vocabulary_size],
             dtype=tf.float32,
             initializer=tf.keras.initializers.get(None),
-        )
-        self.ffn_out = tf.keras.layers.Dense(
-            vocabulary_size,
-            name=f'{name}_vocab',
-            kernel_regularizer=kernel_regularizer,
-            bias_regularizer=bias_regularizer,
         )
         self.training_mode = training_mode
 
     def call(self, inputs, training=False):
         # enc has shape [B, T, E]
         # pred has shape [B, U, P]
-        enc_out, pred_out = inputs
-        # [B, T, V]
-        enc_out = self.ffn_enc(enc_out, training=training)
-        # [B, U, V]
-        pred_out = self.ffn_pred(pred_out, training=training)
-        # [B, T, 1, V]
+        if self.training_mode:
+            enc_out, pred_out, language_out = inputs
+            outputs_language = self.language_out(enc_out, training=training)
+        else:
+            enc_out, pred_out = inputs
+            outputs_language = self.language_out(enc_out, training=training)
+            language_out = tf.argmax(outputs_language, -1)
+        enc_out = self.ffn_enc(
+            enc_out, training=training
+        )  # [B, T, E] => [B, T, V]
+        pred_out = self.ffn_pred(
+            pred_out, training=training
+        )  # [B, U, P] => [B, U, V]
         enc_out = tf.expand_dims(enc_out, axis=2)
-        # [B, 1, U, V]
         pred_out = tf.expand_dims(pred_out, axis=1)
-        # [B, T, U, V]
-        outputs = tf.nn.tanh(enc_out + pred_out)
-        # [B, T, U, L]
-        outputs_lang = self.language_out(outputs, training=training)
-        # [B, T, U, D]
-        gathered = tf.gather(self.embeddings, tf.argmax(outputs_lang, -1))
-        # [B, T, U, D]
-        outputs = self.ffn_out(outputs, training=training)
-        return outputs + gathered, outputs_lang
+        outputs = tf.nn.tanh(enc_out + pred_out)  # => [B, T, U, V]
+        gathered = tf.gather(self.embeddings, language_out)
+        outputs = tf.matmul(outputs, gathered)
+        return outputs, outputs_language
 
     def get_config(self):
         conf = self.ffn_enc.get_config()
@@ -288,13 +283,19 @@ class Model(tf.keras.Model):
         Returns:
             `logits` with shape [B, T, U, vocab]
         """
-        features, predicted, prediction_length = inputs
+        if self.training_mode:
+            features, predicted, prediction_length, language_out = inputs
+        else:
+            features, predicted, prediction_length = inputs
         enc = self.encoder(features, training=training)
         pred = self.predict_net(
             [predicted, prediction_length], training=training
         )
-        outputs, outputs_lang = self.joint_net([enc, pred], training=training)
-        return outputs, outputs_lang
+        if self.training_mode:
+            outputs = self.joint_net([enc, pred, language_out], training=training)
+        else:
+            outputs = self.joint_net([enc, pred], training=training)
+        return outputs
 
     def encoder_inference(self, features):
         """
@@ -324,7 +325,6 @@ class Model(tf.keras.Model):
         )
         ytu, lang = self.joint_net([encoded, y], training=training)
         ytu = tf.nn.log_softmax(ytu)
-        lang = tf.nn.log_softmax(lang)
         ytu = tf.squeeze(ytu, axis=None)
         lang = tf.squeeze(lang, axis=None)
         return ytu, lang, new_states
@@ -446,15 +446,14 @@ class Model(tf.keras.Model):
                 states=_hypothesis.states,
             )
             _predict = tf.argmax(ytu, axis=-1, output_type=tf.int32)
-            _predict_lang = tf.argmax(lang, axis=-1, output_type=tf.int32)
             _equal = tf.equal(_predict, BLANK)
-            _equal_lang = tf.equal(_predict_lang, BLANK)
-            # _equal = tf.math.logical_or(_equal, _equal_lang)
             _index = tf.where(_equal, _hypothesis.index, _predict)
             _states = tf.where(_equal, _hypothesis.states, _states)
 
             _prediction = _hypothesis.prediction.write(_time, _predict)
-            _lang = _hypothesis.lang.write(_time, _predict_lang)
+
+            _predict = tf.argmax(lang, axis=-1, output_type=tf.int32)
+            _lang = _hypothesis.lang.write(_time, _predict)
             _hypothesis = Hypothesis(
                 index=_index, prediction=_prediction, lang=_lang, states=_states
             )

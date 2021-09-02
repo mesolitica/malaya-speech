@@ -149,6 +149,10 @@ class ActNorm(tf.keras.layers.Layer):
 
         x_len = tf.reduce_sum(x_mask, [2, 1])
 
+        if not self.initialized:
+            self.initialize(x, x_mask)
+            self.initialized = True
+
         if reverse:
             z = (x - self.bias) * tf.math.exp(-self.logs) * x_mask
             logdet = None
@@ -156,6 +160,24 @@ class ActNorm(tf.keras.layers.Layer):
             z = (self.bias + tf.math.exp(self.logs) * x) * x_mask
             logdet = tf.reduce_sum(self.logs) * x_len
         return z, logdet
+
+    def initialize(self, x, x_mask):
+        denom = tf.stop_gradient(tf.reduce_sum(x_mask, [0, 1]))
+        m = tf.stop_gradient(tf.reduce_sum(x * x_mask, [0, 1]) / denom)
+        m_sq = tf.stop_gradient(tf.reduce_sum(x * x * x_mask, [0, 1]) / denom)
+        v = tf.stop_gradient(m_sq - (m ** 2))
+        logs = tf.stop_gradient(0.5 * tf.math.log(tf.clip_by_value(v, 1e-6, tf.reduce_max(v))))
+        bias_init = tf.stop_gradient((-m * tf.math.exp(-logs)))
+        bias_init = tf.stop_gradient(tf.reshape(bias_init, self.bias.shape))
+        logs_init = tf.stop_gradient((-logs))
+        self.bias = bias_init
+        self.logs = logs_init
+
+    def store_inverse(self):
+        pass
+
+    def set_ddi(self, ddi):
+        self.initialized = not ddi
 
 
 class InvConvNear(tf.keras.layers.Layer):
@@ -171,8 +193,10 @@ class InvConvNear(tf.keras.layers.Layer):
             w_init[:, 0] = -1 * w_init[:, 0]
         w_init = tf.convert_to_tensor(w_init.astype(np.float32))
         self.weight = tf.Variable(w_init, name='w_init')
+        self.weight_inv = None
 
     def call(self, x, x_mask=None, reverse=False, **kwargs):
+        # [B, T, C] -> [B, C, T]
         x = tf.transpose(x, [0, 2, 1])
         b, c, t = shape_list(x)
 
@@ -182,14 +206,19 @@ class InvConvNear(tf.keras.layers.Layer):
         else:
             x_len = tf.reduce_sum(x_mask, [2, 1])
 
+        # [B, 2, C // N, N // 2, T]
         x = tf.reshape(x, (b, 2, c // self.n_split, self.n_split // 2, t))
+        # [B, 2, N // 2, C // N, T]
         x = tf.transpose(x, (0, 1, 3, 2, 4))
 
-        # [B, C, H, W]
+        # [B, N, C // N, T]
         x = tf.reshape(x, (b, self.n_split, c // self.n_split, t))
 
         if reverse:
-            weight = tf.linalg.inv(self.weight)
+            if self.weight_inv is not None:
+                weight = self.weight_inv
+            else:
+                weight = tf.linalg.inv(self.weight)
             logdet = None
         else:
             weight = self.weight
@@ -200,13 +229,20 @@ class InvConvNear(tf.keras.layers.Layer):
 
         weight = tf.reshape(weight, (1, 1, self.n_split, self.n_split))
 
-        # [B, H, W, C]
+        # [B, C // N, T, N]
         x = tf.transpose(x, (0, 2, 3, 1))
         z = tf.nn.conv2d(x, weight, 1, padding='SAME')
-        # [B, C, H, W]
+        # [B, N, C // N, T]
         z = tf.transpose(z, (0, 3, 1, 2))
+        # [B, 2, N // 2, C // N, T]
         z = tf.reshape(z, (b, 2, self.n_split // 2, c // self.n_split, t))
+        # [B, 2, C // N, N // 2, T]
         z = tf.transpose(z, (0, 1, 3, 2, 4))
+        # [B, C, T]
         z = tf.reshape(z, (b, c, t))
+        # [B, T, C]
         z = tf.transpose(z, (0, 2, 1))
         return z * x_mask, logdet
+
+    def store_inverse(self):
+        self.weight_inv = tf.linalg.inv(self.weight)

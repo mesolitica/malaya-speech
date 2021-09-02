@@ -168,8 +168,6 @@ def model_fn(features, labels, mode, params):
         return l
 
     l_length = duration_loss(logw, logw_, input_lengths)
-    loss_g = l_mle + l_length
-
     mae = tf.losses.absolute_difference
     max_length = tf.cast(tf.reduce_max(mel_lengths), tf.int32)
 
@@ -180,6 +178,7 @@ def model_fn(features, labels, mode, params):
     mel_loss = mae(
         labels=mel_outputs, predictions=z, weights=mask
     )
+    loss_g = l_mle + l_length + mel_loss
 
     tf.identity(loss_g, 'loss_g')
     tf.identity(l_mle, name='l_mle')
@@ -194,10 +193,10 @@ def model_fn(features, labels, mode, params):
     if mode == tf.estimator.ModeKeys.TRAIN:
         train_op = train.optimizer.adamw.create_optimizer(
             loss_g,
-            init_lr=0.001,
+            init_lr=0.0001,
             num_train_steps=total_steps,
-            num_warmup_steps=int(0.02 * total_steps),
-            end_learning_rate=0.00005,
+            num_warmup_steps=0,
+            end_learning_rate=0.00001,
             weight_decay_rate=0.001,
             beta_1=0.9,
             beta_2=0.98,
@@ -237,7 +236,7 @@ train.run_training(
     model_dir='glowtts-haqkiem',
     num_gpus=1,
     log_step=1,
-    save_checkpoint_step=10000,
+    save_checkpoint_step=2000,
     max_steps=total_steps,
     eval_fn=None,
     train_hooks=train_hooks,

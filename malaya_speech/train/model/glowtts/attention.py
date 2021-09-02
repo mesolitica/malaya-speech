@@ -51,3 +51,6 @@ class CouplingBlock(tf.keras.layers.Layer):
 
         z = tf.concat([z_0, z_1], 2)
         return z, logdet
+
+    def store_inverse(self):
+        self.start = self.start.remove()
