@@ -1,5 +1,5 @@
-from malaya_speech.model.clustering import ClusteringAP
 from scipy.spatial.distance import cdist
+from malaya_speech.model.clustering import ClusteringAP
 from malaya_speech.utils.dist import l2_normalize, compute_log_dist_matrix
 import numpy as np
 from herpetologist import check_type
@@ -23,8 +23,6 @@ def speaker_similarity(
         results from VAD.
     speaker_vector: callable
         speaker vector object.
-    speaker_change_results: List[Tuple[Frame, float]], optional (default=None)
-        results from speaker change module, must in float result.
     similarity_threshold: float, optional (default=0.8)
         if current voice activity sample similar at least 80%, we assumed it is from the same speaker.
     norm_function: Callable, optional(default=None)
@@ -76,6 +74,69 @@ def speaker_similarity(
 
 
 @check_type
+def n_clustering(
+    vad_results,
+    speaker_vector,
+    model,
+    norm_function: Callable = l2_normalize,
+    return_embedding=False,
+):
+    """
+    Speaker diarization using any clustering model.
+
+    Parameters
+    ----------
+    vad_results: List[Tuple[Frame, label]]
+        results from VAD.
+    speaker_vector: callable
+        speaker vector object.
+    model: callable
+        Prefer any sklearn unsupervised clustering model. 
+        Required `fit_predict` or `apply` method.
+    norm_function: Callable, optional(default=malaya_speech.utils.dist.l2_normalize)
+        normalize function for speaker vectors.
+    log_distance_metric: str, optional (default='cosine')
+        post distance norm in log scale metrics.
+
+    Returns
+    -------
+    result : List[Tuple[Frame, label]]
+    """
+    if not hasattr(model, 'fit_predict') and not hasattr(model, 'apply'):
+        raise ValueError('model must have `fit_predict` or `apply` method.')
+
+    speakers, activities, mapping = [], [], {}
+    for no, result in enumerate(vad_results):
+        if result[1]:
+            speakers.append('got')
+            mapping[len(activities)] = no
+            vector = speaker_vector([result[0]])[0]
+            activities.append(vector)
+        else:
+            speakers.append('not a speaker')
+
+    activities = np.array(activities)
+    if norm_function:
+        activities = norm_function(activities)
+
+    if hasattr(model, 'fit_predict'):
+        cluster_labels = model.fit_predict(activities)
+    if hasattr(model, 'apply'):
+        cluster_labels = model.apply(activities)
+    for k, v in mapping.items():
+        speakers[v] = f'speaker {cluster_labels[k]}'
+
+    results = []
+    for no, result in enumerate(vad_results):
+        results.append((result[0], speakers[no]))
+
+    if return_embedding:
+        return results, activities
+    else:
+        return results
+
+
+@check_type
 def affinity_propagation(
     vad_results,
     speaker_vector,
@@ -107,33 +168,13 @@ def affinity_propagation(
     affinity = ClusteringAP(
         metric=log_distance_metric, damping=damping, preference=preference
     )
-    speakers, activities, mapping = [], [], {}
-    for no, result in enumerate(vad_results):
-        if result[1]:
-            speakers.append('got')
-            mapping[len(activities)] = no
-            vector = speaker_vector([result[0]])[0]
-            activities.append(vector)
-        else:
-            speakers.append('not a speaker')
-
-    activities = np.array(activities)
-    if norm_function:
-        activities = norm_function(activities)
-
-    cluster_labels = affinity.apply(activities)
-
-    for k, v in mapping.items():
-        speakers[v] = f'speaker {cluster_labels[k]}'
-
-    results = []
-    for no, result in enumerate(vad_results):
-        results.append((result[0], speakers[no]))
-
-    if return_embedding:
-        return results, activities
-    else:
-        return results
+    return n_clustering(
+        vad_results=vad_results,
+        speaker_vector=speaker_vector,
+        model=affinity,
+        norm_function=norm_function,
+        return_embedding=return_embedding,
+    )
 
 
 @check_type

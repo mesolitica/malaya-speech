@@ -1,5 +1,6 @@
 from typing import List
 from malaya_speech.utils.text_encoder.subword_encoder import SubwordTextEncoder
+import re
 
 BLANK = 0
 
@@ -18,6 +19,36 @@ def generate_tokenizer(
         max_corpus_chars=max_corpus_chars,
         reserved_tokens=reserved_tokens,
     )
+
+
+def decode_multilanguage(row, langs):
+
+    if not len(row):
+        return ''
+
+    len_vocab = [l.vocab_size for l in langs]
+
+    def get_index_multilanguage(r):
+        for i in range(len(langs)):
+            sum_v = sum(len_vocab[:i + 1])
+            if r < sum(len_vocab[:i + 1]):
+                return i, r - sum(len_vocab[:i])
+
+    last_index, v = get_index_multilanguage(row[0])
+    d, q = [], [v]
+    for r in row[1:]:
+        index, v = get_index_multilanguage(r)
+        if index != last_index:
+            d.append(decode(langs[last_index], q))
+            q = [v]
+            last_index = index
+        else:
+            q.append(v)
+    if len(q):
+        d.append(decode(langs[last_index], q))
+    d = re.sub(r'[ ]+', ' ', ' '.join(d)).strip()
+    d = d.replace(' lah', 'lah')
+    return d
 
 
 def encode(tokenizer, string: str, add_blank: bool = False):

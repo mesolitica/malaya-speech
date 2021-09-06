@@ -8,7 +8,7 @@ from malaya_speech.utils.padding import (
     sequence_1d,
 )
 from malaya_speech.utils.char import decode as char_decode
-from malaya_speech.utils.subword import decode as subword_decode
+from malaya_speech.utils.subword import decode as subword_decode, decode_multilanguage
 from malaya_speech.utils.execute import execute_graph
 from malaya_speech.utils.activation import softmax
 from malaya_speech.utils.featurization import universal_mel
@@ -492,6 +492,7 @@ class Transducer(Abstract):
         model,
         name,
         wavs,
+        stack=False,
     ):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
@@ -505,6 +506,7 @@ class Transducer(Abstract):
         self.__model__ = model
         self.__name__ = name
         self._wavs = wavs
+        self._stack = stack
 
     def _check_decoder(self, decoder, beam_size):
         decoder = decoder.lower()
@@ -580,6 +582,10 @@ class Transducer(Abstract):
         -------
         result: List[Dict[text, start, end]]
         """
+
+        if self._stack:
+            raise ValueError('`predict_alignment` not supported by stack multilanguage model')
+
         padded, lens, index = self._get_inputs([input])
         r = self._execute(
             inputs=[padded, lens],
@@ -625,7 +631,11 @@ class Transducer(Abstract):
         )['greedy_decoder']
 
         for row in r[:index]:
-            results.append(subword_decode(self._vocab, row[row > 0]))
+            if self._stack:
+                d = decode_multilanguage(row[row > 0], self._vocab)
+            else:
+                d = subword_decode(self._vocab, row[row > 0])
+            results.append(d)
 
         return results
 
@@ -718,7 +728,11 @@ class Transducer(Abstract):
                 initial_states=s,
                 beam_width=beam_size,
             )
-            results.append(subword_decode(self._vocab, r))
+            if self._stack:
+                d = decode_multilanguage(r, self._vocab)
+            else:
+                d = subword_decode(self._vocab, r)
+            results.append(d)
         return results
 
     def predict(

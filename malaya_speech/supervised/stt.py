@@ -21,16 +21,33 @@ def get_vocab_ctc(language):
     return CTC_VOCABS.get(language, CTC_VOCABS['malay'])
 
 
-def transducer_load(model, module, quantized=False, **kwargs):
-    path = check_file(
-        file=model,
-        module=module,
-        keys={'model': 'model.pb', 'vocab': get_vocab(model.split('-')[-1])},
-        quantized=quantized,
-        **kwargs,
-    )
+def transducer_load(model, module, languages, quantized=False, **kwargs):
+    splitted = model.split('-')
+    stack = 'stack' == splitted[-2]
+    if stack:
+        keys = {'model': 'model.pb'}
+        for no, language in enumerate(languages):
+            keys[f'vocab_{no}'] = get_vocab(language)
+        path = check_file(
+            file=model,
+            module=module,
+            keys=keys,
+            quantized=quantized,
+            **kwargs,
+        )
+        vocab = []
+        for no, language in enumerate(languages):
+            vocab.append(subword_load(path[f'vocab_{no}'].replace('.subwords', '')))
+    else:
+        path = check_file(
+            file=model,
+            module=module,
+            keys={'model': 'model.pb', 'vocab': get_vocab(splitted[-1])},
+            quantized=quantized,
+            **kwargs,
+        )
+        vocab = subword_load(path['vocab'].replace('.subwords', ''))
     g = load_graph(path['model'], **kwargs)
-    vocab = subword_load(path['vocab'].replace('.subwords', ''))
     featurizer = STTFeaturizer(normalize_per_feature=True)
 
     time_reduction_factor = {
@@ -72,7 +89,8 @@ def transducer_load(model, module, quantized=False, **kwargs):
         sess=generate_session(graph=g, **kwargs),
         model=model,
         name=module,
-        wavs=[wav1, wav2]
+        wavs=[wav1, wav2],
+        stack=stack,
     )
 
 

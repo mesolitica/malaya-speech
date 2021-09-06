@@ -45,6 +45,20 @@ _transducer_availability = {
         'CER': 0.16606,
         'Language': ['malay', 'singlish'],
     },
+    'conformer-stack-mixed': {
+        'Size (MB)': 125,
+        'Quantized Size (MB)': 37.1,
+        'WER': 0.244364,
+        'CER': 0.098110,
+        'Language': ['malay', 'singlish'],
+    },
+    'large-conformer-stack-mixed': {
+        'Size (MB)': 404,
+        'Quantized Size (MB)': 107,
+        'WER': 0.270419,
+        'CER': 0.105506,
+        'Language': ['malay', 'singlish'],
+    },
 }
 
 _ctc_availability = {
@@ -289,6 +303,7 @@ def deep_transducer(
     return stt.transducer_load(
         model=model,
         module='speech-to-text-transducer',
+        languages=_transducer_availability[model]['Language'],
         quantized=quantized,
         **kwargs
     )
