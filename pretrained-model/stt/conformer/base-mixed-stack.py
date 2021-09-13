@@ -115,7 +115,7 @@ def add_uniform_noise(
 
 
 def calc(signal, add_uniform=True):
-    choice = random.randint(0, 10)
+    choice = random.randint(0, 11)
     print('choice', choice)
     if choice == 0:
         x = augmentation.sox_augment_high(
@@ -182,6 +182,9 @@ def calc(signal, add_uniform=True):
     if choice == 9:
         x = augment_room(signal)
     if choice == 10:
+        x_ = malaya_speech.resample(signal, 16000, 4000)
+        x = malaya_speech.resample(x_, 4000, 16000)
+    if choice == 11:
         x = signal
 
     if choice not in [5] and random.gauss(0.5, 0.14) > 0.6:

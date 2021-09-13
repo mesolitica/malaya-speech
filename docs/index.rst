@@ -112,6 +112,7 @@ Contents:
 
    load-speaker-change
    load-diarization
+   load-diarization-using-features
 
 .. toctree::
    :maxdepth: 2

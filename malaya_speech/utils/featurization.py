@@ -80,6 +80,24 @@ class STTFeaturizer:
         norm_per_feature=True,
         **kwargs,
     ):
+        """
+        sample_rate: int, optional (default=16000)
+        frame_ms: int, optional (default=25)
+            To calculate `frame_length` for librosa STFT, `frame_length = int(sample_rate * (frame_ms / 1000))`
+        stride_ms: int, optional (default=10)
+            To calculate `frame_step` for librosa STFT, `frame_step = int(sample_rate * (stride_ms / 1000))`
+        nfft: int, optional (default=None)
+            If None, will calculate by `math.ceil(math.log2((frame_ms / 1000) * sample_rate))`
+        num_feature_bins: int, optional (default=80)
+            Size of output features.
+        feature_type: str, optional (default='log_mel_spectrogram')
+            Features type, allowed values:
+
+            * ``'spectrogram'`` - np.square(np.abs(librosa.core.stft))
+            * ``'mfcc'`` - librosa.feature.mfcc(np.square(np.abs(librosa.core.stft)))
+            * ``'log_mel_spectrogram'`` - log(mel(np.square(np.abs(librosa.core.stft))))
+        """
+
         self.sample_rate = sample_rate
         self.frame_length = int(self.sample_rate * (frame_ms / 1000))
         self.frame_step = int(self.sample_rate * (stride_ms / 1000))
@@ -124,7 +142,7 @@ class STTFeaturizer:
                         hop_length=self.frame_step,
                         win_length=self.frame_length,
                         center=True,
-                        window=window_fn,
+                        window=self.window_fn,
                     )
                 )
             )

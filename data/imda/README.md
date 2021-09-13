@@ -15,3 +15,5 @@
 1048 hours.
 
 6. PART 1, https://f000.backblazeb2.com/file/malay-dataset/speech/imda/part1.tar, https://f000.backblazeb2.com/file/malay-dataset/speech/imda/SCRIPT.zip
+
+7. PART 2, https://f000.backblazeb2.com/file/malay-dataset/speech/imda/part2.tar, https://f000.backblazeb2.com/file/malay-dataset/speech/imda/SCRIPT-part2.zip

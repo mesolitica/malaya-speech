@@ -95,6 +95,7 @@ Malaya-Speech also released pretrained models, simply check at `malaya-speech/pr
 -  **FastSpeechSplit**, Faster and Accurate Speech Split Conversion using Transformer, no paper produced.
 -  **HuBERT**, Self-Supervised Speech Representation Learning by Masked Prediction of Hidden Units, https://arxiv.org/pdf/2106.07447v1.pdf
 -  **FastPitch**, Parallel Text-to-speech with Pitch Prediction, https://arxiv.org/abs/2006.06873
+-  **GlowTTS**, A Generative Flow for Text-to-Speech via Monotonic Alignment Search, https://arxiv.org/abs/2005.11129
 
 References
 -----------

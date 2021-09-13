@@ -35,6 +35,7 @@ def load_graph(frozen_graph_filename, **kwargs):
     return frozen_graph.load_graph(package, frozen_graph_filename, **kwargs)
 
 
+from . import arange
 from . import astype
 from . import char
 from . import combine
