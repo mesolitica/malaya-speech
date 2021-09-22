@@ -583,9 +583,6 @@ class Transducer(Abstract):
         result: List[Dict[text, start, end]]
         """
 
-        if self._stack:
-            raise ValueError('`predict_alignment` not supported by stack multilanguage model')
-
         padded, lens, index = self._get_inputs([input])
         r = self._execute(
             inputs=[padded, lens],
@@ -632,7 +629,7 @@ class Transducer(Abstract):
 
         for row in r[:index]:
             if self._stack:
-                d = decode_multilanguage(row[row > 0], self._vocab)
+                d = decode_multilanguage(self._vocab, row[row > 0])
             else:
                 d = subword_decode(self._vocab, row[row > 0])
             results.append(d)
@@ -729,7 +726,7 @@ class Transducer(Abstract):
                 beam_width=beam_size,
             )
             if self._stack:
-                d = decode_multilanguage(r, self._vocab)
+                d = decode_multilanguage(self._vocab, r)
             else:
                 d = subword_decode(self._vocab, r)
             results.append(d)

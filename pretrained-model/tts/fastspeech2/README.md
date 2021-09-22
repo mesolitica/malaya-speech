@@ -86,3 +86,7 @@ python3 fastspeech2-husein.py
 11. Husein speaker, last update 10th August 2021, [fastspeech2-husein-output-2021-08-10.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeech2-husein-output-2021-08-10.tar.gz)
 
   - Lower case, understand `.,?!` punctuations.
+
+12. Female Singlish speaker, last update 22nd September 2021, [fastspeech2-female-singlish-output-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeech2-female-singlish-output-v2.tar.gz)
+
+  - Lower case, understand `.,?!` punctuations.

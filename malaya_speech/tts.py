@@ -120,13 +120,13 @@ class TextIDS:
         normalizer,
         pad_to,
         sentence_tokenizer,
-        true_case,
+        true_case_model,
         understand_punct=True,
     ):
         self.normalizer = normalizer
         self.pad_to = pad_to
         self.sentence_tokenizer = sentence_tokenizer
-        self.true_case = true_case
+        self.true_case_model = true_case_model
         self.understand_punct = understand_punct
 
     def normalize(
@@ -142,8 +142,8 @@ class TextIDS:
             string = self.sentence_tokenizer(string, minimum_length=0)
             string = '. '.join(string)
 
-        if self.true_case:
-            string = self.true_case.predict([string], beam_search=False)[0]
+        if self.true_case_model is not None:
+            string = self.true_case_model(string)
 
         string = re.sub(r'[ ]+', ' ', string).strip()
         if string[-1] in '-,':
@@ -199,7 +199,7 @@ class TextIDS:
 
 def load_text_ids(
     pad_to: int = 8,
-    true_case=None,
+    true_case_model=None,
     quantized=False,
     understand_punct=True,
     **kwargs
@@ -213,16 +213,12 @@ def load_text_ids(
 
     normalizer = malaya.normalize.normalizer(date=False, time=False)
     sentence_tokenizer = malaya.text.function.split_into_sentences
-    if true_case:
-        true_case = malaya.true_case.transformer(
-            model=true_case, quantized=quantized, **kwargs
-        )
 
     return TextIDS(
         normalizer=normalizer,
         pad_to=pad_to,
         sentence_tokenizer=sentence_tokenizer,
-        true_case=true_case,
+        true_case_model=true_case_model,
         understand_punct=understand_punct,
     )
 
@@ -267,7 +263,7 @@ def tacotron2(
     model: str = 'male',
     quantized: bool = False,
     pad_to: int = 8,
-    true_case: str = None,
+    true_case_model=None,
     **kwargs
 ):
     """
@@ -291,13 +287,9 @@ def tacotron2(
     pad_to : int, optional (default=8)
         size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
 
-    true_case: str, optional (default=None)
-        Load True Case model from https://malaya.readthedocs.io/en/latest/load-true-case.html,
-        to fix case sensitive and punctuation errors. Allowed values:
-
-        * ``'small'`` - Small size True Case model.
-        * ``'base'`` - Base size True Case model.
-        * ``None`` - no True Case model.
+    true_case_model: str, optional (default=None)
+        load any true case model, eg, malaya true case model from https://malaya.readthedocs.io/en/latest/load-true-case.html
+        the interface must accept a string, return a string, eg, string = true_case_model(string)
 
     Returns
     -------
@@ -312,7 +304,7 @@ def tacotron2(
 
     text_ids = load_text_ids(
         pad_to=pad_to,
-        true_case=true_case,
+        true_case_model=true_case_model,
         quantized=quantized,
         **kwargs
     )
@@ -332,7 +324,7 @@ def fastspeech2(
     model: str = 'male',
     quantized: bool = False,
     pad_to: int = 8,
-    true_case: str = None,
+    true_case_model=None,
     **kwargs
 ):
     """
@@ -356,13 +348,9 @@ def fastspeech2(
     pad_to : int, optional (default=8)
         size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
 
-    true_case: str, optional (default=None)
-        Load True Case model from https://malaya.readthedocs.io/en/latest/load-true-case.html,
-        to fix case sensitive and punctuation errors. Allowed values:
-
-        * ``'small'`` - Small size True Case model.
-        * ``'base'`` - Base size True Case model.
-        * ``None`` - no True Case model.
+    true_case_model: str, optional (default=None)
+        load any true case model, eg, malaya true case model from https://malaya.readthedocs.io/en/latest/load-true-case.html
+        the interface must accept a string, return a string, eg, string = true_case_model(string)
 
     Returns
     -------
@@ -378,7 +366,7 @@ def fastspeech2(
 
     text_ids = load_text_ids(
         pad_to=pad_to,
-        true_case=true_case,
+        true_case_model=true_case_model,
         quantized=quantized,
         **kwargs
     )
@@ -397,7 +385,7 @@ def fastpitch(
     model: str = 'male',
     quantized: bool = False,
     pad_to: int = 8,
-    true_case: str = None,
+    true_case_model=None,
     **kwargs
 ):
     """
@@ -421,13 +409,9 @@ def fastpitch(
     pad_to : int, optional (default=8)
         size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
 
-    true_case: str, optional (default=None)
-        Load True Case model from https://malaya.readthedocs.io/en/latest/load-true-case.html,
-        to fix case sensitive and punctuation errors. Allowed values:
-
-        * ``'small'`` - Small size True Case model.
-        * ``'base'`` - Base size True Case model.
-        * ``None`` - no True Case model.
+    true_case_model: str, optional (default=None)
+        load any true case model, eg, malaya true case model from https://malaya.readthedocs.io/en/latest/load-true-case.html
+        the interface must accept a string, return a string, eg, string = true_case_model(string)
 
     Returns
     -------
@@ -443,7 +427,7 @@ def fastpitch(
 
     text_ids = load_text_ids(
         pad_to=pad_to,
-        true_case=true_case,
+        true_case_model=true_case_model,
         quantized=quantized,
         **kwargs
     )

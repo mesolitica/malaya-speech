@@ -59,6 +59,27 @@ _transducer_availability = {
         'CER': 0.105506,
         'Language': ['malay', 'singlish'],
     },
+    'small-conformer-singlish': {
+        'Size (MB)': 49.2,
+        'Quantized Size (MB)': 18.1,
+        'WER': 0.20599,
+        'CER': 0.08933,
+        'Language': ['singlish'],
+    },
+    'conformer-singlish': {
+        'Size (MB)': 125,
+        'Quantized Size (MB)': 37.1,
+        'WER': 0.16547,
+        'CER': 0.06410,
+        'Language': ['singlish'],
+    },
+    'large-conformer-singlish': {
+        'Size (MB)': 404,
+        'Quantized Size (MB)': 107,
+        'WER': 0.15986,
+        'CER': 0.05937,
+        'Language': ['singlish'],
+    },
 }
 
 _ctc_availability = {
@@ -282,9 +303,12 @@ def deep_transducer(
         * ``'large-conformer'`` - LARGE size Google Conformer.
         * ``'small-alconformer'`` - SMALL size A-Lite Google Conformer.
         * ``'alconformer'`` - BASE size A-Lite Google Conformer.
-        * ``'small-conformer-mixed'`` - SMALL size Google Conformer for (Malay + Singlish) languages.
         * ``'conformer-mixed'`` - BASE size Google Conformer for (Malay + Singlish) languages.
         * ``'large-conformer-mixed'`` - LARGE size Google Conformer for (Malay + Singlish) languages.
+        * ``'conformer-stack-mixed'`` - BASE size Stacked Google Conformer for (Malay + Singlish) languages.
+        * ``'small-conformer-singlish'`` - SMALL size Google Conformer for singlish language.
+        * ``'conformer-singlish'`` - BASE size Google Conformer for singlish language.
+        * ``'large-conformer-singlish'`` - LARGE size Google Conformer for singlish language.
 
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.

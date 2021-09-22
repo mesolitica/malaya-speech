@@ -47,7 +47,6 @@ def split_vad_duration(
     frames,
     max_duration: float = 5.0,
     negative_threshold: float = 0.1,
-    sample_rate: int = 16000,
 ):
     """
     Split a sample into multiple samples based maximum duration of voice activities.
@@ -59,8 +58,6 @@ def split_vad_duration(
         Maximum duration to assume one sample combined from voice activities.
     negative_threshold: float, optional (default = 0.1)
         If `negative_threshold` is 0.1, means that, length negative samples must at least 0.1 second.
-    sample_rate: int, optional (default = 16000)
-        sample rate for frames.
 
     Returns
     -------
@@ -73,7 +70,7 @@ def split_vad_duration(
     results, temp, lengths = [], [], 0
     for no, g in enumerate(grouped):
         a = g[0]
-        l = len(a.array) / sample_rate
+        l = a.duration
         lengths += l
         temp.append(a)
         if lengths >= max_duration:

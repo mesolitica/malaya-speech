@@ -21,33 +21,45 @@ def generate_tokenizer(
     )
 
 
-def decode_multilanguage(row, langs):
+def decode_multilanguage(tokenizers, ids):
+    """
+    Decode integer representation to string using list of tokenizer objects.
 
-    if not len(row):
+    Parameters
+    -----------
+    tokenizers: List[object]
+        List of tokenizer objects.
+    ids: List[int]
+
+    Returns
+    --------
+    result: str
+    """
+
+    if not len(ids):
         return ''
 
-    len_vocab = [l.vocab_size for l in langs]
+    len_vocab = [l.vocab_size for l in tokenizers]
 
     def get_index_multilanguage(r):
-        for i in range(len(langs)):
+        for i in range(len(tokenizers)):
             sum_v = sum(len_vocab[:i + 1])
             if r < sum(len_vocab[:i + 1]):
                 return i, r - sum(len_vocab[:i])
 
-    last_index, v = get_index_multilanguage(row[0])
+    last_index, v = get_index_multilanguage(ids[0])
     d, q = [], [v]
-    for r in row[1:]:
+    for r in ids[1:]:
         index, v = get_index_multilanguage(r)
         if index != last_index:
-            d.append(decode(langs[last_index], q))
+            d.append(decode(tokenizers[last_index], q))
             q = [v]
             last_index = index
         else:
             q.append(v)
     if len(q):
-        d.append(decode(langs[last_index], q))
+        d.append(decode(tokenizers[last_index], q))
     d = re.sub(r'[ ]+', ' ', ' '.join(d)).strip()
-    d = d.replace(' lah', 'lah')
     return d
 
 
@@ -57,6 +69,8 @@ def encode(tokenizer, string: str, add_blank: bool = False):
 
     Parameters
     -----------
+    tokenizer: object
+        tokenizer object
     string: str
     add_blank: bool, optional (default=False)
         add BLANK token at the starting of encoded, this is for transducer / transformer based.
@@ -79,6 +93,8 @@ def decode(tokenizer, ids):
 
     Parameters
     -----------
+    tokenizer: object
+        tokenizer object
     ids: List[int]
 
     Returns

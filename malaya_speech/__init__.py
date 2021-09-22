@@ -8,13 +8,12 @@
 
 from malaya_boilerplate.utils import get_home
 
-version = '1.1'
-bump_version = '1.2.1'
+version = '1.2'
+bump_version = '1.2'
 __version__ = bump_version
 
 package = 'malaya-speech'
 url = 'https://f000.backblazeb2.com/file/malaya-speech-model/'
-
 __home__, _ = get_home(package=package, package_version=version)
 
 from . import augmentation

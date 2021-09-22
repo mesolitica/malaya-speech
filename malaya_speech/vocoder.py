@@ -22,11 +22,6 @@ _melgan_availability = {
         'Quantized Size (MB)': 4.53,
         'Mel loss': 0.4819,
     },
-    'female-singlish': {
-        'Size (MB)': 17.3,
-        'Quantized Size (MB)': 4.53,
-        'Mel loss': 0.4123,
-    },
     'universal': {
         'Size (MB)': 309,
         'Quantized Size (MB)': 77.5,

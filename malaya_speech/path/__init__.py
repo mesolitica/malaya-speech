@@ -4,7 +4,7 @@ from malaya_speech import package
 home, _ = _get_home(package=package)
 
 TRANSDUCER_VOCAB = 'vocab/transducer.subword.subwords'
-TRANSDUCER_MIXED_VOCAB = 'vocab/transducer-mixed.subword.subwords'
+TRANSDUCER_MIXED_VOCAB = 'vocab/transducer-mixed-v2.subword.subwords'
 TRANSDUCER_SINGLISH_VOCAB = 'vocab/transducer-singlish.subword.subwords'
 TRANSDUCER_2048_VOCAB = 'vocab/transducer-2048.subword.subwords'
 
