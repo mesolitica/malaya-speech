@@ -92,11 +92,6 @@ _fastpitch_availability = {
         'Quantized Size (MB)': 31.1,
         'Combined loss': 0.5186,
     },
-    'female-singlish': {
-        'Size (MB)': 123,
-        'Quantized Size (MB)': 31.1,
-        'Combined loss': 0.4083,
-    },
 }
 
 _pad = 'pad'
@@ -400,7 +395,6 @@ def fastpitch(
         * ``'male'`` - Fastpitch trained on male voice.
         * ``'husein'`` - Fastpitch trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
         * ``'haqkiem'`` - Fastpitch trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
-        * ``'female-singlish'`` - Fastpitch trained on female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
 
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.

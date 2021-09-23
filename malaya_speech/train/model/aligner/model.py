@@ -86,7 +86,8 @@ class ConvNorm(tf.keras.layers.Layer):
 class AlignmentEncoder(tf.keras.Model):
     def __init__(
         self, vocab_size, vocab_embedding,
-        n_mel_channels=80, n_text_channels=512, n_att_channels=80, temperature=0.0005, **kwargs
+        n_mel_channels=80, n_text_channels=512, n_att_channels=80, temperature=0.0005,
+        use_position_embedding=False, max_position_embeddings=2048, **kwargs
     ):
         super(AlignmentEncoder, self).__init__(name='AlignmentEncoder', **kwargs)
         self.temperature = temperature
@@ -105,6 +106,33 @@ class AlignmentEncoder(tf.keras.Model):
             dtype=tf.float32,
             initializer=get_initializer(),
         )
+        self.hidden_size = vocab_embedding
+        self.max_position_embeddings = max_position_embeddings
+        self.use_position_embedding = use_position_embedding
+        if self.use_position_embedding:
+            self.position_embeddings = tf.convert_to_tensor(
+                self._sincos_embedding()
+            )
+
+    def _sincos_embedding(self):
+        position_enc = np.array(
+            [
+                [
+                    pos
+                    / np.power(10000, 2.0 * (i // 2) / self.hidden_size)
+                    for i in range(self.hidden_size)
+                ]
+                for pos in range(self.max_position_embeddings + 1)
+            ]
+        )
+
+        position_enc[:, 0::2] = np.sin(position_enc[:, 0::2])
+        position_enc[:, 1::2] = np.cos(position_enc[:, 1::2])
+
+        # pad embedding.
+        position_enc[0] = 0.0
+
+        return position_enc
 
     def call(self, queries, keys, mask=None, attn_prior=None, training=True, **kwargs):
         """
@@ -112,12 +140,23 @@ class AlignmentEncoder(tf.keras.Model):
         queries (torch.tensor): B x T1 x C1 tensor (probably going to be mel data).
         keys (torch.tensor): B x T2 x C2 tensor (text data).
         mask (torch.tensor): uint8 binary mask for variable length entries, B x T2 x 1 (should be in the T2 domain).
-        attn_prior (torch.tensor): prior for attention matrix, B x T2 x 1
+        attn_prior (torch.tensor): prior for attention matrix, B x T1 x T2
         Output:
             attn (torch.tensor): B x 1 x T1 x T2 attention mask. Final dim T2 should sum to 1.
             attn_logprob (torch.tensor): B x 1 x T1 x T2 log-prob attention mask.
         """
         keys = tf.nn.embedding_lookup(self.embeddings, keys)
+        if self.use_position_embedding:
+            input_shape = tf.shape(keys)
+            seq_length = input_shape[1]
+            inputs = tf.range(1, seq_length + 1, dtype=tf.int32)[
+                tf.newaxis, :
+            ]
+            position_embeddings = tf.gather(self.position_embeddings, inputs)
+            keys = keys + tf.cast(
+                position_embeddings, keys.dtype
+            )
+
         keys_enc = self.key_proj(keys, training=training)
         queries_enc = self.query_proj(queries, training=training)
         keys_enc = tf.transpose(keys_enc, [0, 2, 1])
@@ -127,7 +166,6 @@ class AlignmentEncoder(tf.keras.Model):
         attn = -self.temperature * tf.reduce_sum(attn, 1, keepdims=True)
 
         if attn_prior is not None:
-            attn_prior = tf.transpose(attn_prior, [0, 2, 1])
             attn = tf.nn.log_softmax(attn, 3) + tf.math.log(tf.expand_dims(attn_prior, 1) + 1e-8)
 
         attn_logprob = tf.identity(attn)
@@ -138,7 +176,7 @@ class AlignmentEncoder(tf.keras.Model):
             fill = tf.fill(tf.shape(mask), mask_value)
             attn = tf.where(tf.cast(mask, tf.bool), attn, fill)
 
-        return tf.nn.softmax(attn, 2), attn_logprob
+        return tf.nn.softmax(attn, 3), attn_logprob
 
     def get_hard_attention(self, attn_soft, in_lens, out_lens):
         """

@@ -73,9 +73,9 @@ S3_PATH_TTS_TACOTRON2 = {
         'stats': 'v1/vocoder-stats/haqkiem.npy',
     },
     'female-singlish': {
-        'model': 'v2/tts/tacotron2-female-singlish.pb',
-        'quantized': 'v2/tts/tacotron2-female-singlish.pb.quantized',
-        'stats': 'v1/vocoder-stats/female-singlish.npy',
+        'model': 'v3/tts/tacotron2-female-singlish.pb',
+        'quantized': 'v3/tts/tacotron2-female-singlish.pb.quantized',
+        'stats': 'v3/vocoder-stats/female-singlish.npy',
     },
 }
 
@@ -135,9 +135,9 @@ S3_PATH_TTS_FASTSPEECH2 = {
         'stats': 'v1/vocoder-stats/haqkiem.npy',
     },
     'female-singlish': {
-        'model': 'v2/tts/fastspeech2-female-singlish.pb',
-        'quantized': 'v2/tts/fastspeech2-female-singlish.pb.quantized',
-        'stats': 'v1/vocoder-stats/female-singlish.npy',
+        'model': 'v3/tts/fastspeech2-female-singlish.pb',
+        'quantized': 'v3/tts/fastspeech2-female-singlish.pb.quantized',
+        'stats': 'v3/vocoder-stats/female-singlish.npy',
     },
 }
 
