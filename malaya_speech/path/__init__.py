@@ -109,7 +109,7 @@ PATH_TTS_FASTSPEECH2 = {
         'quantized': home
         + '/tts/fastspeech2-female-singlish/quantized/model.pb',
         'stats': home + '/tts/stats/female-singlish.npy',
-        'version': 'v2',
+        'version': 'v3',
     },
 }
 

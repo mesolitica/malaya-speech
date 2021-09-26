@@ -24,7 +24,6 @@ import collections
 from absl import logging
 import six
 import tensorflow.compat.v2 as tf
-
 from malaya_speech.utils import text_encoder
 
 # Internally, an underscore indicates a single space, so, to ensure

@@ -43,7 +43,7 @@ def deep_aligner(
 
     Parameters
     ----------
-    model : str, optional (default='conformer')
+    model : str, optional (default='fastspeech-decoder-aligner-stt')
         Model architecture supported. Allowed values:
 
         * ``'fastspeech-decoder-aligner-tts'`` - FastSpeech Decoder trained on Malay TTS dataset.
@@ -60,7 +60,7 @@ def deep_aligner(
     result : malaya_speech.model.tf.DeepAligner class
     """
     model = model.lower()
-    if model not in _ctc_availability:
+    if model not in _availability:
         raise ValueError(
             'model not supported, please check supported models from `malaya_speech.force_alignment.available_aligner()`.'
         )

@@ -8,7 +8,12 @@ from malaya_speech.utils.padding import (
     sequence_1d,
 )
 from malaya_speech.utils.char import decode as char_decode
-from malaya_speech.utils.subword import decode as subword_decode, decode_multilanguage
+from malaya_speech.utils.subword import (
+    decode as subword_decode,
+    decode_multilanguage,
+    get_index_multilanguage,
+    align_multilanguage,
+)
 from malaya_speech.utils.execute import execute_graph
 from malaya_speech.utils.activation import softmax
 from malaya_speech.utils.featurization import universal_mel
@@ -507,6 +512,8 @@ class Transducer(Abstract):
         self.__name__ = name
         self._wavs = wavs
         self._stack = stack
+        if self._stack:
+            self._len_vocab = [l.vocab_size for l in self._vocab]
 
     def _check_decoder(self, decoder, beam_size):
         decoder = decoder.lower()
@@ -592,13 +599,22 @@ class Transducer(Abstract):
         non_blank_transcript = r['non_blank_transcript']
         non_blank_stime = r['non_blank_stime']
         if combined:
-            words, indices = self._vocab.decode(
-                non_blank_transcript, get_index=True
-            )
+            if self._stack:
+                words, indices = align_multilanguage(
+                    self._vocab, non_blank_transcript, get_index=True
+                )
+            else:
+                words, indices = self._vocab.decode(
+                    non_blank_transcript, get_index=True
+                )
         else:
             words, indices = [], []
             for no, ids in enumerate(non_blank_transcript):
-                w = self._vocab._id_to_subword(ids - 1)
+                if self._stack:
+                    last_index, v = get_index_multilanguage(ids, self._vocab, self._len_vocab)
+                    w = self._vocab[last_index]._id_to_subword(v - 1)
+                else:
+                    w = self._vocab._id_to_subword(ids - 1)
                 if isinstance(w, bytes):
                     w = w.decode()
                 words.extend([w, None])

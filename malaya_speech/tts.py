@@ -11,6 +11,7 @@ from malaya_speech.utils.text import (
     collapse_whitespace,
     put_spacing_num,
     tts_encode,
+    TextIDS,
 )
 from malaya_speech.supervised import tts
 import numpy as np
@@ -94,109 +95,11 @@ _fastpitch_availability = {
     },
 }
 
-_pad = 'pad'
-_start = 'start'
-_eos = 'eos'
-_punctuation = "!'(),.:;? "
-_special = '-'
-_letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-_rejected = '\'():;"'
-_punct = ':;,.?'
-
-
-MALAYA_SPEECH_SYMBOLS = (
-    [_pad, _start, _eos] + list(_special) + list(_punctuation) + list(_letters)
-)
-
-
-class TextIDS:
-    def __init__(
-        self,
-        normalizer,
-        pad_to,
-        sentence_tokenizer,
-        true_case_model,
-        understand_punct=True,
-    ):
-        self.normalizer = normalizer
-        self.pad_to = pad_to
-        self.sentence_tokenizer = sentence_tokenizer
-        self.true_case_model = true_case_model
-        self.understand_punct = understand_punct
-
-    def normalize(
-        self,
-        string,
-        normalize=True,
-        assume_newline_fullstop=False,
-        **kwargs
-    ):
-        string = convert_to_ascii(string)
-        if assume_newline_fullstop:
-            string = string.replace('\n', '. ')
-            string = self.sentence_tokenizer(string, minimum_length=0)
-            string = '. '.join(string)
-
-        if self.true_case_model is not None:
-            string = self.true_case_model(string)
-
-        string = re.sub(r'[ ]+', ' ', string).strip()
-        if string[-1] in '-,':
-            string = string[:-1]
-        if string[-1] not in '.,?!':
-            string = string + '.'
-
-        string = string.replace('&', ' dan ')
-        string = string.replace(':', ',').replace(';', ',')
-        if normalize:
-            t = self.normalizer._tokenizer(string)
-            for i in range(len(t)):
-                if t[i] == '-':
-                    t[i] = ','
-            string = ' '.join(t)
-            string = self.normalizer.normalize(
-                string,
-                check_english=False,
-                normalize_entity=False,
-                normalize_text=False,
-                normalize_url=True,
-                normalize_email=True,
-                normalize_telephone=True,
-            )
-            string = string['normalize']
-        else:
-            string = string
-        string = put_spacing_num(string)
-        string = ''.join(
-            [
-                c
-                for c in string
-                if c in MALAYA_SPEECH_SYMBOLS and c not in _rejected
-            ]
-        )
-        if not self.understand_punct:
-            string = ''.join([c for c in string if c not in _punct])
-        string = re.sub(r'[ ]+', ' ', string).strip()
-        string = string.lower()
-        ids = tts_encode(string, MALAYA_SPEECH_SYMBOLS, add_eos=False)
-        ids = ids + [2, 0, 0, 0]
-        text_input = np.array(ids)
-        num_pad = self.pad_to - ((len(text_input) + 2) % self.pad_to)
-        text_input = np.pad(
-            text_input, ((1, 1)), 'constant', constant_values=((1, 2))
-        )
-        text_input = np.pad(
-            text_input, ((0, num_pad)), 'constant', constant_values=0
-        )
-
-        return string, text_input
-
 
 def load_text_ids(
     pad_to: int = 8,
+    understand_punct: bool = True,
     true_case_model=None,
-    quantized=False,
-    understand_punct=True,
     **kwargs
 ):
     try:
@@ -210,11 +113,11 @@ def load_text_ids(
     sentence_tokenizer = malaya.text.function.split_into_sentences
 
     return TextIDS(
-        normalizer=normalizer,
         pad_to=pad_to,
+        understand_punct=understand_punct,
+        normalizer=normalizer,
         sentence_tokenizer=sentence_tokenizer,
         true_case_model=true_case_model,
-        understand_punct=understand_punct,
     )
 
 
@@ -250,7 +153,7 @@ def available_fastpitch():
 
     return describe_availability(
         _fastpitch_availability,
-        text='`husein`, `haqkiem` and `female-singlish` combined loss from training set',
+        text='`husein` and `haqkiem` combined loss from training set',
     )
 
 
@@ -278,10 +181,8 @@ def tacotron2(
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
-
     pad_to : int, optional (default=8)
         size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
-
     true_case_model: str, optional (default=None)
         load any true case model, eg, malaya true case model from https://malaya.readthedocs.io/en/latest/load-true-case.html
         the interface must accept a string, return a string, eg, string = true_case_model(string)
@@ -339,10 +240,8 @@ def fastspeech2(
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
-
     pad_to : int, optional (default=8)
         size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
-
     true_case_model: str, optional (default=None)
         load any true case model, eg, malaya true case model from https://malaya.readthedocs.io/en/latest/load-true-case.html
         the interface must accept a string, return a string, eg, string = true_case_model(string)
@@ -399,10 +298,8 @@ def fastpitch(
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
-
     pad_to : int, optional (default=8)
         size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
-
     true_case_model: str, optional (default=None)
         load any true case model, eg, malaya true case model from https://malaya.readthedocs.io/en/latest/load-true-case.html
         the interface must accept a string, return a string, eg, string = true_case_model(string)

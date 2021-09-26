@@ -13,11 +13,14 @@ import malaya_speech.augmentation.spectrogram as mask_augmentation
 import malaya_speech.augmentation.waveform as augmentation
 import malaya_speech
 import tensorflow as tf
+import wandb
+wandb.init()
 
 subwords = malaya_speech.subword.load('transducer-singlish.subword')
 config = malaya_speech.config.conformer_small_encoder_config
 sr = 16000
 maxlen = 18
+maxlen_subwords = 100
 minlen_text = 1
 
 parameters = {
@@ -98,9 +101,14 @@ def parse(serialized_example):
 
     keys = list(features.keys())
     for k in keys:
-        if k not in ['inputs', 'inputs_length', 'targets', 'targets_length']:
+        if k not in ['waveforms', 'inputs', 'inputs_length', 'targets', 'targets_length']:
             features.pop(k, None)
 
+    return features
+
+
+def pop(features):
+    features.pop('waveforms', None)
     return features
 
 
@@ -122,6 +130,13 @@ def get_dataset(files, batch_size=20, shuffle_size=32, num_cpu_threads=4,
             d = tf.data.TFRecordDataset(files)
             d = d.repeat()
         d = d.map(parse, num_parallel_calls=thread_count)
+        d = d.filter(
+            lambda x: tf.less(tf.shape(x['waveforms'])[0] / sr, maxlen)
+        )
+        d = d.filter(
+            lambda x: tf.less(tf.shape(x['targets'])[0], maxlen_subwords)
+        )
+        d = d.map(pop, num_parallel_calls=thread_count)
         d = d.padded_batch(
             batch_size,
             padded_shapes={
@@ -194,7 +209,8 @@ def model_fn(features, labels, mode, params):
     return estimator_spec
 
 
-train_hooks = [tf.train.LoggingTensorHook(['train_loss'], every_n_iter=1)]
+train_hooks = [tf.train.LoggingTensorHook(['train_loss'], every_n_iter=1),
+               wandb.tensorflow.WandbHook(steps_per_log=1000)]
 
 with open('imda-tfrecords.json') as fopen:
     imda_tfrecord = json.load(fopen)
