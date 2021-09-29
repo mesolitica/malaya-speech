@@ -10,6 +10,7 @@ from malaya_speech.utils.padding import (
 from malaya_speech.utils.char import decode as char_decode
 from malaya_speech.utils.subword import (
     decode as subword_decode,
+    encode as subword_encode,
     decode_multilanguage,
     get_index_multilanguage,
     align_multilanguage,
@@ -1503,3 +1504,144 @@ class Fastpitch(Abstract):
 
     def __call__(self, input, **kwargs):
         return self.predict(input, **kwargs)
+
+
+class TransducerAligner(Abstract):
+    def __init__(
+        self,
+        input_nodes,
+        output_nodes,
+        featurizer,
+        vocab,
+        time_reduction_factor,
+        sess,
+        model,
+        name,
+        wavs,
+        dummy_sentences,
+    ):
+        self._input_nodes = input_nodes
+        self._output_nodes = output_nodes
+        self._featurizer = featurizer
+        self._vocab = vocab
+        self._time_reduction_factor = time_reduction_factor
+        self._sess = sess
+        self.__model__ = model
+        self.__name__ = name
+        self._wavs = wavs
+        self._dummy_sentences = dummy_sentences
+
+    def _get_inputs(self, inputs, texts):
+        inputs = [
+            input.array if isinstance(input, Frame) else input
+            for input in inputs
+        ]
+
+        index = len(inputs)
+
+        # pretty hacky, result from single batch is not good caused by batchnorm.
+        # have to append extra random wavs
+        if len(inputs) < len(self._wavs) + 1:
+            inputs = inputs + self._wavs[:(len(self._wavs) + 1) - len(inputs)]
+            texts = texts + self._dummy_sentences
+
+        padded, lens = sequence_1d(inputs, return_len=True)
+        targets = [subword_encode(self._vocab, t) for t in texts]
+        targets_padded, targets_lens = sequence_1d(targets, return_len=True)
+
+        return padded, lens, targets_padded, targets_lens, index
+
+    def _combined_indices(
+        self, subwords, ids, l, reduction_factor=160, sample_rate=16000
+    ):
+        result, temp_l, temp_r = [], [], []
+        for i in range(len(subwords)):
+            if ids[i] is None and len(temp_r):
+                data = {
+                    'text': ''.join(temp_l),
+                    'start': round(temp_r[0], 4),
+                    'end': round(
+                        temp_r[-1] + (reduction_factor / sample_rate), 4
+                    ),
+                }
+                result.append(data)
+                temp_l, temp_r = [], []
+            else:
+                temp_l.append(subwords[i])
+                temp_r.append(l[ids[i]])
+
+        if len(temp_l):
+            data = {
+                'text': ''.join(temp_l),
+                'start': round(temp_r[0], 4),
+                'end': round(temp_r[-1] + (reduction_factor / sample_rate), 4),
+            }
+            result.append(data)
+
+        return result
+
+    def predict(self, input, transcription: str):
+        """
+        Transcribe input, will return a string.
+
+        Parameters
+        ----------
+        input: np.array
+            np.array or malaya_speech.model.frame.Frame.
+        transcription: str
+            transcription of input audio
+
+        Returns
+        -------
+        result: Dict[words_alignment, subwords_alignment, subwords, alignment]
+        """
+
+        padded, lens, targets_padded, targets_lens, index = self._get_inputs([input],
+                                                                             [transcription])
+        r = self._execute(
+            inputs=[padded, lens, targets_padded, targets_lens],
+            input_labels=['X_placeholder', 'X_len_placeholder', 'subwords', 'subwords_lens'],
+            output_labels=['non_blank_transcript', 'non_blank_stime', 'decoded', 'alignment'],
+        )
+        non_blank_transcript = r['non_blank_transcript']
+        non_blank_stime = r['non_blank_stime']
+        decoded = r['decoded']
+        alignment = r['alignment']
+        words, indices = self._vocab.decode(
+            non_blank_transcript, get_index=True
+        )
+        words_alignment = self._combined_indices(words, indices, non_blank_stime)
+
+        words, indices = [], []
+        for no, ids in enumerate(non_blank_transcript):
+            w = self._vocab._id_to_subword(ids - 1)
+            if isinstance(w, bytes):
+                w = w.decode()
+            words.extend([w, None])
+            indices.extend([no, None])
+        subwords_alignment = self._combined_indices(words, indices, non_blank_stime)
+
+        subwords_ = [self._vocab._id_to_subword(ids - 1) for ids in decoded[decoded > 0]]
+        subwords_ = [s.decode() if isinstance(s, bytes) else s for s in subwords_]
+        alignment = alignment[:, targets_padded[0, :targets_lens[0]]].T
+        return {'words_alignment': words_alignment,
+                'subwords_alignment': subwords_alignment,
+                'subwords': subwords_,
+                'alignment': alignment}
+
+    def __call__(self, input, transcription: str):
+        """
+        Transcribe input, will return a string.
+
+        Parameters
+        ----------
+        input: np.array
+            np.array or malaya_speech.model.frame.Frame.
+        transcription: str
+            transcription of input audio
+
+        Returns
+        -------
+        result: Dict[words_alignment, subwords_alignment, subwords, alignment]
+        """
+        return self.predict(input, transcription)

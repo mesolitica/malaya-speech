@@ -23,6 +23,7 @@ from . import utils
 from . import age_detection
 from . import diarization
 from . import emotion
+from . import force_alignment
 from . import gender
 from . import language_detection
 from . import multispeaker_separation

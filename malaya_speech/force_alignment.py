@@ -1,25 +1,20 @@
-from malaya_speech.supervised import force_alignment
+from malaya_speech.supervised import stt
 from herpetologist import check_type
 
 _availability = {
-    'small-conformer-transducer-tts': {
-        'Size (MB)': 49.2,
-        'Quantized Size (MB)': 18.1,
-        'Language': ['malay'],
-    },
-    'conformer-transducer-stt': {
-        'Size (MB)': 49.2,
-        'Quantized Size (MB)': 18.1,
+    'conformer-transducer': {
+        'Size (MB)': 120,
+        'Quantized Size (MB)': 32.3,
         'Language': ['malay'],
     },
     'conformer-transducer-mixed': {
-        'Size (MB)': 49.2,
-        'Quantized Size (MB)': 18.1,
+        'Size (MB)': 120,
+        'Quantized Size (MB)': 32.3,
         'Language': ['mixed'],
     },
     'conformer-transducer-singlish': {
-        'Size (MB)': 49.2,
-        'Quantized Size (MB)': 18.1,
+        'Size (MB)': 120,
+        'Quantized Size (MB)': 32.3,
         'Language': ['singlish'],
     },
 }
@@ -36,18 +31,17 @@ def available_aligner():
 
 @check_type
 def deep_aligner(
-    model: str = 'small-conformer-transducer-tts', quantized: bool = False, **kwargs
+    model: str = 'conformer-transducer', quantized: bool = False, **kwargs
 ):
     """
     Load Deep Aligner model.
 
     Parameters
     ----------
-    model : str, optional (default='small-conformer-transducer-tts')
+    model : str, optional (default='conformer-transducer')
         Model architecture supported. Allowed values:
 
-        * ``'small-conformer-transducer-tts'`` - Small Conformer + RNNT trained on Malay TTS dataset.
-        * ``'conformer-transducer-stt'`` - Conformer + RNNT trained on Malay STT dataset.
+        * ``'conformer-transducer'`` - Conformer + RNNT trained on Malay STT dataset.
         * ``'conformer-transducer-mixed'`` - Conformer + RNNT trained on Mixed STT dataset.
         * ``'conformer-transducer-singlish'`` - Conformer + RNNT trained on Singlish STT dataset.
 
@@ -57,10 +51,18 @@ def deep_aligner(
 
     Returns
     -------
-    result : malaya_speech.model.tf.DeepAligner class
+    result : malaya_speech.model.tf.TransducerAligner class
     """
     model = model.lower()
     if model not in _availability:
         raise ValueError(
             'model not supported, please check supported models from `malaya_speech.force_alignment.available_aligner()`.'
         )
+
+    return stt.transducer_alignment_load(
+        model=model,
+        module='force-alignment',
+        languages=_availability[model]['Language'],
+        quantized=quantized,
+        **kwargs
+    )

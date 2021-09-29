@@ -49,7 +49,8 @@ Contents:
    realtime-asr
    realtime-asr-mixed
    realtime-asr-rubberband
-   realtime-force-alignment
+   realtime-alignment
+   force-alignment
 
 .. toctree::
    :maxdepth: 2

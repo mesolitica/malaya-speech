@@ -7,7 +7,7 @@ from malaya_speech.utils import (
 from malaya_speech.utils.read import load as load_wav
 from malaya_speech.utils.tf_featurization import STTFeaturizer
 from malaya_speech.utils.subword import load as subword_load
-from malaya_speech.model.tf import Transducer, Wav2Vec2_CTC
+from malaya_speech.model.tf import Transducer, Wav2Vec2_CTC, TransducerAligner
 from malaya_speech.path import TRANSDUCER_VOCABS, CTC_VOCABS
 import json
 import os
@@ -19,6 +19,9 @@ def get_vocab(language):
 
 def get_vocab_ctc(language):
     return CTC_VOCABS.get(language, CTC_VOCABS['malay'])
+
+
+dummy_sentences = ['tangan aku disentuh lembut', 'sebut perkataan angka']
 
 
 def transducer_load(model, module, languages, quantized=False, **kwargs):
@@ -91,6 +94,59 @@ def transducer_load(model, module, languages, quantized=False, **kwargs):
         name=module,
         wavs=[wav1, wav2],
         stack=stack,
+    )
+
+
+def transducer_alignment_load(model, module, languages, quantized=False, **kwargs):
+    splitted = model.split('-')
+    path = check_file(
+        file=model,
+        module=module,
+        keys={'model': 'model.pb', 'vocab': get_vocab(splitted[-1])},
+        quantized=quantized,
+        **kwargs,
+    )
+    vocab = subword_load(path['vocab'].replace('.subwords', ''))
+    g = load_graph(path['model'], **kwargs)
+    featurizer = STTFeaturizer(normalize_per_feature=True)
+
+    time_reduction_factor = {
+        'small-conformer': 4,
+        'conformer': 4,
+        'large-conformer': 4,
+        'alconformer': 4,
+    }
+
+    inputs = [
+        'X_placeholder',
+        'X_len_placeholder',
+        'subwords',
+        'subwords_lens'
+    ]
+    outputs = [
+        'padded_features',
+        'padded_lens',
+        'non_blank_transcript',
+        'non_blank_stime',
+        'decoded',
+        'alignment'
+    ]
+    input_nodes, output_nodes = nodes_session(g, inputs, outputs)
+    this_dir = os.path.dirname(__file__)
+    wav1, _ = load_wav(os.path.join(this_dir, 'speech', '1.wav'))
+    wav2, _ = load_wav(os.path.join(this_dir, 'speech', '2.wav'))
+
+    return TransducerAligner(
+        input_nodes=input_nodes,
+        output_nodes=output_nodes,
+        featurizer=featurizer,
+        vocab=vocab,
+        time_reduction_factor=time_reduction_factor.get(model, 4),
+        sess=generate_session(graph=g, **kwargs),
+        model=model,
+        name=module,
+        wavs=[wav1, wav2],
+        dummy_sentences=dummy_sentences,
     )
 
 
