@@ -1,6 +1,6 @@
 ## How-to
 
-1. Download from here, https://huseinhouse-storage.s3-ap-southeast-1.amazonaws.com/speech-sg/test-wav.tgz
+1. Download from here, https://f000.backblazeb2.com/file/malay-dataset/speech/manglish/test-wav.tgz
 
 2. Extract using tar,
 

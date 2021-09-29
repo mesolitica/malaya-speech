@@ -41,8 +41,8 @@ _transducer_availability = {
     'large-conformer-mixed': {
         'Size (MB)': 404,
         'Quantized Size (MB)': 107,
-        'WER': 0.291254,
-        'CER': 0.187944,
+        'WER': 0.262179,
+        'CER': 0.165555,
         'Language': ['malay', 'singlish'],
     },
     'conformer-stack-mixed': {
@@ -55,8 +55,8 @@ _transducer_availability = {
     'small-conformer-singlish': {
         'Size (MB)': 49.2,
         'Quantized Size (MB)': 18.1,
-        'WER': 0.20599,
-        'CER': 0.08933,
+        'WER': 0.12771,
+        'CER': 0.0703953,
         'Language': ['singlish'],
     },
     'conformer-singlish': {
@@ -132,8 +132,8 @@ google_accuracy = {
         'CER': 0.0597320
     },
     'singlish': {
-        'WER': 0.164775,
-        'CER': 0.0597320
+        'WER': 0.4941349,
+        'CER': 0.3026296
     }
 }
 

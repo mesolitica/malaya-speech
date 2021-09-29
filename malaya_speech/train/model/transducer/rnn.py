@@ -282,7 +282,7 @@ class Model(tf.keras.Model):
         outputs = self.encoder(outputs, training=False)
         return tf.squeeze(outputs, axis=0)
 
-    def decoder_inference(self, encoded, predicted, states, training=False):
+    def decoder_inference(self, encoded, predicted, states, training=False, use_softmax=False):
         """Infer function for decoder
         Args:
             encoded (tf.Tensor): output of encoder at each time step => shape [E]
@@ -296,7 +296,11 @@ class Model(tf.keras.Model):
         y, new_states = self.predict_net.recognize(
             predicted, states, training=training
         )
-        ytu = tf.nn.log_softmax(
+        if use_softmax:
+            f = tf.nn.softmax
+        else:
+            f = tf.nn.log_softmax
+        ytu = f(
             self.joint_net([encoded, y], training=training)
         )
         ytu = tf.squeeze(ytu, axis=None)
@@ -433,6 +437,8 @@ class Model(tf.keras.Model):
         self,
         features,
         encoded_length,
+        phonemes,
+        phonemes_length,
         parallel_iterations=10,
         swap_memory=False,
         from_wav2vec2=False,
@@ -454,9 +460,10 @@ class Model(tf.keras.Model):
             )
         total = tf.shape(features)[0]
         batch = tf.constant(0, dtype=tf.int32)
-        decoded = tf.zeros(shape=(0, tf.shape(features)[1]), dtype=tf.int32)
+        maxlen = tf.reduce_max(encoded_length)
+        decoded = tf.zeros(shape=(0, maxlen), dtype=tf.int32)
         decoded_alignment = tf.zeros(
-            shape=(0, tf.shape(features)[1], self.vocabulary_size),
+            shape=(0, maxlen, self.vocabulary_size),
             dtype=tf.float32,
         )
 
@@ -467,20 +474,22 @@ class Model(tf.keras.Model):
             hypothesis = self._perform_greedy_alignment(
                 encoded=encoded[batch],
                 encoded_length=encoded_length[batch],
+                phonemes=phonemes[batch],
+                phonemes_length=phonemes_length[batch],
                 predicted=tf.constant(BLANK, dtype=tf.int32),
                 states=self.predict_net.get_initial_state(),
                 parallel_iterations=parallel_iterations,
                 swap_memory=swap_memory,
             )
             yseq = tf.expand_dims(hypothesis.prediction, axis=0)
-            padding = [[0, 0], [0, tf.shape(features)[1] - tf.shape(yseq)[1]]]
+            padding = [[0, 0], [0, maxlen - tf.shape(yseq)[1]]]
             yseq = tf.pad(yseq, padding, 'CONSTANT')
             decoded = tf.concat([decoded, yseq], axis=0)
 
             yseq = tf.expand_dims(hypothesis.alignment, axis=0)
             padding = [
                 [0, 0],
-                [0, tf.shape(features)[1] - tf.shape(yseq)[1]],
+                [0, maxlen - tf.shape(yseq)[1]],
                 [0, 0],
             ]
             yseq = tf.pad(yseq, padding, 'CONSTANT')
@@ -507,13 +516,17 @@ class Model(tf.keras.Model):
         self,
         encoded,
         encoded_length,
+        phonemes,
+        phonemes_length,
         predicted,
         states,
         parallel_iterations=10,
         swap_memory=False,
     ):
         time = tf.constant(0, dtype=tf.int32)
+        time_phoneme = tf.constant(0, dtype=tf.int32)
         total = encoded_length
+        total_phoneme = phonemes_length
 
         hypothesis = Hypothesis_Alignment(
             index=predicted,
@@ -534,21 +547,24 @@ class Model(tf.keras.Model):
             ),
         )
 
-        def condition(_time, _hypothesis):
-            return tf.less(_time, total)
+        def condition(_time, _time_phoneme, _hypothesis):
+            return tf.math.logical_and(tf.less(_time, total), tf.less(_time_phoneme, total_phoneme))
 
-        def body(_time, _hypothesis):
+        def body(_time, _time_phoneme, _hypothesis):
             ytu, _states = self.decoder_inference(
                 encoded=tf.gather_nd(
                     encoded, tf.expand_dims(_time, axis=-1)
                 ),
                 predicted=_hypothesis.index,
                 states=_hypothesis.states,
+                use_softmax=True,
             )
             _predict = tf.argmax(ytu, axis=-1, output_type=tf.int32)
             _equal = tf.equal(_predict, BLANK)
+            _predict = tf.where(_equal, BLANK, phonemes[_time_phoneme])
             _index = tf.where(_equal, _hypothesis.index, _predict)
             _states = tf.where(_equal, _hypothesis.states, _states)
+            _time_phoneme = tf.where(_equal, _time_phoneme, _time_phoneme + 1)
 
             _prediction = _hypothesis.prediction.write(_time, _predict)
             _ytu = _hypothesis.alignment.write(_time, ytu)
@@ -559,12 +575,12 @@ class Model(tf.keras.Model):
                 alignment=_ytu,
             )
 
-            return _time + 1, _hypothesis
+            return _time + 1, _time_phoneme, _hypothesis
 
-        time, hypothesis = tf.while_loop(
+        time, time_phoneme, hypothesis = tf.while_loop(
             condition,
             body,
-            loop_vars=(time, hypothesis),
+            loop_vars=(time, time_phoneme, hypothesis),
             parallel_iterations=parallel_iterations,
             swap_memory=swap_memory,
             back_prop=False,

@@ -2,22 +2,22 @@ from malaya_speech.supervised import force_alignment
 from herpetologist import check_type
 
 _availability = {
-    'fastspeech-decoder-aligner-tts': {
+    'small-conformer-transducer-tts': {
         'Size (MB)': 49.2,
         'Quantized Size (MB)': 18.1,
         'Language': ['malay'],
     },
-    'fastspeech-decoder-aligner-stt': {
+    'conformer-transducer-stt': {
         'Size (MB)': 49.2,
         'Quantized Size (MB)': 18.1,
         'Language': ['malay'],
     },
-    'fastspeech-decoder-aligner-mixed': {
+    'conformer-transducer-mixed': {
         'Size (MB)': 49.2,
         'Quantized Size (MB)': 18.1,
         'Language': ['mixed'],
     },
-    'fastspeech-decoder-aligner-singlish': {
+    'conformer-transducer-singlish': {
         'Size (MB)': 49.2,
         'Quantized Size (MB)': 18.1,
         'Language': ['singlish'],
@@ -36,20 +36,20 @@ def available_aligner():
 
 @check_type
 def deep_aligner(
-    model: str = 'fastspeech-decoder-aligner-stt', quantized: bool = False, **kwargs
+    model: str = 'small-conformer-transducer-tts', quantized: bool = False, **kwargs
 ):
     """
     Load Deep Aligner model.
 
     Parameters
     ----------
-    model : str, optional (default='fastspeech-decoder-aligner-stt')
+    model : str, optional (default='small-conformer-transducer-tts')
         Model architecture supported. Allowed values:
 
-        * ``'fastspeech-decoder-aligner-tts'`` - FastSpeech Decoder trained on Malay TTS dataset.
-        * ``'fastspeech-decoder-aligner-stt'`` - FastSpeech Decoder trained on Malay STT dataset.
-        * ``'fastspeech-decoder-aligner-mixed'`` - FastSpeech Decoder trained on Mixed STT dataset.
-        * ``'fastspeech-decoder-aligner-singlish'`` - FastSpeech Decoder trained on Singlish STT dataset.
+        * ``'small-conformer-transducer-tts'`` - Small Conformer + RNNT trained on Malay TTS dataset.
+        * ``'conformer-transducer-stt'`` - Conformer + RNNT trained on Malay STT dataset.
+        * ``'conformer-transducer-mixed'`` - Conformer + RNNT trained on Mixed STT dataset.
+        * ``'conformer-transducer-singlish'`` - Conformer + RNNT trained on Singlish STT dataset.
 
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.

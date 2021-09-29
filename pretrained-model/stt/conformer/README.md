@@ -77,3 +77,9 @@ Tensorboard, https://tensorboard.dev/experiment/1qBD7FGyS32Q8uQvhA1NnA/
 17. Large Conformer Mixed, last update 26th September 2021, [output-large-mixed-conformer-v3.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-large-mixed-conformer-v3.tar.gz)
 
 18. Conformer Stack Mixed, last update 26th September 2021, [output-base-stack-mixed-conformer.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-base-stack-mixed-conformer.tar.gz)
+
+19. Small Conformer Singlish, last update 26th September 2021, [output-small-singlish-conformer-v1.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-small-singlish-conformer-v1.tar.gz)
+
+20. Conformer Singlish, last update 26th September 2021, [output-base-singlish-conformer-v1.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-base-singlish-conformer-v1.tar.gz)
+
+21. Large Conformer Singlish, last update 26th September 2021, [output-large-singlish-conformer-v1.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-large-singlish-conformer-v1.tar.gz)

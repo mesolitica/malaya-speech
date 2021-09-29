@@ -25,3 +25,5 @@
 11. PART 6, Call centre 1, https://f000.backblazeb2.com/file/malay-dataset/speech/imda/part6-call-centre-1.tar.gz
 
 12. PART 6, Call centre 2, https://f000.backblazeb2.com/file/malay-dataset/speech/imda/part6-call-centre-2.tar.gz
+
+13. Test set, https://f000.backblazeb2.com/file/malay-dataset/speech/manglish/testset-imda.tar.gz, https://f000.backblazeb2.com/file/malay-dataset/speech/manglish/test-set-imda.json
