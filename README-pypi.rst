@@ -38,7 +38,7 @@ Features
 -  **Speaker Vector**, calculate similarity between speakers using Pretrained Speaker Vector.
 -  **Speech Enhancement**, enhance voice activities using Waveform UNET.
 -  **SpeechSplit Conversion**, detailed speaking style conversion by disentangling speech into content, timbre, rhythm and pitch using PyWorld and PySPTK.
--  **Speech-to-Text**, End-to-End Speech to Text for Malay and Mixed (Malay and Singlish) using RNN-Transducer and Wav2Vec2 CTC.
+-  **Speech-to-Text**, End-to-End Speech to Text for Malay, Mixed (Malay and Singlish) and Singlish using RNN-Transducer and Wav2Vec2 CTC.
 -  **Super Resolution**, Super Resolution 4x for Waveform.
 -  **Text-to-Speech**, Text to Speech for Malay and Singlish using Tacotron2, FastSpeech2 and FastPitch.
 -  **Vocoder**, convert Mel to Waveform using MelGAN, Multiband MelGAN and Universal MelGAN Vocoder.

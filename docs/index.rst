@@ -43,6 +43,7 @@ Contents:
 
    load-stt-transducer-model
    load-stt-transducer-model-mixed
+   load-stt-transducer-model-singlish
    transcribe-long-audio
    ctc-language-model
    load-stt-ctc-model

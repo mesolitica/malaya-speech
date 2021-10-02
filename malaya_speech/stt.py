@@ -62,15 +62,15 @@ _transducer_availability = {
     'conformer-singlish': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 37.1,
-        'WER': 0.16547,
-        'CER': 0.06410,
+        'WER': 0.0963391,
+        'CER': 0.0545533,
         'Language': ['singlish'],
     },
     'large-conformer-singlish': {
         'Size (MB)': 404,
         'Quantized Size (MB)': 107,
-        'WER': 0.15986,
-        'CER': 0.05937,
+        'WER': 0.0839525,
+        'CER': 0.0445617,
         'Language': ['singlish'],
     },
 }
