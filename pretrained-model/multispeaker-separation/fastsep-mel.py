@@ -20,6 +20,7 @@ from sklearn.utils import shuffle
 
 sr = 22050
 speakers_size = 4
+min_val = np.log(1e-2)
 
 
 def get_data(combined_path, speakers_size=4, sr=22050):
@@ -35,7 +36,7 @@ def get_data(combined_path, speakers_size=4, sr=22050):
 
 def to_mel(y):
     mel = malaya_speech.featurization.universal_mel(y)
-    mel[mel <= np.log(1e-2)] = np.log(1e-2)
+    mel[mel <= min_val] = min_val
     return mel
 
 
@@ -80,6 +81,10 @@ def get_dataset(batch_size=4):
 total_steps = 10000000
 
 
+def mish(x):
+    return x * tf.math.tanh(tf.math.softplus(x))
+
+
 def model_fn(features, labels, mode, params):
     lengths = features['length'][:, 0]
     config = malaya_speech.config.fastspeech_config
@@ -94,7 +99,7 @@ def model_fn(features, labels, mode, params):
         transformer,
         decoder,
         encoder_out_nchannels=384,
-        activation=None,
+        activation=mish,
     )
     logits = model(features['combined'], lengths)
     outputs = tf.transpose(logits, [1, 2, 0, 3])
@@ -110,10 +115,10 @@ def model_fn(features, labels, mode, params):
 
         train_op = train.optimizer.adamw.create_optimizer(
             loss,
-            init_lr=0.0001,
+            init_lr=1e-4,
             num_train_steps=total_steps,
             num_warmup_steps=100000,
-            end_learning_rate=0.00001,
+            end_learning_rate=1e-6,
             weight_decay_rate=0.001,
             beta_1=0.9,
             beta_2=0.98,

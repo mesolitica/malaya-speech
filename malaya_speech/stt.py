@@ -52,6 +52,13 @@ _transducer_availability = {
         'CER': 0.1577375,
         'Language': ['malay', 'singlish'],
     },
+    'conformer-stack-3mixed': {
+        'Size (MB)': 130,
+        'Quantized Size (MB)': 38.5,
+        'WER': 0.2401982,
+        'CER': 0.1577375,
+        'Language': ['malay', 'singlish', 'mandarin'],
+    },
     'small-conformer-singlish': {
         'Size (MB)': 49.2,
         'Quantized Size (MB)': 18.1,
