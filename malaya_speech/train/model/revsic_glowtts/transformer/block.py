@@ -1,27 +1,3 @@
-"""
-MIT License
-
-Copyright (c) 2021 YoungJoong Kim
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
-
 from typing import Tuple
 
 import tensorflow as tf
@@ -57,7 +33,7 @@ class Block(tf.keras.Model):
             tf.keras.layers.Dropout(dropout),
             tf.keras.layers.LayerNormalization(axis=-1)])
 
-    def call(self, inputs: tf.Tensor, mask: tf.Tensor, training=True) \
+    def call(self, inputs: tf.Tensor, mask: tf.Tensor) \
             -> Tuple[tf.Tensor, tf.Tensor]:
         """Transform the inputs.
         Args:
@@ -68,12 +44,11 @@ class Block(tf.keras.Model):
             attn: [tf.float32; [B, K, T, T]], attention weights.
         """
         # [B, T, C], [B, K, T, T]
-        x, attn = self.attn(inputs, mask, training=training)
+        x, attn = self.attn(inputs, mask)
         # [B, T, C], assume inputs tensor is already masked
-
-        x = self.norm1(x + inputs, training=training) * tf.expand_dims(mask, -1)
+        x = self.norm1(x + inputs) * mask[..., None]
         # [B, T, C]
-        y = self.ffn(x, training=training) * tf.expand_dims(mask, -1)
+        y = self.ffn(x) * mask[..., None]
         # [B, T, C]
-        y = self.norm2(y + x, training=training) * tf.expand_dims(mask, -1)
+        y = self.norm2(y + x) * mask[..., None]
         return y, attn

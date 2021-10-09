@@ -27,8 +27,8 @@ from tensorflow.python.ops import math_ops
 from tensorflow.python.ops import state_ops
 from tensorflow.python.training import optimizer
 from tensorflow.python.training import training_ops
-from tensorflow.train import MomentumOptimizer
-import tensorflow as tf
+from tensorflow.compat.v1.train import MomentumOptimizer
+import tensorflow.compat.v1 as tf
 
 from ..loss import AutomaticLossScaler
 from ..utils import mask_nans, check_params
@@ -42,7 +42,6 @@ OPTIMIZER_CLS_NAMES = {
     'Momentum': tf.train.MomentumOptimizer,
     'RMSProp': tf.train.RMSPropOptimizer,
     'SGD': tf.train.GradientDescentOptimizer,
-    'AdamW': tf.contrib.opt.AdamWOptimizer,
 }
 
 OPTIMIZER_SUMMARIES = [

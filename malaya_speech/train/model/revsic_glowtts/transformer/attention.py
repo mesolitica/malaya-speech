@@ -1,27 +1,3 @@
-"""
-MIT License
-
-Copyright (c) 2021 YoungJoong Kim
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
-
 from typing import Tuple
 
 import numpy as np
@@ -51,7 +27,7 @@ class MultiHeadSelfAttn(tf.keras.Model):
         self.dropout = tf.keras.layers.Dropout(dropout)
         self.proj_out = tf.keras.layers.Dense(channels)
 
-    def call(self, inputs: tf.Tensor, mask: tf.Tensor, training=True) \
+    def call(self, inputs: tf.Tensor, mask: tf.Tensor) \
             -> Tuple[tf.Tensor, tf.Tensor]:
         """Self-attend the inputs.
         Args:
@@ -78,13 +54,12 @@ class MultiHeadSelfAttn(tf.keras.Model):
         # scaling
         scores = scores / np.sqrt(self.channels)
         # masking
-        mask_ = tf.expand_dims(tf.expand_dims(mask, 1), 1)
-        scores = scores * mask_ + \
-            (1 - mask_) * tf.float32.min
+        scores = scores * mask[:, None, None] + \
+            (1 - mask[:, None, None]) * tf.float32.min
 
         # [B, K, T, T]
         attn = tf.nn.softmax(scores, axis=-1)
-        attn = self.dropout(attn, training=training)
+        attn = self.dropout(attn)
         # [B, K, T, Ck]
         attend = tf.matmul(
             attn,
@@ -94,4 +69,4 @@ class MultiHeadSelfAttn(tf.keras.Model):
             tf.transpose(attend, [0, 2, 1, 3]),
             [bsize, timestep, self.actual_channels])
         # [B, T, Cout], [B, K, T, T]
-        return self.proj_out(out) * tf.expand_dims(mask, -1), attn
+        return self.proj_out(out) * mask[..., None], attn

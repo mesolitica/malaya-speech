@@ -1,27 +1,3 @@
-"""
-MIT License
-
-Copyright (c) 2021 YoungJoong Kim
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
-
 from typing import Tuple
 
 import tensorflow as tf
@@ -54,7 +30,7 @@ class AffineCoupling(tf.keras.Model):
             logscale: [tf.float32; [B, T, C]], logscale tensor.
         """
         # [B, T, H]
-        x = self.start(inputs) * tf.expand_dims(mask, -1)
+        x = self.start(inputs) * mask[..., None]
         # [B, T, H]
         x = self.nonlinear(x, mask)
         # [B, T, C // 2], [B, T, C // 2]
@@ -78,10 +54,9 @@ class AffineCoupling(tf.keras.Model):
         # [B, T, C // 2]
         x1 = bias + tf.exp(logscale) * x1
         # [B, T, C]
-
-        outputs = tf.concat([x0, x1], axis=-1) * tf.expand_dims(mask, -1)
+        outputs = tf.concat([x0, x1], axis=-1) * mask[..., None]
         # [B]
-        dlogdet = tf.reduce_sum(logscale * tf.expand_dims(mask, -1), axis=[1, 2])
+        dlogdet = tf.reduce_sum(logscale * mask[..., None], axis=[1, 2])
         return outputs, dlogdet
 
     def inverse(self, inputs: tf.Tensor, mask: tf.Tensor) -> tf.Tensor:
@@ -99,4 +74,4 @@ class AffineCoupling(tf.keras.Model):
         # [B, T, C // 2]
         x1 = (x1 - bias) * tf.exp(-logscale)
         # [B, T, C]
-        return tf.concat([x0, x1], axis=-1) * tf.expand_dims(mask, -1)
+        return tf.concat([x0, x1], axis=-1) * mask[..., None]

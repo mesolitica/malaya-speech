@@ -1,27 +1,3 @@
-"""
-MIT License
-
-Copyright (c) 2021 YoungJoong Kim
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
-
 from typing import List, Tuple
 
 import tensorflow as tf
@@ -67,7 +43,7 @@ class Transformer(tf.keras.Model):
                 config.block_dropout)
             for _ in range(config.block_num)]
 
-    def call(self, inputs: tf.Tensor, mask: tf.Tensor, training=True) \
+    def call(self, inputs: tf.Tensor, mask: tf.Tensor) \
             -> Tuple[tf.Tensor, List[tf.Tensor]]:
         """Transform the inputs.
         Args:
@@ -78,13 +54,13 @@ class Transformer(tf.keras.Model):
             attn: [tf.Tensor, [tf.float32; [B, K, T, T]]; N], attentions.
         """
         # [B, T, C]
-        x = self.prenet(inputs, mask, training=training)
+        x = self.prenet(inputs, mask)
         # [B, T, C]
-        x = x + tf.expand_dims(self.pe(tf.shape(x)[1]), 0)
+        x = x + self.pe(tf.shape(x)[1])[None]
         attn = []
         for block in self.blocks:
             # [B, T, C], [B, K, T, T]
-            x, align = block(x, mask, training=training)
+            x, align = block(x, mask)
             # N x [B, K, T, T]
             attn.append(align)
         # [B, T, C], N x [B, K, T, T]

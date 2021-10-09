@@ -1,27 +1,3 @@
-"""
-MIT License
-
-Copyright (c) 2021 YoungJoong Kim
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
-
 from typing import Dict, Optional, Tuple
 
 import tensorflow as tf
@@ -36,7 +12,7 @@ from ..utils import shape_list
 
 class Model(tf.keras.Model):
     """Glow-TTS: A Generative Flow for Text-to-Speech
-        via Monotonic Alignment Search, Kim et al. In NeurIPS 2020.
+        via Monotonic Alignment Search, Kim et al. In NeurIPS 2020. 
     """
     DURATION_MAX = 80
 
@@ -60,7 +36,7 @@ class Model(tf.keras.Model):
         # mean-only training
         self.proj_mu = tf.keras.layers.Dense(config.neck)
 
-    def call(self, inputs: tf.Tensor, lengths: tf.Tensor, training=True) \
+    def call(self, inputs: tf.Tensor, lengths: tf.Tensor) \
             -> Tuple[tf.Tensor, tf.Tensor]:
         """Generate mel-spectrogram from text inputs.
         Args:
@@ -76,9 +52,9 @@ class Model(tf.keras.Model):
         # [B, S]
         mask = self.mask(lengths, maxlen=seqlen)
         # [B, S, C]
-        embedding = self.embedding(inputs) * tf.expand_dims(mask, -1)
+        embedding = self.embedding(inputs) * mask[..., None]
         # [B, S, C]
-        hidden, _ = self.encoder(embedding, mask, training=training)
+        hidden, _ = self.encoder(embedding, mask)
         # [B, S, N]
         mean = self.proj_mu(hidden)
 
@@ -93,7 +69,7 @@ class Model(tf.keras.Model):
         sample = mean + tf.random.normal(tf.shape(mean)) * std
 
         # [B, T / F, M x F]
-        mel = self.decoder.inverse(sample * tf.expand_dims(mask, -1), mask)
+        mel = self.decoder.inverse(sample * mask[..., None], mask)
         # [B]
         mellen = tf.cast(tf.reduce_sum(mask, axis=-1), tf.int32)
         # [B, T, M], [B]
@@ -101,7 +77,7 @@ class Model(tf.keras.Model):
         return mel, mellen, attn
 
     def compute_loss(self, text: tf.Tensor, textlen: tf.Tensor,
-                     mel: tf.Tensor, mellen: tf.Tensor, training=True) \
+                     mel: tf.Tensor, mellen: tf.Tensor) \
             -> Tuple[tf.Tensor, Dict[str, tf.Tensor], tf.Tensor]:
         """Compute loss for glow-tts.
         Args:
@@ -117,9 +93,9 @@ class Model(tf.keras.Model):
         # [B, S]
         mask = self.mask(textlen, maxlen=tf.shape(text)[1])
         # [B, S, C]
-        embedding = self.embedding(text) * tf.expand_dims(mask, -1)
+        embedding = self.embedding(text) * mask[..., None]
         # [B, S, C]
-        hidden, _ = self.encoder(embedding, mask, training=training)
+        hidden, _ = self.encoder(embedding, mask)
         # [B, S, N], constant standard deviation
         mean = self.proj_mu(hidden)
 
@@ -131,11 +107,11 @@ class Model(tf.keras.Model):
         latent, dlogdet = self.decoder(mel, melmask)
 
         # [B, T', S]
-        attnmask = tf.expand_dims(melmask, -1) * tf.expand_dims(mask, 1)
+        attnmask = melmask[..., None] * mask[:, None]
         # [B, T', S], (mean - latent) ** 2
         dist = tf.reduce_sum(tf.square(latent), axis=-1, keepdims=True) - \
             2 * tf.matmul(latent, tf.transpose(mean, [0, 2, 1])) + \
-            tf.expand_dims(tf.reduce_sum(tf.square(mean), axis=-1), 1)
+            tf.reduce_sum(tf.square(mean), axis=-1)[:, None]
         # [B, T', S], assume constant standard deviation, 1.
         ll = -0.5 * (np.log(2 * np.pi) + dist) * attnmask
         # [B, T', S], attention alignment
@@ -175,7 +151,7 @@ class Model(tf.keras.Model):
         # [B, T]
         dur = tf.round(tf.exp(logdur))
         # [B, T]
-        dur = tf.clip_by_value(dur, 1., self.DURATION_MAX) * mask * self.length_scale
+        dur = tf.clip_by_value(dur, 1., Model.DURATION_MAX) * mask * self.length_scale
         return tf.cast(dur, tf.int32)
 
     def fold(self, inputs: tf.Tensor, lengths: tf.Tensor) \
@@ -197,7 +173,7 @@ class Model(tf.keras.Model):
             # T + R
             timestep = timestep + rest
         # [B, T // F, C x F]
-        folded = tf.reshape(inputs, [bsize, timestep // self.factor, self.mel * self.factor])
+        folded = tf.reshape(inputs, [bsize, timestep // self.factor, -1])
         # T / F
         lengths = tf.cast(tf.math.ceil(lengths / self.factor), tf.int32)
         return folded, lengths
@@ -215,7 +191,7 @@ class Model(tf.keras.Model):
         # B, T // F, _
         bsize, timestep, _ = shape_list(inputs)
         # [B, T, C]
-        recovered = tf.reshape(inputs, [bsize, timestep * self.factor, self.mel])
+        recovered = tf.reshape(inputs, [bsize, timestep * self.factor, -1])
         return recovered, lengths * self.factor
 
     def mask(self, lengths: tf.Tensor, maxlen: Optional[tf.Tensor] = None) \
@@ -229,8 +205,8 @@ class Model(tf.keras.Model):
         """
         if maxlen is None:
             maxlen = tf.reduce_max(lengths)
-
-        return tf.cast(tf.sequence_mask(lengths, maxlen), tf.float32)
+        # [B, S]
+        return tf.cast(tf.range(maxlen)[None] < lengths[:, None], tf.float32)
 
     def align(self, duration: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         """Generate attention from duration.
