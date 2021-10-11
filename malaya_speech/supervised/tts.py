@@ -4,7 +4,7 @@ from malaya_speech.utils import (
     generate_session,
     nodes_session,
 )
-from malaya_speech.model.tf import Tacotron, Fastspeech, Fastpitch
+from malaya_speech.model.tf import Tacotron, Fastspeech, Fastpitch, GlowTTS
 import numpy as np
 
 
@@ -79,6 +79,33 @@ def fastpitch_load(
     stats = np.load(path[model]['stats'])
 
     return Fastpitch(
+        input_nodes=input_nodes,
+        output_nodes=output_nodes,
+        normalizer=normalizer,
+        stats=stats,
+        sess=generate_session(graph=g, **kwargs),
+        model=model,
+        name=name,
+    )
+
+
+def glowtts_load(
+    path, s3_path, model, name, normalizer, quantized=False, **kwargs
+):
+    check_file(path[model], s3_path[model], quantized=quantized, **kwargs)
+    if quantized:
+        model_path = 'quantized'
+    else:
+        model_path = 'model'
+
+    g = load_graph(path[model][model_path], **kwargs)
+    inputs = ['input_ids', 'lens', 'temperature', 'length_ratio']
+    outputs = ['mel_output', 'alignment_histories']
+    input_nodes, output_nodes = nodes_session(g, inputs, outputs)
+
+    stats = np.load(path[model]['stats'])
+
+    return GlowTTS(
         input_nodes=input_nodes,
         output_nodes=output_nodes,
         normalizer=normalizer,

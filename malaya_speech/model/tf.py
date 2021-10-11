@@ -1645,3 +1645,16 @@ class TransducerAligner(Abstract):
         result: Dict[words_alignment, subwords_alignment, subwords, alignment]
         """
         return self.predict(input, transcription)
+
+
+class GlowTTS(Abstract):
+    def __init__(
+        self, input_nodes, output_nodes, normalizer, stats, sess, model, name
+    ):
+        self._input_nodes = input_nodes
+        self._output_nodes = output_nodes
+        self._normalizer = normalizer
+        self._stats = stats
+        self._sess = sess
+        self.__model__ = model
+        self.__name__ = name

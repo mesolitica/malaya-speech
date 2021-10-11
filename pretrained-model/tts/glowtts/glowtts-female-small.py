@@ -47,6 +47,8 @@ parameters = {
 }
 
 config = glowtts.Config(mel=80, vocabs=len(MALAYA_SPEECH_SYMBOLS))
+config.flow_block_num = 6
+config.block_num = 4
 
 
 def noam_schedule(step, channels, learning_rate=1.0, warmup_steps=4000):
@@ -197,7 +199,7 @@ def model_fn(features, labels, mode, params):
         all_finite = tf.constant(True, dtype=tf.bool)
         (grads, _) = tf.clip_by_global_norm(
             grads,
-            clip_norm=2.0,
+            clip_norm=1.0,
             use_norm=tf.cond(
                 all_finite, lambda: tf.global_norm(grads), lambda: tf.constant(1.0)
             ),
@@ -234,10 +236,10 @@ dev_dataset = get_dataset(files['test'])
 train.run_training(
     train_fn=train_dataset,
     model_fn=model_fn,
-    model_dir='glowtts-female',
+    model_dir='glowtts-female-small',
     num_gpus=1,
     log_step=1,
-    save_checkpoint_step=2500,
+    save_checkpoint_step=5000,
     max_steps=total_steps,
     eval_fn=dev_dataset,
     train_hooks=train_hooks,

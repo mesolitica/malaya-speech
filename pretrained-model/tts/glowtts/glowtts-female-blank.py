@@ -46,7 +46,7 @@ parameters = {
     },
 }
 
-config = glowtts.Config(mel=80, vocabs=len(MALAYA_SPEECH_SYMBOLS))
+config = glowtts.Config(mel=80, vocabs=len(MALAYA_SPEECH_SYMBOLS) + 1)
 
 
 def noam_schedule(step, channels, learning_rate=1.0, warmup_steps=4000):
@@ -91,12 +91,15 @@ def generate(files):
             [MALAYA_SPEECH_SYMBOLS.index(c) for c in text_ids]
         )
         num_pad = pad_to - ((len(text_input) + 2) % pad_to)
+        result = [len(MALAYA_SPEECH_SYMBOLS)] * (len(text_input) * 2 + 1)
+        result[1::2] = text_input
         text_input = np.pad(
-            text_input, ((1, 1)), 'constant', constant_values=((1, 2))
+            result, ((1, 1)), 'constant', constant_values=((1, 2))
         )
         text_input = np.pad(
             text_input, ((0, num_pad)), 'constant', constant_values=0
         )
+
         num_pad = pad_to - ((len(mel) + 1) % pad_to) + 1
         pad_value_mel = np.log(data_min)
         mel = np.pad(
@@ -106,11 +109,11 @@ def generate(files):
             constant_values=pad_value_mel,
         )
         len_mel = [len(mel)]
-        len_text_ids = [len(text_input)]
+        len_text_ids = [len(result)]
 
         yield {
             'mel': mel,
-            'text_ids': text_input,
+            'text_ids': result,
             'len_mel': len_mel,
             'len_text_ids': len_text_ids,
             'f': [f],
@@ -197,7 +200,7 @@ def model_fn(features, labels, mode, params):
         all_finite = tf.constant(True, dtype=tf.bool)
         (grads, _) = tf.clip_by_global_norm(
             grads,
-            clip_norm=2.0,
+            clip_norm=1.0,
             use_norm=tf.cond(
                 all_finite, lambda: tf.global_norm(grads), lambda: tf.constant(1.0)
             ),
@@ -234,7 +237,7 @@ dev_dataset = get_dataset(files['test'])
 train.run_training(
     train_fn=train_dataset,
     model_fn=model_fn,
-    model_dir='glowtts-female',
+    model_dir='glowtts-female-blank',
     num_gpus=1,
     log_step=1,
     save_checkpoint_step=2500,

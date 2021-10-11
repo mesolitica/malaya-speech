@@ -5,6 +5,8 @@ from malaya_speech.path import (
     S3_PATH_TTS_FASTSPEECH2,
     PATH_TTS_FASTPITCH,
     S3_PATH_TTS_FASTPITCH,
+    PATH_TTS_GLOWTTS,
+    S3_PATH_TTS_GLOWTTS,
 )
 from malaya_speech.utils.text import (
     convert_to_ascii,
@@ -93,6 +95,34 @@ _fastpitch_availability = {
         'Quantized Size (MB)': 31.1,
         'Combined loss': 0.5186,
     },
+}
+
+_glowtts_availability = {
+    'male': {
+        'Size (MB)': 119,
+        'Quantized Size (MB)': 27.6,
+        'Combined loss': 1.614,
+    },
+    'female': {
+        'Size (MB)': 119,
+        'Quantized Size (MB)': 27.6,
+        'Combined loss': 1.669,
+    },
+    'husein': {
+        'Size (MB)': 119,
+        'Quantized Size (MB)': 27.6,
+        'Combined loss': 0.52515,
+    },
+    'haqkiem': {
+        'Size (MB)': 119,
+        'Quantized Size (MB)': 27.6,
+        'Combined loss': 0.5186,
+    },
+    'multispeaker': {
+        'Size (MB)': 123,
+        'Quantized Size (MB)': 31.1,
+        'Combined loss': 1.614,
+    }
 }
 
 
@@ -323,6 +353,62 @@ def fastpitch(
         **kwargs
     )
     return tts.fastpitch_load(
+        path=PATH_TTS_FASTPITCH,
+        s3_path=S3_PATH_TTS_FASTPITCH,
+        model=model,
+        name='text-to-speech',
+        normalizer=text_ids,
+        quantized=quantized,
+        **kwargs
+    )
+
+
+def glowtts(model: str = 'male',
+            quantized: bool = False,
+            pad_to: int = 2,
+            true_case_model=None,
+            **kwargs):
+    """
+    Load GlowTTS TTS model.
+
+    Parameters
+    ----------
+    model : str, optional (default='male')
+        Model architecture supported. Allowed values:
+
+        * ``'female'`` - GlowTTS trained on female voice.
+        * ``'male'`` - GlowTTS trained on male voice.
+        * ``'husein'`` - GlowTTS trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
+        * ``'haqkiem'`` - GlowTTS trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
+
+    quantized : bool, optional (default=False)
+        if True, will load 8-bit quantized model.
+        Quantized model not necessary faster, totally depends on the machine.
+    pad_to : int, optional (default=2)
+        size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 2.
+    true_case_model: str, optional (default=None)
+        load any true case model, eg, malaya true case model from https://malaya.readthedocs.io/en/latest/load-true-case.html
+        the interface must accept a string, return a string, eg, string = true_case_model(string)
+
+    Returns
+    -------
+    result : malaya_speech.model.tf.GlowTTS class
+    """
+
+    model = model.lower()
+
+    if model not in _fastpitch_availability:
+        raise ValueError(
+            'model not supported, please check supported models from `malaya_speech.tts.available_fastpitch()`.'
+        )
+
+    text_ids = load_text_ids(
+        pad_to=pad_to,
+        true_case_model=true_case_model,
+        quantized=quantized,
+        **kwargs
+    )
+    return tts.glowtts_load(
         path=PATH_TTS_FASTPITCH,
         s3_path=S3_PATH_TTS_FASTPITCH,
         model=model,

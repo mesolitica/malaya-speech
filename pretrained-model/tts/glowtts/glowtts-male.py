@@ -17,7 +17,7 @@ import math
 import json
 import re
 
-with open('mels-female.json') as fopen:
+with open('mels-male.json') as fopen:
     files = json.load(fopen)
 
 reduction_factor = 1
@@ -197,7 +197,7 @@ def model_fn(features, labels, mode, params):
         all_finite = tf.constant(True, dtype=tf.bool)
         (grads, _) = tf.clip_by_global_norm(
             grads,
-            clip_norm=2.0,
+            clip_norm=1.0,
             use_norm=tf.cond(
                 all_finite, lambda: tf.global_norm(grads), lambda: tf.constant(1.0)
             ),
@@ -234,7 +234,7 @@ dev_dataset = get_dataset(files['test'])
 train.run_training(
     train_fn=train_dataset,
     model_fn=model_fn,
-    model_dir='glowtts-female',
+    model_dir='glowtts-male',
     num_gpus=1,
     log_step=1,
     save_checkpoint_step=2500,

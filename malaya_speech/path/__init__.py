@@ -202,3 +202,53 @@ S3_PATH_TTS_FASTPITCH = {
         'stats': 'v1/vocoder-stats/female-singlish.npy',
     },
 }
+
+PATH_TTS_GLOWTTS = {
+    'female': {
+        'model': home + '/tts/glowtts-female/model.pb',
+        'quantized': home + '/tts/glowtts-female/quantized/model.pb',
+        'stats': home + '/tts/stats/female.npy',
+        'version': 'v1',
+    },
+    'male': {
+        'model': home + '/tts/glowtts-male/model.pb',
+        'quantized': home + '/tts/glowtts-male/quantized/model.pb',
+        'stats': home + '/tts/stats/male.npy',
+        'version': 'v1',
+    },
+    'husein': {
+        'model': home + '/tts/glowtts-husein/model.pb',
+        'quantized': home + '/tts/glowtts-husein/quantized/model.pb',
+        'stats': home + '/tts/stats/husein.npy',
+        'version': 'v1',
+    },
+    'haqkiem': {
+        'model': home + '/tts/glowtts-haqkiem/model.pb',
+        'quantized': home + '/tts/glowtts-haqkiem/quantized/model.pb',
+        'stats': home + '/tts/stats/haqkiem.npy',
+        'version': 'v1',
+    },
+}
+
+S3_PATH_TTS_GLOWTTS = {
+    'female': {
+        'model': 'v1/tts/glowtts-female.pb',
+        'quantized': 'v1/tts/glowtts-female.pb.quantized',
+        'stats': 'v2/vocoder-stats/female.npy',
+    },
+    'male': {
+        'model': 'v1/tts/glowtts-male.pb',
+        'quantized': 'v1/tts/glowtts-male.pb.quantized',
+        'stats': 'v2/vocoder-stats/male.npy',
+    },
+    'husein': {
+        'model': 'v1/tts/glowtts-husein.pb',
+        'quantized': 'v1/tts/glowtts-husein.pb.quantized',
+        'stats': 'v2/vocoder-stats/husein.npy',
+    },
+    'haqkiem': {
+        'model': 'v1/tts/glowtts-haqkiem.pb',
+        'quantized': 'v1/tts/glowtts-haqkiem.pb.quantized',
+        'stats': 'v1/vocoder-stats/haqkiem.npy',
+    },
+}
