@@ -76,6 +76,7 @@ Contents:
    tts-fastspeech2-model
    more-tts-fastspeech2
    tts-fastpitch-model
+   tts-glowtts-model
    tts-singlish
    tts-long-text
 

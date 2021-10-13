@@ -232,23 +232,23 @@ PATH_TTS_GLOWTTS = {
 
 S3_PATH_TTS_GLOWTTS = {
     'female': {
-        'model': 'v1/tts/glowtts-female.pb',
-        'quantized': 'v1/tts/glowtts-female.pb.quantized',
+        'model': 'v2/tts/glowtts-female.pb',
+        'quantized': 'v2/tts/glowtts-female.pb.quantized',
         'stats': 'v2/vocoder-stats/female.npy',
     },
     'male': {
-        'model': 'v1/tts/glowtts-male.pb',
-        'quantized': 'v1/tts/glowtts-male.pb.quantized',
+        'model': 'v2/tts/glowtts-male.pb',
+        'quantized': 'v2/tts/glowtts-male.pb.quantized',
         'stats': 'v2/vocoder-stats/male.npy',
     },
-    'husein': {
-        'model': 'v1/tts/glowtts-husein.pb',
-        'quantized': 'v1/tts/glowtts-husein.pb.quantized',
-        'stats': 'v2/vocoder-stats/husein.npy',
-    },
     'haqkiem': {
-        'model': 'v1/tts/glowtts-haqkiem.pb',
-        'quantized': 'v1/tts/glowtts-haqkiem.pb.quantized',
+        'model': 'v2/tts/glowtts-haqkiem.pb',
+        'quantized': 'v2/tts/glowtts-haqkiem.pb.quantized',
         'stats': 'v1/vocoder-stats/haqkiem.npy',
+    },
+    'female-singlish': {
+        'model': 'v2/tts/glowtts-female-singlish.pb',
+        'quantized': 'v2/tts/glowtts-female-singlish.pb.quantized',
+        'stats': 'v1/vocoder-stats/female-singlish.npy',
     },
 }

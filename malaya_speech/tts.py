@@ -101,22 +101,17 @@ _glowtts_availability = {
     'male': {
         'Size (MB)': 119,
         'Quantized Size (MB)': 27.6,
-        'Combined loss': 1.614,
+        'Combined loss': -1.429,
     },
     'female': {
         'Size (MB)': 119,
         'Quantized Size (MB)': 27.6,
-        'Combined loss': 1.669,
-    },
-    'husein': {
-        'Size (MB)': 119,
-        'Quantized Size (MB)': 27.6,
-        'Combined loss': 0.52515,
+        'Combined loss': -1.464,
     },
     'haqkiem': {
         'Size (MB)': 119,
         'Quantized Size (MB)': 27.6,
-        'Combined loss': 0.5186,
+        'Combined loss': -1.649,
     },
     'multispeaker': {
         'Size (MB)': 123,
@@ -184,6 +179,18 @@ def available_fastpitch():
     return describe_availability(
         _fastpitch_availability,
         text='`husein` and `haqkiem` combined loss from training set',
+    )
+
+
+def available_glowtts():
+    """
+    List available GlowTTS, Text to Mel models.
+    """
+    from malaya_speech.utils import describe_availability
+
+    return describe_availability(
+        _fastpitch_availability,
+        text='`haqkiem` and `female-singlish` combined loss from training set',
     )
 
 
@@ -378,7 +385,6 @@ def glowtts(model: str = 'male',
 
         * ``'female'`` - GlowTTS trained on female voice.
         * ``'male'`` - GlowTTS trained on male voice.
-        * ``'husein'`` - GlowTTS trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
         * ``'haqkiem'`` - GlowTTS trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
 
     quantized : bool, optional (default=False)
@@ -409,8 +415,8 @@ def glowtts(model: str = 'male',
         **kwargs
     )
     return tts.glowtts_load(
-        path=PATH_TTS_FASTPITCH,
-        s3_path=S3_PATH_TTS_FASTPITCH,
+        path=PATH_TTS_GLOWTTS,
+        s3_path=S3_PATH_TTS_GLOWTTS,
         model=model,
         name='text-to-speech',
         normalizer=text_ids,

@@ -1658,3 +1658,49 @@ class GlowTTS(Abstract):
         self._sess = sess
         self.__model__ = model
         self.__name__ = name
+
+    def predict(
+        self,
+        string,
+        temperature: float = 0.3333,
+        length_ratio: float = 1.0,
+        **kwargs,
+    ):
+        """
+        Change string to Mel.
+
+        Parameters
+        ----------
+        string: str
+        temperature: float, optional (default=0.3333)
+            Decoder model trying to decode with random.normal() * temperature.
+        length_ratio: float, optional (default=1.0)
+            Increase this variable will increase time voice generated.
+
+        Returns
+        -------
+        result: Dict[string, ids, mel-output, alignment, universal-output]
+        """
+        t, ids = self._normalizer.normalize(string, **kwargs)
+        r = self._execute(
+            inputs=[[ids], [len(ids)], [temperature], [length_ratio]],
+            input_labels=[
+                'input_ids',
+                'lens',
+                'temperature',
+                'length_ratio',
+            ],
+            output_labels=['mel_output', 'alignment_histories'],
+        )
+        v = r['mel_output'][0] * self._stats[1] + self._stats[0]
+        v = (v - MEL_MEAN) / MEL_STD
+        return {
+            'string': t,
+            'ids': ids,
+            'mel-output': r['mel_output'][0],
+            'alignment': r['alignment_histories'][0].T,
+            'universal-output': v,
+        }
+
+    def __call__(self, input, **kwargs):
+        return self.predict(input, **kwargs)

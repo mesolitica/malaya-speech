@@ -17,7 +17,7 @@ import math
 import json
 import re
 
-files = glob('/home/husein/speech-bahasa/output-haqkiem/mels/*.npy')
+files = glob('/home/husein/speech-bahasa/output-female-singlish/mels/*.npy')
 
 reduction_factor = 1
 maxlen = 1008
@@ -233,7 +233,7 @@ train_dataset = get_dataset(files)
 train.run_training(
     train_fn=train_dataset,
     model_fn=model_fn,
-    model_dir='glowtts-haqkiem',
+    model_dir='glowtts-female-singlish',
     num_gpus=1,
     log_step=1,
     save_checkpoint_step=2500,

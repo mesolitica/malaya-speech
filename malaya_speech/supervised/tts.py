@@ -98,7 +98,7 @@ def glowtts_load(
     else:
         model_path = 'model'
 
-    g = load_graph(path[model][model_path], **kwargs)
+    g = load_graph(path[model][model_path], glowtts_graph=True, **kwargs)
     inputs = ['input_ids', 'lens', 'temperature', 'length_ratio']
     outputs = ['mel_output', 'alignment_histories']
     input_nodes, output_nodes = nodes_session(g, inputs, outputs)
