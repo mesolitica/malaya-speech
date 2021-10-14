@@ -113,6 +113,11 @@ _glowtts_availability = {
         'Quantized Size (MB)': 27.6,
         'Combined loss': -1.649,
     },
+    'female-singlish': {
+        'Size (MB)': 119,
+        'Quantized Size (MB)': 27.6,
+        'Combined loss': -1.728,
+    },
     'multispeaker': {
         'Size (MB)': 123,
         'Quantized Size (MB)': 31.1,

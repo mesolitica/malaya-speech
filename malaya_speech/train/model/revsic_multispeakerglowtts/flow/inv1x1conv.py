@@ -68,7 +68,7 @@ class Inv1x1Conv(tf.keras.Model):
         # [B, T, C], [B]
         return outputs, dlogdet
 
-    def call(self, inputs: tf.Tensor, mask: tf.Tensor) \
+    def call(self, inputs: tf.Tensor, mask: tf.Tensor, g=None) \
             -> Tuple[tf.Tensor, tf.Tensor]:
         """Forward 1x1 convolution.
         Args:
@@ -80,7 +80,7 @@ class Inv1x1Conv(tf.keras.Model):
         """
         return self.transform(inputs, mask, self.weight)
 
-    def inverse(self, inputs: tf.Tensor, mask: tf.Tensor) \
+    def inverse(self, inputs: tf.Tensor, mask: tf.Tensor, g=None) \
             -> Tuple[tf.Tensor, tf.Tensor]:
         """Inverse 1x1 convolution.
         Args:

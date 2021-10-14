@@ -65,7 +65,7 @@ class Model(tf.keras.Model):
         g = tf.expand_dims(g, 1)
         return g
 
-    def call(self, inputs: tf.Tensor, lengths: tf.Tensor) \
+    def call(self, inputs: tf.Tensor, lengths: tf.Tensor, g: tf.Tensor) \
             -> Tuple[tf.Tensor, tf.Tensor]:
         """Generate mel-spectrogram from text inputs.
         Args:
@@ -76,6 +76,7 @@ class Model(tf.keras.Model):
             mellen: [tf.int32; [B]], length of the mel-spectrogram.
             attn: [tf.float32; [B, T / F, S]], attention alignment.
         """
+        g = self._norm_g(g)
         # S
         _, seqlen = shape_list(inputs)
         # [B, S]
@@ -84,7 +85,8 @@ class Model(tf.keras.Model):
         embedding = self.embedding(inputs) * mask[..., None]
         # [B, S, C]
         hidden, _ = self.encoder(embedding, mask)
-        # [B, S, N]
+        g_tile = tf.tile(g, [1, tf.shape(hidden)[1], 1])
+        hidden = tf.concat([hidden, g_tile], 2)
         mean = self.proj_mu(hidden)
 
         # [B, S]
@@ -98,7 +100,7 @@ class Model(tf.keras.Model):
         sample = mean + tf.random.normal(tf.shape(mean)) * std
 
         # [B, T / F, M x F]
-        mel = self.decoder.inverse(sample * mask[..., None], mask)
+        mel = self.decoder.inverse(sample * mask[..., None], mask, g=g)
         # [B]
         mellen = tf.cast(tf.reduce_sum(mask, axis=-1), tf.int32)
         # [B, T, M], [B]
@@ -129,7 +131,7 @@ class Model(tf.keras.Model):
         hidden, _ = self.encoder(embedding, mask)
         # [B, S, N], constant standard deviation
         g_tile = tf.tile(g, [1, tf.shape(hidden)[1], 1])
-        hidden = tf.concat([hidden, g_tile], 1)
+        hidden = tf.concat([hidden, g_tile], 2)
         mean = self.proj_mu(hidden)
 
         # [B, T', N], [B]

@@ -66,7 +66,7 @@ class WaveNetFlow(tf.keras.Model):
                         config.wavenet_kernel_size,
                         config.wavenet_dilation))])
 
-    def call(self, inputs: tf.Tensor, mask: tf.Tensor) \
+    def call(self, inputs: tf.Tensor, mask: tf.Tensor, g) \
             -> Tuple[tf.Tensor, tf.Tensor]:
         """Compute latent from inputs.
         Args:
@@ -80,12 +80,12 @@ class WaveNetFlow(tf.keras.Model):
         x, contrib = inputs, []
         for block in self.flows:
             # [B, T, C], [B]
-            x, dlogdet = block(x, mask)
+            x, dlogdet = block(x, mask, g=g)
             contrib.append(dlogdet)
         # [B, T, C], [B]
         return x, tf.reduce_sum(contrib, axis=0)
 
-    def inverse(self, inputs: tf.Tensor, mask: tf.Tensor) -> tf.Tensor:
+    def inverse(self, inputs: tf.Tensor, mask: tf.Tensor, g) -> tf.Tensor:
         """Generate samples from latent.
         Args:
             inputs: [tf.float32; [B, T, C]], latent tensor.
@@ -97,6 +97,6 @@ class WaveNetFlow(tf.keras.Model):
         x = inputs
         for block in self.flows[::-1]:
             # [B, T, C]
-            x = block.inverse(x, mask)
+            x = block.inverse(x, mask, g=g)
         # [B, T, C]
         return x

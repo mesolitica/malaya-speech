@@ -61,7 +61,7 @@ class ActNorm(tf.keras.Model):
         self.logstd.assign(logstd)
         self.init = 1
 
-    def call(self, inputs: tf.Tensor, mask: tf.Tensor) \
+    def call(self, inputs: tf.Tensor, mask: tf.Tensor, g=None) \
             -> Tuple[tf.Tensor, tf.Tensor]:
         """Normalize inputs with ddi.
         Args:
@@ -82,7 +82,7 @@ class ActNorm(tf.keras.Model):
         dlogdet = tf.reduce_sum(-self.logstd) * tf.reduce_sum(mask, axis=1)
         return outputs, dlogdet
 
-    def inverse(self, inputs: tf.Tensor, mask: tf.Tensor) -> tf.Tensor:
+    def inverse(self, inputs: tf.Tensor, mask: tf.Tensor, g=None) -> tf.Tensor:
         """Denormalize inputs.
         Args:
             inputs: [tf.float32; [B, T, C]], input tensor.

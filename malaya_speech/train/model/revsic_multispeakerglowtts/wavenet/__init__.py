@@ -60,12 +60,13 @@ class WaveNet(tf.keras.Model):
             for i in range(block_num_per_cycle)]
         self.proj_skip = tf.keras.layers.Conv1D(channels, 1)
         self.cond_layer = WeightNormalization(
-            tf.keras.layers.Conv1d(2*channels*n_layers, 1))
+            tf.keras.layers.Conv1D(2*channels*len(self.blocks), 1))
+        self.hidden_channels = channels
 
     def call(self,
              inputs: tf.Tensor,
              mask: tf.Tensor,
-             aux: Optional[tf.Tensor] = None) -> tf.Tensor:
+             g: tf.Tensor) -> tf.Tensor:
         """Pass to WaveNet.
         Args:
             inputs: [tf.float32; [B, T, C]], input tensor.
@@ -77,9 +78,12 @@ class WaveNet(tf.keras.Model):
         context = []
         # [B, T, C]
         x = inputs
-        for block in self.blocks:
+        g = self.cond_layer(g)
+        for no, block in enumerate(self.blocks):
             # [B, T, C], [B, T, C]
-            x, skip = block(x, mask, aux)
+            cond_offset = no * 2 * self.hidden_channels
+            g_l = g[:, :, cond_offset:cond_offset+2*self.hidden_channels]
+            x, skip = block(x, mask, g=g_l)
             context.append(skip)
         # [B, T, C], variance scaling
         context = tf.reduce_sum(context, axis=0) / (self.block_num ** 0.5)

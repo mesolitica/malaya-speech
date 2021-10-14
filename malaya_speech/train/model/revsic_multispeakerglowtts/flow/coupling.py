@@ -43,7 +43,7 @@ class AffineCoupling(tf.keras.Model):
         self.end = tf.keras.layers.Conv1D(channels, 1, kernel_initializer='zeros')
         self.nonlinear = nonlinear
 
-    def parameterize(self, inputs: tf.Tensor, mask: tf.Tensor) \
+    def parameterize(self, inputs: tf.Tensor, mask: tf.Tensor, g=None) \
             -> Tuple[tf.Tensor, tf.Tensor]:
         """Generate affine parameters.
         Args:
@@ -56,12 +56,12 @@ class AffineCoupling(tf.keras.Model):
         # [B, T, H]
         x = self.start(inputs) * mask[..., None]
         # [B, T, H]
-        x = self.nonlinear(x, mask)
+        x = self.nonlinear(x, mask, g=g)
         # [B, T, C // 2], [B, T, C // 2]
         bias, logscale = tf.split(self.end(x), 2, axis=-1)
         return bias, logscale
 
-    def call(self, inputs: tf.Tensor, mask: tf.Tensor) \
+    def call(self, inputs: tf.Tensor, mask: tf.Tensor, g=None) \
             -> Tuple[tf.Tensor, tf.Tensor]:
         """Pass to affine coupling.
         Args:
@@ -74,7 +74,7 @@ class AffineCoupling(tf.keras.Model):
         # [B, T, C // 2], [B, T, C // 2]
         x0, x1 = tf.split(inputs, 2, axis=-1)
         # [B, T, C // 2], [B, T, C // 2]
-        bias, logscale = self.parameterize(x0, mask)
+        bias, logscale = self.parameterize(x0, mask, g=g)
         # [B, T, C // 2]
         x1 = bias + tf.exp(logscale) * x1
         # [B, T, C]
@@ -83,7 +83,7 @@ class AffineCoupling(tf.keras.Model):
         dlogdet = tf.reduce_sum(logscale * mask[..., None], axis=[1, 2])
         return outputs, dlogdet
 
-    def inverse(self, inputs: tf.Tensor, mask: tf.Tensor) -> tf.Tensor:
+    def inverse(self, inputs: tf.Tensor, mask: tf.Tensor, g) -> tf.Tensor:
         """Inverse affine coupling.
         Args:
             inputs: [tf.float32; [B, T, C]], input tensor.
@@ -94,7 +94,7 @@ class AffineCoupling(tf.keras.Model):
         # [B, T, C // 2], [B, T, C // 2]
         x0, x1 = tf.split(inputs, 2, axis=-1)
         # [B, T, C // 2], [B, T, C // 2]
-        bias, logscale = self.parameterize(x0, mask)
+        bias, logscale = self.parameterize(x0, mask, g=g)
         # [B, T, C // 2]
         x1 = (x1 - bias) * tf.exp(-logscale)
         # [B, T, C]
