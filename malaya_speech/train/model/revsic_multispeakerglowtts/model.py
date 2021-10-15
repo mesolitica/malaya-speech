@@ -59,9 +59,11 @@ class Model(tf.keras.Model):
             config.dur_kernel, config.dur_dropout)
         # mean-only training
         self.proj_mu = tf.keras.layers.Dense(config.neck)
+        self.norm_g = config.norm_g
 
     def _norm_g(self, g):
-        g = tf.linalg.normalize(g, 2)[0]
+        if self.norm_g:
+            g = tf.linalg.normalize(g, 2)[0]
         g = tf.expand_dims(g, 1)
         return g
 

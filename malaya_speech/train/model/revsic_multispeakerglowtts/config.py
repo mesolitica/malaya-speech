@@ -69,3 +69,5 @@ class Config:
         self.dur_kernel = 3
         self.dur_layers = 2
         self.dur_dropout = self.block_dropout
+
+        self.norm_g = True
