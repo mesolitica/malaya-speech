@@ -92,17 +92,8 @@ global_step = tf.train.get_or_create_global_step()
 
 print(global_step)
 
-g_boundaries = [100_000, 200_000, 300_000, 400_000, 500_000, 600_000, 700_000]
-g_values = [
-    0.0005,
-    0.0005,
-    0.00025,
-    0.000_125,
-    0.000_062_5,
-    0.000_031_25,
-    0.000_015_625,
-    0.000_001,
-]
+g_boundaries = [100000, 200000, 300000, 400000, 500000, 600000, 700000]
+g_values = [0.000125, 0.000125, 0.000625, 0.000625, 0.0000625, 0.00003125, 0.000015625, 0.000001]
 
 piece_wise = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
     g_boundaries, g_values

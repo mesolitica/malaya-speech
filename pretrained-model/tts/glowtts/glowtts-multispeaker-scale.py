@@ -31,7 +31,7 @@ stats = {
 mel_stats = np.load('universal-stats/stats.npy')
 
 reduction_factor = 1
-maxlen = 904
+maxlen = 1008
 minlen = 32
 pad_to = 2
 data_min = 1e-2
@@ -98,7 +98,7 @@ def generate(files):
         ]
         wav = np.load(f.replace('mels', 'audios'))
         audio_16k = malaya_speech.resample(wav, 22050, 16000)
-        v = speaker_model([audio_16k])[0]
+        v = speaker_model([audio_16k])[0] * 30 - 3.5
         text_ids = ''.join(
             [
                 c

@@ -30,14 +30,12 @@ import numpy as np
 from .config import Config
 from .durator import DurationPredictor
 from .flow import WaveNetFlow
+from .posterior import PosteriorEncoder
 from .transformer import Transformer
 from ..utils import shape_list
 
 
 class Model(tf.keras.Model):
-    """Glow-TTS: A Generative Flow for Text-to-Speech
-        via Monotonic Alignment Search, Kim et al. In NeurIPS 2020. 
-    """
     DURATION_MAX = 80
 
     def __init__(self, config: Config):
@@ -47,27 +45,21 @@ class Model(tf.keras.Model):
         """
         super().__init__()
         self.mel = config.mel
-        self.factor = config.factor
         self.temperature = config.temperature
         self.length_scale = config.length_scale
         self.embedding = tf.keras.layers.Embedding(
             config.vocabs, config.channels)
         self.encoder = Transformer(config)
-        self.decoder = WaveNetFlow(config)
+        self.enc_q = PosteriorEncoder(config)
+        self.flow = WaveNetFlow(config)
         self.durator = DurationPredictor(
             config.dur_layers, config.channels,
             config.dur_kernel, config.dur_dropout)
         # mean-only training
-        self.proj_mu = tf.keras.layers.Dense(config.neck)
-        self.norm_g = config.norm_g
+        self.proj = tf.keras.layers.Dense(config.mel * 2)
+        self.interchannels = config.mel
 
-    def _norm_g(self, g):
-        if self.norm_g:
-            g = tf.linalg.normalize(g, 2)[0]
-        g = tf.expand_dims(g, 1)
-        return g
-
-    def call(self, inputs: tf.Tensor, lengths: tf.Tensor, g: tf.Tensor, g_right: tf.Tensor) \
+    def call(self, inputs: tf.Tensor, lengths: tf.Tensor) \
             -> Tuple[tf.Tensor, tf.Tensor]:
         """Generate mel-spectrogram from text inputs.
         Args:
@@ -78,19 +70,19 @@ class Model(tf.keras.Model):
             mellen: [tf.int32; [B]], length of the mel-spectrogram.
             attn: [tf.float32; [B, T / F, S]], attention alignment.
         """
-        g = self._norm_g(g)
-        g_right = self._norm_g(g_right)
         # S
         _, seqlen = shape_list(inputs)
-        # [B, S]
         mask = self.mask(lengths, maxlen=seqlen)
         # [B, S, C]
         embedding = self.embedding(inputs) * mask[..., None]
         # [B, S, C]
         hidden, _ = self.encoder(embedding, mask)
-        g_tile = tf.tile(g, [1, tf.shape(hidden)[1], 1])
-        hidden = tf.concat([hidden, g_tile], 2)
-        mean = self.proj_mu(hidden)
+        # [B, S, 2C]
+        stats = self.proj(hidden) * mask[..., None]
+        # [B, S, C]
+        m_p = stats[..., :self.interchannels]
+        # [B, S, C]
+        logs_p = stats[..., self.interchannels:]
 
         # [B, S]
         duration = self.quantize(self.durator(hidden, mask), mask)
@@ -98,20 +90,20 @@ class Model(tf.keras.Model):
         attn, mask = self.align(duration)
 
         # [B, T / F, N(=M x F)], []
-        mean, std = tf.matmul(attn, mean), self.temperature
+        m_p = tf.matmul(attn, m_p)
+        logs_p = tf.matmul(attn, logs_p)
+        std = self.temperature
         # [B, T / F, M x F]
-        sample = mean + tf.random.normal(tf.shape(mean)) * std
+        sample = m_p + tf.random.normal(tf.shape(m_p)) * tf.exp(logs_p) * std
 
         # [B, T / F, M x F]
-        mel = self.decoder.inverse(sample * mask[..., None], mask, g=g_right)
+        mel = self.flow.inverse(sample * mask[..., None], mask)
         # [B]
         mellen = tf.cast(tf.reduce_sum(mask, axis=-1), tf.int32)
-        # [B, T, M], [B]
-        mel, mellen = self.unfold(mel, mellen)
         return mel, mellen, attn
 
     def compute_loss(self, text: tf.Tensor, textlen: tf.Tensor,
-                     mel: tf.Tensor, mellen: tf.Tensor, g: tf.Tensor) \
+                     mel: tf.Tensor, mellen: tf.Tensor) \
             -> Tuple[tf.Tensor, Dict[str, tf.Tensor], tf.Tensor]:
         """Compute loss for glow-tts.
         Args:
@@ -119,50 +111,65 @@ class Model(tf.keras.Model):
             textlen: [tf.int32; [B]], text lengths.
             mel: [tf.float32; [B, T, M]], mel-spectrogram.
             mellen: [tf.int32; [B]], mel lengths.
-            g: [tf.float32; [B, V]], speaker vector.
         Returns:
             loss: [tf.float32; []], loss tensor.
             ll: loss lists.
             attn: [tf.float32; [B, T, S]], attention alignment.
         """
-        g = self._norm_g(g)
         # [B, S]
         mask = self.mask(textlen, maxlen=tf.shape(text)[1])
         # [B, S, C]
         embedding = self.embedding(text) * mask[..., None]
         # [B, S, C]
         hidden, _ = self.encoder(embedding, mask)
-        # [B, S, N], constant standard deviation
-        g_tile = tf.tile(g, [1, tf.shape(hidden)[1], 1])
-        hidden = tf.concat([hidden, g_tile], 2)
-        mean = self.proj_mu(hidden)
+        # [B, S, 2C]
+        stats = self.proj(hidden) * mask[..., None]
+        # [B, S, C]
+        m_p = stats[..., :self.interchannels]
+        # [B, S, C]
+        logs_p = stats[..., self.interchannels:]
 
-        # [B, T', N], [B]
-        mel, mellen = self.fold(mel, mellen)
-        # [B, T']
+        # [B, T]
         melmask = self.mask(mellen, maxlen=tf.shape(mel)[1])
-        # [B, T', N], [B]
-        latent, dlogdet = self.decoder(mel, melmask, g=g)
+
+        latent, m_q, logs_q = self.enc_q(mel, melmask)
+
+        latent_p = self.flow(latent, melmask)
 
         # [B, T', S]
         attnmask = melmask[..., None] * mask[:, None]
-        # [B, T', S], (mean - latent) ** 2
-        dist = tf.reduce_sum(tf.square(latent), axis=-1, keepdims=True) - \
-            2 * tf.matmul(latent, tf.transpose(mean, [0, 2, 1])) + \
-            tf.reduce_sum(tf.square(mean), axis=-1)[:, None]
-        # [B, T', S], assume constant standard deviation, 1.
-        ll = -0.5 * (np.log(2 * np.pi) + dist) * attnmask
-        # [B, T', S], attention alignment
-        attn = tf.stop_gradient(self.monotonic_alignment_search(ll, attnmask))
 
-        # [B, T', N]
-        mean = tf.matmul(attn, mean)
+        s_p_sq_r = tf.exp(-2 * logs_p)
+        neg_cent1 = tf.reduce_sum(-0.5 * np.log(2 * np.pi) - logs_p, axis=-1)[:, None]
+        neg_cent2 = tf.matmul(-0.5 * (latent_p ** 2), tf.transpose(s_p_sq_r, [0, 2, 1]))
+        neg_cent3 = tf.matmul(latent_p, tf.transpose((m_p * s_p_sq_r), [0, 2, 1]))
+        neg_cent4 = tf.reduce_sum(-0.5 * (m_p ** 2) * s_p_sq_r, axis=-1)[:, None]
+        neg_cent = neg_cent1 + neg_cent2 + neg_cent3 + neg_cent4
+        attn = tf.stop_gradient(self.monotonic_alignment_search(neg_cent, attnmask))
+
+        # [B, T', S], (mean - latent) ** 2
+        # dist = tf.reduce_sum(tf.square(latent), axis=-1, keepdims=True) - \
+        #     2 * tf.matmul(latent, tf.transpose(mean, [0, 2, 1])) + \
+        #     tf.reduce_sum(tf.square(mean), axis=-1)[:, None]
+        # # [B, T', S], assume constant standard deviation, 1.
+        # ll = -0.5 * (np.log(2 * np.pi) + dist) * attnmask
+        # # [B, T', S], attention alignment
+        # attn = tf.stop_gradient(self.monotonic_alignment_search(ll, attnmask))
+
+        m_p = tf.matmul(attn, m_p)
+        logs_p = tf.matmul(attn, logs_p)
+
+        # nll = 0.5 * (np.log(2 * np.pi) +
+        #              tf.reduce_sum(tf.square(latent - mean), axis=[1, 2])) - dlogdet
+        # # []
+        # nll = tf.reduce_mean(
+        #     nll / tf.cast(mellen * tf.shape(mean)[-1], tf.float32))
+
         # [B]
-        nll = 0.5 * (np.log(2 * np.pi) +
-                     tf.reduce_sum(tf.square(latent - mean), axis=[1, 2])) - dlogdet
-        # []
-        nll = tf.reduce_mean(
-            nll / tf.cast(mellen * tf.shape(mean)[-1], tf.float32))
+        kl = logs_p - logs_q - 0.5
+        kl += 0.5 * ((latent_p - m_p)**2) * tf.exp(-2. * logs_p)
+        kl = tf.reduce_mean(
+            tf.reduce_sum(kl, [1, 2]) / tf.cast(mellen * tf.shape(m_p)[-1], tf.float32))
 
         # [B, S]
         logdur = self.durator(tf.stop_gradient(hidden), mask)
@@ -174,9 +181,7 @@ class Model(tf.keras.Model):
         # []
         durloss = tf.reduce_mean(durloss)
 
-        # []
-        loss = nll + durloss
-        return loss, {'nll': nll, 'durloss': durloss}, attn
+        return {'kl': kl, 'durloss': durloss}, attn
 
     def quantize(self, logdur: tf.Tensor, mask: tf.Tensor) -> tf.Tensor:
         """Convert log-duration to duration.
@@ -191,46 +196,6 @@ class Model(tf.keras.Model):
         # [B, T]
         dur = tf.clip_by_value(dur, 1., Model.DURATION_MAX) * mask * self.length_scale
         return tf.cast(dur, tf.int32)
-
-    def fold(self, inputs: tf.Tensor, lengths: tf.Tensor) \
-            -> Tuple[tf.Tensor, tf.Tensor]:
-        """Fold inputs.
-        Args:
-            inputs: [tf.float32; [B, T, C]], input tensor.
-            lengths: [tf.int32; [B]], input lengths.
-        Returns:
-            folded: [tf.float32; [B, T // F, C x F]], folded.
-            lengths: [tf.int32; [B]], folded lengths.
-        """
-        # B, T, _
-        bsize, timestep, channels = shape_list(inputs)
-        if timestep % self.factor != 0:
-            rest = self.factor - timestep % self.factor
-            # [B, T + R, C]
-            inputs = tf.concat([inputs, tf.zeros([bsize, rest, channels])], axis=1)
-            # T + R
-            timestep = timestep + rest
-        # [B, T // F, C x F]
-        folded = tf.reshape(inputs, [bsize, timestep // self.factor, -1])
-        # T / F
-        lengths = tf.cast(tf.math.ceil(lengths / self.factor), tf.int32)
-        return folded, lengths
-
-    def unfold(self, inputs: tf.Tensor, lengths: tf.Tensor) \
-            -> Tuple[tf.Tensor, tf.Tensor]:
-        """Recover folded inputs.
-        Args:
-            inputs: [tf.float32; [B, T // F, C x F]], folded tensor.
-            lengths: [tf.int32; [B]], input lengths.
-        Returns:
-            recovered: [tf.float32; [B, T, C]], recovered.
-            lengths: [tf.int32; [B]], recovered lengths.
-        """
-        # B, T // F, _
-        bsize, timestep, _ = shape_list(inputs)
-        # [B, T, C]
-        recovered = tf.reshape(inputs, [bsize, timestep * self.factor, -1])
-        return recovered, lengths * self.factor
 
     def mask(self, lengths: tf.Tensor, maxlen: Optional[tf.Tensor] = None) \
             -> tf.Tensor:

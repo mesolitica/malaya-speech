@@ -1673,7 +1673,7 @@ class GlowTTS(Abstract):
         ----------
         string: str
         temperature: float, optional (default=0.3333)
-            Decoder model trying to decode with random.normal() * temperature.
+            Decoder model trying to decode with encoder(text) + random.normal() * temperature.
         length_ratio: float, optional (default=1.0)
             Increase this variable will increase time voice generated.
 
@@ -1700,6 +1700,68 @@ class GlowTTS(Abstract):
             'mel-output': r['mel_output'][0],
             'alignment': r['alignment_histories'][0].T,
             'universal-output': v,
+        }
+
+    def __call__(self, input, **kwargs):
+        return self.predict(input, **kwargs)
+
+
+class GlowTTS_MultiSpeaker(Abstract):
+    def __init__(
+        self, input_nodes, output_nodes, normalizer, speaker_vector, sess, model, name
+    ):
+        self._input_nodes = input_nodes
+        self._output_nodes = output_nodes
+        self._normalizer = normalizer
+        self._speaker_vector = speaker_vector
+        self._sess = sess
+        self.__model__ = model
+        self.__name__ = name
+
+    def predict(
+        self,
+        string,
+        audio,
+        temperature: float = 0.3333,
+        length_ratio: float = 1.0,
+        **kwargs,
+    ):
+        """
+        Change string to Mel.
+
+        Parameters
+        ----------
+        string: str
+        temperature: float, optional (default=0.3333)
+            Decoder model trying to decode with encoder(text) + random.normal() * temperature.
+        speaker: np.array
+            speaker audio, np.array or malaya_speech.model.frame.Frame, to feed into speaker embedding.
+        length_ratio: float, optional (default=1.0)
+            Increase this variable will increase time voice generated.
+
+        Returns
+        -------
+        result: Dict[string, ids, mel-output, alignment, universal-output]
+        """
+        t, ids = self._normalizer.normalize(string, **kwargs)
+        v = self._speaker_vector([audio])
+        r = self._execute(
+            inputs=[[ids], [len(ids)], [temperature], [length_ratio], [v], [v]],
+            input_labels=[
+                'input_ids',
+                'lens',
+                'temperature',
+                'length_ratio',
+                'encoder_speaker',
+                'decoder_speaker',
+            ],
+            output_labels=['mel_output', 'alignment_histories'],
+        )
+        return {
+            'string': t,
+            'ids': ids,
+            'alignment': r['alignment_histories'][0].T,
+            'universal-output': r['mel_output'][0],
         }
 
     def __call__(self, input, **kwargs):
