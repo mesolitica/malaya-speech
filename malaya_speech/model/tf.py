@@ -1732,6 +1732,9 @@ class GlowTTS_MultiSpeaker(Abstract):
         Parameters
         ----------
         string: str
+        audio: np.array
+            np.array or malaya_speech.model.frame.Frame.
+            We only trained on `female`, `male`, `husein` and `haqkiem` speakers.
         temperature: float, optional (default=0.3333)
             Decoder model trying to decode with encoder(text) + random.normal() * temperature.
         speaker: np.array
@@ -1763,6 +1766,30 @@ class GlowTTS_MultiSpeaker(Abstract):
             'alignment': r['alignment_histories'][0].T,
             'universal-output': r['mel_output'][0],
         }
+
+    def voice_conversion(self, string, original_audio,
+                         target_audio, temperature: float = 0.3333,
+                         length_ratio: float = 1.0,
+                         **kwargs,):
+        """
+        Change string to Mel.
+
+        Parameters
+        ----------
+        string: str
+        temperature: float, optional (default=0.3333)
+            Decoder model trying to decode with encoder(text) + random.normal() * temperature.
+        speaker: np.array
+            speaker audio, np.array or malaya_speech.model.frame.Frame, to feed into speaker embedding.
+        length_ratio: float, optional (default=1.0)
+            Increase this variable will increase time voice generated.
+
+        Returns
+        -------
+        result: Dict[string, ids, mel-output, alignment, universal-output]
+        """
+        t, ids = self._normalizer.normalize(string, **kwargs)
+        v = self._speaker_vector([audio])
 
     def __call__(self, input, **kwargs):
         return self.predict(input, **kwargs)

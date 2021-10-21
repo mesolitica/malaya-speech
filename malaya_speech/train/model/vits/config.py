@@ -66,3 +66,6 @@ class Config:
         self.dur_kernel = 3
         self.dur_layers = 2
         self.dur_dropout = self.block_dropout
+
+        self.segment_size = 8192
+        self.hop_size = 256

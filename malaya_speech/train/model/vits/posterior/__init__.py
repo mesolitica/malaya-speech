@@ -40,7 +40,7 @@ class PosteriorEncoder(tf.keras.Model):
             config.channels,
             config.wavenet_kernel_size,
             config.wavenet_dilation)
-        self.proj = tf.keras.layers.Conv1D(config.mel * 2, 1)
+        self.proj = tf.keras.layers.Conv1D(config.mel, 1)
         self.interchannels = config.mel
 
     def call(self, inputs: tf.Tensor, mask: tf.Tensor):
@@ -51,7 +51,7 @@ class PosteriorEncoder(tf.keras.Model):
         """
         x = self.pre(inputs) * mask[..., None]
         x = self.enc(x, mask)
-        stats = self.proj(x) * mask[..., None]
-        m, logs = stats[..., :self.interchannels], stats[..., self.interchannels:]
-        z = (m + tf.random.normal(tf.shape(m)) * tf.exp(logs)) * mask[..., None]
-        return z, m, logs
+        m = self.proj(x) * mask[..., None]
+        # m, logs = stats[..., :self.interchannels], stats[..., self.interchannels:]
+        z = (m + tf.random.normal(tf.shape(m))) * mask[..., None]
+        return z, m

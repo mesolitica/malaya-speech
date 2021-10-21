@@ -61,7 +61,7 @@ class WaveNetFlow(tf.keras.Model):
                         config.wavenet_cycle,
                         config.channels,
                         config.wavenet_kernel_size,
-                        config.wavenet_dilation)), Flip()])
+                        config.wavenet_dilation))])
 
     def call(self, inputs: tf.Tensor, mask: tf.Tensor) \
             -> Tuple[tf.Tensor, tf.Tensor]:
