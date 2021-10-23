@@ -4,7 +4,14 @@ from malaya_speech.utils import (
     generate_session,
     nodes_session,
 )
-from malaya_speech.model.tf import Tacotron, Fastspeech, Fastpitch, GlowTTS
+from malaya_speech.model.tf import (
+    Tacotron,
+    Fastspeech,
+    Fastpitch,
+    GlowTTS,
+    GlowTTS_MultiSpeaker
+)
+from malaya_speech import speaker_vector
 import numpy as np
 
 
@@ -100,15 +107,23 @@ def glowtts_load(
 
     g = load_graph(path[model][model_path], glowtts_graph=True, **kwargs)
     inputs = ['input_ids', 'lens', 'temperature', 'length_ratio']
+    if model == 'multispeaker':
+        inputs = inputs + ['speakers', 'speakers_right']
+        speaker_vector = speaker_vector.deep_model('vggvox-v2', **kwargs)
+        model_class = GlowTTS_MultiSpeaker
+    else:
+        speaker_vector = None
+        model_class = GlowTTS
     outputs = ['mel_output', 'alignment_histories']
     input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
     stats = np.load(path[model]['stats'])
 
-    return GlowTTS(
+    return model_class(
         input_nodes=input_nodes,
         output_nodes=output_nodes,
         normalizer=normalizer,
+        speaker_vector=speaker_vector,
         stats=stats,
         sess=generate_session(graph=g, **kwargs),
         model=model,

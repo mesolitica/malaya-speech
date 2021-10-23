@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import tensorflow as tf
 import numpy as np
@@ -31,7 +31,7 @@ stats = {
 mel_stats = np.load('universal-stats/stats.npy')
 
 reduction_factor = 1
-maxlen = 1008
+maxlen = 904
 minlen = 32
 pad_to = 2
 data_min = 1e-2
@@ -61,6 +61,8 @@ config = glowtts.Config(mel=80, vocabs=len(MALAYA_SPEECH_SYMBOLS), gin_channels=
 config.norm_g = False
 config.block_num = 8
 config.flow_block_num = 16
+config.channels = 256
+config.block_ffn = config.channels * 4
 
 
 def noam_schedule(step, channels, learning_rate=1.0, warmup_steps=4000):
@@ -76,7 +78,7 @@ def learning_rate_scheduler(global_step):
     )
 
 
-total_steps = 100_000
+total_steps = 200_000
 
 
 def generate(files):
@@ -98,7 +100,7 @@ def generate(files):
         ]
         wav = np.load(f.replace('mels', 'audios'))
         audio_16k = malaya_speech.resample(wav, 22050, 16000)
-        v = speaker_model([audio_16k])[0] * 30 - 3.5
+        v = speaker_model([audio_16k])[0]
         text_ids = ''.join(
             [
                 c
@@ -138,7 +140,7 @@ def generate(files):
         }
 
 
-def get_dataset(files, batch_size=16, shuffle_size=32, thread_count=24):
+def get_dataset(files, batch_size=12, shuffle_size=32, thread_count=24):
     def get():
         dataset = tf.data.Dataset.from_generator(
             generate,
@@ -261,7 +263,7 @@ train_dataset = get_dataset(files)
 train.run_training(
     train_fn=train_dataset,
     model_fn=model_fn,
-    model_dir='glowtts-multispeaker',
+    model_dir='glowtts-multispeaker-scale',
     num_gpus=1,
     log_step=1,
     save_checkpoint_step=2500,

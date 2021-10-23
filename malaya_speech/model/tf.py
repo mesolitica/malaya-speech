@@ -1649,7 +1649,7 @@ class TransducerAligner(Abstract):
 
 class GlowTTS(Abstract):
     def __init__(
-        self, input_nodes, output_nodes, normalizer, stats, sess, model, name
+        self, input_nodes, output_nodes, normalizer, stats, sess, model, name, **kwargs
     ):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
@@ -1767,8 +1767,8 @@ class GlowTTS_MultiSpeaker(Abstract):
             'universal-output': r['mel_output'][0],
         }
 
-    def voice_conversion(self, string, original_audio,
-                         target_audio, temperature: float = 0.3333,
+    def voice_conversion(self, string, original_audio, target_audio,
+                         temperature: float = 0.3333,
                          length_ratio: float = 1.0,
                          **kwargs,):
         """
@@ -1789,7 +1789,8 @@ class GlowTTS_MultiSpeaker(Abstract):
         result: Dict[string, ids, mel-output, alignment, universal-output]
         """
         t, ids = self._normalizer.normalize(string, **kwargs)
-        v = self._speaker_vector([audio])
+        v = self._speaker_vector([original_audio])
+        v_right = self._speaker_vector([target_audio])
 
     def __call__(self, input, **kwargs):
         return self.predict(input, **kwargs)

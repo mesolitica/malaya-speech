@@ -391,6 +391,8 @@ def glowtts(model: str = 'male',
         * ``'female'`` - GlowTTS trained on female voice.
         * ``'male'`` - GlowTTS trained on male voice.
         * ``'haqkiem'`` - GlowTTS trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
+        * ``'female-singlish'`` - Fastspeech2 trained on female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
+        * ``'multispeaker'`` - Multispeaker GlowTTS trained on male, female, husein and haqkiem voices.
 
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.

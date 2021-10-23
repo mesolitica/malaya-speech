@@ -69,7 +69,7 @@ from malaya_speech.train.model import stft
 import malaya_speech.config
 from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 
-hifigan_config = malaya_speech.config.hifigan_config
+hifigan_config = malaya_speech.config.hifigan_config_v2
 generator = hifigan.Generator(
     hifigan.GeneratorConfig(**hifigan_config['hifigan_generator_params']),
     name='hifigan_generator',
@@ -205,16 +205,7 @@ global_step_discriminator = tf.Variable(
 )
 
 g_boundaries = [100_000, 200_000, 300_000, 400_000, 500_000, 600_000, 700_000]
-g_values = [
-    0.0005,
-    0.0005,
-    0.00025,
-    0.000_125,
-    0.000_062_5,
-    0.000_031_25,
-    0.000_015_625,
-    0.000_001,
-]
+g_values = [0.000125, 0.000125, 0.0000625, 0.0000625, 0.0000625, 0.00003125, 0.000015625, 0.000001]
 
 d_boundaries = [100_000, 200_000, 300_000, 400_000, 500_000]
 d_values = [

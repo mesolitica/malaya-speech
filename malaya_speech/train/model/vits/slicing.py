@@ -4,7 +4,8 @@ from ..utils import shape_list
 
 
 def slice_segments(x, ids_str, segment_size=8192, pad_val=0.0):
-    b, t, d = shape_list(x)
+    b, _, d = shape_list(x)
+    t = segment_size
     ret = tf.TensorArray(dtype=tf.float32, size=b)
 
     def condition(j, ret):
