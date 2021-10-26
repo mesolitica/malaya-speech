@@ -105,25 +105,29 @@ def glowtts_load(
     else:
         model_path = 'model'
 
-    g = load_graph(path[model][model_path], glowtts_graph=True, **kwargs)
     inputs = ['input_ids', 'lens', 'temperature', 'length_ratio']
     if model == 'multispeaker':
         inputs = inputs + ['speakers', 'speakers_right']
-        speaker_vector = speaker_vector.deep_model('vggvox-v2', **kwargs)
+        speaker_model = speaker_vector.deep_model('vggvox-v2', **kwargs)
         model_class = GlowTTS_MultiSpeaker
+        g = load_graph(path[model][model_path], glowtts_multispeaker_graph=True, **kwargs)
     else:
-        speaker_vector = None
+        speaker_model = None
         model_class = GlowTTS
+        g = load_graph(path[model][model_path], glowtts_graph=True, **kwargs)
     outputs = ['mel_output', 'alignment_histories']
     input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
-    stats = np.load(path[model]['stats'])
+    if 'stats' in path[model]:
+        stats = np.load(path[model]['stats'])
+    else:
+        stats = None
 
     return model_class(
         input_nodes=input_nodes,
         output_nodes=output_nodes,
         normalizer=normalizer,
-        speaker_vector=speaker_vector,
+        speaker_vector=speaker_model,
         stats=stats,
         sess=generate_session(graph=g, **kwargs),
         model=model,

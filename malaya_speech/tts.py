@@ -119,9 +119,9 @@ _glowtts_availability = {
         'Combined loss': -1.728,
     },
     'multispeaker': {
-        'Size (MB)': 123,
-        'Quantized Size (MB)': 31.1,
-        'Combined loss': 1.614,
+        'Size (MB)': 404,
+        'Quantized Size (MB)': 79.9,
+        'Combined loss': -1.882,
     }
 }
 
@@ -194,7 +194,7 @@ def available_glowtts():
     from malaya_speech.utils import describe_availability
 
     return describe_availability(
-        _fastpitch_availability,
+        _glowtts_availability,
         text='`haqkiem` and `female-singlish` combined loss from training set',
     )
 
@@ -391,8 +391,8 @@ def glowtts(model: str = 'male',
         * ``'female'`` - GlowTTS trained on female voice.
         * ``'male'`` - GlowTTS trained on male voice.
         * ``'haqkiem'`` - GlowTTS trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
-        * ``'female-singlish'`` - Fastspeech2 trained on female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
-        * ``'multispeaker'`` - Multispeaker GlowTTS trained on male, female, husein and haqkiem voices.
+        * ``'female-singlish'`` - GlowTTS trained on female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
+        * ``'multispeaker'`` - Multispeaker GlowTTS trained on male, female, husein and haqkiem voices, also able to do voice conversion.
 
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
@@ -410,9 +410,9 @@ def glowtts(model: str = 'male',
 
     model = model.lower()
 
-    if model not in _fastpitch_availability:
+    if model not in _glowtts_availability:
         raise ValueError(
-            'model not supported, please check supported models from `malaya_speech.tts.available_fastpitch()`.'
+            'model not supported, please check supported models from `malaya_speech.tts.available_glowtts()`.'
         )
 
     text_ids = load_text_ids(

@@ -1,13 +1,13 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 import tensorflow as tf
 import numpy as np
 from glob import glob
 from itertools import cycle
 
-mels = glob('../speech-bahasa/output-female-v2/mels/*.npy')
+mels = glob('../speech-bahasa/output-female-v3/mels/*.npy')
 file_cycle = cycle(mels)
 f = next(file_cycle)
 

@@ -56,6 +56,18 @@ _mbmelgan_availability = {
     },
 }
 
+_hifigan_availability = {
+    'male': {
+
+    },
+    'female': {
+
+    },
+    'universal': {
+
+    }
+}
+
 
 def available_melgan():
     """
@@ -73,6 +85,15 @@ def available_mbmelgan():
     from malaya_speech.utils import describe_availability
 
     return describe_availability(_mbmelgan_availability)
+
+
+def available_hifigan():
+    """
+    List available HiFiGAN Mel-to-Speech models.
+    """
+    from malaya_speech.utils import describe_availability
+
+    return describe_availability(_hifigan_availability)
 
 
 @check_type

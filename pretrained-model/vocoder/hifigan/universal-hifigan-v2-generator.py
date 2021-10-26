@@ -1,24 +1,32 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 import tensorflow as tf
 import numpy as np
 from glob import glob
 from itertools import cycle
-
-mels = glob('../speech-bahasa/output-female-v3/mels/*.npy')
-file_cycle = cycle(mels)
-f = next(file_cycle)
-
+import json
 import random
+import malaya_speech
+import malaya_speech.train
+from malaya_speech.train.model import melgan, hifigan
+from malaya_speech.train.model import stft
+import malaya_speech.config
+from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
+
+with open('universal-files.json') as fopen:
+    files = json.load(fopen)
+
+file_cycle = cycle(files)
+f = next(file_cycle)
 
 
 def generate(batch_max_steps=8192, hop_size=256):
     while True:
         f = next(file_cycle)
-        mel = np.load(f)
-        audio = np.load(f.replace('mels', 'audios'))
+        audio, _ = malaya_speech.load(f, sr=22050)
+        mel = malaya_speech.featurization.universal_mel(audio)
 
         batch_max_frames = batch_max_steps // hop_size
         if len(audio) < len(mel) * hop_size:
@@ -48,7 +56,7 @@ dataset = tf.data.Dataset.from_generator(
 )
 dataset = dataset.shuffle(32)
 dataset = dataset.padded_batch(
-    32,
+    16,
     padded_shapes={
         'audio': tf.TensorShape([None]),
         'mel': tf.TensorShape([None, 80]),
@@ -62,14 +70,7 @@ dataset = dataset.padded_batch(
 features = dataset.make_one_shot_iterator().get_next()
 features
 
-import malaya_speech
-import malaya_speech.train
-from malaya_speech.train.model import melgan, hifigan
-from malaya_speech.train.model import stft
-import malaya_speech.config
-from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
-
-hifigan_config = malaya_speech.config.hifigan_config_v2
+hifigan_config = malaya_speech.config.hifigan_config
 generator = hifigan.Generator(
     hifigan.GeneratorConfig(**hifigan_config['hifigan_generator_params']),
     name='hifigan_generator',
@@ -109,7 +110,7 @@ saver = tf.train.Saver()
 
 checkpoint = 10000
 epoch = 100_000
-path = 'hifigan-female'
+path = 'universal-hifigan-v2'
 
 ckpt_path = tf.train.latest_checkpoint(path)
 if ckpt_path:

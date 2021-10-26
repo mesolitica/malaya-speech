@@ -1708,7 +1708,7 @@ class GlowTTS(Abstract):
 
 class GlowTTS_MultiSpeaker(Abstract):
     def __init__(
-        self, input_nodes, output_nodes, normalizer, speaker_vector, sess, model, name
+        self, input_nodes, output_nodes, normalizer, speaker_vector, stats, sess, model, name
     ):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
@@ -1717,6 +1717,31 @@ class GlowTTS_MultiSpeaker(Abstract):
         self._sess = sess
         self.__model__ = model
         self.__name__ = name
+
+    def _predict(self, string, left_audio, right_audio,
+                 temperature: float = 0.3333,
+                 length_ratio: float = 1.0, **kwargs):
+        t, ids = self._normalizer.normalize(string, **kwargs)
+        left_v = self._speaker_vector([left_audio])
+        right_v = self._speaker_vector([right_audio])
+        r = self._execute(
+            inputs=[[ids], [len(ids)], [temperature], [length_ratio], left_v, right_v],
+            input_labels=[
+                'input_ids',
+                'lens',
+                'temperature',
+                'length_ratio',
+                'speakers',
+                'speakers_right',
+            ],
+            output_labels=['mel_output', 'alignment_histories'],
+        )
+        return {
+            'string': t,
+            'ids': ids,
+            'alignment': r['alignment_histories'][0].T,
+            'universal-output': r['mel_output'][0][:-8],
+        }
 
     def predict(
         self,
@@ -1733,39 +1758,20 @@ class GlowTTS_MultiSpeaker(Abstract):
         ----------
         string: str
         audio: np.array
-            np.array or malaya_speech.model.frame.Frame.
+            np.array or malaya_speech.model.frame.Frame, must in 16k format.
             We only trained on `female`, `male`, `husein` and `haqkiem` speakers.
         temperature: float, optional (default=0.3333)
             Decoder model trying to decode with encoder(text) + random.normal() * temperature.
-        speaker: np.array
-            speaker audio, np.array or malaya_speech.model.frame.Frame, to feed into speaker embedding.
         length_ratio: float, optional (default=1.0)
             Increase this variable will increase time voice generated.
 
         Returns
         -------
-        result: Dict[string, ids, mel-output, alignment, universal-output]
+        result: Dict[string, ids, alignment, universal-output]
         """
-        t, ids = self._normalizer.normalize(string, **kwargs)
-        v = self._speaker_vector([audio])
-        r = self._execute(
-            inputs=[[ids], [len(ids)], [temperature], [length_ratio], [v], [v]],
-            input_labels=[
-                'input_ids',
-                'lens',
-                'temperature',
-                'length_ratio',
-                'encoder_speaker',
-                'decoder_speaker',
-            ],
-            output_labels=['mel_output', 'alignment_histories'],
-        )
-        return {
-            'string': t,
-            'ids': ids,
-            'alignment': r['alignment_histories'][0].T,
-            'universal-output': r['mel_output'][0],
-        }
+        return self._predict(string=string,
+                             left_audio=audio, right_audio=audio,
+                             temperature=temperature, length_ratio=length_ratio, **kwargs)
 
     def voice_conversion(self, string, original_audio, target_audio,
                          temperature: float = 0.3333,
@@ -1777,20 +1783,22 @@ class GlowTTS_MultiSpeaker(Abstract):
         Parameters
         ----------
         string: str
+        original_audio: np.array
+            original speaker to encode speaking style, must in 16k format.
+        target_audio: np.array
+            target speaker to follow speaking style from `original_audio`, must in 16k format.
         temperature: float, optional (default=0.3333)
             Decoder model trying to decode with encoder(text) + random.normal() * temperature.
-        speaker: np.array
-            speaker audio, np.array or malaya_speech.model.frame.Frame, to feed into speaker embedding.
         length_ratio: float, optional (default=1.0)
             Increase this variable will increase time voice generated.
 
         Returns
         -------
-        result: Dict[string, ids, mel-output, alignment, universal-output]
+        result: Dict[string, ids, alignment, universal-output]
         """
-        t, ids = self._normalizer.normalize(string, **kwargs)
-        v = self._speaker_vector([original_audio])
-        v_right = self._speaker_vector([target_audio])
+        return self._predict(string=string,
+                             left_audio=original_audio, right_audio=target_audio,
+                             temperature=temperature, length_ratio=length_ratio, **kwargs)
 
     def __call__(self, input, **kwargs):
         return self.predict(input, **kwargs)

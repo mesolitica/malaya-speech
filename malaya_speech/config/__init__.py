@@ -13,6 +13,8 @@ from .fastspeech2 import config_v2 as fastspeech2_config_v2
 from .glowtts import config as glowtts_config
 from .hifigan import config as hifigan_config
 from .hifigan import config_v2 as hifigan_config_v2
+from .hifigan import config_v3 as hifigan_config_v3
+from .hifigan import config_v4 as hifigan_config_v4
 from .mb_melgan import config as mb_melgan_config
 from .melgan import config as melgan_config
 from .speakernet_featurizer import config as speakernet_featurizer_config

@@ -162,7 +162,8 @@ class Model(tf.keras.Model):
 
         # []
         loss = nll + durloss
-        return loss, {'nll': nll, 'durloss': durloss}, attn
+        latent_, _ = self.unfold(latent, mellen)
+        return loss, {'nll': nll, 'durloss': durloss, 'mel_': latent_}, attn
 
     def quantize(self, logdur: tf.Tensor, mask: tf.Tensor) -> tf.Tensor:
         """Convert log-duration to duration.

@@ -41,9 +41,12 @@ def create_optimizer(
     beta_1=0.9,
     beta_2=0.999,
     epsilon=1e-6,
+    tvars=None,
+    global_step=None,
 ):
     """Creates an optimizer training op."""
-    global_step = tf.train.get_or_create_global_step()
+    if global_step is None:
+        global_step = tf.train.get_or_create_global_step()
 
     learning_rate = tf.constant(value=init_lr, shape=[], dtype=tf.float32)
 
@@ -96,8 +99,8 @@ def create_optimizer(
     #         decr_every_n_nan_or_inf=2,
     #         decr_ratio=0.5)
     #     optimizer = tf.contrib.mixed_precision.LossScaleOptimizer(optimizer, loss_scale_manager)
-
-    tvars = tf.trainable_variables()
+    if tvars is None:
+        tvars = tf.trainable_variables()
     gvs = optimizer.compute_gradients(loss, tvars)
     gvs = [(g, v) for g, v in gvs if g is not None]
     grads, tvars = list(zip(*gvs))
