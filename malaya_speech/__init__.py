@@ -45,6 +45,7 @@ from . import utils
 from .pipeline import Pipeline
 from .streaming import record
 from .utils import (
+    aligner,
     arange,
     astype,
     char,

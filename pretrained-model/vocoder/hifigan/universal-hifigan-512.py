@@ -1,32 +1,24 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 import tensorflow as tf
 import numpy as np
 from glob import glob
 from itertools import cycle
-import json
 import random
-import malaya_speech
-import malaya_speech.train
-from malaya_speech.train.model import melgan, hifigan
-from malaya_speech.train.model import stft
-import malaya_speech.config
-from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 
-with open('universal-files.json') as fopen:
-    files = json.load(fopen)
-
-file_cycle = cycle(files)
+npys = glob('universal-audio/*.npy')
+random.shuffle(npys)
+file_cycle = cycle(npys)
 f = next(file_cycle)
 
 
 def generate(batch_max_steps=8192, hop_size=256):
     while True:
         f = next(file_cycle)
-        audio, _ = malaya_speech.load(f, sr=22050)
-        mel = malaya_speech.featurization.universal_mel(audio)
+        audio = np.load(f)
+        mel = np.load(f.replace('-audio', '-mel'))
 
         batch_max_frames = batch_max_steps // hop_size
         if len(audio) < len(mel) * hop_size:
@@ -70,8 +62,16 @@ dataset = dataset.padded_batch(
 features = dataset.make_one_shot_iterator().get_next()
 features
 
-hifigan_config = malaya_speech.config.hifigan_config
-generator = hifigan.Generator(
+import malaya_speech
+import malaya_speech.train
+from malaya_speech.train.model import melgan, hifigan
+from malaya_speech.train.model import stft
+import malaya_speech.config
+from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
+
+hifigan_config = malaya_speech.config.hifigan_config_v2
+hifigan_config['hifigan_generator_params']['filters'] = 512
+generator = hifigan.MultiGenerator(
     hifigan.GeneratorConfig(**hifigan_config['hifigan_generator_params']),
     name='hifigan_generator',
 )
@@ -205,7 +205,7 @@ global_step_discriminator = tf.Variable(
     50000, trainable=False, name='global_step_discriminator'
 )
 
-g_boundaries = [100000, 200000, 300000, 400000, 500000, 600000, 700000]
+g_boundaries = [100_000, 200_000, 300_000, 400_000, 500_000, 600_000, 700_000]
 g_values = [0.000125, 0.000125, 0.0000625, 0.0000625, 0.0000625, 0.00003125, 0.000015625, 0.000001]
 
 d_boundaries = [100_000, 200_000, 300_000, 400_000, 500_000]
@@ -241,21 +241,31 @@ sess = tf.InteractiveSession()
 sess.run(tf.global_variables_initializer())
 
 saver = tf.train.Saver(var_list=g_vars)
-saver.restore(sess, tf.train.latest_checkpoint('universal-hifigan-v2'))
+saver.restore(sess, tf.train.latest_checkpoint('hifigan-512'))
 
 saver = tf.train.Saver()
 
 checkpoint = 10000
+write_tensorboard = 100
 epoch = 4_000_000
-path = 'universal-hifigan-v2-combined'
+path = 'hifigan-512-combined'
 
 writer = tf.summary.FileWriter(f'./{path}')
 
-for i in range(0, epoch):
+ckpt_path = tf.train.latest_checkpoint(path)
+if ckpt_path:
+    saver.restore(sess, ckpt_path)
+    print(f'restoring checkpoint from {ckpt_path}')
+
+global_step = sess.run(global_step_generator)
+for i in range(global_step, epoch):
     g_loss, _ = sess.run([generator_loss, g_optimizer])
     d_loss, _ = sess.run([discriminator_loss, d_optimizer])
-    s = sess.run(summaries)
-    writer.add_summary(s, i)
+    i = sess.run(global_step_generator)
+
+    if i % write_tensorboard == 0:
+        s = sess.run(summaries)
+        writer.add_summary(s, i)
 
     if i % checkpoint == 0:
         saver.save(sess, f'{path}/model.ckpt', global_step=i)

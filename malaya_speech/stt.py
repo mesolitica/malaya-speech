@@ -3,11 +3,18 @@ from herpetologist import check_type
 import json
 
 _transducer_availability = {
+    'tiny-conformer': {
+        'Size (MB)': 24.4,
+        'Quantized Size (MB)': 9.14,
+        'WER': 0.2128108,
+        'CER': 0.08136871,
+        'Language': ['malay'],
+    },
     'small-conformer': {
         'Size (MB)': 49.2,
         'Quantized Size (MB)': 18.1,
-        'WER': 0.20599,
-        'CER': 0.08933,
+        'WER': 0.1981407,
+        'CER': 0.075313,
         'Language': ['malay'],
     },
     'conformer': {
@@ -22,13 +29,6 @@ _transducer_availability = {
         'Quantized Size (MB)': 107,
         'WER': 0.15986,
         'CER': 0.05937,
-        'Language': ['malay'],
-    },
-    'alconformer': {
-        'Size (MB)': 38.1,
-        'Quantized Size (MB)': 15.1,
-        'WER': 0.20703,
-        'CER': 0.08533,
         'Language': ['malay'],
     },
     'conformer-mixed': {
@@ -86,50 +86,47 @@ _ctc_availability = {
     'wav2vec2-conformer': {
         'Size (MB)': 115,
         'Quantized Size (MB)': 31.1,
-        'WER': 0.25899,
-        'CER': 0.06350,
+        'WER': 0.255762,
+        'CER': 0.061953,
+        'WER-LM': 0.255762,
+        'CER-LM': 0.061953,
         'Language': ['malay'],
-        'mode': 'char',
     },
     'wav2vec2-conformer-large': {
         'Size (MB)': 392,
         'Quantized Size (MB)': 100,
         'WER': 0.23997,
         'CER': 0.05827,
+        'WER-LM': 0.255762,
+        'CER-LM': 0.061953,
         'Language': ['malay'],
-        'mode': 'char',
+    },
+    'hubert-conformer-tiny': {
+        'Size (MB)': 36.6,
+        'Quantized Size (MB)': 10.3,
+        'WER': 0.255762,
+        'CER': 0.061953,
+        'WER-LM': 0.255762,
+        'CER-LM': 0.061953,
+        'Language': ['malay'],
     },
     'hubert-conformer': {
         'Size (MB)': 115,
         'Quantized Size (MB)': 31.1,
         'WER': 0.255762,
         'CER': 0.061953,
+        'WER-LM': 0.255762,
+        'CER-LM': 0.061953,
         'Language': ['malay'],
-        'mode': 'char',
-    },
-    'hubert-conformer-subword': {
-        'Size (MB)': 116,
-        'Quantized Size (MB)': 31.1,
-        'WER': 0.308862,
-        'CER': 0.09865,
-        'Language': ['malay'],
-        'mode': 'subword',
     },
     'hubert-conformer-large': {
         'Size (MB)': 392,
         'Quantized Size (MB)': 100,
         'WER': 0.22837,
         'CER': 0.054309,
+        'WER-LM': 0.255762,
+        'CER-LM': 0.061953,
         'Language': ['malay'],
-        'mode': 'char',
-    },
-    'hubert-conformer-large-subword': {
-        'Size (MB)': 392,
-        'Quantized Size (MB)': 100,
-        'WER': 0.239554,
-        'CER': 0.078788,
-        'Language': ['malay'],
-        'mode': 'subword',
     },
 }
 
@@ -165,15 +162,26 @@ _language_model_availability = {
         'Size (MB)': 29,
         'Description': 'Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences) + Bahasa Wikipedia (Random sample 150k sentences).',
         'Command': [
-            './lmplz --text text.txt --arpa out.arpa -o 2 --prune 0 1 1',
+            './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
             './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
         ],
     },
     'redape-community': {
         'Size (MB)': 887.1,
         'Description': 'Mirror for https://github.com/redapesolutions/suara-kami-community',
-        'Command': [''],
-    }
+        'Command': [
+            './lmplz --text text.txt --arpa out.arpa -o 4 --prune 0 1 1 1',
+            './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
+        ],
+    },
+    'dump-combined': {
+        'Size (MB)': 310,
+        'Description': 'Academia + News + IIUM + Parliament + Watpadd + Wikipedia + Common Crawl + training set from https://github.com/huseinzol05/malay-dataset/tree/master/dumping/clean',
+        'Command': [
+            './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
+            './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
+        ],
+    },
 }
 
 
@@ -206,7 +214,7 @@ def available_transducer():
 
 @check_type
 def language_model(
-    model: str = 'bahasa', alpha: float = 0.5, beta: float = 1.0, **kwargs
+    model: str = 'bahasa', **kwargs
 ):
     """
     Load KenLM language model.
@@ -220,17 +228,11 @@ def language_model(
         * ``'bahasa-news'`` - Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences).
         * ``'bahasa-combined'`` - Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences) + Bahasa Wikipedia (Random sample 150k sentences).
         * ``'redape-community'`` - Mirror for https://github.com/redapesolutions/suara-kami-community
-
-    alpha: float, optional (default=0.5)
-        score = alpha * np.log(lm) + beta * np.log(word_cnt),
-        increase will put more bias on lm score computed by kenlm.
-    beta: float, optional (beta=1.0)
-        score = alpha * np.log(lm) + beta * np.log(word_cnt),
-        increase will put more bias on word count.
+        * ``'dump-combined'`` - Academia + News + IIUM + Parliament + Watpadd + Wikipedia + Common Crawl + training set from https://github.com/huseinzol05/malay-dataset/tree/master/dumping/clean.
 
     Returns
     -------
-    result : ctc_decoders.Scorer
+    result : str
     """
     model = model.lower()
     if model not in _language_model_availability:
@@ -238,34 +240,31 @@ def language_model(
             'model not supported, please check supported models from `malaya_speech.stt.available_language_model()`.'
         )
 
-    scorer = lm.load(
+    path_model = lm.load(
         model=model,
         module='language-model',
-        alpha=alpha,
-        beta=beta,
         **kwargs
     )
-    return scorer
+    return path_model
 
 
 @check_type
 def deep_ctc(
-    model: str = 'wav2vec2-conformer', quantized: bool = False, **kwargs
+    model: str = 'hubert-conformer', quantized: bool = False, **kwargs
 ):
     """
     Load Encoder-Transducer ASR model.
 
     Parameters
     ----------
-    model : str, optional (default='conformer')
+    model : str, optional (default='hubert-conformer')
         Model architecture supported. Allowed values:
 
         * ``'wav2vec2-conformer'`` - Finetuned Wav2Vec2 Conformer.
         * ``'wav2vec2-conformer-large'`` - Finetuned Wav2Vec2 Conformer LARGE.
+        * ``'hubert-conformer-tiny'`` - Finetuned HuBERT Conformer TINY.
         * ``'hubert-conformer'`` - Finetuned HuBERT Conformer.
-        * ``'hubert-conformer-subword'`` - Finetuned HuBERT Conformer with Subword vocab.
         * ``'hubert-conformer-large'`` - Finetuned HuBERT Conformer LARGE.
-        * ``'hubert-conformer-large-subword'`` - Finetuned HuBERT Conformer LARGE with Subword vocab.
 
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
@@ -302,11 +301,10 @@ def deep_transducer(
     model : str, optional (default='conformer')
         Model architecture supported. Allowed values:
 
+        * ``'tiny-conformer'`` - TINY size Google Conformer.
         * ``'small-conformer'`` - SMALL size Google Conformer.
         * ``'conformer'`` - BASE size Google Conformer.
         * ``'large-conformer'`` - LARGE size Google Conformer.
-        * ``'small-alconformer'`` - SMALL size A-Lite Google Conformer.
-        * ``'alconformer'`` - BASE size A-Lite Google Conformer.
         * ``'conformer-mixed'`` - BASE size Google Conformer for (Malay + Singlish) languages.
         * ``'large-conformer-mixed'`` - LARGE size Google Conformer for (Malay + Singlish) languages.
         * ``'conformer-stack-mixed'`` - BASE size Stacked Google Conformer for (Malay + Singlish) languages.

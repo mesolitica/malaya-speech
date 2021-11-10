@@ -7,6 +7,7 @@ from malaya_speech.utils.padding import (
     sequence_nd as padding_sequence_nd,
     sequence_1d,
 )
+from malaya_speech.utils.char import CTC_VOCAB
 from malaya_speech.utils.char import decode as char_decode
 from malaya_speech.utils.subword import (
     decode as subword_decode,
@@ -1095,12 +1096,10 @@ class Split_Mel(Abstract):
 
 
 class Wav2Vec2_CTC(Abstract):
-    def __init__(self, input_nodes, output_nodes, vocab, sess, mode, model, name):
+    def __init__(self, input_nodes, output_nodes, sess, model, name):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
-        self._vocab = vocab
         self._sess = sess
-        self._mode = mode
         self.__model__ = model
         self.__name__ = name
         self._beam_size = 1
@@ -1196,43 +1195,26 @@ class Wav2Vec2_CTC(Abstract):
 
         results = []
         for i in range(len(decoded)):
-            if self._mode == 'char':
-                r = char_decode(decoded[i], lookup=self._vocab).replace(
-                    '<PAD>', ''
-                )
-            else:
-                r = subword_decode(self._vocab, decoded[i][decoded[i] > 0])
+            r = char_decode(decoded[i], lookup=CTC_VOCAB).replace(
+                '<PAD>', ''
+            )
             results.append(r)
         return results
 
-    def predict_lm(self, inputs, lm, beam_size: int = 100, **kwargs):
+    def predict_logits(self, inputs, **kwargs):
         """
-        Transcribe inputs using Beam Search + LM, will return list of strings.
-        This method will not able to utilise batch decoding, instead will do loop to decode for each elements.
+        Predict logits from inputs.
 
         Parameters
         ----------
         input: List[np.array]
             List[np.array] or List[malaya_speech.model.frame.Frame].
-        lm: ctc_decoders.Scorer
-            Returned from `malaya_speech.stt.language_model()`.
-        beam_size: int, optional (default=100)
-            beam size for beam decoder.
 
 
         Returns
         -------
-        result: List[str]
+        result: List[np.array]
         """
-        if self._mode != 'char':
-            raise ValueError('Model is not character based, not able to use `predict_lm`.')
-
-        try:
-            from ctc_decoders import ctc_beam_search_decoder
-        except BaseException:
-            raise ModuleNotFoundError(
-                'ctc_decoders not installed. Please install it by `pip install ctc-decoders` and try again.'
-            )
 
         inputs = [
             input.array if isinstance(input, Frame) else input
@@ -1245,18 +1227,11 @@ class Wav2Vec2_CTC(Abstract):
         logits = softmax(logits)
         results = []
         for i in range(len(logits)):
-            d = ctc_beam_search_decoder(
-                logits[i][: seq_lens[i]],
-                self._vocab,
-                beam_size,
-                ext_scoring_func=lm,
-                **kwargs,
-            )
-            results.append(d[0][1])
+            results.append(logits[i][: seq_lens[i]])
         return results
 
     def __call__(
-        self, input, decoder: str = 'greedy', lm: bool = False, **kwargs
+        self, input, **kwargs
     ):
         """
         Transcribe input, will return a string.
@@ -1271,17 +1246,12 @@ class Wav2Vec2_CTC(Abstract):
             * ``'greedy'`` - greedy decoder.
             * ``'beam'`` - beam decoder.
         lm: bool, optional (default=False)
-        **kwargs: keyword arguments passed to `predict` or `predict_lm`.
 
         Returns
         -------
         result: str
         """
-        if lm:
-            method = self.predict_lm
-        else:
-            method = self.predict
-        return method([input], decoder=decoder, **kwargs)[0]
+        return self.predict([input], decoder=decoder, **kwargs)[0]
 
 
 class CTC(Abstract):

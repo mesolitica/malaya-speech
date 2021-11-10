@@ -8,15 +8,11 @@ TRANSDUCER_MIXED_VOCAB = 'vocab/transducer-mixed-v2.subword.subwords'
 TRANSDUCER_SINGLISH_VOCAB = 'vocab/transducer-singlish.subword.subwords'
 TRANSDUCER_2048_VOCAB = 'vocab/transducer-2048.subword.subwords'
 
-CTC_VOCAB = 'vocab/ctc-bahasa.json'
-
 TRANSDUCER_VOCABS = {
     'malay': TRANSDUCER_VOCAB,
     'mixed': TRANSDUCER_MIXED_VOCAB,
     'singlish': TRANSDUCER_SINGLISH_VOCAB,
 }
-
-CTC_VOCABS = {'malay': CTC_VOCAB}
 
 PATH_TTS_TACOTRON2 = {
     'female': {

@@ -1,3 +1,7 @@
+import os
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+
 import pyroomacoustics as pra
 import numpy as np
 from pydub import AudioSegment
@@ -5,61 +9,23 @@ from sklearn.utils import shuffle
 from glob import glob
 import random
 import json
+from malaya_speech.train.model.conformer.model import Model as ConformerModel
+from malaya_speech.train.model import hubert, ctc
 import malaya_speech.train as train
 import malaya_speech.config
-import malaya_speech.train.model.transducer as transducer
-import malaya_speech.train.model.conformer as conformer
-import malaya_speech.augmentation.spectrogram as mask_augmentation
 import malaya_speech.augmentation.waveform as augmentation
 import malaya_speech
 import tensorflow as tf
 import os
+import string
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
-
-subwords = malaya_speech.subword.load('transducer.subword')
-config = malaya_speech.config.conformer_base_encoder_config
 sr = 16000
 maxlen = 18
 minlen_text = 1
-prob_aug = 0.9
+prob_aug = 0.95
 
-parameters = {
-    'optimizer_params': {'beta1': 0.9, 'beta2': 0.98, 'epsilon': 10e-9},
-    'lr_policy_params': {
-        'warmup_steps': 40000,
-        'max_lr': (0.05 / config['dmodel']),
-    },
-}
-
-featurizer = malaya_speech.tf_featurization.STTFeaturizer(
-    normalize_per_feature=True
-)
-n_mels = featurizer.num_feature_bins
-
-
-def transformer_schedule(step, d_model, warmup_steps=4000, max_lr=None):
-    arg1 = tf.math.rsqrt(tf.cast(step, tf.float32))
-    arg2 = step * (warmup_steps ** -1.5)
-    arg1 = tf.cast(arg1, tf.float32)
-    arg2 = tf.cast(arg2, tf.float32)
-    lr = tf.math.rsqrt(tf.cast(d_model, tf.float32)) * tf.math.minimum(
-        arg1, arg2
-    )
-    if max_lr is not None:
-        max_lr = tf.cast(max_lr, tf.float32)
-        return tf.math.minimum(max_lr, lr)
-    return lr
-
-
-def learning_rate_scheduler(global_step):
-
-    return transformer_schedule(
-        tf.cast(global_step, tf.float32),
-        config['dmodel'],
-        **parameters['lr_policy_params'],
-    )
+unique_vocab = list(string.ascii_lowercase + string.digits) + [' ']
 
 
 def augment_room(y, scale=1.0):
@@ -191,16 +157,6 @@ def calc(signal, add_uniform=True):
     return x
 
 
-def mel_augmentation(features):
-
-    features = mask_augmentation.warp_time_pil(features)
-    features = mask_augmentation.mask_frequency(features, width_freq_mask=12)
-    features = mask_augmentation.mask_time(
-        features, width_time_mask=int(features.shape[0] * 0.05)
-    )
-    return features
-
-
 def mp3_to_wav(file, sr=sr):
     audio = AudioSegment.from_file(file)
     audio = audio.set_frame_rate(sr).set_channels(1)
@@ -222,27 +178,18 @@ def generate(file):
                 else:
                     wav_data, _ = malaya_speech.load(audios[i], sr=sr)
 
-                if (len(wav_data) / sr) > maxlen:
-                    # print(f'skipped audio too long {audios[i]}')
-                    continue
-
                 if len(cleaned_texts[i]) < minlen_text:
                     # print(f'skipped text too short {audios[i]}')
                     continue
 
-                t = malaya_speech.subword.encode(
-                    subwords, cleaned_texts[i], add_blank=False
-                )
+                if (len(wav_data) / sr) > maxlen:
+                    continue
 
-                if random.random() > prob_aug:
-                    wav_data = calc(wav_data)
-
-                back = np.zeros(shape=(2000,))
-                front = np.zeros(shape=(200,))
-                wav_data = np.concatenate([front, wav_data, back], axis=-1)
+                t = [unique_vocab.index(c) for c in cleaned_texts[i]]
 
                 yield {
                     'waveforms': wav_data,
+                    'waveforms_length': [len(wav_data)],
                     'targets': t,
                     'targets_length': [len(t)],
                 }
@@ -250,23 +197,10 @@ def generate(file):
                 print(e)
 
 
-def preprocess_inputs(example):
-    s = featurizer.vectorize(example['waveforms'])
-    s = tf.reshape(s, (-1, n_mels))
-    s = tf.compat.v1.numpy_function(mel_augmentation, [s], tf.float32)
-    mel_fbanks = tf.reshape(s, (-1, n_mels))
-    length = tf.cast(tf.shape(mel_fbanks)[0], tf.int32)
-    length = tf.expand_dims(length, 0)
-    example['inputs'] = mel_fbanks
-    example['inputs_length'] = length
-    example.pop('waveforms', None)
-    return example
-
-
 def get_dataset(
     file,
-    batch_size=16,
-    shuffle_size=16,
+    batch_size=12,
+    shuffle_size=20,
     thread_count=24,
     maxlen_feature=1800,
 ):
@@ -275,31 +209,30 @@ def get_dataset(
             generate,
             {
                 'waveforms': tf.float32,
+                'waveforms_length': tf.int32,
                 'targets': tf.int32,
                 'targets_length': tf.int32,
             },
             output_shapes={
                 'waveforms': tf.TensorShape([None]),
+                'waveforms_length': tf.TensorShape([None]),
                 'targets': tf.TensorShape([None]),
                 'targets_length': tf.TensorShape([None]),
             },
             args=(file,),
         )
         dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
-        dataset = dataset.map(
-            preprocess_inputs, num_parallel_calls=thread_count
-        )
         dataset = dataset.padded_batch(
             batch_size,
             padded_shapes={
-                'inputs': tf.TensorShape([None, n_mels]),
-                'inputs_length': tf.TensorShape([None]),
+                'waveforms': tf.TensorShape([None]),
+                'waveforms_length': tf.TensorShape([None]),
                 'targets': tf.TensorShape([None]),
                 'targets_length': tf.TensorShape([None]),
             },
             padding_values={
-                'inputs': tf.constant(0, dtype=tf.float32),
-                'inputs_length': tf.constant(0, dtype=tf.int32),
+                'waveforms': tf.constant(0, dtype=tf.float32),
+                'waveforms_length': tf.constant(0, dtype=tf.int32),
                 'targets': tf.constant(0, dtype=tf.int32),
                 'targets_length': tf.constant(0, dtype=tf.int32),
             },
@@ -309,54 +242,77 @@ def get_dataset(
     return get
 
 
+class Encoder:
+    def __init__(self, config):
+        self.config = config
+        self.encoder = ConformerModel(**self.config)
+
+    def __call__(self, x, input_mask, training=True):
+        return self.encoder(x, training=training)
+
+
+total_steps = 2000000
+
+
 def model_fn(features, labels, mode, params):
-    conformer_model = conformer.Model(
-        kernel_regularizer=None, bias_regularizer=None, **config
+    config_conformer = malaya_speech.config.conformer_tiny_encoder_config
+    config_conformer['subsampling']['type'] = 'none'
+    config_conformer['dropout'] = 0.0
+    encoder = Encoder(config_conformer)
+    cfg = hubert.HuBERTConfig(
+        extractor_mode='layer_norm',
+        dropout=0.0,
+        attention_dropout=0.0,
+        encoder_layerdrop=0.0,
+        dropout_input=0.0,
+        dropout_features=0.0,
+        final_dim=128,
     )
-    decoder_config = malaya_speech.config.conformer_base_decoder_config
-    transducer_model = transducer.rnn.Model(
-        conformer_model, vocabulary_size=subwords.vocab_size, **decoder_config
-    )
+    model = hubert.Model(cfg, encoder, ['pad', 'eos', 'unk'] + [str(i) for i in range(100)])
+    X = features['waveforms']
+    X_len = features['waveforms_length'][:, 0]
+    targets = features['targets']
+    targets_int32 = tf.cast(targets, tf.int32)
     targets_length = features['targets_length'][:, 0]
-    v = tf.expand_dims(features['inputs'], -1)
-    z = tf.zeros((tf.shape(features['targets'])[0], 1), dtype=tf.int32)
-    c = tf.concat([z, features['targets']], axis=1)
-
-    logits = transducer_model([v, c, targets_length + 1], training=True)
-
-    cost = transducer.loss.rnnt_loss(
-        logits=logits,
-        labels=features['targets'],
-        label_length=targets_length,
-        logit_length=features['inputs_length'][:, 0]
-        // conformer_model.conv_subsampling.time_reduction_factor,
+    r = model(X, padding_mask=X_len, features_only=True, mask=False)
+    logits = tf.layers.dense(r['x'], len(unique_vocab) + 1)
+    seq_lens = tf.reduce_sum(
+        tf.cast(tf.logical_not(r['padding_mask']), tf.int32), axis=1
     )
-    mean_error = tf.reduce_mean(cost)
-
+    mean_error, sum_error, sum_weight = ctc.loss.ctc_loss(
+        logits, seq_lens, targets_int32, targets_length
+    )
     loss = mean_error
+    accuracy = ctc.metrics.ctc_sequence_accuracy(
+        logits, seq_lens, targets_int32, targets_length,
+    )
 
     tf.identity(loss, 'train_loss')
+    tf.identity(accuracy, name='train_accuracy')
 
-    # variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-    # variables = [v for v in variables if 'transducer_prediction' in v.name]
-    # init_checkpoint = 'transducer-rnn-base/model-rename.ckpt'
+    tf.summary.scalar('train_accuracy', accuracy)
 
-    # assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
-    #     variables, init_checkpoint
-    # )
+    variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+    init_checkpoint = 'hubert-conformer-tiny/model.ckpt-1000000'
 
-    # tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
+    assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
+        variables, init_checkpoint
+    )
+
+    tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
-        train_op = train.optimizer.optimize_loss(
+        train_op = train.optimizer.adamw.create_optimizer(
             loss,
-            tf.train.AdamOptimizer,
-            parameters['optimizer_params'],
-            learning_rate_scheduler,
-            summaries=['learning_rate', 'loss_scale'],
-            larc_params=parameters.get('larc_params', None),
-            loss_scaling=parameters.get('loss_scaling', 1.0),
-            loss_scaling_params=parameters.get('loss_scaling_params', None),
+            init_lr=5e-5,
+            num_train_steps=total_steps,
+            num_warmup_steps=100000,
+            end_learning_rate=0.0,
+            weight_decay_rate=0.01,
+            beta_1=0.9,
+            beta_2=0.999,
+            epsilon=1e-6,
+            clip_norm=1.0,
         )
         estimator_spec = tf.estimator.EstimatorSpec(
             mode=mode, loss=loss, train_op=train_op
@@ -365,24 +321,34 @@ def model_fn(features, labels, mode, params):
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode=tf.estimator.ModeKeys.EVAL, loss=loss
+            mode=tf.estimator.ModeKeys.EVAL,
+            loss=loss,
+            eval_metric_ops={
+                'accuracy': ctc.metrics.ctc_sequence_accuracy_estimator(
+                    logits, seq_lens, targets_int32, targets_length
+                )
+            },
         )
 
     return estimator_spec
 
 
-train_hooks = [tf.train.LoggingTensorHook(['train_loss'], every_n_iter=1)]
+train_hooks = [
+    tf.train.LoggingTensorHook(
+        ['train_accuracy', 'train_loss'], every_n_iter=1
+    )
+]
 train_dataset = get_dataset('bahasa-asr-train-combined.json')
 dev_dataset = get_dataset('bahasa-asr-test.json')
 
 train.run_training(
     train_fn=train_dataset,
     model_fn=model_fn,
-    model_dir='asr-base-conformer-transducer-v3',
+    model_dir='hubert-conformer-tiny-ctc-char',
     num_gpus=1,
     log_step=1,
-    save_checkpoint_step=25000,
-    max_steps=1000_000,
+    save_checkpoint_step=20000,
+    max_steps=total_steps,
     eval_fn=dev_dataset,
     train_hooks=train_hooks,
 )

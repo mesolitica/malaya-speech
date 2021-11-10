@@ -31,3 +31,9 @@ Female speaker,
 ```bash
 python3 hifigan-female.py
 ```
+
+## download
+
+1. Male, last update 29th October 2021, [hifigan-male-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/hifigan-male-output.tar.gz)
+
+2. Female, last update 29th October 2021, [hifigan-female-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/hifigan-female-output.tar.gz)

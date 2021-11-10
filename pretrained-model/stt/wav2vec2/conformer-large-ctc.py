@@ -20,10 +20,9 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 sr = 16000
 maxlen = 18
 minlen_text = 1
-prob_aug = 0.85
+prob_aug = 0.9
 
-with open('malaya-speech-sst-vocab.json') as fopen:
-    unique_vocab = json.load(fopen) + ['{', '}', '[']
+unique_vocab = list(string.ascii_lowercase + string.digits) + [' ']
 
 
 def augment_room(y, scale=1.0):

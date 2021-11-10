@@ -51,3 +51,28 @@ def binarize_attention(attn, in_len, out_len):
         hard_attn = mas(attn_cpu[ind, 0, : out_len[ind], : in_len[ind]])
         attn_out[ind, 0, : out_len[ind], : in_len[ind]] = hard_attn
     return attn_out
+
+
+def put_comma(alignment, min_threshold: float = 0.5):
+    """
+    Put comma in alignment from force alignment model.
+
+    Parameters
+    -----------
+    alignment: List[Dict[text, start, end]]
+    min_threshold: float, optional (default=0.5)
+        minimum threshold in term of seconds to assume a comma.
+
+    Returns
+    --------
+    result: List[str]
+    """
+    r = []
+    for no, row in enumerate(alignment):
+        if no > 0:
+            if alignment[no]['start'] - alignment[no-1]['end'] >= min_threshold:
+                r.append(',')
+
+        r.append(row['text'])
+    r.append('.')
+    return r

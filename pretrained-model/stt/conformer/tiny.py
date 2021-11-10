@@ -19,11 +19,11 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 
 subwords = malaya_speech.subword.load('transducer.subword')
-config = malaya_speech.config.conformer_base_encoder_config
+config = malaya_speech.config.conformer_tiny_encoder_config
 sr = 16000
 maxlen = 18
 minlen_text = 1
-prob_aug = 0.9
+prob_aug = 0.95
 
 parameters = {
     'optimizer_params': {'beta1': 0.9, 'beta2': 0.98, 'epsilon': 10e-9},
@@ -265,8 +265,8 @@ def preprocess_inputs(example):
 
 def get_dataset(
     file,
-    batch_size=16,
-    shuffle_size=16,
+    batch_size=24,
+    shuffle_size=20,
     thread_count=24,
     maxlen_feature=1800,
 ):
@@ -313,7 +313,7 @@ def model_fn(features, labels, mode, params):
     conformer_model = conformer.Model(
         kernel_regularizer=None, bias_regularizer=None, **config
     )
-    decoder_config = malaya_speech.config.conformer_base_decoder_config
+    decoder_config = malaya_speech.config.conformer_tiny_decoder_config
     transducer_model = transducer.rnn.Model(
         conformer_model, vocabulary_size=subwords.vocab_size, **decoder_config
     )
@@ -339,7 +339,7 @@ def model_fn(features, labels, mode, params):
 
     # variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
     # variables = [v for v in variables if 'transducer_prediction' in v.name]
-    # init_checkpoint = 'transducer-rnn-base/model-rename.ckpt'
+    # init_checkpoint = 'transducer-rnn-small/model-rename.ckpt'
 
     # assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
     #     variables, init_checkpoint
@@ -378,7 +378,7 @@ dev_dataset = get_dataset('bahasa-asr-test.json')
 train.run_training(
     train_fn=train_dataset,
     model_fn=model_fn,
-    model_dir='asr-base-conformer-transducer-v3',
+    model_dir='asr-tiny-conformer-transducer-v3',
     num_gpus=1,
     log_step=1,
     save_checkpoint_step=25000,

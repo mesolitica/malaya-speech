@@ -52,6 +52,7 @@ Contents:
    realtime-asr-rubberband
    realtime-alignment
    force-alignment
+   put-comma-force-alignment
 
 .. toctree::
    :maxdepth: 2

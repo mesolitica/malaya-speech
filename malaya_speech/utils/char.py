@@ -1,4 +1,5 @@
 import six
+import string
 from typing import List
 
 PAD = '<PAD>'
@@ -9,6 +10,7 @@ PAD_ID = RESERVED_TOKENS.index(PAD)
 EOS_ID = RESERVED_TOKENS.index(EOS)
 VOCAB_SIZE = 256
 BLANK = 0
+CTC_VOCAB = [''] + list(string.ascii_lowercase + string.digits) + [' ']
 
 
 def strip_ids(ids, ids_to_strip):
@@ -95,14 +97,11 @@ def decode(ids, lookup: List[str] = None):
     decoded_ids = []
     int2byte = six.int2byte
     for id_ in ids:
-        if 0 <= id_ < NUM_RESERVED_TOKENS:
-            decoded_ids.append(RESERVED_TOKENS[int(id_)])
+        if lookup:
+            decoded_ids.append(lookup[id_])
         else:
-            if lookup:
-                decoded_ids.append(lookup[id_])
-            else:
-                decoded_ids.append(
-                    int2byte(id_ - NUM_RESERVED_TOKENS).decode('utf-8')
-                )
+            decoded_ids.append(
+                int2byte(id_ - NUM_RESERVED_TOKENS).decode('utf-8')
+            )
 
     return ''.join(decoded_ids)
