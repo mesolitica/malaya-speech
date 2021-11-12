@@ -17,7 +17,7 @@ from malaya_speech.utils.subword import (
     align_multilanguage,
 )
 from malaya_speech.utils.execute import execute_graph
-from malaya_speech.utils.activation import softmax
+from malaya_speech.utils.activation import softmax, apply_temp
 from malaya_speech.utils.featurization import universal_mel
 from malaya_speech.utils.read import resample
 from malaya_speech.utils.speechsplit import (
@@ -25,11 +25,14 @@ from malaya_speech.utils.speechsplit import (
     get_f0_sptk,
     get_fo_pyworld,
 )
-from malaya_speech.utils.constant import MEL_MEAN, MEL_STD
-
-BeamHypothesis = collections.namedtuple(
-    'BeamHypothesis', ('score', 'prediction', 'states')
+from malaya_speech.utils.lm import (
+    BeamHypothesis_LM,
+    BeamHypothesis,
+    sort_and_trim_beams,
+    prune_history,
+    get_lm_beams
 )
+from malaya_speech.utils.constant import MEL_MEAN, MEL_STD
 
 
 class Abstract:
@@ -516,6 +519,10 @@ class Transducer(Abstract):
         self._stack = stack
         if self._stack:
             self._len_vocab = [l.vocab_size for l in self._vocab]
+        else:
+            self._vocabs = {i: self._vocab._id_to_subword(i) for i in range(self._vocab.vocab_size - 1)}
+            self._vocabs[-1] = ''
+            self._len_vocab = [l.vocab_size]
 
     def _check_decoder(self, decoder, beam_size):
         decoder = decoder.lower()
@@ -654,8 +661,55 @@ class Transducer(Abstract):
 
         return results
 
+    def _beam_decoder_lm(self, enc, total, initial_states, language_model,
+                         beam_width=5, token_min_logp=-20.0, beam_prune_logp=-1.0,
+                         temperature=0.1):
+        kept_hyps = [
+            BeamHypothesis_LM(score=0.0, prediction=[0], states=initial_states, text='', next_word='',
+                              word_part='')
+        ]
+        cached_lm_scores: Dict[str, Tuple[float, float, LMState]] = {
+            '': (0.0, 0.0, language_model.get_start_state())
+        }
+        cached_p_lm_scores: Dict[str, float] = {}
+        B = kept_hyps
+        for i in range(total):
+            A = B
+            B = []
+            while True:
+                y_hat = max(A, key=lambda x: x.score)
+                A.remove(y_hat)
+                r = self._execute(
+                    inputs=[enc[i], y_hat.prediction[-1], y_hat.states],
+                    input_labels=[
+                        'encoded_placeholder',
+                        'predicted_placeholder',
+                        'states_placeholder',
+                    ],
+                    output_labels=['ytu', 'new_states'],
+                )
+                ytu_, new_states_ = r['ytu'], r['new_states']
+                if temperature > 0:
+                    ytu_ = apply_temp(ytu_, temperature=temperature)
+                B.append(BeamHypothesis_LM(
+                    score=y_hat.score + ytu_[0],
+                    prediction=y_hat.prediction,
+                    states=y_hat.states,
+                    text=y_hat.text,
+                    next_word=y_hat.next_word,
+                    word_part=y_hat.word_part,
+                ))
+                ytu_ = ytu_[1:]
+                max_idx = ytu_.argmax()
+                idx_list = set(np.where(ytu_ >= token_min_logp)[0]) | {max_idx}
+                for k in idx_list:
+                    w = self._vocabs[k]
+                    if isinstance(w, bytes):
+                        w = w.decode(encoding='ISO-8859-1')
+
     def _beam_decoder(
-        self, enc, total, initial_states, beam_width=10, norm_score=True
+        self, enc, total, initial_states,
+        beam_width=10, temperature=0.0,
     ):
         kept_hyps = [
             BeamHypothesis(
@@ -679,35 +733,78 @@ class Transducer(Abstract):
                     output_labels=['ytu', 'new_states'],
                 )
                 ytu_, new_states_ = r['ytu'], r['new_states']
-                for k in range(ytu_.shape[0]):
+                if temperature > 0:
+                    ytu_ = apply_temp(ytu_, temperature=temperature)
+                top_k = ytu_[1:].argsort()[-beam_width:][::-1]
+                B.append(BeamHypothesis(
+                    score=y_hat.score + ytu_[0],
+                    prediction=y_hat.prediction,
+                    states=y_hat.states,
+                ))
+                for k in top_k:
                     beam_hyp = BeamHypothesis(
-                        score=(y_hat.score + float(ytu_[k])),
-                        prediction=y_hat.prediction,
-                        states=y_hat.states,
+                        score=y_hat.score + ytu_[k + 1],
+                        prediction=y_hat.prediction + [k + 1],
+                        states=new_states_,
                     )
-                    if k == 0:
-                        B.append(beam_hyp)
-                    else:
-                        beam_hyp = BeamHypothesis(
-                            score=beam_hyp.score,
-                            prediction=(beam_hyp.prediction + [int(k)]),
-                            states=new_states_,
-                        )
-                        A.append(beam_hyp)
-                if len(B) > beam_width:
+                    A.append(beam_hyp)
+                hyps_max = max(A, key=lambda x: x.score).score
+                kept_most_prob = sorted(
+                    [hyp for hyp in B if hyp.score > hyps_max],
+                    key=lambda x: x.score,
+                )
+                if len(kept_most_prob) >= beam_width:
+                    B = kept_most_prob
                     break
 
-        if norm_score:
-            kept_hyps = sorted(
-                B, key=lambda x: x.score / len(x.prediction), reverse=True
-            )[:beam_width]
-        else:
-            kept_hyps = sorted(B, key=lambda x: x.score, reverse=True)[
-                :beam_width
-            ]
+        kept_hyps = sorted(B, key=lambda x: x.score, reverse=True)[:beam_width]
         return kept_hyps[0].prediction
 
-    def beam_decoder(self, inputs, beam_size: int = 5):
+    def _beam()
+
+    def beam_decoder_lm(self, inputs, language_model,
+                        beam_size: int = 5,
+                        token_min_logp: float = -20.0,
+                        beam_prune_logp=-1.0,):
+        """
+        Transcribe inputs, will return list of strings.
+
+        Parameters
+        ----------
+        inputs: List[np.array]
+            List[np.array] or List[malaya_speech.model.frame.Frame].
+        language_model: pyctcdecode.language_model.LanguageModel
+            pyctcdecode language model, load from `LanguageModel(kenlm_model, alpha = alpha, beta = beta)`.
+        beam_size: int, optional (default=5)
+            beam size for beam decoder.
+        token_min_logp: float, optional (default=-20.0)
+            minimum log probability to select a token.
+        beam_prune_logp: float, optional (default=-1.0)
+            filter candidates >= max score + `beam_prune_logp`.
+        temperature: float, optional (default=0.0)
+            apply temperature function for logits, can help for certain case,
+            logits += -np.log(-np.log(uniform_noise_shape_logits)) * temperature
+
+        Returns
+        -------
+        result: List[str]
+        """
+        padded, lens, index = self._get_inputs(inputs)
+        results = []
+
+        r = self._execute(
+            inputs=[padded, lens],
+            input_labels=['X_placeholder', 'X_len_placeholder'],
+            output_labels=['encoded', 'padded_lens', 'initial_states'],
+        )
+        encoded_, padded_lens_, s = (
+            r['encoded'],
+            r['padded_lens'],
+            r['initial_states'],
+        )
+        padded_lens_ = padded_lens_ // self._time_reduction_factor
+
+    def beam_decoder(self, inputs, beam_size: int = 5, temperature: float = 0.0):
         """
         Transcribe inputs, will return list of strings.
 
@@ -717,6 +814,9 @@ class Transducer(Abstract):
             List[np.array] or List[malaya_speech.model.frame.Frame].
         beam_size: int, optional (default=5)
             beam size for beam decoder.
+        temperature: float, optional (default=0.0)
+            apply temperature function for logits, can help for certain case,
+            logits += -np.log(-np.log(uniform_noise_shape_logits)) * temperature
 
         Returns
         -------
@@ -742,6 +842,7 @@ class Transducer(Abstract):
                 total=padded_lens_[i],
                 initial_states=s,
                 beam_width=beam_size,
+                temperature=temperature,
             )
             if self._stack:
                 d = decode_multilanguage(self._vocab, r)

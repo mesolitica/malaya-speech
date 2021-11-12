@@ -20,8 +20,8 @@ _transducer_availability = {
     'conformer': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 37.1,
-        'WER': 0.16547,
-        'CER': 0.06410,
+        'WER': 0.1636023,
+        'CER': 0.0587443,
         'Language': ['malay'],
     },
     'large-conformer': {
@@ -104,10 +104,10 @@ _ctc_availability = {
     'hubert-conformer-tiny': {
         'Size (MB)': 36.6,
         'Quantized Size (MB)': 10.3,
-        'WER': 0.255762,
-        'CER': 0.061953,
-        'WER-LM': 0.255762,
-        'CER-LM': 0.061953,
+        'WER': 0.381819,
+        'CER': 0.100910,
+        'WER-LM': 0.20345644,
+        'CER-LM': 0.06419384,
         'Language': ['malay'],
     },
     'hubert-conformer': {
@@ -214,7 +214,7 @@ def available_transducer():
 
 @check_type
 def language_model(
-    model: str = 'bahasa', **kwargs
+    model: str = 'dump-combined', **kwargs
 ):
     """
     Load KenLM language model.

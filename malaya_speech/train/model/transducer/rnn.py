@@ -337,12 +337,17 @@ class Model(tf.keras.Model):
             )
         total = tf.shape(features)[0]
         batch = tf.constant(0, dtype=tf.int32)
-        decoded = tf.zeros(shape=(0, tf.shape(features)[1]), dtype=tf.int32)
+        maxlen = tf.reduce_max(encoded_length)
+        decoded = tf.zeros(shape=(0, maxlen), dtype=tf.int32)
+        decoded_alignment = tf.zeros(
+            shape=(0, maxlen, self.vocabulary_size),
+            dtype=tf.float32,
+        )
 
-        def condition(batch, decoded):
+        def condition(batch, decoded, decoded_alignment):
             return tf.less(batch, total)
 
-        def body(batch, decoded):
+        def body(batch, decoded, decoded_alignment):
             hypothesis = self._perform_greedy(
                 encoded=encoded[batch],
                 encoded_length=encoded_length[batch],
@@ -352,25 +357,35 @@ class Model(tf.keras.Model):
                 swap_memory=swap_memory,
             )
             yseq = tf.expand_dims(hypothesis.prediction, axis=0)
-            padding = [[0, 0], [0, tf.shape(features)[1] - tf.shape(yseq)[1]]]
+            padding = [[0, 0], [0, maxlen - tf.shape(yseq)[1]]]
             yseq = tf.pad(yseq, padding, 'CONSTANT')
             decoded = tf.concat([decoded, yseq], axis=0)
-            return batch + 1, decoded
 
-        batch, decoded = tf.while_loop(
+            yseq = tf.expand_dims(hypothesis.alignment, axis=0)
+            padding = [
+                [0, 0],
+                [0, maxlen - tf.shape(yseq)[1]],
+                [0, 0],
+            ]
+            yseq = tf.pad(yseq, padding, 'CONSTANT')
+            decoded_alignment = tf.concat([decoded_alignment, yseq], axis=0)
+            return batch + 1, decoded, decoded_alignment
+
+        batch, decoded, decoded_alignment = tf.while_loop(
             condition,
             body,
-            loop_vars=(batch, decoded),
+            loop_vars=(batch, decoded, decoded_alignment),
             parallel_iterations=parallel_iterations,
             swap_memory=True,
             shape_invariants=(
                 batch.get_shape(),
                 tf.TensorShape([None, None]),
+                tf.TensorShape([None, None, self.vocabulary_size]),
             ),
             back_prop=False,
         )
 
-        return decoded
+        return decoded, decoded_alignment
 
     def _perform_greedy(
         self,
@@ -384,7 +399,7 @@ class Model(tf.keras.Model):
         time = tf.constant(0, dtype=tf.int32)
         total = encoded_length
 
-        hypothesis = Hypothesis(
+        hypothesis = Hypothesis_Alignment(
             index=predicted,
             prediction=tf.TensorArray(
                 dtype=tf.int32,
@@ -394,6 +409,13 @@ class Model(tf.keras.Model):
                 element_shape=tf.TensorShape([]),
             ),
             states=states,
+            alignment=tf.TensorArray(
+                dtype=tf.float32,
+                size=total,
+                dynamic_size=False,
+                clear_after_read=False,
+                element_shape=tf.TensorShape([self.vocabulary_size]),
+            ),
         )
 
         def condition(_time, _hypothesis):
@@ -413,8 +435,12 @@ class Model(tf.keras.Model):
             _states = tf.where(_equal, _hypothesis.states, _states)
 
             _prediction = _hypothesis.prediction.write(_time, _predict)
-            _hypothesis = Hypothesis(
-                index=_index, prediction=_prediction, states=_states
+            _ytu = _hypothesis.alignment.write(_time, ytu)
+            _hypothesis = Hypothesis_Alignment(
+                index=_index,
+                prediction=_prediction,
+                states=_states,
+                alignment=_ytu,
             )
 
             return _time + 1, _hypothesis
@@ -427,10 +453,11 @@ class Model(tf.keras.Model):
             swap_memory=swap_memory,
             back_prop=False,
         )
-        return Hypothesis(
+        return Hypothesis_Alignment(
             index=hypothesis.index,
             prediction=hypothesis.prediction.stack(),
             states=hypothesis.states,
+            alignment=hypothesis.alignment.stack(),
         )
 
     def greedy_decoder_alignment(

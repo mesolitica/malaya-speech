@@ -47,3 +47,9 @@ def softmax(x, axis=None):
 
 def sigmoid(x):
     return np.exp(-np.logaddexp(0, -x))
+
+
+def apply_temp(logits_BxN, temperature):
+    uniform_noise_BxN = np.random.uniform(size=logits_BxN.shape)
+    logits_BxN += -np.log(-np.log(uniform_noise_BxN)) * temperature
+    return logits_BxN

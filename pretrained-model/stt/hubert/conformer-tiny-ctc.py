@@ -25,7 +25,7 @@ maxlen = 18
 minlen_text = 1
 prob_aug = 0.95
 
-unique_vocab = list(string.ascii_lowercase + string.digits) + [' ']
+unique_vocab = [''] + list(string.ascii_lowercase + string.digits) + [' ']
 
 
 def augment_room(y, scale=1.0):
