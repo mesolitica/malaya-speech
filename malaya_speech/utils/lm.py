@@ -2,10 +2,8 @@ import collections
 import re
 import heapq
 
-# heavily copy from https://github.com/kensho-technologies/pyctcdecode/blob/v0.1.0/pyctcdecode/decoder.py
-
 BeamHypothesis_LM = collections.namedtuple(
-    'BeamHypothesis_LM', ('score', 'prediction', 'states', 'text', 'next_word', 'word_part')
+    'BeamHypothesis_LM', ('score', 'score_lm', 'prediction', 'states', 'text', 'next_word', 'word_part')
 )
 
 BeamHypothesis = collections.namedtuple(
@@ -17,11 +15,17 @@ def prune_space(string):
     return re.sub(r'[ ]+', ' ', string).strip()
 
 
-def sort_and_trim_beams(beams: list, beam_width: int) -> list:
-    return heapq.nlargest(beam_width, beams, key=lambda x: x.score)
+def sort_and_trim_beams(beams: list, beam_width: int):
+    """
+    https://github.com/kensho-technologies/pyctcdecode/blob/v0.1.0/pyctcdecode/decoder.py#L68
+    """
+    return heapq.nlargest(beam_width, beams, key=lambda x: x.score_lm)
 
 
 def merge_tokens(token_1, token_2) -> str:
+    """
+    https://github.com/kensho-technologies/pyctcdecode/blob/v0.1.0/pyctcdecode/decoder.py#L100
+    """
     if len(token_2) == 0:
         text = token_1
     elif len(token_1) == 0:
@@ -32,7 +36,10 @@ def merge_tokens(token_1, token_2) -> str:
 
 
 def prune_history(beams, lm_order: int):
-    """Filter out beams that are the same over max_ngram history.
+    """
+    https://github.com/kensho-technologies/pyctcdecode/blob/v0.1.0/pyctcdecode/decoder.py#L140
+
+    Filter out beams that are the same over max_ngram history.
     Since n-gram language models have a finite history when scoring a new token, we can use that
     fact to prune beams that only differ early on (more than n tokens in the past) and keep only the
     higher scoring ones. Note that this helps speed up the decoding process but comes at the cost of
@@ -43,6 +50,7 @@ def prune_history(beams, lm_order: int):
     min_n_history = max(1, lm_order - 1)
     seen_hashes = set()
     filtered_beams = []
+    # for each beam after this, check if we need to add it
     for beam in beams:
         text = beam.text
         next_word = beam.next_word
@@ -53,6 +61,7 @@ def prune_history(beams, lm_order: int):
         if hash_idx not in seen_hashes:
             beam_hyp = BeamHypothesis_LM(
                 score=logit_score,
+                score_lm=0.0,
                 prediction=beam.prediction,
                 states=beam.states,
                 text=text,
@@ -90,7 +99,8 @@ def get_lm_beams(beams, cached_lm_scores,
                 )
             lm_score += cached_partial_token_scores[word_part]
         beam_hyp = BeamHypothesis_LM(
-            score=logit_score + lm_score,
+            score=logit_score,
+            score_lm=logit_score + lm_score,
             prediction=beam.prediction,
             states=beam.states,
             text=new_text,

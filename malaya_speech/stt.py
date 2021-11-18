@@ -8,13 +8,17 @@ _transducer_availability = {
         'Quantized Size (MB)': 9.14,
         'WER': 0.2128108,
         'CER': 0.08136871,
+        'WER-LM': 0.1996828,
+        'CER-LM': 0.0770037,
         'Language': ['malay'],
     },
     'small-conformer': {
         'Size (MB)': 49.2,
         'Quantized Size (MB)': 18.1,
-        'WER': 0.1981407,
-        'CER': 0.075313,
+        'WER': 0.19853302,
+        'CER': 0.07449528,
+        'WER-LM': 0.18536073,
+        'CER-LM': 0.07114307,
         'Language': ['malay'],
     },
     'conformer': {
@@ -22,28 +26,18 @@ _transducer_availability = {
         'Quantized Size (MB)': 37.1,
         'WER': 0.1636023,
         'CER': 0.0587443,
+        'WER-LM': 0.1561821,
+        'CER-LM': 0.0571897,
         'Language': ['malay'],
     },
     'large-conformer': {
         'Size (MB)': 404,
         'Quantized Size (MB)': 107,
-        'WER': 0.15986,
-        'CER': 0.05937,
+        'WER': 0.1602798,
+        'CER': 0.0647702,
+        'WER-LM': 0.1538312,
+        'CER-LM': 0.0637261,
         'Language': ['malay'],
-    },
-    'conformer-mixed': {
-        'Size (MB)': 125,
-        'Quantized Size (MB)': 37.1,
-        'WER': 0.279536,
-        'CER': 0.177017,
-        'Language': ['malay', 'singlish'],
-    },
-    'large-conformer-mixed': {
-        'Size (MB)': 404,
-        'Quantized Size (MB)': 107,
-        'WER': 0.262179,
-        'CER': 0.165555,
-        'Language': ['malay', 'singlish'],
     },
     'conformer-stack-mixed': {
         'Size (MB)': 130,
@@ -104,28 +98,28 @@ _ctc_availability = {
     'hubert-conformer-tiny': {
         'Size (MB)': 36.6,
         'Quantized Size (MB)': 10.3,
-        'WER': 0.381819,
-        'CER': 0.100910,
-        'WER-LM': 0.20345644,
-        'CER-LM': 0.06419384,
+        'WER': 0.3359682,
+        'CER': 0.0882573,
+        'WER-LM': 0.1992265,
+        'CER-LM': 0.0635223,
         'Language': ['malay'],
     },
     'hubert-conformer': {
         'Size (MB)': 115,
         'Quantized Size (MB)': 31.1,
-        'WER': 0.255762,
-        'CER': 0.061953,
-        'WER-LM': 0.255762,
-        'CER-LM': 0.061953,
+        'WER': 0.2436595,
+        'CER': 0.061728,
+        'WER-LM': 0.142499,
+        'CER-LM': 0.043618,
         'Language': ['malay'],
     },
     'hubert-conformer-large': {
         'Size (MB)': 392,
         'Quantized Size (MB)': 100,
-        'WER': 0.22837,
-        'CER': 0.054309,
-        'WER-LM': 0.255762,
-        'CER-LM': 0.061953,
+        'WER': 0.2237763,
+        'CER': 0.0586332,
+        'WER-LM': 0.12776263,
+        'CER-LM': 0.04154692,
         'Language': ['malay'],
     },
 }
@@ -144,6 +138,7 @@ google_accuracy = {
 _language_model_availability = {
     'bahasa': {
         'Size (MB)': 17,
+        'LM order': 3,
         'Description': 'Gathered from malaya-speech ASR bahasa transcript',
         'Command': [
             './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
@@ -152,6 +147,7 @@ _language_model_availability = {
     },
     'bahasa-news': {
         'Size (MB)': 24,
+        'LM order': 3,
         'Description': 'Gathered from malaya-speech bahasa ASR transcript + News (Random sample 300k sentences)',
         'Command': [
             './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
@@ -160,6 +156,7 @@ _language_model_availability = {
     },
     'bahasa-combined': {
         'Size (MB)': 29,
+        'LM order': 3,
         'Description': 'Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences) + Bahasa Wikipedia (Random sample 150k sentences).',
         'Command': [
             './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
@@ -168,6 +165,7 @@ _language_model_availability = {
     },
     'redape-community': {
         'Size (MB)': 887.1,
+        'LM order': 4,
         'Description': 'Mirror for https://github.com/redapesolutions/suara-kami-community',
         'Command': [
             './lmplz --text text.txt --arpa out.arpa -o 4 --prune 0 1 1 1',
@@ -176,6 +174,7 @@ _language_model_availability = {
     },
     'dump-combined': {
         'Size (MB)': 310,
+        'LM order': 3,
         'Description': 'Academia + News + IIUM + Parliament + Watpadd + Wikipedia + Common Crawl + training set from https://github.com/huseinzol05/malay-dataset/tree/master/dumping/clean',
         'Command': [
             './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',

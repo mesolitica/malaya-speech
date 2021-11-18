@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
 import pyroomacoustics as pra
 import numpy as np
@@ -24,6 +24,8 @@ sr = 16000
 maxlen = 18
 minlen_text = 1
 prob_aug = 0.95
+task_balance = 0.5
+distill_temperature = 1.0
 
 unique_vocab = [''] + list(string.ascii_lowercase + string.digits) + [' ']
 
@@ -255,6 +257,13 @@ total_steps = 2000000
 
 
 def model_fn(features, labels, mode, params):
+
+    X = features['waveforms']
+    X_len = features['waveforms_length'][:, 0]
+    targets = features['targets']
+    targets_int32 = tf.cast(targets, tf.int32)
+    targets_length = features['targets_length'][:, 0]
+
     config_conformer = malaya_speech.config.conformer_large_encoder_config
     config_conformer['subsampling']['type'] = 'none'
     config_conformer['dropout'] = 0.0
@@ -268,17 +277,43 @@ def model_fn(features, labels, mode, params):
         dropout_features=0.0,
         final_dim=768,
     )
-    model = hubert.Model(cfg, encoder, ['pad', 'eos', 'unk'] + [str(i) for i in range(100)])
-    X = features['waveforms']
-    X_len = features['waveforms_length'][:, 0]
-    targets = features['targets']
-    targets_int32 = tf.cast(targets, tf.int32)
-    targets_length = features['targets_length'][:, 0]
-    r = model(X, padding_mask=X_len, features_only=True, mask=False)
-    logits = tf.layers.dense(r['x'], len(unique_vocab) + 1)
+    teacher = hubert.Model(cfg, encoder, ['pad', 'eos', 'unk'] + [str(i) for i in range(100)])
+    r = teacher(X, padding_mask=X_len, features_only=True, mask=False)
+    logits_teacher = tf.layers.dense(r['x'], len(unique_vocab) + 1)
+
+    with tf.compat.v1.variable_scope('student') as vs:
+        config_conformer = malaya_speech.config.conformer_tiny_encoder_config
+        config_conformer['subsampling']['type'] = 'none'
+        config_conformer['dropout'] = 0.0
+        encoder = Encoder(config_conformer)
+        cfg = hubert.HuBERTConfig(
+            extractor_mode='layer_norm',
+            dropout=0.0,
+            attention_dropout=0.0,
+            encoder_layerdrop=0.0,
+            dropout_input=0.0,
+            dropout_features=0.0,
+            final_dim=128,
+        )
+        model = hubert.Model(cfg, encoder, ['pad', 'eos', 'unk'] + [str(i) for i in range(100)])
+        r = model(X, padding_mask=X_len, features_only=True, mask=False)
+        logits = tf.layers.dense(r['x'], len(unique_vocab) + 1)
+
     seq_lens = tf.reduce_sum(
         tf.cast(tf.logical_not(r['padding_mask']), tf.int32), axis=1
     )
+
+    teacher_targets = tf.nn.softmax(
+        logits_teacher / distill_temperature
+    )
+    student_distill_xent = tf.nn.softmax_cross_entropy_with_logits_v2(
+        labels=tf.stop_gradient(teacher_targets),
+        logits=logits / distill_temperature,
+    )
+    student_distill_xent = tf.reduce_sum(student_distill_xent * tf.cast(tf.logical_not(r['padding_mask']), tf.float32))
+    student_distill_xent *= distill_temperature ** 2
+    student_distill_xent = tf.reduce_mean(student_distill_xent)
+
     mean_error, sum_error, sum_weight = ctc.loss.ctc_loss(
         logits, seq_lens, targets_int32, targets_length
     )
@@ -287,14 +322,24 @@ def model_fn(features, labels, mode, params):
         logits, seq_lens, targets_int32, targets_length,
     )
 
+    phase_loss = task_balance * mean_error
+    phase_loss += (1 - task_balance) * student_distill_xent
+
+    loss = phase_loss
+    task_loss = mean_error
+    distill_loss = student_distill_xent
+
     tf.identity(loss, 'train_loss')
+    tf.identity(task_loss, name='task_loss')
+    tf.identity(distill_loss, name='distill_loss')
     tf.identity(accuracy, name='train_accuracy')
 
+    tf.summary.scalar('task_loss', task_loss)
+    tf.summary.scalar('distill_loss', distill_loss)
     tf.summary.scalar('train_accuracy', accuracy)
 
     variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-    init_checkpoint = 'hubert-conformer-large-output/model.ckpt-1000000'
-
+    init_checkpoint = 'hubert-conformer-large-ctc-char/model.ckpt-1860000'
     assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
         variables, init_checkpoint
     )
@@ -335,7 +380,7 @@ def model_fn(features, labels, mode, params):
 
 train_hooks = [
     tf.train.LoggingTensorHook(
-        ['train_accuracy', 'train_loss'], every_n_iter=1
+        ['train_accuracy', 'train_loss', 'task_loss', 'distill_loss'], every_n_iter=1
     )
 ]
 train_dataset = get_dataset('bahasa-asr-train-combined.json')
@@ -344,7 +389,7 @@ dev_dataset = get_dataset('bahasa-asr-test.json')
 train.run_training(
     train_fn=train_dataset,
     model_fn=model_fn,
-    model_dir='hubert-conformer-large-ctc-char',
+    model_dir='hubert-conformer-tiny-ctc-distillation',
     num_gpus=1,
     log_step=1,
     save_checkpoint_step=20000,
