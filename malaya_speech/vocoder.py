@@ -185,13 +185,13 @@ def mbmelgan(model: str = 'female', quantized: bool = False, **kwargs):
 
 
 @check_type
-def hifigan(model: str = 'female', quantized: bool = False, **kwargs):
+def hifigan(model: str = 'universal-768', quantized: bool = False, **kwargs):
     """
     Load HiFiGAN Vocoder model.
 
     Parameters
     ----------
-    model : str, optional (default='female')
+    model : str, optional (default='universal-768')
         Model architecture supported. Allowed values:
 
         * ``'female'`` - HiFiGAN trained on female voice.

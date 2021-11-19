@@ -44,6 +44,8 @@ _transducer_availability = {
         'Quantized Size (MB)': 38.5,
         'WER': 0.2401982,
         'CER': 0.1577375,
+        'WER-LM': 0.1538312,
+        'CER-LM': 0.0637261,
         'Language': ['malay', 'singlish'],
     },
     'conformer-stack-3mixed': {
@@ -51,6 +53,8 @@ _transducer_availability = {
         'Quantized Size (MB)': 38.5,
         'WER': 0.2401982,
         'CER': 0.1577375,
+        'WER-LM': None,
+        'CER-LM': None,
         'Language': ['malay', 'singlish', 'mandarin'],
     },
     'small-conformer-singlish': {
@@ -116,10 +120,10 @@ _ctc_availability = {
     'hubert-conformer-large': {
         'Size (MB)': 392,
         'Quantized Size (MB)': 100,
-        'WER': 0.2237763,
-        'CER': 0.0586332,
-        'WER-LM': 0.12776263,
-        'CER-LM': 0.04154692,
+        'WER': 0.2203140,
+        'CER': 0.0549270,
+        'WER-LM': 0.1280064,
+        'CER-LM': 0.03853289,
         'Language': ['malay'],
     },
 }
@@ -127,11 +131,11 @@ _ctc_availability = {
 google_accuracy = {
     'malay': {
         'WER': 0.164775,
-        'CER': 0.0597320
+        'CER': 0.0597320,
     },
     'singlish': {
         'WER': 0.4941349,
-        'CER': 0.3026296
+        'CER': 0.3026296,
     }
 }
 
@@ -181,6 +185,24 @@ _language_model_availability = {
             './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
         ],
     },
+    'manglish': {
+        'Size (MB)': 310,
+        'LM order': 3,
+        'Description': 'Manglish News + Manglish Reddit + Manglish forum + training set from https://github.com/huseinzol05/malay-dataset/tree/master/dumping/clean.',
+        'Command': [
+            './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
+            './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
+        ],
+    },
+    'bahasa-manglish-combined': {
+        'Size (MB)': 310,
+        'LM order': 3,
+        'Description': 'Combined `dump-combined` and `manglish`.',
+        'Command': [
+            './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
+            './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
+        ],
+    },
 }
 
 
@@ -220,7 +242,7 @@ def language_model(
 
     Parameters
     ----------
-    model : str, optional (default='bahasa')
+    model : str, optional (default='dump-combined')
         Model architecture supported. Allowed values:
 
         * ``'bahasa'`` - Gathered from malaya-speech ASR bahasa transcript.
@@ -228,6 +250,8 @@ def language_model(
         * ``'bahasa-combined'`` - Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences) + Bahasa Wikipedia (Random sample 150k sentences).
         * ``'redape-community'`` - Mirror for https://github.com/redapesolutions/suara-kami-community
         * ``'dump-combined'`` - Academia + News + IIUM + Parliament + Watpadd + Wikipedia + Common Crawl + training set from https://github.com/huseinzol05/malay-dataset/tree/master/dumping/clean.
+        * ``'manglish'`` - Manglish News + Manglish Reddit + Manglish forum + training set from https://github.com/huseinzol05/malay-dataset/tree/master/dumping/clean.
+        * ``'bahasa-manglish-combined'`` - Combined `dump-combined` and `manglish`.
 
     Returns
     -------
@@ -281,9 +305,9 @@ def deep_ctc(
 
     return stt.wav2vec2_ctc_load(
         model=model,
-        module='speech-to-text-ctc',
+        module='speech-to-text-ctc-v2',
         quantized=quantized,
-        mode=_ctc_availability[model]['mode'],
+        mode=_ctc_availability[model],
         **kwargs
     )
 
@@ -304,9 +328,8 @@ def deep_transducer(
         * ``'small-conformer'`` - SMALL size Google Conformer.
         * ``'conformer'`` - BASE size Google Conformer.
         * ``'large-conformer'`` - LARGE size Google Conformer.
-        * ``'conformer-mixed'`` - BASE size Google Conformer for (Malay + Singlish) languages.
-        * ``'large-conformer-mixed'`` - LARGE size Google Conformer for (Malay + Singlish) languages.
         * ``'conformer-stack-mixed'`` - BASE size Stacked Google Conformer for (Malay + Singlish) languages.
+        * ``'conformer-stack-3mixed'`` - BASE size Stacked Google Conformer for (Malay + Singlish + Mandarin) languages.
         * ``'small-conformer-singlish'`` - SMALL size Google Conformer for singlish language.
         * ``'conformer-singlish'`` - BASE size Google Conformer for singlish language.
         * ``'large-conformer-singlish'`` - LARGE size Google Conformer for singlish language.

@@ -47,6 +47,8 @@ Contents:
    transcribe-long-audio
    ctc-language-model
    load-stt-ctc-model
+   load-stt-ctc-model-ctc-decoders
+   load-stt-ctc-model-pyctcdecode
    realtime-asr
    realtime-asr-mixed
    realtime-asr-rubberband
@@ -60,6 +62,7 @@ Contents:
 
    load-vocoder
    load-universal-melgan
+   load-universal-hifigan
 
 .. toctree::
    :maxdepth: 2

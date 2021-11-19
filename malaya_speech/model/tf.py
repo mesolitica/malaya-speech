@@ -767,7 +767,7 @@ class Transducer(Abstract):
         results = []
 
         if language_model:
-            beam_function = self._beam_decoder_lm if language_model is not None
+            beam_function = self._beam_decoder_lm
         else:
             beam_function = self._beam_decoder
 
@@ -1274,7 +1274,7 @@ class Wav2Vec2_CTC(Abstract):
         self._sess = sess
         self.__model__ = model
         self.__name__ = name
-        self._beam_width = 1
+        self._beam_width = 0
 
     def _check_decoder(self, decoder, beam_width):
         decoder = decoder.lower()
@@ -1425,7 +1425,7 @@ class Wav2Vec2_CTC(Abstract):
         padded, lens = sequence_1d(inputs, return_len=True)
         logits, seq_lens = self._get_logits(padded, lens)
         logits = np.transpose(logits, axes=(1, 0, 2))
-        logits = softmax(logits)
+        logits = softmax(logits, axis=-1)
         results = []
         for i in range(len(logits)):
             results.append(logits[i][: seq_lens[i]])

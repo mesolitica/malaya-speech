@@ -29,3 +29,9 @@ python3 conformer-base.py
 6. HuBERT + Conformer BASE CTC, last update 21th August 2021, [output-hubert-conformer-base-ctc.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-hubert-conformer-base-ctc.tar.gz).
 
 7. HuBERT + Conformer LARGE CTC, last update 21th August 2021, [output-hubert-conformer-large-ctc.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-hubert-conformer-large-ctc.tar.gz).
+
+6. HuBERT + Conformer TINY CTC, last update 19th November 2021, [output-hubert-conformer-tiny-ctc-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-hubert-conformer-tiny-ctc-v2.tar.gz).
+
+7. HuBERT + Conformer BASE CTC, last update 19th November 2021, [output-hubert-conformer-base-ctc-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-hubert-conformer-base-ctc-v2.tar.gz).
+
+6. HuBERT + Conformer LARGE CTC, last update 19th November 2021, [output-hubert-conformer-base-ctc.tar-v2.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-hubert-conformer-large-ctc-v2.tar.gz).

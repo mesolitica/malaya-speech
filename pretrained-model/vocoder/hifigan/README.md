@@ -37,3 +37,7 @@ python3 hifigan-female.py
 1. Male, last update 29th October 2021, [hifigan-male-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/hifigan-male-output.tar.gz)
 
 2. Female, last update 29th October 2021, [hifigan-female-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/hifigan-female-output.tar.gz)
+
+3. Universal, last update 29th October 2021, [universal-hifigan-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/universal-hifigan-output.tar.gz)
+
+4. Universal 512, last update 29th October 2021, [universal-hifigan-512-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/universal-hifigan-512-output.tar.gz)

@@ -18,7 +18,8 @@ import malaya_speech
 import tensorflow as tf
 import os
 import string
-
+import re
+import collections
 
 sr = 16000
 maxlen = 18
@@ -256,6 +257,52 @@ class Encoder:
 total_steps = 2000000
 
 
+def get_assignment_map_from_checkpoint(tvars, init_checkpoint, logging=True, prefix=''):
+    """
+    Compute the union of the current variables and checkpoint variables.
+    """
+    assignment_map = {}
+    initialized_variable_names = {}
+
+    name_to_variable = collections.OrderedDict()
+    for var in tvars:
+        name = var.name
+        m = re.match('^(.*):\\d+$', name)
+        if m is not None:
+            name = m.group(1)
+        name_to_variable[name] = var
+
+    init_vars = tf.train.list_variables(init_checkpoint)
+
+    assignment_map = collections.OrderedDict()
+    for x in init_vars:
+        (name, var) = (x[0], x[1])
+
+        if len(prefix):
+            new_name = f'{prefix}/{name}'
+        else:
+            new_name = name
+        if new_name not in name_to_variable:
+            continue
+
+        assignment_map[name] = name
+        assignment_map[name] = name_to_variable[name]
+        initialized_variable_names[name] = 1
+        initialized_variable_names[name + ':0'] = 1
+
+    if logging:
+        tf.logging.info('**** Trainable Variables ****')
+        for var in tvars:
+            init_string = ''
+            if var.name in initialized_variable_names:
+                init_string = ', *INIT_FROM_CKPT*'
+            tf.logging.info(
+                '  name = %s, shape = %s%s', var.name, var.shape, init_string
+            )
+
+    return (assignment_map, initialized_variable_names)
+
+
 def model_fn(features, labels, mode, params):
 
     X = features['waveforms']
@@ -339,11 +386,16 @@ def model_fn(features, labels, mode, params):
     tf.summary.scalar('train_accuracy', accuracy)
 
     variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-    init_checkpoint = 'hubert-conformer-large-ctc-char/model.ckpt-1860000'
+    init_checkpoint = 'hubert-conformer-large-ctc-char/model.ckpt-2000000'
     assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
         variables, init_checkpoint
     )
+    tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
 
+    init_checkpoint = 'hubert-conformer-tiny/model.ckpt-1000000'
+    assignment_map, initialized_variable_names = get_assignment_map_from_checkpoint(
+        variables, init_checkpoint, prefix='student'
+    )
     tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
