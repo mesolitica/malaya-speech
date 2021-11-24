@@ -183,9 +183,6 @@ def generate(file):
                 if (len(wav_data) / sr) > maxlen:
                     continue
 
-                if random.random() > prob_aug:
-                    wav_data = calc(wav_data)
-
                 t = [unique_vocab.index(c) for c in cleaned_texts[i]]
 
                 yield {
@@ -278,6 +275,7 @@ def model_fn(features, labels, mode, params):
         tf.cast(tf.logical_not(r['padding_mask']), tf.int32), axis=1
     )
     targets_int32 = tf.cast(features['targets'], tf.int32)
+    targets_length = features['targets_length'][:, 0]
     mean_error, sum_error, sum_weight = ctc.loss.ctc_loss(
         logits, seq_lens, targets_int32, targets_length
     )
@@ -324,7 +322,7 @@ def model_fn(features, labels, mode, params):
             loss=loss,
             eval_metric_ops={
                 'accuracy': ctc.metrics.ctc_sequence_accuracy_estimator(
-                    logits, targets_int32, seq_lens
+                    logits, seq_lens, targets_int32, targets_length
                 )
             },
         )
@@ -337,7 +335,7 @@ train_hooks = [
         ['train_accuracy', 'train_loss'], every_n_iter=1
     )
 ]
-train_dataset = get_dataset('bahasa-asr-train.json')
+train_dataset = get_dataset('bahasa-asr-train-combined.json')
 dev_dataset = get_dataset('bahasa-asr-test.json')
 
 train.run_training(

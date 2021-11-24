@@ -9,7 +9,3 @@ Pretrained Malaya Speech STT models.
 1. Prepare dataset, follow [../prepare-stt](../prepare-stt).
 
 2. Follow README inside model directory, example, [conformer](conformer).
-
-
-
-

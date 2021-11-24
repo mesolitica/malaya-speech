@@ -13,8 +13,6 @@ import malaya_speech.augmentation.spectrogram as mask_augmentation
 import malaya_speech.augmentation.waveform as augmentation
 import malaya_speech
 import tensorflow as tf
-import wandb
-wandb.init()
 
 subwords = malaya_speech.subword.load('transducer-singlish.subword')
 config = malaya_speech.config.conformer_small_encoder_config
@@ -209,8 +207,7 @@ def model_fn(features, labels, mode, params):
     return estimator_spec
 
 
-train_hooks = [tf.train.LoggingTensorHook(['train_loss'], every_n_iter=1),
-               wandb.tensorflow.WandbHook(steps_per_log=1000)]
+train_hooks = [tf.train.LoggingTensorHook(['train_loss'], every_n_iter=1)]
 
 with open('imda-tfrecords.json') as fopen:
     imda_tfrecord = json.load(fopen)

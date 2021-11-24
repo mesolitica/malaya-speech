@@ -33,10 +33,10 @@ _transducer_availability = {
     'large-conformer': {
         'Size (MB)': 404,
         'Quantized Size (MB)': 107,
-        'WER': 0.1602798,
-        'CER': 0.0647702,
-        'WER-LM': 0.1538312,
-        'CER-LM': 0.0637261,
+        'WER': 0.1566839,
+        'CER': 0.0619715,
+        'WER-LM': 0.1486221,
+        'CER-LM': 0.0590102,
         'Language': ['malay'],
     },
     'conformer-stack-mixed': {
@@ -62,6 +62,8 @@ _transducer_availability = {
         'Quantized Size (MB)': 18.1,
         'WER': 0.12771,
         'CER': 0.0703953,
+        'WER-LM': None,
+        'CER-LM': None,
         'Language': ['singlish'],
     },
     'conformer-singlish': {
@@ -69,6 +71,8 @@ _transducer_availability = {
         'Quantized Size (MB)': 37.1,
         'WER': 0.0963391,
         'CER': 0.0545533,
+        'WER-LM': None,
+        'CER-LM': None,
         'Language': ['singlish'],
     },
     'large-conformer-singlish': {
@@ -76,29 +80,13 @@ _transducer_availability = {
         'Quantized Size (MB)': 107,
         'WER': 0.0839525,
         'CER': 0.0445617,
+        'WER-LM': None,
+        'CER-LM': None,
         'Language': ['singlish'],
     },
 }
 
 _ctc_availability = {
-    'wav2vec2-conformer': {
-        'Size (MB)': 115,
-        'Quantized Size (MB)': 31.1,
-        'WER': 0.255762,
-        'CER': 0.061953,
-        'WER-LM': 0.255762,
-        'CER-LM': 0.061953,
-        'Language': ['malay'],
-    },
-    'wav2vec2-conformer-large': {
-        'Size (MB)': 392,
-        'Quantized Size (MB)': 100,
-        'WER': 0.23997,
-        'CER': 0.05827,
-        'WER-LM': 0.255762,
-        'CER-LM': 0.061953,
-        'Language': ['malay'],
-    },
     'hubert-conformer-tiny': {
         'Size (MB)': 36.6,
         'Quantized Size (MB)': 10.3,
@@ -111,10 +99,10 @@ _ctc_availability = {
     'hubert-conformer': {
         'Size (MB)': 115,
         'Quantized Size (MB)': 31.1,
-        'WER': 0.2436595,
-        'CER': 0.061728,
-        'WER-LM': 0.142499,
-        'CER-LM': 0.043618,
+        'WER': 0.238714,
+        'CER': 0.0608998,
+        'WER-LM': 0.1414791,
+        'CER-LM': 0.0450751,
         'Language': ['malay'],
     },
     'hubert-conformer-large': {
@@ -283,8 +271,6 @@ def deep_ctc(
     model : str, optional (default='hubert-conformer')
         Model architecture supported. Allowed values:
 
-        * ``'wav2vec2-conformer'`` - Finetuned Wav2Vec2 Conformer.
-        * ``'wav2vec2-conformer-large'`` - Finetuned Wav2Vec2 Conformer LARGE.
         * ``'hubert-conformer-tiny'`` - Finetuned HuBERT Conformer TINY.
         * ``'hubert-conformer'`` - Finetuned HuBERT Conformer.
         * ``'hubert-conformer-large'`` - Finetuned HuBERT Conformer LARGE.
