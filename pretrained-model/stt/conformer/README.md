@@ -88,6 +88,6 @@ Tensorboard, https://tensorboard.dev/experiment/1qBD7FGyS32Q8uQvhA1NnA/
 
 23. Small Conformer, last update 6th November 2021, [output-small-conformer-v4.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-small-conformer-v4.tar.gz)
 
-24. Conformer, last update 6th November 2021, [output-base-conformer-v4.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-base-conformer-v4.tar.gz)
+24. Conformer, last update 6th November 2021, [output-base-conformer-v4-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-base-conformer-v4-v2.tar.gz)
 
-25. Large Conformer, last update 6th November 2021, [output-large-conformer-v4.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-large-conformer-v4.tar.gz)
+25. Large Conformer, last update 6th November 2021, [output-large-conformer-v4-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/output-large-conformer-v4-v2.tar.gz)

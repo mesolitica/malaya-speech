@@ -42,6 +42,7 @@ Contents:
    :caption: ASR Module
 
    load-stt-transducer-model
+   load-stt-transducer-model-lm
    load-stt-transducer-model-mixed
    load-stt-transducer-model-singlish
    transcribe-long-audio

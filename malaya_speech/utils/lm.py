@@ -22,7 +22,7 @@ def sort_and_trim_beams(beams: list, beam_width: int):
     return heapq.nlargest(beam_width, beams, key=lambda x: x.score_lm)
 
 
-def merge_tokens(token_1, token_2) -> str:
+def merge_tokens(token_1, token_2):
     """
     https://github.com/kensho-technologies/pyctcdecode/blob/v0.1.0/pyctcdecode/decoder.py#L100
     """
@@ -75,6 +75,7 @@ def prune_history(beams, lm_order: int):
 
 def get_lm_beams(beams, cached_lm_scores,
                  cached_partial_token_scores,
+                 language_model,
                  is_eos: bool = False):
 
     new_beams = []
@@ -84,7 +85,7 @@ def get_lm_beams(beams, cached_lm_scores,
         word_part = beam.word_part
         last_char = beam.prediction[-1]
         logit_score = beam.score
-        new_text = _merge_tokens(text, next_word)
+        new_text = merge_tokens(text, next_word)
         if new_text not in cached_lm_scores:
             _, prev_raw_lm_score, start_state = cached_lm_scores[text]
             score, end_state = language_model.score(start_state, next_word, is_last_word=is_eos)

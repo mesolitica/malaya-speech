@@ -29,7 +29,9 @@ time_reduction_factor = {
 
 def transducer_load(model, module, languages, quantized=False, **kwargs):
     splitted = model.split('-')
-    stack = 'stack' == splitted[-2]
+    stack = False
+    if len(splitted) == 3:
+        stack = 'stack' == splitted[-2]
     if stack:
         keys = {'model': 'model.pb'}
         for no, language in enumerate(languages):

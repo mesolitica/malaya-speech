@@ -523,7 +523,7 @@ class Transducer(Abstract):
         else:
             self._vocabs = {i: self._vocab._id_to_subword(i) for i in range(self._vocab.vocab_size - 1)}
             self._vocabs[-1] = ''
-            self._len_vocab = [l.vocab_size]
+            self._len_vocab = [self._vocab.vocab_size]
 
     def _check_decoder(self, decoder, beam_width):
         decoder = decoder.lower()
@@ -588,8 +588,9 @@ class Transducer(Abstract):
                          beam_width=5, token_min_logp=-20.0, beam_prune_logp=-5.0,
                          temperature=0.0, score_norm=True, **kwargs):
         kept_hyps = [
-            BeamHypothesis_LM(score=0.0, prediction=[0], states=initial_states, text='', next_word='',
-                              word_part='')
+            BeamHypothesis_LM(score=0.0, score_lm=0.0,
+                              prediction=[0], states=initial_states,
+                              text='', next_word='', word_part='')
         ]
         cached_lm_scores = {
             '': (0.0, 0.0, language_model.get_start_state())
@@ -656,7 +657,7 @@ class Transducer(Abstract):
                         )
                     A.append(beam_hyp)
 
-                scored_beams = get_lm_beams(A, cached_lm_scores, cached_p_lm_scores)
+                scored_beams = get_lm_beams(A, cached_lm_scores, cached_p_lm_scores, language_model)
                 max_beam = max(scored_beams, key=lambda x: x.score_lm)
                 max_score = max_beam.score_lm
                 scored_beams = [b for b in scored_beams if b.score_lm >= max_score + beam_prune_logp]
@@ -688,7 +689,7 @@ class Transducer(Abstract):
             )
             new_beams.append(beam_hyp)
 
-        scored_beams = get_lm_beams(new_beams, cached_lm_scores, cached_p_lm_scores, is_eos=True)
+        scored_beams = get_lm_beams(new_beams, cached_lm_scores, cached_p_lm_scores, language_model, is_eos=True)
         max_beam = max(scored_beams, key=lambda x: x.score_lm)
         max_score = max_beam.score_lm
         scored_beams = [b for b in scored_beams if b.score_lm >= max_score + beam_prune_logp]
@@ -756,7 +757,7 @@ class Transducer(Abstract):
             B.sort(key=lambda x: x.score, reverse=True)
         return B[0].prediction
 
-    def _beam(inputs, language_model=None,
+    def _beam(self, inputs, language_model=None,
               beam_width=5,
               token_min_logp=-20.0,
               beam_prune_logp=-5.0,
