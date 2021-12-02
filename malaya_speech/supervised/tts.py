@@ -4,7 +4,14 @@ from malaya_speech.utils import (
     generate_session,
     nodes_session,
 )
-from malaya_speech.model.tf import Tacotron, Fastspeech, Fastpitch
+from malaya_speech.model.tf import (
+    Tacotron,
+    Fastspeech,
+    Fastpitch,
+    GlowTTS,
+    GlowTTS_MultiSpeaker
+)
+from malaya_speech import speaker_vector
 import numpy as np
 
 
@@ -82,6 +89,45 @@ def fastpitch_load(
         input_nodes=input_nodes,
         output_nodes=output_nodes,
         normalizer=normalizer,
+        stats=stats,
+        sess=generate_session(graph=g, **kwargs),
+        model=model,
+        name=name,
+    )
+
+
+def glowtts_load(
+    path, s3_path, model, name, normalizer, quantized=False, **kwargs
+):
+    check_file(path[model], s3_path[model], quantized=quantized, **kwargs)
+    if quantized:
+        model_path = 'quantized'
+    else:
+        model_path = 'model'
+
+    inputs = ['input_ids', 'lens', 'temperature', 'length_ratio']
+    if model == 'multispeaker':
+        inputs = inputs + ['speakers', 'speakers_right']
+        speaker_model = speaker_vector.deep_model('vggvox-v2', **kwargs)
+        model_class = GlowTTS_MultiSpeaker
+        g = load_graph(path[model][model_path], glowtts_multispeaker_graph=True, **kwargs)
+    else:
+        speaker_model = None
+        model_class = GlowTTS
+        g = load_graph(path[model][model_path], glowtts_graph=True, **kwargs)
+    outputs = ['mel_output', 'alignment_histories']
+    input_nodes, output_nodes = nodes_session(g, inputs, outputs)
+
+    if 'stats' in path[model]:
+        stats = np.load(path[model]['stats'])
+    else:
+        stats = None
+
+    return model_class(
+        input_nodes=input_nodes,
+        output_nodes=output_nodes,
+        normalizer=normalizer,
+        speaker_vector=speaker_model,
         stats=stats,
         sess=generate_session(graph=g, **kwargs),
         model=model,

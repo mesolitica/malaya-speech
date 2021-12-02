@@ -190,6 +190,12 @@ malaya_speech.streaming
 .. automodule:: malaya_speech.streaming
     :members:
 
+malaya_speech.utils.aligner
+----------------------------
+
+.. automodule:: malaya_speech.utils.aligner
+    :members:
+
 malaya_speech.utils.astype
 --------------------------
 

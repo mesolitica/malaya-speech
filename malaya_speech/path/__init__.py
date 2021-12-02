@@ -7,8 +7,9 @@ TRANSDUCER_VOCAB = 'vocab/transducer.subword.subwords'
 TRANSDUCER_MIXED_VOCAB = 'vocab/transducer-mixed-v2.subword.subwords'
 TRANSDUCER_SINGLISH_VOCAB = 'vocab/transducer-singlish.subword.subwords'
 TRANSDUCER_2048_VOCAB = 'vocab/transducer-2048.subword.subwords'
-
-CTC_VOCAB = 'vocab/ctc-bahasa.json'
+TRANSDUCER_BAHASA_512_VOCAB = 'vocab/bahasa-512.subword.subwords'
+TRANSDUCER_SINGLISH_512_VOCAB = 'vocab/singlish-512.subword.subwords'
+TRANSDUCER_MANDARIN_512_VOCAB = 'vocab/mandarin-512.subword.subwords'
 
 TRANSDUCER_VOCABS = {
     'malay': TRANSDUCER_VOCAB,
@@ -16,7 +17,11 @@ TRANSDUCER_VOCABS = {
     'singlish': TRANSDUCER_SINGLISH_VOCAB,
 }
 
-CTC_VOCABS = {'malay': CTC_VOCAB}
+TRANSDUCER_MIXED_VOCABS = {
+    'malay': TRANSDUCER_BAHASA_512_VOCAB,
+    'singlish': TRANSDUCER_SINGLISH_512_VOCAB,
+    'mandarin': TRANSDUCER_MANDARIN_512_VOCAB,
+}
 
 PATH_TTS_TACOTRON2 = {
     'female': {
@@ -200,5 +205,64 @@ S3_PATH_TTS_FASTPITCH = {
         'model': 'v1/tts/fastpitch-female-singlish.pb',
         'quantized': 'v1/tts/fastpitch-female-singlish.pb.quantized',
         'stats': 'v1/vocoder-stats/female-singlish.npy',
+    },
+}
+
+PATH_TTS_GLOWTTS = {
+    'female': {
+        'model': home + '/tts/glowtts-female/model.pb',
+        'quantized': home + '/tts/glowtts-female/quantized/model.pb',
+        'stats': home + '/tts/stats/female.npy',
+        'version': 'v1',
+    },
+    'male': {
+        'model': home + '/tts/glowtts-male/model.pb',
+        'quantized': home + '/tts/glowtts-male/quantized/model.pb',
+        'stats': home + '/tts/stats/male.npy',
+        'version': 'v1',
+    },
+    'haqkiem': {
+        'model': home + '/tts/glowtts-haqkiem/model.pb',
+        'quantized': home + '/tts/glowtts-haqkiem/quantized/model.pb',
+        'stats': home + '/tts/stats/haqkiem.npy',
+        'version': 'v1',
+    },
+    'female-singlish': {
+        'model': home + '/tts/glowtts-female-singlish/model.pb',
+        'quantized': home + '/tts/glowtts-female-singlish/quantized/model.pb',
+        'stats': home + '/tts/stats/female-singlish.npy',
+        'version': 'v1',
+    },
+    'multispeaker': {
+        'model': home + '/tts/glowtts-multispeaker/model.pb',
+        'quantized': home + '/tts/glowtts-multispeaker/quantized/model.pb',
+        'version': 'v1',
+    },
+}
+
+S3_PATH_TTS_GLOWTTS = {
+    'female': {
+        'model': 'v2/tts/glowtts-female.pb',
+        'quantized': 'v2/tts/glowtts-female.pb.quantized',
+        'stats': 'v2/vocoder-stats/female.npy',
+    },
+    'male': {
+        'model': 'v2/tts/glowtts-male.pb',
+        'quantized': 'v2/tts/glowtts-male.pb.quantized',
+        'stats': 'v2/vocoder-stats/male.npy',
+    },
+    'haqkiem': {
+        'model': 'v2/tts/glowtts-haqkiem.pb',
+        'quantized': 'v2/tts/glowtts-haqkiem.pb.quantized',
+        'stats': 'v1/vocoder-stats/haqkiem.npy',
+    },
+    'female-singlish': {
+        'model': 'v2/tts/glowtts-female-singlish.pb',
+        'quantized': 'v2/tts/glowtts-female-singlish.pb.quantized',
+        'stats': 'v1/vocoder-stats/female-singlish.npy',
+    },
+    'multispeaker': {
+        'model': 'v2/tts/glowtts-multispeaker.pb',
+        'quantized': 'v2/tts/glowtts-multispeaker.pb.quantized',
     },
 }

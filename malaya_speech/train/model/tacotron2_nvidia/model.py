@@ -107,6 +107,8 @@ class Model:
         encoder_inputs,
         decoder_inputs,
         vocab_size,
+        encoder_config=encoder_config,
+        decoder_config=decoder_config,
         training=True,
         **kwargs
     ):

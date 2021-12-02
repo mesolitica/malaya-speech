@@ -23,7 +23,7 @@ config = malaya_speech.config.conformer_base_encoder_config
 sr = 16000
 maxlen = 18
 minlen_text = 1
-prob_aug = 0.85
+prob_aug = 0.9
 
 parameters = {
     'optimizer_params': {'beta1': 0.9, 'beta2': 0.98, 'epsilon': 10e-9},
@@ -372,13 +372,13 @@ def model_fn(features, labels, mode, params):
 
 
 train_hooks = [tf.train.LoggingTensorHook(['train_loss'], every_n_iter=1)]
-train_dataset = get_dataset('bahasa-asr-train.json')
+train_dataset = get_dataset('bahasa-asr-train-combined.json')
 dev_dataset = get_dataset('bahasa-asr-test.json')
 
 train.run_training(
     train_fn=train_dataset,
     model_fn=model_fn,
-    model_dir='asr-base-conformer-transducer-v2',
+    model_dir='asr-base-conformer-transducer-v3',
     num_gpus=1,
     log_step=1,
     save_checkpoint_step=25000,

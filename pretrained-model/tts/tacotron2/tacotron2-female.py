@@ -44,7 +44,7 @@ parameters = {
         'decay_steps': 20000,
         'decay_rate': 0.4,
         'use_staircase_decay': False,
-        'begin_decay_at': 45000,
+        'begin_decay_at': 10000,
         'min_lr': 1e-5,
     },
     'max_grad_norm': 1.0,

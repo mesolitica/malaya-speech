@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 import tensorflow as tf
 import numpy as np
@@ -11,19 +11,18 @@ import malaya_speech
 import malaya_speech.train
 import malaya_speech.config
 import malaya_speech.train as train
-from malaya_speech.train.model import glowtts
-from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
+from malaya_speech.train.model import revsic_glowtts as glowtts
 from functools import partial
 import math
 import json
 import re
 
-files = glob('../speech-bahasa/output-haqkiem/mels/*.npy')
+files = glob('/home/husein/speech-bahasa/output-haqkiem/mels/*.npy')
 
 reduction_factor = 1
 maxlen = 1008
 minlen = 32
-pad_to = 8
+pad_to = 2
 data_min = 1e-2
 
 _pad = 'pad'
@@ -38,7 +37,31 @@ MALAYA_SPEECH_SYMBOLS = (
     [_pad, _start, _eos] + list(_special) + list(_punctuation) + list(_letters)
 )
 
-total_steps = 120_000
+parameters = {
+    'optimizer_params': {'beta1': 0.9, 'beta2': 0.98, 'epsilon': 1e-9},
+    'lr_policy_params': {
+        'warmup_steps': 4000,
+        'learning_rate': 1.0,
+    },
+}
+
+config = glowtts.Config(mel=80, vocabs=len(MALAYA_SPEECH_SYMBOLS))
+
+
+def noam_schedule(step, channels, learning_rate=1.0, warmup_steps=4000):
+    return learning_rate * channels ** -0.5 * \
+        tf.minimum(step ** -0.5, step * warmup_steps ** -1.5)
+
+
+def learning_rate_scheduler(global_step):
+    return noam_schedule(
+        tf.cast(global_step, tf.float32),
+        config.channels,
+        **parameters['lr_policy_params'],
+    )
+
+
+total_steps = 100_000
 
 
 def generate(files):
@@ -142,75 +165,53 @@ def model_fn(features, labels, mode, params):
     mel_lengths = features['len_mel'][:, 0]
     batch_size = tf.shape(mel_outputs)[0]
 
-    config = malaya_speech.config.fastspeech2_config
-    config['encoder_hidden_size'] = 192
-    config['encoder_num_hidden_layers'] = 6
-    config['encoder_attention_head_size'] = 32
-    config['encoder_intermediate_size'] = 768
-    config = glowtts.Config(vocab_size=len(MALAYA_SPEECH_SYMBOLS), **config)
-    config_glowtts = glowtts.Config_GlowTTS(malaya_speech.config.glowtts_config)
+    model = glowtts.Model(config)
+    loss, losses, attn = model.compute_loss(text=input_ids,
+                                            textlen=input_lengths,
+                                            mel=mel_outputs,
+                                            mellen=mel_lengths)
 
-    model = glowtts.Model(config, config_glowtts)
-    (z, z_m, z_logs, logdet, z_mask), (x_m, x_logs, x_mask), (attn, logw, logw_) = model(
-        input_ids, y=mel_outputs, y_lengths=mel_lengths, training=True)
+    l_mle = losses['nll']
+    l_length = losses['durloss']
 
-    def mle_loss(z, m, logs, logdet, mask):
-        l = tf.reduce_sum(logs) + 0.5 * tf.reduce_sum(tf.math.exp(-2 * logs) * ((z - m)**2))
-        l = l - tf.reduce_sum(logdet)
-        l = l / tf.reduce_sum(tf.ones_like(z) * mask)
-        l = l + 0.5 * math.log(2 * math.pi)
-        return l
-
-    l_mle = mle_loss(z, z_m, z_logs, logdet, z_mask)
-
-    def duration_loss(logw, logw_, lengths):
-        l = tf.reduce_sum((logw - logw_)**2) / tf.reduce_sum(tf.cast(lengths, tf.float32))
-        return l
-
-    l_length = duration_loss(logw, logw_, input_lengths)
-    mae = tf.losses.absolute_difference
-    max_length = tf.cast(tf.reduce_max(mel_lengths), tf.int32)
-
-    mask = tf.sequence_mask(
-        lengths=mel_lengths, maxlen=max_length, dtype=tf.float32
-    )
-    mask = tf.expand_dims(mask, axis=-1)
-    mel_loss = mae(
-        labels=mel_outputs, predictions=z, weights=mask
-    )
-    loss_g = l_mle + l_length + mel_loss
-
-    tf.identity(loss_g, 'loss_g')
+    tf.identity(loss, 'loss')
     tf.identity(l_mle, name='l_mle')
     tf.identity(l_length, name='l_length')
-    tf.identity(mel_loss, name='mel_loss')
 
-    tf.summary.scalar('loss_g', loss_g)
+    tf.summary.scalar('loss', loss)
     tf.summary.scalar('l_mle', l_mle)
     tf.summary.scalar('l_length', l_length)
-    tf.summary.scalar('mel_loss', mel_loss)
+
+    global_step = tf.train.get_or_create_global_step()
+    lr = learning_rate_scheduler(global_step)
+
+    tf.summary.scalar('learning_rate', lr)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
-        train_op = train.optimizer.adamw.create_optimizer(
-            loss_g,
-            init_lr=0.0001,
-            num_train_steps=total_steps,
-            num_warmup_steps=0,
-            end_learning_rate=0.00001,
-            weight_decay_rate=0.001,
-            beta_1=0.9,
-            beta_2=0.98,
-            epsilon=1e-6,
-            clip_norm=1.0,
+        optimizer = tf.train.AdamOptimizer(learning_rate=lr, beta1=0.9, beta2=0.98, epsilon=1e-09)
+        tvars = tf.trainable_variables()
+        gvs = optimizer.compute_gradients(loss, tvars)
+        gvs = [(g, v) for g, v in gvs if g is not None]
+        grads, tvars = list(zip(*gvs))
+        all_finite = tf.constant(True, dtype=tf.bool)
+        (grads, _) = tf.clip_by_global_norm(
+            grads,
+            clip_norm=2.0,
+            use_norm=tf.cond(
+                all_finite, lambda: tf.global_norm(grads), lambda: tf.constant(1.0)
+            ),
+        )
+        train_op = optimizer.apply_gradients(
+            zip(grads, tvars), global_step=global_step
         )
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode=mode, loss=loss_g, train_op=train_op
+            mode=mode, loss=loss, train_op=train_op
         )
 
     elif mode == tf.estimator.ModeKeys.EVAL:
 
         estimator_spec = tf.estimator.EstimatorSpec(
-            mode=tf.estimator.ModeKeys.EVAL, loss=loss_g
+            mode=tf.estimator.ModeKeys.EVAL, loss=loss
         )
 
     return estimator_spec
@@ -219,10 +220,9 @@ def model_fn(features, labels, mode, params):
 train_hooks = [
     tf.train.LoggingTensorHook(
         [
-            'loss_g',
+            'loss',
             'l_mle',
             'l_length',
-            'mel_loss',
         ],
         every_n_iter=1,
     )
@@ -236,8 +236,7 @@ train.run_training(
     model_dir='glowtts-haqkiem',
     num_gpus=1,
     log_step=1,
-    save_checkpoint_step=2000,
+    save_checkpoint_step=2500,
     max_steps=total_steps,
-    eval_fn=None,
     train_hooks=train_hooks,
 )

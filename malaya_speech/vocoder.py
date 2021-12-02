@@ -33,6 +33,7 @@ _melgan_availability = {
         'Mel loss': 0.4591,
     },
 }
+
 _mbmelgan_availability = {
     'female': {
         'Size (MB)': 10.4,
@@ -56,6 +57,29 @@ _mbmelgan_availability = {
     },
 }
 
+_hifigan_availability = {
+    'male': {
+        'Size (MB)': 8.8,
+        'Quantized Size (MB)': 2.49,
+        'Mel loss': 0.465,
+    },
+    'female': {
+        'Size (MB)': 8.8,
+        'Quantized Size (MB)': 2.49,
+        'Mel loss': 0.5547,
+    },
+    'universal-768': {
+        'Size (MB)': 72.8,
+        'Quantized Size (MB)': 18.5,
+        'Mel loss': 0.3617,
+    },
+    'universal-512': {
+        'Size (MB)': 32.6,
+        'Quantized Size (MB)': 8.6,
+        'Mel loss': 0.3253,
+    },
+}
+
 
 def available_melgan():
     """
@@ -73,6 +97,15 @@ def available_mbmelgan():
     from malaya_speech.utils import describe_availability
 
     return describe_availability(_mbmelgan_availability)
+
+
+def available_hifigan():
+    """
+    List available HiFiGAN Mel-to-Speech models.
+    """
+    from malaya_speech.utils import describe_availability
+
+    return describe_availability(_hifigan_availability)
 
 
 @check_type
@@ -146,6 +179,42 @@ def mbmelgan(model: str = 'female', quantized: bool = False, **kwargs):
     return vocoder.load(
         model=model,
         module='vocoder-mbmelgan',
+        quantized=quantized,
+        **kwargs
+    )
+
+
+@check_type
+def hifigan(model: str = 'universal-768', quantized: bool = False, **kwargs):
+    """
+    Load HiFiGAN Vocoder model.
+
+    Parameters
+    ----------
+    model : str, optional (default='universal-768')
+        Model architecture supported. Allowed values:
+
+        * ``'female'`` - HiFiGAN trained on female voice.
+        * ``'male'`` - HiFiGAN trained on male voice.
+        * ``'universal-768'`` - Universal HiFiGAN with 768 filters trained on multiple speakers.
+        * ``'universal-512'`` - Universal HiFiGAN with 512 filters trained on multiple speakers.
+
+    quantized : bool, optional (default=False)
+        if True, will load 8-bit quantized model.
+        Quantized model not necessary faster, totally depends on the machine.
+
+    Returns
+    -------
+    result : malaya_speech.supervised.vocoder.load function
+    """
+    model = model.lower()
+    if model not in _hifigan_availability:
+        raise ValueError(
+            'model not supported, please check supported models from `malaya_speech.vocoder.available_hifigan()`.'
+        )
+    return vocoder.load(
+        model=model,
+        module='vocoder-hifigan',
         quantized=quantized,
         **kwargs
     )

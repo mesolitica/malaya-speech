@@ -42,16 +42,21 @@ Contents:
    :caption: ASR Module
 
    load-stt-transducer-model
-   load-stt-transducer-model-mixed
+   load-stt-transducer-model-lm
    load-stt-transducer-model-singlish
+   load-stt-transducer-model-2mixed
+   load-stt-transducer-model-3mixed
    transcribe-long-audio
    ctc-language-model
    load-stt-ctc-model
+   load-stt-ctc-model-ctc-decoders
+   load-stt-ctc-model-pyctcdecode
    realtime-asr
    realtime-asr-mixed
    realtime-asr-rubberband
    realtime-alignment
    force-alignment
+   put-comma-force-alignment
 
 .. toctree::
    :maxdepth: 2
@@ -59,6 +64,7 @@ Contents:
 
    load-vocoder
    load-universal-melgan
+   load-universal-hifigan
 
 .. toctree::
    :maxdepth: 2
@@ -76,6 +82,8 @@ Contents:
    tts-fastspeech2-model
    more-tts-fastspeech2
    tts-fastpitch-model
+   tts-glowtts-model
+   tts-glowtts-multispeaker-model
    tts-singlish
    tts-long-text
 

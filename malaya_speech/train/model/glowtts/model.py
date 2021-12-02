@@ -140,7 +140,7 @@ class Model(tf.keras.Model):
     def call(self, x, y=None, y_lengths=None, training=True, gen=False,
              noise_scale=1., length_scale=1., **kwargs):
 
-        # [B, xt, C], [B, xt, C], [B, xt, 1], [B, xt, 1]
+        # [B, tx, C], [B, tx, C], [B, tx, 1], [B, tx, 1]
         x_m, x_logs, logw, x_mask = self.encoder(x, training=training)
         if gen:
             w = tf.math.exp(logw) * x_mask * length_scale
@@ -154,16 +154,16 @@ class Model(tf.keras.Model):
 
         y, y_lengths, y_max_length = self.preprocess(y, y_lengths, y_max_length)
 
-        # [B, yt]
+        # [B, ty]
         z_mask = tf.sequence_mask(y_lengths, y_max_length)
-        # [B, 1, yt]
+        # [B, 1, ty]
         z_mask = tf.expand_dims(z_mask, 1)
-        # [B, 1, yt]
+        # [B, 1, ty]
         z_mask = tf.cast(z_mask, x_mask.dtype)
 
-        # [B, 1, xt, 1] * [B, 1, 1, yt] = [B, 1, xt, yt]
+        # [B, 1, tx, 1] * [B, 1, 1, ty] = [B, 1, tx, ty]
         attn_mask = tf.expand_dims(tf.transpose(x_mask, [0, 2, 1]), -1) * tf.expand_dims(z_mask, 2)
-        # [B, yt, 1]
+        # [B, ty, 1]
         z_mask = tf.transpose(z_mask, [0, 2, 1])
 
         if gen:
@@ -174,12 +174,12 @@ class Model(tf.keras.Model):
             # [B, ty, tx]
             left = tf.transpose(tf.squeeze(attn, 1), [0, 2, 1])
             # [B, ty, tx] x [B, tx, C] -> [B, ty, C]
-            z_m = tf.matmul(left, x_m)
+            z_m = tf.matmul(tf.transpose(tf.squeeze(attn, 1), [0, 2, 1]), x_m)
             # [B, ty, tx] x [B, tx, C] -> [B, ty, C]
-            z_logs = tf.matmul(left, x_logs)
+            z_logs = tf.matmul(tf.transpose(tf.squeeze(attn, 1), [0, 2, 1]), x_logs)
 
-            # [B, tx]
-            logw_ = tf.math.log(1e-8 + tf.reduce_sum(attn, -1)) * x_mask
+            # [B, tx, 1] * [B, tx, 1]
+            logw_ = tf.math.log(1e-8 + tf.transpose(tf.reduce_sum(attn, -1), [0, 2, 1])) * x_mask
 
             z = (z_m + tf.math.exp(z_logs) * tf.random.normal(shape=shape_list(z_m)) * noise_scale) * z_mask
             y, logdet = self.decoder(z, z_mask, reverse=True, training=training)
@@ -187,26 +187,48 @@ class Model(tf.keras.Model):
         else:
             # [B, ty, C]
             z, logdet = self.decoder(y, z_mask, reverse=False, training=training)
+            # [B, C, ty]
+            z = tf.transpose(z, [0, 2, 1])
+            # [B, 1, tx]
+            x_mask = tf.transpose(x_mask, [0, 2, 1])
+            # [B, C, tx]
+            x_logs = tf.transpose(x_logs, [0, 2, 1])
+            # [B, C, tx]
+            x_m = tf.transpose(x_m, [0, 2, 1])
+            # [B, C, tx]
             x_s_sq_r = tf.stop_gradient(tf.math.exp(-2 * x_logs))
-            logp1 = tf.stop_gradient(tf.reduce_sum(-0.5 * math.log(2 * math.pi) - x_logs, [2]))
-            logp1 = tf.stop_gradient(tf.expand_dims(logp1, -1))
-            logp2 = tf.stop_gradient(tf.matmul(x_s_sq_r, -0.5 * (tf.transpose(z, [0, 2, 1]) ** 2)))
-            logp3 = tf.stop_gradient(tf.matmul(x_m * x_s_sq_r, tf.transpose(z, [0, 2, 1])))
-            logp4 = tf.stop_gradient(tf.expand_dims(tf.reduce_sum(-0.5 * (x_m ** 2) * x_s_sq_r, [2]), -1))
+            # [B, tx, 1]
+            logp1 = tf.stop_gradient(tf.expand_dims(tf.reduce_sum(-0.5 * math.log(2 * math.pi) - x_logs, 1), -1))
+            # [B, tx, 1] x [B, C, ty] = [B, tx, ty]
+            logp2 = tf.stop_gradient(tf.matmul(tf.transpose(x_s_sq_r, [0, 2, 1]), -0.5 * (z ** 2)))
+            # [B, tx, C] x [B, C, ty] = [B, tx, ty]
+            logp3 = tf.stop_gradient(tf.matmul(tf.transpose(x_m * x_s_sq_r, [0, 2, 1]), z))
+            # [B, tx, 1]
+            logp4 = tf.stop_gradient(tf.expand_dims(tf.reduce_sum(-0.5 * (x_m ** 2) * x_s_sq_r, 1), -1))
+            # [B, tx, 1] + [B, tx, ty] + [B, tx, ty] + [B, tx, 1] = [B, tx, ty]
             logp = tf.stop_gradient(logp1 + logp2 + logp3 + logp4)
 
             # attn = tf.compat.v1.numpy_function(common.maximum_path,
             #                                    [logp, tf.squeeze(attn_mask, 1)], tf.float32)
             print(logp, attn_mask)
+            # [B, tx, ty], [B, tx, ty]
             attn = tf.compat.v1.numpy_function(alignment.maximum_path,
                                                [logp, tf.squeeze(attn_mask, 1)], tf.float32)
+            # [B, tx, ty]
             attn.set_shape((None, None, None))
+            # [B, 1, tx, ty]
             attn = tf.expand_dims(attn, 1)
+            # [B, ty, tx] x [B, tx, C] = [B, ty, C]
+            z_m = tf.matmul(tf.transpose(tf.squeeze(attn, 1), [0, 2, 1]), tf.transpose(x_m, [0, 2, 1]))
+            # [B, C, ty]
+            z_m = tf.transpose(z_m, [0, 2, 1])
 
-            left = tf.transpose(tf.squeeze(attn, 1), [0, 2, 1])
-            z_m = tf.matmul(left, x_m)
-            z_logs = tf.matmul(left, x_logs)
-            logw_ = tf.math.log(1e-8 + tf.reduce_sum(attn, -1))
-            logw_ = tf.transpose(logw_, [0, 2, 1]) * x_mask
+            # [B, ty, tx] x [B, tx, C] = [B, ty, C]
+            z_logs = tf.matmul(tf.transpose(tf.squeeze(attn, 1), [0, 2, 1]), tf.transpose(x_logs, [0, 2, 1]))
+            # [B, C, ty]
+            z_logs = tf.transpose(z_logs, [0, 2, 1])
+
+            # [B, 1, tx] x [B, 1, tx]
+            logw_ = tf.math.log(1e-8 + tf.reduce_sum(attn, -1)) * x_mask
 
             return (z, z_m, z_logs, logdet, z_mask), (x_m, x_logs, x_mask), (attn, logw, logw_)

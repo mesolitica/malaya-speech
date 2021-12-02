@@ -7,7 +7,7 @@ config = {
     'n_blocks_dec': 12,
     'n_layers_enc': 6,
     'n_heads': 2,
-    'p_dropout_dec': 0.05,
+    'p_dropout_dec': 0.1,
     'dilation_rate': 1,
     'kernel_size_dec': 5,
     'n_block_layers': 4,
@@ -20,7 +20,5 @@ config = {
     'sigmoid_scale': False,
     'gin_channels': 0,
     'n_split': 4,
-    'dilation_rate': 5,
-    'p_dropout_dec': 0.0,
     'ddi': False
 }

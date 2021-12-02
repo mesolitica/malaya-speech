@@ -110,6 +110,23 @@ class TFHifiResBlock(tf.keras.layers.Layer):
                 pass
 
 
+class TFMultiHifiResBlock(tf.keras.layers.Layer):
+    """Tensorflow Multi Hifigan resblock 1 module."""
+
+    def __init__(self, list_resblock, **kwargs):
+        super().__init__(**kwargs)
+        self.list_resblock = list_resblock
+
+    def call(self, x, training=False):
+        xs = None
+        for resblock in self.list_resblock:
+            if xs is None:
+                xs = resblock(x, training=training)
+            else:
+                xs += resblock(x, training=training)
+        return xs / len(self.list_resblock)
+
+
 class Generator(tf.keras.Model):
     def __init__(self, config, **kwargs):
         super().__init__(**kwargs)
@@ -167,6 +184,116 @@ class Generator(tf.keras.Model):
                         name='hifigan_resblock_._{}._._{}'.format(i, j),
                     )
                 ]
+        # add final layer
+        layers += [
+            getattr(tf.keras.layers, config.nonlinear_activation)(
+                **config.nonlinear_activation_params
+            ),
+            TFReflectionPad1d(
+                (config.kernel_size - 1) // 2,
+                padding_type=config.padding_type,
+                name='last_reflect_padding',
+            ),
+            tf.keras.layers.Conv1D(
+                filters=config.out_channels,
+                kernel_size=config.kernel_size,
+                use_bias=config.use_bias,
+                dtype=tf.float32,
+            ),
+        ]
+        if config.use_final_nolinear_activation:
+            layers += [tf.keras.layers.Activation('tanh', dtype=tf.float32)]
+
+        if config.is_weight_norm is True:
+            self._apply_weightnorm(layers)
+
+        self.hifigan = tf.keras.models.Sequential(layers)
+
+    def call(self, mels, **kwargs):
+        """Calculate forward propagation.
+        Args:
+            c (Tensor): Input tensor (B, T, channels)
+        Returns:
+            Tensor: Output tensor (B, T ** prod(upsample_scales), out_channels)
+        """
+        return self.inference(mels)
+
+    def inference(self, mels):
+        return self.hifigan(mels)
+
+    def _apply_weightnorm(self, list_layers):
+        """Try apply weightnorm for all layer in list_layers."""
+        for i in range(len(list_layers)):
+            try:
+                layer_name = list_layers[i].name.lower()
+                if 'conv1d' in layer_name or 'dense' in layer_name:
+                    list_layers[i] = WeightNormalization(list_layers[i])
+            except Exception:
+                pass
+
+
+class MultiGenerator(tf.keras.Model):
+    def __init__(self, config, **kwargs):
+        super().__init__(**kwargs)
+        # check hyper parameter is valid or not
+        assert (
+            config.stacks
+            == len(config.stack_kernel_size)
+            == len(config.stack_dilation_rate)
+        )
+
+        # add initial layer
+        layers = []
+        layers += [
+            TFReflectionPad1d(
+                (config.kernel_size - 1) // 2,
+                padding_type=config.padding_type,
+                name='first_reflect_padding',
+            ),
+            tf.keras.layers.Conv1D(
+                filters=config.filters,
+                kernel_size=config.kernel_size,
+                use_bias=config.use_bias,
+            ),
+        ]
+
+        for i, upsample_scale in enumerate(config.upsample_scales):
+            # add upsampling layer
+            layers += [
+                getattr(tf.keras.layers, config.nonlinear_activation)(
+                    **config.nonlinear_activation_params
+                ),
+                TFConvTranspose1d(
+                    filters=config.filters // (2 ** (i + 1)),
+                    kernel_size=upsample_scale * 2,
+                    strides=upsample_scale,
+                    padding='same',
+                    is_weight_norm=config.is_weight_norm,
+                    initializer_seed=config.initializer_seed,
+                    name='conv_transpose_._{}'.format(i),
+                ),
+            ]
+
+            layers += [
+                TFMultiHifiResBlock(
+                    list_resblock=[
+                        TFHifiResBlock(
+                            kernel_size=config.stack_kernel_size[j],
+                            filters=config.filters // (2 ** (i + 1)),
+                            dilation_rate=config.stack_dilation_rate[j],
+                            use_bias=config.use_bias,
+                            nonlinear_activation=config.nonlinear_activation,
+                            nonlinear_activation_params=config.nonlinear_activation_params,
+                            is_weight_norm=config.is_weight_norm,
+                            initializer_seed=config.initializer_seed,
+                            name="hifigan_resblock_._{}".format(j),
+                        )
+                        for j in range(config.stacks)
+                    ],
+                    name="multi_hifigan_resblock_._{}".format(i),
+                )
+            ]
+
         # add final layer
         layers += [
             getattr(tf.keras.layers, config.nonlinear_activation)(

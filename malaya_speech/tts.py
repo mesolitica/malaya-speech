@@ -5,6 +5,8 @@ from malaya_speech.path import (
     S3_PATH_TTS_FASTSPEECH2,
     PATH_TTS_FASTPITCH,
     S3_PATH_TTS_FASTPITCH,
+    PATH_TTS_GLOWTTS,
+    S3_PATH_TTS_GLOWTTS,
 )
 from malaya_speech.utils.text import (
     convert_to_ascii,
@@ -95,6 +97,34 @@ _fastpitch_availability = {
     },
 }
 
+_glowtts_availability = {
+    'male': {
+        'Size (MB)': 119,
+        'Quantized Size (MB)': 27.6,
+        'Combined loss': -1.429,
+    },
+    'female': {
+        'Size (MB)': 119,
+        'Quantized Size (MB)': 27.6,
+        'Combined loss': -1.464,
+    },
+    'haqkiem': {
+        'Size (MB)': 119,
+        'Quantized Size (MB)': 27.6,
+        'Combined loss': -1.649,
+    },
+    'female-singlish': {
+        'Size (MB)': 119,
+        'Quantized Size (MB)': 27.6,
+        'Combined loss': -1.728,
+    },
+    'multispeaker': {
+        'Size (MB)': 404,
+        'Quantized Size (MB)': 79.9,
+        'Combined loss': -1.882,
+    }
+}
+
 
 def load_text_ids(
     pad_to: int = 8,
@@ -154,6 +184,18 @@ def available_fastpitch():
     return describe_availability(
         _fastpitch_availability,
         text='`husein` and `haqkiem` combined loss from training set',
+    )
+
+
+def available_glowtts():
+    """
+    List available GlowTTS, Text to Mel models.
+    """
+    from malaya_speech.utils import describe_availability
+
+    return describe_availability(
+        _glowtts_availability,
+        text='`haqkiem` and `female-singlish` combined loss from training set',
     )
 
 
@@ -325,6 +367,63 @@ def fastpitch(
     return tts.fastpitch_load(
         path=PATH_TTS_FASTPITCH,
         s3_path=S3_PATH_TTS_FASTPITCH,
+        model=model,
+        name='text-to-speech',
+        normalizer=text_ids,
+        quantized=quantized,
+        **kwargs
+    )
+
+
+def glowtts(model: str = 'male',
+            quantized: bool = False,
+            pad_to: int = 2,
+            true_case_model=None,
+            **kwargs):
+    """
+    Load GlowTTS TTS model.
+
+    Parameters
+    ----------
+    model : str, optional (default='male')
+        Model architecture supported. Allowed values:
+
+        * ``'female'`` - GlowTTS trained on female voice.
+        * ``'male'`` - GlowTTS trained on male voice.
+        * ``'haqkiem'`` - GlowTTS trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
+        * ``'female-singlish'`` - GlowTTS trained on female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
+        * ``'multispeaker'`` - Multispeaker GlowTTS trained on male, female, husein and haqkiem voices, also able to do voice conversion.
+
+    quantized : bool, optional (default=False)
+        if True, will load 8-bit quantized model.
+        Quantized model not necessary faster, totally depends on the machine.
+    pad_to : int, optional (default=2)
+        size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 2.
+    true_case_model: str, optional (default=None)
+        load any true case model, eg, malaya true case model from https://malaya.readthedocs.io/en/latest/load-true-case.html
+        the interface must accept a string, return a string, eg, string = true_case_model(string)
+
+    Returns
+    -------
+    result : malaya_speech.model.tf.GlowTTS class
+    """
+
+    model = model.lower()
+
+    if model not in _glowtts_availability:
+        raise ValueError(
+            'model not supported, please check supported models from `malaya_speech.tts.available_glowtts()`.'
+        )
+
+    text_ids = load_text_ids(
+        pad_to=pad_to,
+        true_case_model=true_case_model,
+        quantized=quantized,
+        **kwargs
+    )
+    return tts.glowtts_load(
+        path=PATH_TTS_GLOWTTS,
+        s3_path=S3_PATH_TTS_GLOWTTS,
         model=model,
         name='text-to-speech',
         normalizer=text_ids,
