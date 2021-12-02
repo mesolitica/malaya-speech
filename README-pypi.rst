@@ -20,15 +20,15 @@ GPU version
 
 Only **Python 3.6.0 and above** and **Tensorflow 1.15.0 and above** are supported.
 
-We recommend to use **virtualenv** for development. All examples tested on Tensorflow version 1.15.4, 2.4.1 and 2.5.
+We recommend to use **virtualenv** for development. All examples tested on Tensorflow version 1.15.4, 1.15.5, 2.4.1 and 2.5.
 
 Features
 --------
 
 -  **Age Detection**, detect age in speech using Finetuned Speaker Vector.
 -  **Speaker Diarization**, diarizing speakers using Pretrained Speaker Vector.
--  **Force Alignment**, generate a time-aligned transcription of an audio file using RNNT.
 -  **Emotion Detection**, detect emotions in speech using Finetuned Speaker Vector.
+-  **Force Alignment**, generate a time-aligned transcription of an audio file using RNNT.
 -  **Gender Detection**, detect genders in speech using Finetuned Speaker Vector.
 -  **Language Detection**, detect hyperlocal languages in speech using Finetuned Speaker Vector.
 -  **Multispeaker Separation**, Multispeaker separation using FastSep on 8k Wav.
@@ -78,6 +78,7 @@ Malaya-Speech also released pretrained models, simply check at `malaya-speech/pr
 -  **FastSpeechSplit**, Faster and Accurate Speech Split Conversion using Transformer, no paper produced.
 -  **HuBERT**, Self-Supervised Speech Representation Learning by Masked Prediction of Hidden Units, https://arxiv.org/pdf/2106.07447v1.pdf
 -  **FastPitch**, Parallel Text-to-speech with Pitch Prediction, https://arxiv.org/abs/2006.06873
+-  **GlowTTS**, A Generative Flow for Text-to-Speech via Monotonic Alignment Search, https://arxiv.org/abs/2005.11129
 
 References
 -----------

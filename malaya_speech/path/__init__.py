@@ -7,11 +7,20 @@ TRANSDUCER_VOCAB = 'vocab/transducer.subword.subwords'
 TRANSDUCER_MIXED_VOCAB = 'vocab/transducer-mixed-v2.subword.subwords'
 TRANSDUCER_SINGLISH_VOCAB = 'vocab/transducer-singlish.subword.subwords'
 TRANSDUCER_2048_VOCAB = 'vocab/transducer-2048.subword.subwords'
+TRANSDUCER_BAHASA_512_VOCAB = 'vocab/bahasa-512.subword.subwords'
+TRANSDUCER_SINGLISH_512_VOCAB = 'vocab/singlish-512.subword.subwords'
+TRANSDUCER_MANDARIN_512_VOCAB = 'vocab/mandarin-512.subword.subwords'
 
 TRANSDUCER_VOCABS = {
     'malay': TRANSDUCER_VOCAB,
     'mixed': TRANSDUCER_MIXED_VOCAB,
     'singlish': TRANSDUCER_SINGLISH_VOCAB,
+}
+
+TRANSDUCER_MIXED_VOCABS = {
+    'malay': TRANSDUCER_BAHASA_512_VOCAB,
+    'singlish': TRANSDUCER_SINGLISH_512_VOCAB,
+    'mandarin': TRANSDUCER_MANDARIN_512_VOCAB,
 }
 
 PATH_TTS_TACOTRON2 = {

@@ -503,6 +503,7 @@ class Transducer(Abstract):
         name,
         wavs,
         stack=False,
+        dummy_sentences=None,
     ):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
@@ -518,12 +519,16 @@ class Transducer(Abstract):
         self._wavs = wavs
         self._stack = stack
         if self._stack:
-            self._vocabs = {}
             self._len_vocab = [l.vocab_size for l in self._vocab]
+            self._vocabs = {}
+            k = 0
+            for v in self._vocab:
+                for i in range(v.vocab_size - 1):
+                    self._vocabs[k] = v._id_to_subword(i)
+                    k += 1
         else:
             self._vocabs = {i: self._vocab._id_to_subword(i) for i in range(self._vocab.vocab_size - 1)}
-            self._vocabs[-1] = ''
-            self._len_vocab = [self._vocab.vocab_size]
+        self._vocabs[-1] = ''
 
     def _check_decoder(self, decoder, beam_width):
         decoder = decoder.lower()
@@ -1683,6 +1688,7 @@ class TransducerAligner(Abstract):
         name,
         wavs,
         dummy_sentences,
+        stack=False,
     ):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
@@ -1694,6 +1700,9 @@ class TransducerAligner(Abstract):
         self.__name__ = name
         self._wavs = wavs
         self._dummy_sentences = dummy_sentences
+        self._stack = stack
+        if self._stack:
+            self._len_vocab = [l.vocab_size for l in self._vocab]
 
     def _get_inputs(self, inputs, texts):
         inputs = [
@@ -1771,21 +1780,36 @@ class TransducerAligner(Abstract):
         non_blank_stime = r['non_blank_stime']
         decoded = r['decoded']
         alignment = r['alignment']
-        words, indices = self._vocab.decode(
-            non_blank_transcript, get_index=True
-        )
+        if self._stack:
+            words, indices = align_multilanguage(
+                self._vocab, non_blank_transcript, get_index=True
+            )
+        else:
+            words, indices = self._vocab.decode(
+                non_blank_transcript, get_index=True
+            )
         words_alignment = self._combined_indices(words, indices, non_blank_stime)
 
         words, indices = [], []
         for no, ids in enumerate(non_blank_transcript):
-            w = self._vocab._id_to_subword(ids - 1)
+            if self._stack:
+                last_index, v = get_index_multilanguage(ids, self._vocab, self._len_vocab)
+                w = self._vocab[last_index]._id_to_subword(v - 1)
+            else:
+                w = self._vocab._id_to_subword(ids - 1)
             if isinstance(w, bytes):
                 w = w.decode()
             words.extend([w, None])
             indices.extend([no, None])
         subwords_alignment = self._combined_indices(words, indices, non_blank_stime)
 
-        subwords_ = [self._vocab._id_to_subword(ids - 1) for ids in decoded[decoded > 0]]
+        if self._stack:
+            subwords_ = []
+            for ids in decoded[decoded > 0]:
+                last_index, v = get_index_multilanguage(ids, self._vocab, self._len_vocab)
+            subwords_.append(self._vocab[last_index]._id_to_subword(v - 1))
+        else:
+            subwords_ = [self._vocab._id_to_subword(ids - 1) for ids in decoded[decoded > 0]]
         subwords_ = [s.decode() if isinstance(s, bytes) else s for s in subwords_]
         alignment = alignment[:, targets_padded[0, :targets_lens[0]]].T
         return {'words_alignment': words_alignment,

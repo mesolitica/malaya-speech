@@ -39,11 +39,11 @@ _transducer_availability = {
         'CER-LM': 0.0590102,
         'Language': ['malay'],
     },
-    'conformer-stack-mixed': {
+    'conformer-stack-2mixed': {
         'Size (MB)': 130,
         'Quantized Size (MB)': 38.5,
-        'WER': 0.2401982,
-        'CER': 0.1577375,
+        'WER': 0.1376717,
+        'CER': 0.0717507,
         'WER-LM': None,
         'CER-LM': None,
         'Language': ['malay', 'singlish'],
@@ -51,8 +51,8 @@ _transducer_availability = {
     'conformer-stack-3mixed': {
         'Size (MB)': 130,
         'Quantized Size (MB)': 38.5,
-        'WER': 0.2401982,
-        'CER': 0.1577375,
+        'WER': 0.27758773,
+        'CER': 0.1631205,
         'WER-LM': None,
         'CER-LM': None,
         'Language': ['malay', 'singlish', 'mandarin'],
@@ -174,7 +174,7 @@ _language_model_availability = {
         ],
     },
     'manglish': {
-        'Size (MB)': 310,
+        'Size (MB)': 202,
         'LM order': 3,
         'Description': 'Manglish News + Manglish Reddit + Manglish forum + training set from https://github.com/huseinzol05/malay-dataset/tree/master/dumping/clean.',
         'Command': [
@@ -183,7 +183,7 @@ _language_model_availability = {
         ],
     },
     'bahasa-manglish-combined': {
-        'Size (MB)': 310,
+        'Size (MB)': 608,
         'LM order': 3,
         'Description': 'Combined `dump-combined` and `manglish`.',
         'Command': [
@@ -314,7 +314,7 @@ def deep_transducer(
         * ``'small-conformer'`` - SMALL size Google Conformer.
         * ``'conformer'`` - BASE size Google Conformer.
         * ``'large-conformer'`` - LARGE size Google Conformer.
-        * ``'conformer-stack-mixed'`` - BASE size Stacked Google Conformer for (Malay + Singlish) languages.
+        * ``'conformer-stack-2mixed'`` - BASE size Stacked Google Conformer for (Malay + Singlish) languages.
         * ``'conformer-stack-3mixed'`` - BASE size Stacked Google Conformer for (Malay + Singlish + Mandarin) languages.
         * ``'small-conformer-singlish'`` - SMALL size Google Conformer for singlish language.
         * ``'conformer-singlish'`` - BASE size Google Conformer for singlish language.

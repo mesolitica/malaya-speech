@@ -59,10 +59,11 @@ def deep_aligner(
             'model not supported, please check supported models from `malaya_speech.force_alignment.available_aligner()`.'
         )
 
-    return stt.transducer_alignment_load(
+    return stt.transducer_load(
         model=model,
         module='force-alignment',
         languages=_availability[model]['Language'],
         quantized=quantized,
+        stt=False,
         **kwargs
     )

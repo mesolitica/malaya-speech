@@ -119,84 +119,87 @@ def add_uniform_noise(
 def calc(signal, add_uniform=True):
     if random.random() < prob_aug:
         return signal
-    choice = random.randint(0, 10)
-    print('choice', choice)
-    if choice == 0:
-        x = augmentation.sox_augment_high(
-            signal,
-            min_bass_gain=random.randint(25, 50),
-            reverberance=random.randint(0, 80),
-            hf_damping=10,
-            room_scale=random.randint(0, 50),
-            negate=1,
-        )
-    if choice == 1:
-        x = augmentation.sox_augment_high(
-            signal,
-            min_bass_gain=random.randint(25, 70),
-            reverberance=random.randint(0, 80),
-            hf_damping=10,
-            room_scale=random.randint(0, 50),
-            negate=0,
-        )
-    if choice == 2:
-        x = augmentation.sox_augment_low(
-            signal,
-            min_bass_gain=random.randint(5, 30),
-            reverberance=random.randint(0, 80),
-            hf_damping=10,
-            room_scale=random.randint(0, 50),
-            negate=random.randint(0, 1),
-        )
-    if choice == 3:
-        x = augmentation.sox_augment_combine(
-            signal,
-            min_bass_gain_high=random.randint(25, 70),
-            min_bass_gain_low=random.randint(5, 30),
-            reverberance=random.randint(0, 80),
-            hf_damping=10,
-            room_scale=random.randint(0, 90),
-        )
-    if choice == 4:
-        x = augmentation.sox_reverb(
-            signal,
-            reverberance=random.randint(10, 80),
-            hf_damping=10,
-            room_scale=random.randint(10, 90),
-        )
-    if choice == 5:
-        x = random_amplitude_threshold(
-            signal, threshold=random.uniform(0.35, 0.8)
-        )
-    if choice == 6:
-        x = augmentation.lowpass_filter(
-            signal, sr=sr, cutoff=random.randint(200, 551)
-        )
-    if choice == 7:
-        x = augmentation.highpass_filter(
-            signal, sr=sr, cutoff=random.randint(551, 1653)
-        )
-    if choice == 8:
-        x = augmentation.bandpass_filter(
-            signal,
-            sr=sr,
-            cutoff_low=random.randint(200, 551),
-            cutoff_high=random.randint(551, 1653),
-        )
-    if choice == 9:
-        x = augment_room(signal)
-    if choice == 10:
-        x = signal
+    try:
+        choice = random.randint(0, 10)
+        print('choice', choice)
+        if choice == 0:
+            x = augmentation.sox_augment_high(
+                signal,
+                min_bass_gain=random.randint(25, 50),
+                reverberance=random.randint(0, 80),
+                hf_damping=10,
+                room_scale=random.randint(0, 50),
+                negate=1,
+            )
+        if choice == 1:
+            x = augmentation.sox_augment_high(
+                signal,
+                min_bass_gain=random.randint(25, 70),
+                reverberance=random.randint(0, 80),
+                hf_damping=10,
+                room_scale=random.randint(0, 50),
+                negate=0,
+            )
+        if choice == 2:
+            x = augmentation.sox_augment_low(
+                signal,
+                min_bass_gain=random.randint(5, 30),
+                reverberance=random.randint(0, 80),
+                hf_damping=10,
+                room_scale=random.randint(0, 50),
+                negate=random.randint(0, 1),
+            )
+        if choice == 3:
+            x = augmentation.sox_augment_combine(
+                signal,
+                min_bass_gain_high=random.randint(25, 70),
+                min_bass_gain_low=random.randint(5, 30),
+                reverberance=random.randint(0, 80),
+                hf_damping=10,
+                room_scale=random.randint(0, 90),
+            )
+        if choice == 4:
+            x = augmentation.sox_reverb(
+                signal,
+                reverberance=random.randint(10, 80),
+                hf_damping=10,
+                room_scale=random.randint(10, 90),
+            )
+        if choice == 5:
+            x = random_amplitude_threshold(
+                signal, threshold=random.uniform(0.35, 0.8)
+            )
+        if choice == 6:
+            x = augmentation.lowpass_filter(
+                signal, sr=sr, cutoff=random.randint(200, 551)
+            )
+        if choice == 7:
+            x = augmentation.highpass_filter(
+                signal, sr=sr, cutoff=random.randint(551, 1653)
+            )
+        if choice == 8:
+            x = augmentation.bandpass_filter(
+                signal,
+                sr=sr,
+                cutoff_low=random.randint(200, 551),
+                cutoff_high=random.randint(551, 1653),
+            )
+        if choice == 9:
+            x = augment_room(signal)
+        if choice == 10:
+            x = signal
 
-    if choice not in [5] and random.gauss(0.5, 0.14) > 0.6:
-        x = random_amplitude_threshold(
-            x, low=1.0, high=2.0, threshold=random.uniform(0.6, 0.9)
-        )
+        if choice not in [5] and random.gauss(0.5, 0.14) > 0.6:
+            x = random_amplitude_threshold(
+                x, low=1.0, high=2.0, threshold=random.uniform(0.6, 0.9)
+            )
 
-    if random.gauss(0.5, 0.14) > 0.6 and add_uniform:
-        x = add_uniform_noise(x, power=random.uniform(0.005, 0.015))
+        if random.gauss(0.5, 0.14) > 0.6 and add_uniform:
+            x = add_uniform_noise(x, power=random.uniform(0.005, 0.015))
 
-    return x.astype(np.float32)
+        return x.astype(np.float32)
+    except:
+        return signal
 
 
 def mel_augmentation(features):
@@ -270,7 +273,7 @@ def pop(features):
     return features
 
 
-def get_dataset(files, batch_size=10, shuffle_size=32, num_cpu_threads=4,
+def get_dataset(files, batch_size=10, shuffle_size=32, num_cpu_threads=6,
                 thread_count=24, is_training=True):
     def get():
         if is_training:
@@ -278,11 +281,10 @@ def get_dataset(files, batch_size=10, shuffle_size=32, num_cpu_threads=4,
             d = d.repeat()
             d = d.shuffle(buffer_size=len(files))
             cycle_length = min(num_cpu_threads, len(files))
-            d = d.apply(
-                tf.contrib.data.parallel_interleave(
-                    tf.data.TFRecordDataset,
-                    sloppy=is_training,
-                    cycle_length=cycle_length))
+            d = d.interleave(
+                tf.data.TFRecordDataset,
+                cycle_length=cycle_length,
+                block_length=batch_size)
             d = d.shuffle(buffer_size=100)
         else:
             d = tf.data.TFRecordDataset(files)
