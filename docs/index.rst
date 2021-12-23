@@ -51,6 +51,7 @@ Contents:
    load-stt-ctc-model
    load-stt-ctc-model-ctc-decoders
    load-stt-ctc-model-pyctcdecode
+   load-stt-ctc-model-3mixed
    realtime-asr
    realtime-asr-mixed
    realtime-asr-rubberband

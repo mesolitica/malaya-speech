@@ -18,8 +18,8 @@ Prepare ASR dataset for ASR models.
 
 ## Download
 
-1. Malay Test set, audio files, [malay-test.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/malay-test.tar.gz), transcript, [malay-test.json](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/malay-test.json).
+1. Malay Test set, audio files, ~53 minutes, [malay-test.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/malay-test.tar.gz), transcript, [malay-test.json](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/malay-test.json).
 
-2. Singlish Test set, audio files, [singlish-test.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/singlish-test.tar.gz), transcript, [singlish-test.json](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/singlish-test.json).
+2. Singlish Test set, audio files, ~271 minutes, [singlish-test.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/singlish-test.tar.gz), transcript, [singlish-test.json](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/singlish-test.json).
 
-3. Mandarin Test set, audio files, [mandarin-test.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/mandarin-test.tar.gz), transcript, [mandarin-test.json](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/mandarin-test.json).
+3. Mandarin Test set, audio files, ~46 minutes, [mandarin-test.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/mandarin-test.tar.gz), transcript, [mandarin-test.json](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/mandarin-test.json).

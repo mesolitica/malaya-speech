@@ -114,6 +114,15 @@ _ctc_availability = {
         'CER-LM': 0.03853289,
         'Language': ['malay'],
     },
+    'hubert-conformer-large-3mixed': {
+        'Size (MB)': 392,
+        'Quantized Size (MB)': 100,
+        'WER': 0.2411256,
+        'CER': 0.0787939,
+        'WER-LM': 0.13276059,
+        'CER-LM': 0.05748197,
+        'Language': ['malay', 'singlish', 'mandarin'],
+    },
 }
 
 google_accuracy = {
@@ -274,6 +283,7 @@ def deep_ctc(
         * ``'hubert-conformer-tiny'`` - Finetuned HuBERT Conformer TINY.
         * ``'hubert-conformer'`` - Finetuned HuBERT Conformer.
         * ``'hubert-conformer-large'`` - Finetuned HuBERT Conformer LARGE.
+        * ``'hubert-conformer-large-3mixed'`` - Finetuned HuBERT Conformer LARGE for (Malay + Singlish + Mandarin) languages.
 
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
