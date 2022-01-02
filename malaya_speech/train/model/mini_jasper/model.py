@@ -4,7 +4,7 @@ from ..openseq2seq.model import TDNNEncoder
 
 residual_dense = False
 
-encoder_config = {
+config = {
     'convnet_layers': [
         {
             'type': 'sep_conv1d',
