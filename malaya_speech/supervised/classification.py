@@ -8,6 +8,7 @@ from malaya_speech.model.tf import (
     Speakernet,
     Speaker2Vec,
     SpeakernetClassification,
+    MarbleNetClassification,
     Classification,
 )
 from malaya_speech.utils import featurization
@@ -44,22 +45,25 @@ def load(model, module, extra, label, quantized=False, **kwargs):
     else:
         if model == 'speakernet':
             model_class = SpeakernetClassification
+        elif 'marblenet' in model:
+            model_class = MarbleNetClassification
         else:
             model_class = Classification
 
     if model == 'speakernet':
         inputs = ['Placeholder', 'Placeholder_1']
-        outputs = ['logits']
+    elif 'marblenet' in model:
+        inputs = ['X_placeholder', 'X_len_placeholder']
     else:
         inputs = ['Placeholder']
-        outputs = ['logits']
+    outputs = ['logits']
 
     input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
     return model_class(
         input_nodes=input_nodes,
         output_nodes=output_nodes,
-        vectorizer=vectorizer_mapping[model],
+        vectorizer=vectorizer_mapping.get(model),
         sess=generate_session(graph=g, **kwargs),
         model=model,
         extra=extra,
