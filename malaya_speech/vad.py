@@ -6,18 +6,33 @@ _availability = {
     'vggvox-v1': {
         'Size (MB)': 70.8,
         'Quantized Size (MB)': 17.7,
-        'Accuracy': 0.95,
+        'Accuracy': 0.80984375,
     },
     'vggvox-v2': {
         'Size (MB)': 31.1,
         'Quantized Size (MB)': 7.92,
-        'Accuracy': 0.9594,
+        'Accuracy': 0.8196875,
     },
     'speakernet': {
         'Size (MB)': 20.3,
         'Quantized Size (MB)': 5.18,
-        'Accuracy': 0.9,
+        'Accuracy': 0.7340625,
     },
+    'marblenet-factor1': {
+        'Size (MB)': 0.526,
+        'Quantized Size (MB)': 0.232,
+        'Accuracy': 0.8491875,
+    },
+    'marblenet-factor3': {
+        'Size (MB)': 3.21,
+        'Quantized Size (MB)': 0.934,
+        'Accuracy': 0.83855625,
+    },
+    'marblenet-factor5': {
+        'Size (MB)': 8.38,
+        'Quantized Size (MB)': 2.21,
+        'Accuracy': 0.843540625,
+    }
 }
 
 
@@ -66,7 +81,7 @@ def webrtc(
 
 
 @check_type
-def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
+def deep_model(model: str = 'marblenet-factor1', quantized: bool = False, **kwargs):
     """
     Load VAD model.
 
@@ -77,6 +92,11 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
 
         * ``'vggvox-v1'`` - finetuned VGGVox V1.
         * ``'vggvox-v2'`` - finetuned VGGVox V2.
+        * ``'speakernet'`` - finetuned SpeakerNet.
+        * ``'marblenet-factor1'`` - Pretrained MarbleNet * factor 1.
+        * ``'marblenet-factor3'`` - Pretrained MarbleNet * factor 3.
+        * ``'marblenet-factor5'`` - Pretrained MarbleNet * factor 5.
+
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
@@ -95,6 +115,9 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
         'vggvox-v1': {'frame_len': 0.005, 'frame_step': 0.0005},
         'vggvox-v2': {'hop_length': 24, 'concat': False, 'mode': 'eval'},
         'speakernet': {'frame_ms': 20, 'stride_ms': 1.0},
+        'marblenet-factor1': {'feature_type': 'mfcc'},
+        'marblenet-factor3': {'feature_type': 'mfcc'},
+        'marblenet-factor5': {'feature_type': 'mfcc'},
     }
 
     return classification.load(
