@@ -58,6 +58,7 @@ class Model(tf.keras.Model):
             shape=[cfg.encoder_embed_dim],
             initializer=tf.truncated_normal_initializer(),
         )
+        self.logits = tf.keras.layers.Dense(cfg.num_embeddings)
         self.encoder = encoder
 
     def get_code_indices(self, x):
@@ -150,6 +151,7 @@ class Model(tf.keras.Model):
         training=True,
     ):
         features = self.feature_extractor(source, training=training)
+        features = self.layer_norm(features, training=training)
         unmasked_features = tf.identity(features, name='unmasked_features')
         if padding_mask is not None:
             input_lengths = padding_mask
@@ -191,7 +193,7 @@ class Model(tf.keras.Model):
 
         x = self.encoder(x, padding_mask, training=training)
         if features_only:
-            return {'x': x, 'padding_mask': padding_mask}
+            return {'x': x, 'padding_mask': padding_mask, 'y': y}
         else:
             onehot = self.get_code_indices(y)
-            return {'x': x, 'padding_mask': padding_mask, 'y': onehot}
+            return {'x': self.logits(x), 'padding_mask': padding_mask, 'y': y, 'onehot': onehot}
