@@ -89,6 +89,7 @@ class Model(tf.keras.Model):
                     combine_groups=False,
                     vq_dim=vq_dim,
                 )
+            self.project_inp = tf.keras.layers.Dense(cfg.encoder_embed_dim)
 
         self.mask_emb = tf.get_variable(
             name='mask_emb',
