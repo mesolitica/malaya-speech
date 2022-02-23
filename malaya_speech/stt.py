@@ -123,6 +123,33 @@ _ctc_availability = {
         'CER-LM': 0.05748197,
         'Language': ['malay', 'singlish', 'mandarin'],
     },
+    'best-rq-conformer-tiny': {
+        'Size (MB)': 36.6,
+        'Quantized Size (MB)': 10.3,
+        'WER': 0.3359682,
+        'CER': 0.0882573,
+        'WER-LM': 0.1992265,
+        'CER-LM': 0.0635223,
+        'Language': ['malay'],
+    },
+    'best-rq-conformer': {
+        'Size (MB)': 115,
+        'Quantized Size (MB)': 31.1,
+        'WER': 0.238714,
+        'CER': 0.0608998,
+        'WER-LM': 0.1414791,
+        'CER-LM': 0.0450751,
+        'Language': ['malay'],
+    },
+    'best-rq-conformer-large': {
+        'Size (MB)': 392,
+        'Quantized Size (MB)': 100,
+        'WER': 0.2346511,
+        'CER': 0.0601605,
+        'WER-LM': 0.1300819,
+        'CER-LM': 0.044521,
+        'Language': ['malay'],
+    },
 }
 
 google_accuracy = {
@@ -176,7 +203,7 @@ _language_model_availability = {
     'dump-combined': {
         'Size (MB)': 310,
         'LM order': 3,
-        'Description': 'Academia + News + IIUM + Parliament + Watpadd + Wikipedia + Common Crawl + training set from https://github.com/huseinzol05/malay-dataset/tree/master/dumping/clean',
+        'Description': 'Academia + News + IIUM + Parliament + Watpadd + Wikipedia + Common Crawl + training set from https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt',
         'Command': [
             './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
             './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
@@ -185,7 +212,7 @@ _language_model_availability = {
     'manglish': {
         'Size (MB)': 202,
         'LM order': 3,
-        'Description': 'Manglish News + Manglish Reddit + Manglish forum + training set from https://github.com/huseinzol05/malay-dataset/tree/master/dumping/clean.',
+        'Description': 'Manglish News + Manglish Reddit + Manglish forum + training set from https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt.',
         'Command': [
             './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
             './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
@@ -246,8 +273,8 @@ def language_model(
         * ``'bahasa-news'`` - Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences).
         * ``'bahasa-combined'`` - Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences) + Bahasa Wikipedia (Random sample 150k sentences).
         * ``'redape-community'`` - Mirror for https://github.com/redapesolutions/suara-kami-community
-        * ``'dump-combined'`` - Academia + News + IIUM + Parliament + Watpadd + Wikipedia + Common Crawl + training set from https://github.com/huseinzol05/malay-dataset/tree/master/dumping/clean.
-        * ``'manglish'`` - Manglish News + Manglish Reddit + Manglish forum + training set from https://github.com/huseinzol05/malay-dataset/tree/master/dumping/clean.
+        * ``'dump-combined'`` - Academia + News + IIUM + Parliament + Watpadd + Wikipedia + Common Crawl + training set from https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt.
+        * ``'manglish'`` - Manglish News + Manglish Reddit + Manglish forum + training set from https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt.
         * ``'bahasa-manglish-combined'`` - Combined `dump-combined` and `manglish`.
 
     Returns
@@ -273,7 +300,7 @@ def deep_ctc(
     model: str = 'hubert-conformer', quantized: bool = False, **kwargs
 ):
     """
-    Load Encoder-Transducer ASR model.
+    Load Encoder-CTC ASR model.
 
     Parameters
     ----------
@@ -284,6 +311,10 @@ def deep_ctc(
         * ``'hubert-conformer'`` - Finetuned HuBERT Conformer.
         * ``'hubert-conformer-large'`` - Finetuned HuBERT Conformer LARGE.
         * ``'hubert-conformer-large-3mixed'`` - Finetuned HuBERT Conformer LARGE for (Malay + Singlish + Mandarin) languages.
+        * ``'best-rq-conformer-tiny'`` - Finetuned BEST-RQ Conformer TINY.
+        * ``'best-rq-conformer'`` - Finetuned BEST-RQ Conformer.
+        * ``'best-rq-conformer-large'`` - Finetuned BEST-RQ Conformer LARGE.
+
 
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
