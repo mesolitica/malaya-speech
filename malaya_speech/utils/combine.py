@@ -1,6 +1,6 @@
-from malaya_speech.utils.split import group_frames, group_frames_threshold
 import numpy as np
 from typing import List
+from malaya_speech.utils.split import group_frames, group_frames_threshold
 
 
 def without_silent(

@@ -3,6 +3,7 @@ import numpy as np
 import collections
 from malaya_speech.utils import featurization
 from malaya_speech.model.frame import Frame
+from malaya_speech.utils.astype import int_to_float
 from malaya_speech.utils.padding import (
     sequence_nd as padding_sequence_nd,
     sequence_1d,
@@ -32,7 +33,15 @@ from malaya_speech.utils.lm import (
     prune_history,
     get_lm_beams,
 )
+from malaya_speech.utils.ctc_aligner import (
+    get_trellis,
+    backtrack,
+    merge_repeats,
+    merge_words,
+)
+from scipy.special import log_softmax
 from malaya_speech.utils.constant import MEL_MEAN, MEL_STD
+from typing import Callable
 
 
 class Abstract:
@@ -962,6 +971,42 @@ class Transducer(Abstract):
         """
         return self.greedy_decoder(inputs)
 
+    def gradio(self, record_mode: bool = True, **kwargs):
+        """
+        Transcribe an input using beam decoder on Gradio interface.
+
+        Parameters
+        ----------
+        record_mode: bool, optional (default=True)
+            if True, Gradio will use record mode, else, file upload mode.
+        **kwargs: keyword arguments for beam decoder.
+        """
+        try:
+            import gradio as gr
+        except BaseException:
+            raise ModuleNotFoundError(
+                'gradio not installed. Please install it by `pip install gradio` and try again.'
+            )
+
+        def pred(audio):
+            sr, data = audio
+            if len(data.shape) == 2:
+                data = np.mean(data, axis=1)
+            data = int_to_float(data)
+            data = resample(data, sr, 16000)
+            return self._beam(inputs=[data], **kwargs)[0]
+
+        title = 'RNNT-STT using Beam Decoder'
+        description = 'It will take sometime for the first time, after that, should be really fast.'
+
+        if record_mode:
+            input = 'microphone'
+        else:
+            input = 'audio'
+
+        iface = gr.Interface(pred, input, 'text', title=title, description=description)
+        return iface.launch(**kwargs)
+
     def __call__(self, input):
         """
         Transcribe input using greedy decoder, will return a string.
@@ -1375,7 +1420,7 @@ class Wav2Vec2_CTC(Abstract):
         """
         return self._predict(inputs=inputs, decoder='greedy')
 
-    def beam_decoder(self, inputs, beam_width: int = 100):
+    def beam_decoder(self, inputs, beam_width: int = 100, **kwargs):
         """
         Transcribe inputs using beam decoder.
 
@@ -1408,7 +1453,7 @@ class Wav2Vec2_CTC(Abstract):
         """
         return self.greedy_decoder(inputs=inputs)
 
-    def predict_logits(self, inputs):
+    def predict_logits(self, inputs, norm_func=softmax):
         """
         Predict logits from inputs.
 
@@ -1416,6 +1461,7 @@ class Wav2Vec2_CTC(Abstract):
         ----------
         input: List[np.array]
             List[np.array] or List[malaya_speech.model.frame.Frame].
+        norm_func: Callable, optional (default=malaya.utils.activation.softmax)
 
 
         Returns
@@ -1431,11 +1477,99 @@ class Wav2Vec2_CTC(Abstract):
         padded, lens = sequence_1d(inputs, return_len=True)
         logits, seq_lens = self._get_logits(padded, lens)
         logits = np.transpose(logits, axes=(1, 0, 2))
-        logits = softmax(logits, axis=-1)
+        logits = norm_func(logits, axis=-1)
         results = []
         for i in range(len(logits)):
             results.append(logits[i][: seq_lens[i]])
         return results
+
+    def gradio(self, record_mode: bool = True,
+               lm_partial_func: Callable = None,
+               **kwargs):
+        """
+        Transcribe an input using beam decoder on Gradio interface.
+
+        Parameters
+        ----------
+        record_mode: bool, optional (default=True)
+            if True, Gradio will use record mode, else, file upload mode.
+
+        **kwargs: keyword arguments for beam decoder.
+        """
+        try:
+            import gradio as gr
+        except BaseException:
+            raise ModuleNotFoundError(
+                'gradio not installed. Please install it by `pip install gradio` and try again.'
+            )
+
+        def pred(audio):
+            sr, data = audio
+            if len(data.shape) == 2:
+                data = np.mean(data, axis=1)
+            data = int_to_float(data)
+            data = resample(data, sr, 16000)
+            if lm_partial_func is not None:
+                logits = self.predict_logits(inputs=[data])[0]
+                return lm_partial_func(logits)
+            else:
+                return self.beam_decoder(inputs=[data], **kwargs)[0]
+
+        title = 'Wav2Vec2-STT using Beam Decoder'
+        description = 'It will take sometime for the first time, after that, should be really fast.'
+
+        if record_mode:
+            input = 'microphone'
+        else:
+            input = 'audio'
+
+        iface = gr.Interface(pred, input, 'text', title=title, description=description)
+        return iface.launch(**kwargs)
+
+    def force_alignment(self, input, transcription: str, sr: int = 16000):
+        """
+        Transcribe input, will return a string.
+
+        Parameters
+        ----------
+        input: np.array
+            np.array or malaya_speech.model.frame.Frame.
+        transcription: str
+            transcription of input audio.
+        sr: int, optional (default=16000)
+            sample rate for `input`.
+
+        Returns
+        -------
+        result: Dict[chars_alignment, words_alignment, trellis, segments, word_segments]
+        """
+        o = self.predict_logits([input], norm_func=log_softmax)[0]
+        dictionary = {c: i for i, c in enumerate(CTC_VOCAB)}
+        tokens = [dictionary[c] for c in transcription]
+        trellis = get_trellis(o, tokens)
+        path = backtrack(trellis, o, tokens)
+        segments = merge_repeats(path, transcription)
+        word_segments = merge_words(segments)
+
+        t = (len(input) / sr) / o.shape[0]
+        chars_alignment = []
+        for s in segments:
+            chars_alignment.append({'text': s.label,
+                                    'start': s.start * t,
+                                    'end': s.end * t})
+        words_alignment = []
+        for s in word_segments:
+            words_alignment.append({'text': s.label,
+                                    'start': s.start * t,
+                                    'end': s.end * t})
+
+        return {
+            'chars_alignment': chars_alignment,
+            'words_alignment': words_alignment,
+            'trellis': trellis,
+            'segments': segments,
+            'word_segments': word_segments
+        }
 
     def __call__(self, input):
         """

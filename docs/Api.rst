@@ -208,6 +208,18 @@ malaya_speech.utils.char
 .. automodule:: malaya_speech.utils.char
     :members:
 
+malaya_speech.utils.combine
+-----------------------------
+
+.. automodule:: malaya_speech.utils.combine
+    :members:
+
+malaya_speech.utils.ctc_aligner
+--------------------------------
+
+.. automodule:: malaya_speech.utils.ctc_aligner
+    :members:
+
 malaya_speech.utils.featurization
 ----------------------------------
 

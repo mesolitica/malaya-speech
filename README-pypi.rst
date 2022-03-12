@@ -28,7 +28,7 @@ Features
 -  **Age Detection**, detect age in speech using Finetuned Speaker Vector.
 -  **Speaker Diarization**, diarizing speakers using Pretrained Speaker Vector.
 -  **Emotion Detection**, detect emotions in speech using Finetuned Speaker Vector.
--  **Force Alignment**, generate a time-aligned transcription of an audio file using RNNT.
+-  **Force Alignment**, generate a time-aligned transcription of an audio file using RNNT and CTC.
 -  **Gender Detection**, detect genders in speech using Finetuned Speaker Vector.
 -  **Language Detection**, detect hyperlocal languages in speech using Finetuned Speaker Vector.
 -  **Multispeaker Separation**, Multispeaker separation using FastSep on 8k Wav.

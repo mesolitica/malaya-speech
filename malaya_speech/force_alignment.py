@@ -34,7 +34,7 @@ def deep_aligner(
     model: str = 'conformer-transducer', quantized: bool = False, **kwargs
 ):
     """
-    Load Deep Aligner model.
+    Load Encoder-Transducer Aligner model.
 
     Parameters
     ----------

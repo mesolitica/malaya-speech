@@ -56,7 +56,14 @@ Contents:
    realtime-asr-mixed
    realtime-asr-rubberband
    realtime-alignment
+   
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Force Alignment Module
+
    force-alignment
+   force-alignment-ctc
    put-comma-force-alignment
 
 .. toctree::
