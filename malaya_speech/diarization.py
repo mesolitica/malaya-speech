@@ -204,10 +204,6 @@ def spectral_cluster(
     max_clusters: int, optional (default=None)
         maximal number of clusters allowed (only effective if not None).
         can be used together with min_clusters to fix the number of clusters.
-    gaussian_blur_sigma: float, optional (default=1.0)
-        sigma value of the Gaussian blur operation.
-    p_percentile: float, optional (default=0.95)
-        the p-percentile for the row wise thresholding.
     norm_function: Callable, optional(default=malaya_speech.utils.dist.l2_normalize)
         normalize function for speaker vectors.
     log_distance_metric: str, optional (default=None)
@@ -228,8 +224,6 @@ def spectral_cluster(
     clusterer = SpectralClusterer(
         min_clusters=min_clusters,
         max_clusters=max_clusters,
-        p_percentile=p_percentile,
-        gaussian_blur_sigma=gaussian_blur_sigma,
         **kwargs,
     )
 
