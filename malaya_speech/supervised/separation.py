@@ -4,7 +4,7 @@ from malaya_speech.utils import (
     generate_session,
     nodes_session,
 )
-from malaya_speech.model.tf import Split_Wav, Split_Mel
+from malaya_speech.model.splitter import Split_Wav, Split_Mel
 
 
 def load(model, module, quantized=False, **kwargs):

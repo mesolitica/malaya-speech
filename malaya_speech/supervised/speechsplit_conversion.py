@@ -4,7 +4,7 @@ from malaya_speech.utils import (
     generate_session,
     nodes_session,
 )
-from malaya_speech.model.tf import FastSpeechSplit
+from malaya_speech.model.splitter import FastSpeechSplit
 from malaya_speech import speaker_vector, gender
 
 

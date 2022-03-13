@@ -4,7 +4,7 @@ from malaya_speech.utils import (
     generate_session,
     nodes_session,
 )
-from malaya_speech.model.tf import UNET, UNETSTFT, UNET1D
+from malaya_speech.model.unet import UNET, UNETSTFT, UNET1D
 
 
 def load(model, module, quantized=False, **kwargs):

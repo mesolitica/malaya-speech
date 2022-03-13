@@ -142,7 +142,6 @@ class Annotation:
     def plot(self, ax=None):
 
         try:
-            import seaborn as sns
             import matplotlib.pyplot as plt
         except BaseException:
             raise ValueError(

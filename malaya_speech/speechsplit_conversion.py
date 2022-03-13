@@ -47,7 +47,7 @@ def available_deep_conversion(f0_mode='pysptk'):
 
 def deep_conversion(
     model: str = 'fastspeechsplit-v2-vggvox-v2',
-    f0_mode='pysptk',
+    f0_mode: str = 'pysptk',
     quantized: bool = False,
     **kwargs,
 ):
@@ -74,7 +74,7 @@ def deep_conversion(
 
     Returns
     -------
-    result : malaya_speech.supervised.speechsplit_conversion.load function
+    result : malaya_speech.model.splitter.FastSpeechSplit class
     """
 
     model = model.lower()

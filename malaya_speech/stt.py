@@ -322,7 +322,7 @@ def deep_ctc(
 
     Returns
     -------
-    result : malaya_speech.model.tf.Wav2Vec2_CTC class
+    result : malaya_speech.model.wav2vec.Wav2Vec2_CTC class
     """
     model = model.lower()
     if model not in _ctc_availability:
@@ -367,7 +367,7 @@ def deep_transducer(
 
     Returns
     -------
-    result : malaya_speech.model.tf.Transducer class
+    result : malaya_speech.model.transducer.Transducer class
     """
     model = model.lower()
     if model not in _transducer_availability:

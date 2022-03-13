@@ -44,7 +44,7 @@ def deep_conversion(
 
     Returns
     -------
-    result : malaya_speech.supervised.voice_conversion.load function
+    result : malaya_speech.model.synthesis.FastVC class
     """
     model = model.lower()
     if model not in _availability:

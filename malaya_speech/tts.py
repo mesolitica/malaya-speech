@@ -231,7 +231,7 @@ def tacotron2(
 
     Returns
     -------
-    result : malaya_speech.model.tf.Tacotron class
+    result : malaya_speech.model.synthesis.Tacotron class
     """
     model = model.lower()
 
@@ -290,7 +290,7 @@ def fastspeech2(
 
     Returns
     -------
-    result : malaya_speech.model.tf.Fastspeech class
+    result : malaya_speech.model.synthesis.Fastspeech class
     """
 
     model = model.lower()
@@ -348,7 +348,7 @@ def fastpitch(
 
     Returns
     -------
-    result : malaya_speech.model.tf.Fastpitch class
+    result : malaya_speech.model.synthesis.Fastpitch class
     """
 
     model = model.lower()
@@ -405,7 +405,7 @@ def glowtts(model: str = 'male',
 
     Returns
     -------
-    result : malaya_speech.model.tf.GlowTTS class
+    result : malaya_speech.model.synthesis.GlowTTS class
     """
 
     model = model.lower()

@@ -4,7 +4,7 @@ from malaya_speech.utils import (
     generate_session,
     nodes_session,
 )
-from malaya_speech.model.tf import (
+from malaya_speech.model.synthesis import (
     Tacotron,
     Fastspeech,
     Fastpitch,

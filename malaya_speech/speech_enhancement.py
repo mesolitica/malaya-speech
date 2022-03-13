@@ -94,7 +94,7 @@ def deep_masking(model: str = 'resnet-unet', quantized: bool = False, **kwargs):
 
     Returns
     -------
-    result : malaya_speech.model.tf.UNETSTFT class
+    result : malaya_speech.model.unet.UNETSTFT class
     """
 
     model = model.lower()
@@ -131,7 +131,7 @@ def deep_enhance(model: str = 'unet', quantized: bool = False, **kwargs):
 
     Returns
     -------
-    result : malaya_speech.model.tf.UNET1D class
+    result : malaya_speech.model.unet.UNET1D class
     """
 
     model = model.lower()

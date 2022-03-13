@@ -132,7 +132,7 @@ def melgan(model: str = 'female', quantized: bool = False, **kwargs):
 
     Returns
     -------
-    result : malaya_speech.supervised.vocoder.load function
+    result : malaya_speech.model.synthesis.Vocoder class
     """
     model = model.lower()
     if model not in _melgan_availability:
@@ -169,7 +169,7 @@ def mbmelgan(model: str = 'female', quantized: bool = False, **kwargs):
 
     Returns
     -------
-    result : malaya_speech.supervised.vocoder.load function
+    result : malaya_speech.model.synthesis.Vocoder class
     """
     model = model.lower()
     if model not in _mbmelgan_availability:
@@ -205,7 +205,7 @@ def hifigan(model: str = 'universal-768', quantized: bool = False, **kwargs):
 
     Returns
     -------
-    result : malaya_speech.supervised.vocoder.load function
+    result : malaya_speech.model.synthesis.Vocoder class
     """
     model = model.lower()
     if model not in _hifigan_availability:

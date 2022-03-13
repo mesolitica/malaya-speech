@@ -7,9 +7,9 @@ from malaya_speech.utils import (
 from malaya_speech.utils.read import load as load_wav
 from malaya_speech.utils.subword import load as subword_load
 from malaya_speech.utils.tf_featurization import STTFeaturizer
-from malaya_speech.model.tf import Transducer, Wav2Vec2_CTC, TransducerAligner
+from malaya_speech.model.transducer import Transducer, TransducerAligner
+from malaya_speech.model.wav2vec import Wav2Vec2_CTC, Wav2Vec2_Aligner
 from malaya_speech.path import TRANSDUCER_VOCABS, TRANSDUCER_MIXED_VOCABS
-import json
 import os
 
 
@@ -161,7 +161,7 @@ def wav2vec_transducer_load(model, module, quantized=False, **kwargs):
     )
 
 
-def wav2vec2_ctc_load(model, module, quantized=False, **kwargs):
+def wav2vec2_ctc_load(model, module, quantized=False, stt=True, **kwargs):
 
     path = check_file(
         file=model,
@@ -178,7 +178,12 @@ def wav2vec2_ctc_load(model, module, quantized=False, **kwargs):
     outputs = ['logits', 'seq_lens']
     input_nodes, output_nodes = nodes_session(g, inputs, outputs)
 
-    return Wav2Vec2_CTC(
+    if stt:
+        selected_model = Wav2Vec2_CTC
+    else:
+        selected_model = Wav2Vec2_Aligner
+
+    return selected_model(
         input_nodes=input_nodes,
         output_nodes=output_nodes,
         sess=generate_session(graph=g, **kwargs),
