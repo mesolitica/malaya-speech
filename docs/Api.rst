@@ -27,107 +27,120 @@ malaya_speech.extra.visualization
 .. automodule:: malaya_speech.extra.visualization
     :members:
 
-malaya_speech.model.tf.Speakernet
------------------------------------
+malaya_speech.model.classification.Speakernet
+----------------------------------------------
 
-.. autoclass:: malaya_speech.model.tf.Speakernet()
+.. autoclass:: malaya_speech.model.classification.Speakernet()
     :members:
 
-malaya_speech.model.tf.Speaker2Vec
------------------------------------
+malaya_speech.model.classification.Speaker2Vec
+------------------------------------------------
 
-.. autoclass:: malaya_speech.model.tf.Speaker2Vec()
+.. autoclass:: malaya_speech.model.classification.Speaker2Vec()
     :members:
 
-malaya_speech.model.tf.SpeakernetClassification
---------------------------------------------------
+malaya_speech.model.classification.SpeakernetClassification
+------------------------------------------------------------
 
-.. autoclass:: malaya_speech.model.tf.SpeakernetClassification()
+.. autoclass:: malaya_speech.model.classification.SpeakernetClassification()
     :members:
 
-malaya_speech.model.tf.Classification
+malaya_speech.model.classification.Classification
+---------------------------------------------------
+
+.. autoclass:: malaya_speech.model.classification.Classification()
+    :members:
+
+malaya_speech.model.unet.UNET
+-------------------------------
+
+.. autoclass:: malaya_speech.model.unet.UNET()
+    :members:
+
+malaya_speech.model.unet.UNETSTFT
+----------------------------------
+
+.. autoclass:: malaya_speech.model.unet.UNETSTFT()
+    :members:
+
+malaya_speech.model.unet.UNET1D
+----------------------------------
+
+.. autoclass:: malaya_speech.model.unet.UNET1D()
+    :members:
+
+malaya_speech.model.transducer.Transducer
+------------------------------------------
+
+.. autoclass:: malaya_speech.model.transducer.Transducer()
+    :members:
+    
+malaya_speech.model.transducer.TransducerAligner
+-------------------------------------------------
+
+.. autoclass:: malaya_speech.model.transducer.TransducerAligner()
+    :members:
+
+malaya_speech.model.synthesis.Vocoder
+--------------------------------------
+
+.. autoclass:: malaya_speech.model.synthesis.Vocoder()
+    :members:
+
+malaya_speech.model.synthesis.Tacotron
 ----------------------------------------
 
-.. autoclass:: malaya_speech.model.tf.Classification()
+.. autoclass:: malaya_speech.model.synthesis.Tacotron()
     :members:
 
-malaya_speech.model.tf.UNET
------------------------------
+malaya_speech.model.synthesis.Fastspeech
+------------------------------------------
 
-.. autoclass:: malaya_speech.model.tf.UNET()
-    :members:
-
-malaya_speech.model.tf.UNETSTFT
-----------------------------------
-
-.. autoclass:: malaya_speech.model.tf.UNETSTFT()
-    :members:
-
-malaya_speech.model.tf.UNET1D
-----------------------------------
-
-.. autoclass:: malaya_speech.model.tf.UNET1D()
-    :members:
-
-malaya_speech.model.tf.Transducer
-----------------------------------
-
-.. autoclass:: malaya_speech.model.tf.Transducer()
-    :members:
-
-malaya_speech.model.tf.Vocoder
-----------------------------------
-
-.. autoclass:: malaya_speech.model.tf.Vocoder()
-    :members:
-
-malaya_speech.model.tf.Tacotron
-----------------------------------
-
-.. autoclass:: malaya_speech.model.tf.Tacotron()
-    :members:
-
-malaya_speech.model.tf.Fastspeech
-----------------------------------
-
-.. autoclass:: malaya_speech.model.tf.Fastspeech()
+.. autoclass:: malaya_speech.model.synthesis.Fastspeech()
     :members:
 
 
-malaya_speech.model.tf.FastVC
-----------------------------------
-
-.. autoclass:: malaya_speech.model.tf.FastVC()
-    :members:
-
-malaya_speech.model.tf.Split_Wav
-----------------------------------
-
-.. autoclass:: malaya_speech.model.tf.Split_Wav()
-    :members:
-
-malaya_speech.model.tf.Split_Mel
-----------------------------------
-
-.. autoclass:: malaya_speech.model.tf.Split_Mel()
-    :members:
-
-malaya_speech.model.tf.Wav2Vec2_CTC
+malaya_speech.model.synthesis.FastVC
 -------------------------------------
 
-.. autoclass:: malaya_speech.model.tf.Wav2Vec2_CTC()
+.. autoclass:: malaya_speech.model.synthesis.FastVC()
     :members:
 
-malaya_speech.model.tf.FastSpeechSplit
+malaya_speech.model.splitter.Split_Wav
+-----------------------------------------
+
+.. autoclass:: malaya_speech.model.splitter.Split_Wav()
+    :members:
+
+malaya_speech.model.splitter.Split_Mel
 ---------------------------------------
 
-.. autoclass:: malaya_speech.model.tf.FastSpeechSplit()
+.. autoclass:: malaya_speech.model.splitter.Split_Mel()
     :members:
 
-malaya_speech.model.tf.Fastpitch
-----------------------------------
+malaya_speech.model.wav2vec.Wav2Vec2_CTC
+-----------------------------------------
 
-.. autoclass:: malaya_speech.model.tf.Fastpitch()
+.. autoclass:: malaya_speech.model.wav2vec.Wav2Vec2_CTC()
+    :members:
+
+malaya_speech.model.wav2vec.Wav2Vec2_Aligner
+---------------------------------------------
+
+.. autoclass:: malaya_speech.model.wav2vec.Wav2Vec2_Aligner()
+    :members:
+
+
+malaya_speech.model.splitter.FastSpeechSplit
+---------------------------------------------
+
+.. autoclass:: malaya_speech.model.splitter.FastSpeechSplit()
+    :members:
+
+malaya_speech.model.synthesis.Fastpitch
+----------------------------------------
+
+.. autoclass:: malaya_speech.model.synthesis.Fastpitch()
     :members:
 
 malaya_speech.model.webrtc.WebRTC
@@ -214,12 +227,6 @@ malaya_speech.utils.combine
 .. automodule:: malaya_speech.utils.combine
     :members:
 
-malaya_speech.utils.ctc_aligner
---------------------------------
-
-.. automodule:: malaya_speech.utils.ctc_aligner
-    :members:
-
 malaya_speech.utils.featurization
 ----------------------------------
 
@@ -290,6 +297,12 @@ malaya_speech.emotion
 -----------------------------------
 
 .. automodule:: malaya_speech.emotion
+    :members:
+
+malaya_speech.force_alignment
+-----------------------------------
+
+.. automodule:: malaya_speech.force_alignment
     :members:
 
 malaya_speech.gender

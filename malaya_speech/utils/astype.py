@@ -33,7 +33,7 @@ def to_byte(array):
 
     Parameters
     ----------
-    array: ist / tuple / np.array
+    array: list / tuple / np.array
 
     Returns
     -------
