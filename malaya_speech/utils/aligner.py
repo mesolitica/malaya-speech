@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from dataclasses import dataclass
 from malaya_speech.utils.char import CTC_VOCAB as labels
 
@@ -223,6 +222,14 @@ def plot_alignments(
     plot_score_word: bool, optional (default=True)
         plot score on top of word plots.
     """
+
+    try:
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+    except BaseException:
+        raise ValueError(
+            'seaborn and matplotlib not installed. Please install it by `pip install matplotlib seaborn` and try again.'
+        )
 
     trellis_with_path = alignment.copy()
     if trellis_with_path.shape[1] == len(subs_alignment):
