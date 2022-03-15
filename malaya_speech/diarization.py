@@ -183,8 +183,6 @@ def spectral_cluster(
     speaker_vector,
     min_clusters: int = None,
     max_clusters: int = None,
-    p_percentile: float = 0.95,
-    gaussian_blur_sigma=1.0,
     norm_function: Callable = l2_normalize,
     log_distance_metric: str = None,
     return_embedding=False,
