@@ -193,7 +193,7 @@ class Wav2Vec2_CTC(Abstract):
         return results
 
     def gradio(self, record_mode: bool = True,
-               lm_partial_func: Callable = None,
+               lm_func: Callable = None,
                **kwargs):
         """
         Transcribe an input using beam decoder on Gradio interface.
@@ -202,8 +202,10 @@ class Wav2Vec2_CTC(Abstract):
         ----------
         record_mode: bool, optional (default=True)
             if True, Gradio will use record mode, else, file upload mode.
+        lm_func: Callable, optional (default=None)
+            if not None, will pass a logits with shape [T, D].
 
-        **kwargs: keyword arguments for beam decoder.
+        **kwargs: keyword arguments for beam decoder and `iface.launch`.
         """
         try:
             import gradio as gr
@@ -218,13 +220,16 @@ class Wav2Vec2_CTC(Abstract):
                 data = np.mean(data, axis=1)
             data = int_to_float(data)
             data = resample(data, sample_rate, 16000)
-            if lm_partial_func is not None:
+            if lm_func is not None:
                 logits = self.predict_logits(inputs=[data])[0]
-                return lm_partial_func(logits)
+                return lm_func(logits)
             else:
                 return self.beam_decoder(inputs=[data], **kwargs)[0]
 
         title = 'Wav2Vec2-STT using Beam Decoder'
+        if lm_func is not None:
+            title = f'{title} with LM'
+
         description = 'It will take sometime for the first time, after that, should be really fast.'
 
         if record_mode:

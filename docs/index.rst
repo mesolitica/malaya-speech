@@ -46,12 +46,14 @@ Contents:
    load-stt-transducer-model-singlish
    load-stt-transducer-model-2mixed
    load-stt-transducer-model-3mixed
+   stt-transducer-gradio
    transcribe-long-audio
    ctc-language-model
    load-stt-ctc-model
    load-stt-ctc-model-ctc-decoders
    load-stt-ctc-model-pyctcdecode
    load-stt-ctc-model-3mixed
+   stt-ctc-gradio
    realtime-asr
    realtime-asr-mixed
    realtime-asr-rubberband

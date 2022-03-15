@@ -499,7 +499,8 @@ class Transducer(Abstract):
         ----------
         record_mode: bool, optional (default=True)
             if True, Gradio will use record mode, else, file upload mode.
-        **kwargs: keyword arguments for beam decoder.
+
+        **kwargs: keyword arguments for beam decoder and `iface.launch`.
         """
         try:
             import gradio as gr
