@@ -2,12 +2,51 @@ from malaya_speech.model.frame import Frame
 from malaya_speech.utils.padding import (
     sequence_1d,
 )
+from malaya_speech.utils.astype import float_to_int
 from malaya_speech.utils.featurization import universal_mel
 from malaya_speech.model.abstract import Abstract
 from malaya_speech.utils.constant import MEL_MEAN, MEL_STD
+from typing import Callable
 
 
-class Vocoder(Abstract):
+class TTS:
+    def gradio(self, vocoder: Callable, **kwargs):
+        """
+        Text-to-Speech on Gradio interface.
+
+        Parameters
+        ----------
+        vocoder: bool, Callable
+            vocoder object that has `predict` method, prefer from malaya_speech itself.
+
+        **kwargs: keyword arguments for `predict` and `iface.launch`.
+        """
+        try:
+            import gradio as gr
+        except BaseException:
+            raise ModuleNotFoundError(
+                'gradio not installed. Please install it by `pip install gradio` and try again.'
+            )
+
+        def pred(string):
+            r = self.predict(string=string, **kwargs)
+            if 'universal' in str(vocoder):
+                o = r['universal-output']
+            else:
+                o = r['mel-output']
+            y_ = vocoder(o)
+            data = float_to_int(y_)
+            return (22050, data)
+
+        title = 'Text-to-Speech'
+        description = 'It will take sometime for the first time, after that, should be really fast.'
+
+        iface = gr.Interface(pred, gr.inputs.Textbox(lines=3, label='Input Text'),
+                             'audio', title=title, description=description)
+        return iface.launch(**kwargs)
+
+
+class Vocoder(Abstract, TTS):
     def __init__(self, input_nodes, output_nodes, sess, model, name):
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
@@ -44,7 +83,7 @@ class Vocoder(Abstract):
         return self.predict([input])[0]
 
 
-class Tacotron(Abstract):
+class Tacotron(Abstract, TTS):
     def __init__(
         self, input_nodes, output_nodes, normalizer, stats, sess, model, name
     ):
@@ -66,7 +105,7 @@ class Tacotron(Abstract):
 
         Returns
         -------
-        result: Dict[string, decoder-output, postnet-output, universal-output, alignment]
+        result: Dict[string, decoder-output, mel-output, universal-output, alignment]
         """
 
         t, ids = self._normalizer.normalize(string, **kwargs)
@@ -85,7 +124,7 @@ class Tacotron(Abstract):
             'string': t,
             'ids': ids,
             'decoder-output': r['decoder_output'][0],
-            'postnet-output': r['post_mel_outputs'][0],
+            'mel-output': r['post_mel_outputs'][0],
             'universal-output': v,
             'alignment': r['alignment_histories'][0],
         }
@@ -94,7 +133,7 @@ class Tacotron(Abstract):
         return self.predict(input)
 
 
-class Fastspeech(Abstract):
+class Fastspeech(Abstract, TTS):
     def __init__(
         self, input_nodes, output_nodes, normalizer, stats, sess, model, name
     ):
@@ -129,7 +168,7 @@ class Fastspeech(Abstract):
 
         Returns
         -------
-        result: Dict[string, decoder-output, postnet-output, universal-output]
+        result: Dict[string, decoder-output, mel-output, universal-output]
         """
         t, ids = self._normalizer.normalize(string, **kwargs)
         r = self._execute(
@@ -148,7 +187,7 @@ class Fastspeech(Abstract):
             'string': t,
             'ids': ids,
             'decoder-output': r['decoder_output'][0],
-            'postnet-output': r['post_mel_outputs'][0],
+            'mel-output': r['post_mel_outputs'][0],
             'universal-output': v,
         }
 
@@ -186,7 +225,7 @@ class FastVC(Abstract):
 
         Returns
         -------
-        result: Dict[decoder-output, postnet-output]
+        result: Dict[decoder-output, mel-output]
         """
         original_audio = (
             input.array if isinstance(original_audio, Frame) else original_audio
@@ -218,14 +257,14 @@ class FastVC(Abstract):
         )
         return {
             'decoder-output': r['mel_before'][0],
-            'postnet-output': r['mel_after'][0],
+            'mel-output': r['mel_after'][0],
         }
 
     def __call__(self, original_audio, target_audio):
         return self.predict(original_audio, target_audio)
 
 
-class Fastpitch(Abstract):
+class Fastpitch(Abstract, TTS):
     def __init__(
         self, input_nodes, output_nodes, normalizer, stats, sess, model, name
     ):
@@ -260,7 +299,7 @@ class Fastpitch(Abstract):
 
         Returns
         -------
-        result: Dict[string, decoder-output, postnet-output, pitch-output, universal-output]
+        result: Dict[string, decoder-output, mel-output, pitch-output, universal-output]
         """
         t, ids = self._normalizer.normalize(string, **kwargs)
         r = self._execute(
@@ -279,7 +318,7 @@ class Fastpitch(Abstract):
             'string': t,
             'ids': ids,
             'decoder-output': r['decoder_output'][0],
-            'postnet-output': r['post_mel_outputs'][0],
+            'mel-output': r['post_mel_outputs'][0],
             'pitch-output': r['pitch_outputs'][0],
             'universal-output': v,
         }
@@ -288,7 +327,7 @@ class Fastpitch(Abstract):
         return self.predict(input, **kwargs)
 
 
-class GlowTTS(Abstract):
+class GlowTTS(Abstract, TTS):
     def __init__(
         self, input_nodes, output_nodes, normalizer, stats, sess, model, name, **kwargs
     ):

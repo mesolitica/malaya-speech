@@ -96,6 +96,7 @@ Contents:
    tts-glowtts-multispeaker-model
    tts-singlish
    tts-long-text
+   tts-gradio
 
 .. toctree::
    :maxdepth: 2

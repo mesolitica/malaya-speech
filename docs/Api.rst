@@ -81,6 +81,12 @@ malaya_speech.model.transducer.TransducerAligner
 .. autoclass:: malaya_speech.model.transducer.TransducerAligner()
     :members:
 
+malaya_speech.model.synthesis.TTS
+--------------------------------------
+
+.. autoclass:: malaya_speech.model.synthesis.TTS()
+    :members:
+
 malaya_speech.model.synthesis.Vocoder
 --------------------------------------
 
