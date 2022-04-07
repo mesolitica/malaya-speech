@@ -18,6 +18,7 @@ from malaya_speech.utils.text import (
 from malaya_speech.supervised import tts
 import numpy as np
 import re
+from typing import Callable
 
 _tacotron2_availability = {
     'male': {
@@ -126,31 +127,6 @@ _glowtts_availability = {
 }
 
 
-def load_text_ids(
-    pad_to: int = 8,
-    understand_punct: bool = True,
-    true_case_model=None,
-    **kwargs
-):
-    try:
-        import malaya
-    except BaseException:
-        raise ModuleNotFoundError(
-            'malaya not installed. Please install it by `pip install malaya` and try again.'
-        )
-
-    normalizer = malaya.normalize.normalizer(date=False, time=False)
-    sentence_tokenizer = malaya.text.function.split_into_sentences
-
-    return TextIDS(
-        pad_to=pad_to,
-        understand_punct=understand_punct,
-        normalizer=normalizer,
-        sentence_tokenizer=sentence_tokenizer,
-        true_case_model=true_case_model,
-    )
-
-
 def available_tacotron2():
     """
     List available Tacotron2, Text to Mel models.
@@ -199,11 +175,39 @@ def available_glowtts():
     )
 
 
+def load_text_ids(
+    pad_to: int = 8,
+    understand_punct: bool = True,
+    true_case_model: Callable = None,
+    **kwargs
+):
+    """
+    Load text normalizer module use by Malaya-Speech TTS.
+    """
+    try:
+        import malaya
+    except BaseException:
+        raise ModuleNotFoundError(
+            'malaya not installed. Please install it by `pip install malaya` and try again.'
+        )
+
+    normalizer = malaya.normalize.normalizer(date=False, time=False)
+    sentence_tokenizer = malaya.text.function.split_into_sentences
+
+    return TextIDS(
+        pad_to=pad_to,
+        understand_punct=understand_punct,
+        normalizer=normalizer,
+        sentence_tokenizer=sentence_tokenizer,
+        true_case_model=true_case_model,
+    )
+
+
 def tacotron2(
     model: str = 'male',
     quantized: bool = False,
     pad_to: int = 8,
-    true_case_model=None,
+    true_case_model: Callable = None,
     **kwargs
 ):
     """
@@ -225,7 +229,7 @@ def tacotron2(
         Quantized model not necessary faster, totally depends on the machine.
     pad_to : int, optional (default=8)
         size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
-    true_case_model: str, optional (default=None)
+    true_case_model: Callable, optional (default=None)
         load any true case model, eg, malaya true case model from https://malaya.readthedocs.io/en/latest/load-true-case.html
         the interface must accept a string, return a string, eg, string = true_case_model(string)
 
@@ -262,7 +266,7 @@ def fastspeech2(
     model: str = 'male',
     quantized: bool = False,
     pad_to: int = 8,
-    true_case_model=None,
+    true_case_model: Callable = None,
     **kwargs
 ):
     """
@@ -284,7 +288,7 @@ def fastspeech2(
         Quantized model not necessary faster, totally depends on the machine.
     pad_to : int, optional (default=8)
         size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
-    true_case_model: str, optional (default=None)
+    true_case_model: Callable, optional (default=None)
         load any true case model, eg, malaya true case model from https://malaya.readthedocs.io/en/latest/load-true-case.html
         the interface must accept a string, return a string, eg, string = true_case_model(string)
 
@@ -321,7 +325,7 @@ def fastpitch(
     model: str = 'male',
     quantized: bool = False,
     pad_to: int = 8,
-    true_case_model=None,
+    true_case_model: Callable = None,
     **kwargs
 ):
     """
@@ -342,7 +346,7 @@ def fastpitch(
         Quantized model not necessary faster, totally depends on the machine.
     pad_to : int, optional (default=8)
         size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
-    true_case_model: str, optional (default=None)
+    true_case_model: Callable, optional (default=None)
         load any true case model, eg, malaya true case model from https://malaya.readthedocs.io/en/latest/load-true-case.html
         the interface must accept a string, return a string, eg, string = true_case_model(string)
 
@@ -378,7 +382,7 @@ def fastpitch(
 def glowtts(model: str = 'male',
             quantized: bool = False,
             pad_to: int = 2,
-            true_case_model=None,
+            true_case_model: Callable = None,
             **kwargs):
     """
     Load GlowTTS TTS model.
@@ -399,7 +403,7 @@ def glowtts(model: str = 'male',
         Quantized model not necessary faster, totally depends on the machine.
     pad_to : int, optional (default=2)
         size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 2.
-    true_case_model: str, optional (default=None)
+    true_case_model: Callable, optional (default=None)
         load any true case model, eg, malaya true case model from https://malaya.readthedocs.io/en/latest/load-true-case.html
         the interface must accept a string, return a string, eg, string = true_case_model(string)
 

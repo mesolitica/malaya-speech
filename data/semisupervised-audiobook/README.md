@@ -43,6 +43,20 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
 
 6. Train set with augmentation, https://f000.backblazeb2.com/file/malaya-speech-model/data/trainset-audiobook.tar.gz
 
+7.  https://f000.backblazeb2.com/file/malaya-speech-model/data/salina-supervised-sani.tar.gz
+
+  - Originally from https://nusantaraudiobooks.com/books/salina
+  - Supervised by https://github.com/khursani8
+  - approximate 19.32 hours.
+  - Put commas and apply true case, [comma-salina-sani.json](comma-salina-sani.json), notebook [alignment-salina-sani.ipynb](alignment-salina-sani.ipynb).
+
+8. https://f000.backblazeb2.com/file/malaya-speech-model/data/dari-pasentran-ke-istana-supervised-sani.tar.gz
+
+  - Originally from https://nusantaraudiobooks.com/books/dari-pesantren-ke-istana-biografi-presiden-ke-4-indonesia-kiai-haji-abdurrahman-wahid
+  - Supervised by https://github.com/khursani8
+  - approximate 13.84 hours.
+  - Put commas and apply true case, [comma-dari-pasentran-ke-istana-sani.json](comma-dari-pasentran-ke-istana-sani.json), notebook [alignment-dari-pasentran-ke-istana-sani.ipynb](alignment-dari-pasentran-ke-istana-sani.ipynb).
+
 ## Citation
 
 ```bibtex
