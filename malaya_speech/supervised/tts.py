@@ -11,118 +11,109 @@ from malaya_speech.model.synthesis import (
     GlowTTS,
     GlowTTS_MultiSpeaker
 )
+from malaya_speech.path import STATS_VOCODER
 from malaya_speech import speaker_vector
 import numpy as np
 
 
-def tacotron_load(
-    path, s3_path, model, name, normalizer, quantized=False, **kwargs
-):
-    check_file(path[model], s3_path[model], quantized=quantized, **kwargs)
-    if quantized:
-        model_path = 'quantized'
-    else:
-        model_path = 'model'
-
-    g = load_graph(path[model][model_path], **kwargs)
-    inputs = ['Placeholder', 'Placeholder_1']
-    outputs = ['decoder_output', 'post_mel_outputs', 'alignment_histories']
+def load(model, module, inputs, outputs, normalizer, model_class, quantized=False, **kwargs,):
+    path = check_file(
+        file=model,
+        module=module,
+        keys={'model': 'model.pb', 'stats': STATS_VOCODER[model]},
+        quantized=quantized,
+        **kwargs,
+    )
+    g = load_graph(path['model'], **kwargs)
     input_nodes, output_nodes = nodes_session(g, inputs, outputs)
-
-    stats = np.load(path[model]['stats'])
-
-    return Tacotron(
+    stats = np.load(path['stats'])
+    sess = generate_session(graph=g, **kwargs)
+    return model_class(
         input_nodes=input_nodes,
         output_nodes=output_nodes,
         normalizer=normalizer,
         stats=stats,
-        sess=generate_session(graph=g, **kwargs),
+        sess=sess,
         model=model,
-        name=name,
+        name=module,
     )
+
+
+def tacotron_load(
+    model, module, normalizer, quantized=False, **kwargs,
+):
+    inputs = ['Placeholder', 'Placeholder_1']
+    outputs = ['decoder_output', 'post_mel_outputs', 'alignment_histories']
+    return load(model=model,
+                module=module,
+                inputs=inputs,
+                outputs=outputs,
+                normalizer=normalizer,
+                model_class=Tacotron,
+                quantized=quantized,
+                **kwargs)
 
 
 def fastspeech_load(
-    path, s3_path, model, name, normalizer, quantized=False, **kwargs
+    model, module, normalizer, quantized=False, **kwargs,
 ):
-    check_file(path[model], s3_path[model], quantized=quantized, **kwargs)
-    if quantized:
-        model_path = 'quantized'
-    else:
-        model_path = 'model'
-
-    g = load_graph(path[model][model_path], **kwargs)
     inputs = ['Placeholder', 'speed_ratios', 'f0_ratios', 'energy_ratios']
     outputs = ['decoder_output', 'post_mel_outputs']
-    input_nodes, output_nodes = nodes_session(g, inputs, outputs)
-
-    stats = np.load(path[model]['stats'])
-
-    return Fastspeech(
-        input_nodes=input_nodes,
-        output_nodes=output_nodes,
-        normalizer=normalizer,
-        stats=stats,
-        sess=generate_session(graph=g, **kwargs),
-        model=model,
-        name=name,
-    )
+    return load(model=model,
+                module=module,
+                inputs=inputs,
+                outputs=outputs,
+                normalizer=normalizer,
+                model_class=Fastspeech,
+                quantized=quantized,
+                **kwargs)
 
 
 def fastpitch_load(
-    path, s3_path, model, name, normalizer, quantized=False, **kwargs
+    model, module, normalizer, quantized=False, **kwargs,
 ):
-    check_file(path[model], s3_path[model], quantized=quantized, **kwargs)
-    if quantized:
-        model_path = 'quantized'
-    else:
-        model_path = 'model'
-
-    g = load_graph(path[model][model_path], **kwargs)
     inputs = ['Placeholder', 'speed_ratios', 'pitch_ratios', 'pitch_addition']
     outputs = ['decoder_output', 'post_mel_outputs', 'pitch_outputs']
-    input_nodes, output_nodes = nodes_session(g, inputs, outputs)
-
-    stats = np.load(path[model]['stats'])
-
-    return Fastpitch(
-        input_nodes=input_nodes,
-        output_nodes=output_nodes,
-        normalizer=normalizer,
-        stats=stats,
-        sess=generate_session(graph=g, **kwargs),
-        model=model,
-        name=name,
-    )
+    return load(model=model,
+                module=module,
+                inputs=inputs,
+                outputs=outputs,
+                normalizer=normalizer,
+                model_class=Fastpitch,
+                quantized=quantized,
+                **kwargs)
 
 
 def glowtts_load(
-    path, s3_path, model, name, normalizer, quantized=False, **kwargs
+    model, module, normalizer, quantized=False, **kwargs,
 ):
-    check_file(path[model], s3_path[model], quantized=quantized, **kwargs)
-    if quantized:
-        model_path = 'quantized'
+    if model == 'female-singlish':
+        stats = f'{model}-v1'
     else:
-        model_path = 'model'
+        stats = model
+    path = check_file(
+        file=model,
+        module=module,
+        keys={'model': 'model.pb', 'stats': STATS_VOCODER.get(stats, 'male')},
+        quantized=quantized,
+        **kwargs,
+    )
 
     inputs = ['input_ids', 'lens', 'temperature', 'length_ratio']
     if model == 'multispeaker':
         inputs = inputs + ['speakers', 'speakers_right']
+        g = load_graph(path['model'], glowtts_multispeaker_graph=True, **kwargs)
         speaker_model = speaker_vector.deep_model('vggvox-v2', **kwargs)
         model_class = GlowTTS_MultiSpeaker
-        g = load_graph(path[model][model_path], glowtts_multispeaker_graph=True, **kwargs)
+        stats = None
     else:
         speaker_model = None
         model_class = GlowTTS
-        g = load_graph(path[model][model_path], glowtts_graph=True, **kwargs)
+        g = load_graph(path['model'], glowtts_graph=True, **kwargs)
+        stats = np.load(path['stats'])
+
     outputs = ['mel_output', 'alignment_histories']
     input_nodes, output_nodes = nodes_session(g, inputs, outputs)
-
-    if 'stats' in path[model]:
-        stats = np.load(path[model]['stats'])
-    else:
-        stats = None
-
     return model_class(
         input_nodes=input_nodes,
         output_nodes=output_nodes,
@@ -131,5 +122,5 @@ def glowtts_load(
         stats=stats,
         sess=generate_session(graph=g, **kwargs),
         model=model,
-        name=name,
+        name=module,
     )

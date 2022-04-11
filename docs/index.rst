@@ -17,6 +17,7 @@ Contents:
    :caption: Getting Started
 
    Dataset
+   huggingface-repository
    load-cache
    Api
    Contributing

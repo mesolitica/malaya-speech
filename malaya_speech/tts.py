@@ -1,13 +1,3 @@
-from malaya_speech.path import (
-    PATH_TTS_TACOTRON2,
-    S3_PATH_TTS_TACOTRON2,
-    PATH_TTS_FASTSPEECH2,
-    S3_PATH_TTS_FASTSPEECH2,
-    PATH_TTS_FASTPITCH,
-    S3_PATH_TTS_FASTPITCH,
-    PATH_TTS_GLOWTTS,
-    S3_PATH_TTS_GLOWTTS,
-)
 from malaya_speech.utils.text import (
     convert_to_ascii,
     collapse_whitespace,
@@ -252,10 +242,8 @@ def tacotron2(
     )
 
     return tts.tacotron_load(
-        path=PATH_TTS_TACOTRON2,
-        s3_path=S3_PATH_TTS_TACOTRON2,
         model=model,
-        name='text-to-speech',
+        module='text-to-speech-tacotron',
         normalizer=text_ids,
         quantized=quantized,
         **kwargs
@@ -311,10 +299,8 @@ def fastspeech2(
         **kwargs
     )
     return tts.fastspeech_load(
-        path=PATH_TTS_FASTSPEECH2,
-        s3_path=S3_PATH_TTS_FASTSPEECH2,
         model=model,
-        name='text-to-speech',
+        module='text-to-speech-fastspeech',
         normalizer=text_ids,
         quantized=quantized,
         **kwargs
@@ -369,10 +355,8 @@ def fastpitch(
         **kwargs
     )
     return tts.fastpitch_load(
-        path=PATH_TTS_FASTPITCH,
-        s3_path=S3_PATH_TTS_FASTPITCH,
         model=model,
-        name='text-to-speech',
+        module='text-to-speech-fastpitch',
         normalizer=text_ids,
         quantized=quantized,
         **kwargs
@@ -425,11 +409,10 @@ def glowtts(model: str = 'male',
         quantized=quantized,
         **kwargs
     )
+
     return tts.glowtts_load(
-        path=PATH_TTS_GLOWTTS,
-        s3_path=S3_PATH_TTS_GLOWTTS,
         model=model,
-        name='text-to-speech',
+        module='text-to-speech-glowtts',
         normalizer=text_ids,
         quantized=quantized,
         **kwargs

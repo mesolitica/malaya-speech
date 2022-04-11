@@ -10,9 +10,13 @@ from malaya_boilerplate.frozen_graph import (
     get_device,
 )
 from malaya_boilerplate import backblaze
+from malaya_boilerplate import huggingface
 from malaya_boilerplate import frozen_graph
 from malaya_boilerplate import utils
 from malaya_speech import package, url
+import os
+
+MALAYA_USE_HUGGINGFACE = os.environ.get('MALAYA_USE_HUGGINGFACE', 'false').lower() == 'true'
 
 
 def print_cache(location=None):
@@ -27,8 +31,11 @@ def delete_all_cache():
     return utils.delete_all_cache(package=package)
 
 
-def check_file(file, s3_file=None, **kwargs):
-    return backblaze.check_file(file, package, url, s3_file=s3_file, **kwargs)
+def check_file(file, s3_file=None, use_huggingface=False, **kwargs):
+    if use_huggingface or MALAYA_USE_HUGGINGFACE:
+        return huggingface.check_file(file, package, url, s3_file=s3_file, **kwargs)
+    else:
+        return backblaze.check_file(file, package, url, s3_file=s3_file, **kwargs)
 
 
 def load_graph(frozen_graph_filename, **kwargs):

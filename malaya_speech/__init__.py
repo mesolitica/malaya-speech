@@ -9,7 +9,7 @@
 from malaya_boilerplate.utils import get_home
 
 version = '1.2'
-bump_version = '1.2.5'
+bump_version = '1.2.6'
 __version__ = bump_version
 
 package = 'malaya-speech'
