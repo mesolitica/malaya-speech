@@ -22,6 +22,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+"""
+class PosteriorEncoder(nn.Module):
+  def __init__(self,
+      in_channels,
+      out_channels,
+      hidden_channels,
+      kernel_size,
+      dilation_rate,
+      n_layers,
+      gin_channels=0):
+    super().__init__()
+    self.in_channels = in_channels
+    self.out_channels = out_channels
+    self.hidden_channels = hidden_channels
+    self.kernel_size = kernel_size
+    self.dilation_rate = dilation_rate
+    self.n_layers = n_layers
+    self.gin_channels = gin_channels
+
+    self.pre = nn.Conv1d(in_channels, hidden_channels, 1)
+    self.enc = modules.WN(hidden_channels, kernel_size, dilation_rate, n_layers, gin_channels=gin_channels)
+    self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
+    
+PosteriorEncoder(spec_channels, inter_channels, hidden_channels, 5, 1, 16, gin_channels=gin_channels)
+"""
+
 from typing import Optional
 
 import tensorflow as tf
