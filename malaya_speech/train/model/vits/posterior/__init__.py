@@ -40,18 +40,19 @@ class PosteriorEncoder(tf.keras.Model):
             config.channels,
             config.wavenet_kernel_size,
             config.wavenet_dilation)
-        self.proj = tf.keras.layers.Conv1D(config.mel, 1)
+        self.proj = tf.keras.layers.Conv1D(config.mel * 2, 1)
         self.interchannels = config.mel
 
     def call(self, inputs: tf.Tensor, mask: tf.Tensor):
-        """Compute latent from inputs.
+        """
+        Compute latent from inputs.
         Args:
             inputs: [tf.float32; [B, T, C]], input tensor.
             mask: [tf.float32; [B, T]], binary sequence mask.
         """
         x = self.pre(inputs) * mask[..., None]
         x = self.enc(x, mask)
-        m = self.proj(x) * mask[..., None]
-        # m, logs = stats[..., :self.interchannels], stats[..., self.interchannels:]
-        z = (m + tf.random.normal(tf.shape(m))) * mask[..., None]
-        return z, m
+        stats = self.proj(x) * mask[..., None]
+        m, logs = tf.split(stats, 2, axis=-1)
+        z = (m + tf.random.normal(tf.shape(m)) * tf.exp(logs)) * mask[..., None]
+        return z, m, logs

@@ -64,7 +64,8 @@ class Model(tf.keras.Model):
 
     def call(self, inputs: tf.Tensor, lengths: tf.Tensor) \
             -> Tuple[tf.Tensor, tf.Tensor]:
-        """Generate mel-spectrogram from text inputs.
+        """
+        Generate mel-spectrogram from text inputs.
         Args:
             inputs: [tf.int32; [B, S]], input sequence.
             lengths: [tf.int32; [B]], input lengths.
@@ -81,17 +82,19 @@ class Model(tf.keras.Model):
         # [B, S, C]
         hidden, _ = self.encoder(embedding, mask)
         # [B, S, 2C]
-        mean = self.proj(hidden)
+        stats = self.proj(hidden)
+        m_p, logs_p = tf.split(stats, 2, axis=-1)
         # [B, S, C]
         duration = self.quantize(self.durator(hidden, mask), mask)
         # [B, T / F, S], [B, T / F]
         attn, mask = self.align(duration)
 
         # [B, T / F, N(=M x F)], []
-        mean = tf.matmul(attn, mean)
+        mean = tf.matmul(attn, m_p)
+        logs_p = tf.matmul(attn, logs_p)
         std = self.temperature
         # [B, T / F, M x F]
-        sample = mean + tf.random.normal(tf.shape(mean)) * std
+        sample = mean + tf.random.normal(tf.shape(mean)) * tf.exp(logs_p) * std
 
         # [B, T / F, M x F]
         mel = self.flow.inverse(sample * mask[..., None], mask)
@@ -102,7 +105,8 @@ class Model(tf.keras.Model):
     def compute_loss(self, text: tf.Tensor, textlen: tf.Tensor,
                      mel: tf.Tensor, mellen: tf.Tensor) \
             -> Tuple[tf.Tensor, Dict[str, tf.Tensor], tf.Tensor]:
-        """Compute loss for glow-tts.
+        """
+        Compute loss for glow-tts.
         Args:
             text: [tf.int32; [B, S]], input text.
             textlen: [tf.int32; [B]], text lengths.
@@ -126,20 +130,12 @@ class Model(tf.keras.Model):
         # [B, T]
         melmask = self.mask(mellen, maxlen=tf.shape(mel)[1])
 
-        latent, logs_q = self.enc_q(mel, melmask)
+        z, m_q, logs_q = self.enc_q(mel, melmask)
 
-        latent_p = self.flow(latent, melmask)
+        z_p = self.flow(z, melmask)
 
         # [B, T', S]
         attnmask = melmask[..., None] * mask[:, None]
-
-        s_p_sq_r = tf.exp(-2 * logs_p)
-        neg_cent1 = tf.reduce_sum(-0.5 * np.log(2 * np.pi) - logs_p, axis=-1)[:, None]
-        neg_cent2 = tf.matmul(-0.5 * (latent_p ** 2), tf.transpose(s_p_sq_r, [0, 2, 1]))
-        neg_cent3 = tf.matmul(latent_p, tf.transpose((m_p * s_p_sq_r), [0, 2, 1]))
-        neg_cent4 = tf.reduce_sum(-0.5 * (m_p ** 2) * s_p_sq_r, axis=-1)[:, None]
-        neg_cent = neg_cent1 + neg_cent2 + neg_cent3 + neg_cent4
-        attn = tf.stop_gradient(self.monotonic_alignment_search(neg_cent, attnmask))
 
         # s_p_sq_r = torch.exp(-2 * logs_p) # [b, d, t]
         # neg_cent1 = torch.sum(-0.5 * math.log(2 * math.pi) - logs_p, [1], keepdim=True) # [b, 1, t_s]
@@ -148,8 +144,16 @@ class Model(tf.keras.Model):
         # neg_cent4 = torch.sum(-0.5 * (m_p ** 2) * s_p_sq_r, [1], keepdim=True) # [b, 1, t_s]
         # neg_cent = neg_cent1 + neg_cent2 + neg_cent3 + neg_cent4
 
-        # dist = tf.reduce_sum(tf.square(latent_p), axis=-1, keepdims=True) - \
-        #     2 * tf.matmul(latent_p, tf.transpose(m_p, [0, 2, 1])) + \
+        s_p_sq_r = tf.exp(-2 * logs_p)
+        neg_cent1 = tf.reduce_sum(-0.5 * np.log(2 * np.pi) - logs_p, axis=-1)[:, None]
+        neg_cent2 = tf.matmul(-0.5 * (z_p ** 2), tf.transpose(s_p_sq_r, [0, 2, 1]))
+        neg_cent3 = tf.matmul(z_p, tf.transpose((m_p * s_p_sq_r), [0, 2, 1]))
+        neg_cent4 = tf.reduce_sum(-0.5 * (m_p ** 2) * s_p_sq_r, axis=-1)[:, None]
+        neg_cent = neg_cent1 + neg_cent2 + neg_cent3 + neg_cent4
+        attn = tf.stop_gradient(self.monotonic_alignment_search(neg_cent, attnmask))
+
+        # dist = tf.reduce_sum(tf.square(z_p), axis=-1, keepdims=True) - \
+        #     2 * tf.matmul(z_p, tf.transpose(m_p, [0, 2, 1])) + \
         #     tf.reduce_sum(tf.square(m_p), axis=-1)[:, None]
         # [B, T', S], assume constant standard deviation, 1.
         # ll = -0.5 * (np.log(2 * np.pi) + dist) * attnmask
@@ -177,12 +181,12 @@ class Model(tf.keras.Model):
         #     return l
 
         kl = logs_p - logs_q - 0.5
-        kl += 0.5 * ((latent_p - m_p)**2) * tf.exp(-2. * logs_p)
+        kl += 0.5 * ((z_p - m_p)**2) * tf.exp(-2. * logs_p)
         kl = tf.reduce_sum(kl * tf.expand_dims(melmask, -1))
         kl = kl / tf.reduce_sum(melmask)
 
         # nll = 0.5 * (np.log(2 * np.pi) +
-        #              tf.reduce_sum(tf.square(latent_p - m_p), axis=[1, 2]))
+        #              tf.reduce_sum(tf.square(z_p - m_p), axis=[1, 2]))
         # # []
         # nll = tf.reduce_mean(
         #     nll / tf.cast(mellen * tf.shape(m_p)[-1], tf.float32))
@@ -196,9 +200,9 @@ class Model(tf.keras.Model):
         # []
         durloss = tf.reduce_mean(durloss)
 
-        z_slice, ids_slice = rand_slice_segments(latent, mellen, self.segment_size // self.hop_size, np.log(1e-2))
+        z_slice, ids_slice = rand_slice_segments(z, mellen, self.segment_size // self.hop_size, np.log(1e-2))
 
-        return {'kl': kl, 'durloss': durloss}, attn, latent, z_slice, ids_slice
+        return {'kl': kl, 'durloss': durloss}, attn, z, z_slice, ids_slice
 
     def quantize(self, logdur: tf.Tensor, mask: tf.Tensor) -> tf.Tensor:
         """Convert log-duration to duration.
