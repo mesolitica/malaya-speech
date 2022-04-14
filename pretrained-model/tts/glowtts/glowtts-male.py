@@ -1,6 +1,7 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
 import tensorflow as tf
 import numpy as np
@@ -17,11 +18,11 @@ import math
 import json
 import re
 
-with open('mels-male.json') as fopen:
+with open('mels-male-v2.json') as fopen:
     files = json.load(fopen)
 
 reduction_factor = 1
-maxlen = 1008
+maxlen = 904
 minlen = 32
 pad_to = 2
 data_min = 1e-2
@@ -62,7 +63,7 @@ def learning_rate_scheduler(global_step):
     )
 
 
-total_steps = 100_000
+total_steps = 200_000
 
 
 def generate(files):
@@ -197,7 +198,7 @@ def model_fn(features, labels, mode, params):
         all_finite = tf.constant(True, dtype=tf.bool)
         (grads, _) = tf.clip_by_global_norm(
             grads,
-            clip_norm=1.0,
+            clip_norm=2.0,
             use_norm=tf.cond(
                 all_finite, lambda: tf.global_norm(grads), lambda: tf.constant(1.0)
             ),
@@ -234,7 +235,7 @@ dev_dataset = get_dataset(files['test'])
 train.run_training(
     train_fn=train_dataset,
     model_fn=model_fn,
-    model_dir='glowtts-male',
+    model_dir='glowtts-male-case',
     num_gpus=1,
     log_step=1,
     save_checkpoint_step=2500,

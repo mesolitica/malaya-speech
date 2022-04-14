@@ -33,3 +33,8 @@ python3 glowtts-female.py
 5. Multispeakers, last update 13th October 2021, [glowtts-multispeaker-scale-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/glowtts-multispeaker-scale-output.tar.gz)
 
   - Lower case, understand `.,?!` punctuations.
+
+6. Male speaker, last update 14th April 2022, [glowtts-male-output.tar](https://huggingface.co/huseinzol05/pretrained-glowtts/blob/main/glowtts-male-output.tar).
+
+  - Lower case, understand `.,?!` punctuations.
+  - Improved Male dataset.
