@@ -31,3 +31,21 @@ Guidelines for responsible deployment of synthetic voice technology, https://doc
   - Texts from Malaysia Malay Parliament.
   - Sentences between 2 words and 25 words.
   - transcription, https://huggingface.co/datasets/huseinzol05/Malay-TTS-Yasmin/resolve/main/populated-parliament.json
+
+3. https://huggingface.co/datasets/huseinzol05/Malay-TTS-Osman/resolve/main/tts-malay-osman.tar.gz
+
+  - 24000 sample rate, super clean.
+  - narrator `ms-MY-OsmanNeural`.
+  - approximate 94.5 hours.
+  - Texts from Malay Wikipedia and News.
+  - Sentences between 2 words and 20 words.
+  - transcription, https://huggingface.co/datasets/huseinzol05/Malay-TTS-Osman/resolve/main/populated-text.json
+
+4. https://huggingface.co/datasets/huseinzol05/Malay-TTS-Osman/resolve/main/tts-malay-osman-parliament.tar.gz
+
+  - 24000 sample rate, super clean.
+  - narrator `ms-MY-OsmanNeural`.
+  - approximate 133.2 hours.
+  - Texts from Malaysia Malay Parliament.
+  - Sentences between 2 words and 25 words.
+  - transcription, https://huggingface.co/datasets/huseinzol05/Malay-TTS-Osman/resolve/main/populated-parliament.json
