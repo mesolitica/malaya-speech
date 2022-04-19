@@ -31,7 +31,7 @@ class AffineCoupling(tf.keras.Model):
     """Affine coupling layer.
     """
 
-    def __init__(self, channels: int, hiddens: int, nonlinear: tf.keras.Model):
+    def __init__(self, channels: int, hiddens: int, nonlinear: tf.keras.Model, mean_only=False):
         """Initializer.
         Args:
             channels: size of the input/output channels.
@@ -39,8 +39,10 @@ class AffineCoupling(tf.keras.Model):
             nonlinear: nonlinear transformer.
         """
         super().__init__()
+        self.half_channels = channels // 2
+        self.mean_only = mean_only
         self.start = tf.keras.layers.Conv1D(hiddens, 1)
-        self.end = tf.keras.layers.Conv1D(channels, 1, kernel_initializer='zeros')
+        self.end = tf.keras.layers.Conv1D(self.half_channels * (2 - mean_only), 1, kernel_initializer='zeros')
         self.nonlinear = nonlinear
 
     def parameterize(self, inputs: tf.Tensor, mask: tf.Tensor) \
@@ -58,7 +60,12 @@ class AffineCoupling(tf.keras.Model):
         # [B, T, H]
         x = self.nonlinear(x, mask)
         # [B, T, C // 2], [B, T, C // 2]
-        bias, logscale = tf.split(self.end(x), 2, axis=-1)
+        stats = self.end(x)
+        if not self.mean_only:
+            bias, logscale = tf.split(stats, 2, axis=-1)
+        else:
+            bias = stats
+            logscale = tf.zeros_like(bias)
         return bias, logscale
 
     def call(self, inputs: tf.Tensor, mask: tf.Tensor) \

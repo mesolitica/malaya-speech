@@ -54,5 +54,5 @@ class PosteriorEncoder(tf.keras.Model):
         x = self.enc(x, mask)
         stats = self.proj(x) * mask[..., None]
         m, logs = tf.split(stats, 2, axis=-1)
-        z = (m + tf.random.normal(tf.shape(m)) * logs) * mask[..., None]
+        z = (m + tf.random.normal(tf.shape(m)) * tf.exp(logs)) * mask[..., None]
         return z, m, logs
