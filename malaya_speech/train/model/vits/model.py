@@ -103,7 +103,7 @@ class Model(tf.keras.Model):
         return mel, mellen, attn
 
     def compute_loss(self, text: tf.Tensor, textlen: tf.Tensor,
-                     mel: tf.Tensor, mellen: tf.Tensor) \
+                     mel: tf.Tensor, mellen: tf.Tensor, use_revsic=False) \
             -> Tuple[tf.Tensor, Dict[str, tf.Tensor], tf.Tensor]:
         """
         Compute loss for glow-tts.
@@ -144,13 +144,23 @@ class Model(tf.keras.Model):
         # neg_cent4 = torch.sum(-0.5 * (m_p ** 2) * s_p_sq_r, [1], keepdim=True) # [b, 1, t_s]
         # neg_cent = neg_cent1 + neg_cent2 + neg_cent3 + neg_cent4
 
-        s_p_sq_r = tf.exp(-2 * logs_p)
-        neg_cent1 = tf.reduce_sum(-0.5 * np.log(2 * np.pi) - logs_p, axis=-1)[:, None]
-        neg_cent2 = tf.matmul(-0.5 * (z_p ** 2), tf.transpose(s_p_sq_r, [0, 2, 1]))
-        neg_cent3 = tf.matmul(z_p, tf.transpose((m_p * s_p_sq_r), [0, 2, 1]))
-        neg_cent4 = tf.reduce_sum(-0.5 * (m_p ** 2) * s_p_sq_r, axis=-1)[:, None]
-        neg_cent = neg_cent1 + neg_cent2 + neg_cent3 + neg_cent4
-        attn = tf.stop_gradient(self.monotonic_alignment_search(neg_cent, attnmask))
+        if use_revsic:
+            s_p_sq_r = logs_p
+            dist = tf.reduce_sum(z_p ** 2, axis=-1, keepdims=True) \
+                - 2 * tf.matmul(z_p, tf.transpose(m_p, [0, 2, 1])) \
+                + tf.reduce_sum(tf.square(m_p), axis=-1)[:, None]
+            ll = -0.5 * (np.log(2 * np.pi) - tf.reduce_sum(logs_p, axis=-1)[:, None] + dist)
+            attn = tf.stop_gradient(self.monotonic_alignment_search(ll, attnmask))
+            # [B, T', S], attention alignment
+
+        else:
+            s_p_sq_r = tf.exp(-2 * logs_p)
+            neg_cent1 = tf.reduce_sum(-0.5 * np.log(2 * np.pi) - logs_p, axis=-1)[:, None]
+            neg_cent2 = tf.matmul(-0.5 * (z_p ** 2), tf.transpose(s_p_sq_r, [0, 2, 1]))
+            neg_cent3 = tf.matmul(z_p, tf.transpose((m_p * s_p_sq_r), [0, 2, 1]))
+            neg_cent4 = tf.reduce_sum(-0.5 * (m_p ** 2) * s_p_sq_r, axis=-1)[:, None]
+            neg_cent = neg_cent1 + neg_cent2 + neg_cent3 + neg_cent4
+            attn = tf.stop_gradient(self.monotonic_alignment_search(neg_cent, attnmask))
 
         # x_s_sq_r = torch.exp(-2 * x_logs)
         # logp1 = torch.sum(-0.5 * math.log(2 * math.pi) - x_logs, [1]).unsqueeze(-1) # [b, t, 1]
@@ -158,11 +168,6 @@ class Model(tf.keras.Model):
         # logp3 = torch.matmul((x_m * x_s_sq_r).transpose(1,2), z) # [b, t, d] x [b, d, t'] = [b, t, t']
         # logp4 = torch.sum(-0.5 * (x_m ** 2) * x_s_sq_r, [1]).unsqueeze(-1) # [b, t, 1]
         # logp = logp1 + logp2 + logp3 + logp4 # [b, t, t']
-
-        # dist = tf.reduce_sum(tf.square(latent), axis=-1, keepdims=True) - 2 * tf.matmul(latent, tf.transpose(mean, [0, 2, 1])) + tf.reduce_sum(tf.square(mean), axis=-1)[:, None]
-        # # [B, T', S], assume constant standard deviation, 1.
-        # ll = -0.5 * (np.log(2 * np.pi) + dist) * attnmask
-        # # [B, T', S], attention alignment
 
         # dist = tf.reduce_sum(tf.square(z_p), axis=-1, keepdims=True) - 2 * tf.matmul(z_p,
         #                                                                              tf.transpose(m_p, [0, 2, 1])) + tf.reduce_sum(tf.square(m_p), axis=-1)[:, None]
@@ -191,15 +196,15 @@ class Model(tf.keras.Model):
         #     l = kl / torch.sum(z_mask)
         #     return l
 
-        kl = logs_p - logs_q - 0.5
-        kl += 0.5 * ((z_p - m_p)**2) * tf.exp(-2. * logs_p)
-        kl = tf.reduce_sum(kl * tf.expand_dims(melmask, -1))
-        kl = kl / tf.reduce_sum(melmask)
-
-        # [B]
-        # kl = 0.5 * (np.log(2 * np.pi) + tf.reduce_sum(tf.square(z_p - m_p) + (logs_p - logs_q - 0.5), axis=[1, 2]))
-        # # []
-        # kl = tf.reduce_mean(kl / tf.cast(mellen * tf.shape(m_p)[-1], tf.float32))
+        if use_revsic:
+            dlogdet = tf.reduce_sum(logs_p - logs_q - 0.5, axis=[1, 2])
+            kl = 0.5 * (np.log(2 * np.pi) + tf.reduce_sum(tf.square(z_p - m_p), axis=[1, 2])) - dlogdet
+            kl = tf.reduce_mean(kl / tf.cast(mellen * tf.shape(m_p)[-1], tf.float32))
+        else:
+            kl = logs_p - logs_q - 0.5
+            kl += 0.5 * ((z_p - m_p)**2) * tf.exp(-2. * logs_p)
+            kl = tf.reduce_sum(kl * tf.expand_dims(melmask, -1))
+            kl = kl / tf.reduce_sum(melmask)
 
         # [B, S]
         logdur = self.durator(tf.stop_gradient(hidden), mask)
