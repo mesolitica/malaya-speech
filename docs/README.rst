@@ -98,6 +98,8 @@ Malaya-Speech also released pretrained models, simply check at `malaya-speech/pr
 -  **FastPitch**, Parallel Text-to-speech with Pitch Prediction, https://arxiv.org/abs/2006.06873
 -  **GlowTTS**, A Generative Flow for Text-to-Speech via Monotonic Alignment Search, https://arxiv.org/abs/2005.11129
 -  **BEST-RQ**, Self-supervised learning with random-projection quantizer for speech recognition, https://arxiv.org/pdf/2202.01855.pdf
+-  **LightSpeech**, Lightweight and Fast Text to Speech with Neural Architecture Search, https://arxiv.org/abs/2102.04040
+-  **VITS**, Conditional Variational Autoencoder with Adversarial Learning for End-to-End Text-to-Speech, https://arxiv.org/pdf/2106.06103.pdf 
 
 References
 -----------
