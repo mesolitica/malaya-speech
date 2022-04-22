@@ -1,6 +1,7 @@
 import os
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
 import tensorflow as tf
 import numpy as np
@@ -155,28 +156,16 @@ hop_size = 256
 config = vits.Config(mel=80, vocabs=len(MALAYA_SPEECH_SYMBOLS))
 model = vits.Model(config)
 
-hifigan_config = malaya_speech.config.hifigan_config_v2
-generator = hifigan.Generator(
-    hifigan.GeneratorConfig(**hifigan_config['hifigan_generator_params']),
-    name='hifigan_generator',
+melgan_config = malaya_speech.config.melgan_config
+generator = melgan.Generator(
+    melgan.GeneratorConfig(**melgan_config['melgan_generator_params']),
+    name='melgan-generator',
 )
-multiperiod_discriminator = hifigan.MultiPeriodDiscriminator(
-    hifigan.DiscriminatorConfig(
-        **hifigan_config['hifigan_discriminator_params']
-    ),
-    name='hifigan_multiperiod_discriminator',
-)
-multiscale_discriminator = melgan.MultiScaleDiscriminator(
-    melgan.DiscriminatorConfig(
-        **hifigan_config['melgan_discriminator_params'],
-        name='melgan_multiscale_discriminator',
-    )
-)
-discriminator = hifigan.Discriminator(
-    multiperiod_discriminator, multiscale_discriminator
+discriminator = melgan.MultiScaleDiscriminator(
+    melgan.DiscriminatorConfig(**melgan_config['melgan_discriminator_params']),
+    name='melgan-discriminator',
 )
 
-stft_loss = stft.loss.MultiResolutionSTFT(**hifigan_config['stft_loss_params'])
 mels_loss = melgan.loss.TFMelSpectrogram()
 mse_loss = tf.keras.losses.MeanSquaredError()
 mae_loss = tf.keras.losses.MeanAbsoluteError()
@@ -192,15 +181,16 @@ losses, attn, latent, z_slice, ids_slice = model.compute_loss(text=text,
                                                               textlen=text_lengths,
                                                               mel=mel_outputs,
                                                               mellen=mel_lengths)
-y_hat = generator(z_slice, training=True)
+
 mel = vits.slice_segments(mel_outputs, ids_slice, model.segment_size // model.hop_size, np.log(1e-2))
 y = vits.slice_segments(tf.expand_dims(wavs, -1), ids_slice * model.hop_size, model.segment_size)
 
-p = discriminator(y)
-p_hat = discriminator(y_hat)
-
 
 def compute_per_example_discriminator_losses():
+
+    y_hat = generator(z_slice, training=True)
+    p = discriminator(y)
+    p_hat = discriminator(y_hat)
 
     real_loss = 0.0
     fake_loss = 0.0
@@ -228,6 +218,10 @@ def compute_per_example_discriminator_losses():
 
 def compute_per_example_generator_losses():
 
+    y_hat = generator(z_slice, training=True)
+    p = discriminator(y)
+    p_hat = discriminator(y_hat)
+
     adv_loss = 0.0
     for i in range(len(p_hat)):
         adv_loss += calculate_3d_loss(
@@ -241,14 +235,13 @@ def compute_per_example_generator_losses():
             fm_loss += calculate_3d_loss(
                 p[i][j], p_hat[i][j], loss_fn=mae_loss
             )
-
     fm_loss /= (i + 1) * (j + 1)
 
     a = calculate_2d_loss(tf.squeeze(y, -1), tf.squeeze(y_hat, -1), loss_fn=mels_loss)
     mels_spectrogram_loss = tf.reduce_mean(a)
     mel_loss = calculate_3d_loss(mel, z_slice, loss_fn=mae_loss) * 45.0
     kl_loss = losses['kl'] * 1.0
-    per_example_losses = adv_loss + fm_loss + mel_loss + kl_loss + losses['durloss']
+    per_example_losses = adv_loss + fm_loss * 10 + mel_loss + kl_loss + losses['durloss']
     dict_metrics_losses = {
         'adversarial_loss': adv_loss,
         'fm_loss': fm_loss,
@@ -274,18 +267,18 @@ for k, v in discriminator_losses.items():
 
 tf.summary.scalar('discriminator_loss', discriminator_loss)
 tf.summary.scalar('generator_loss', generator_loss)
-summaries = tf.summary.merge_all()
+
 
 t_vars = tf.trainable_variables()
-d_vars = [var for var in t_vars if var.name.startswith('discriminator')]
-g_vars = [var for var in t_vars if var.name.startswith('hifigan_generator')]
+d_vars = [var for var in t_vars if var.name.startswith('melgan-discriminator')]
+g_vars = [var for var in t_vars if var.name.startswith('melgan-generator')]
 glowtts_vars = [var for var in t_vars if not var.name.startswith(
-    'hifigan_generator') and not var.name.startswith('discriminator')]
+    'melgan-generator') and not var.name.startswith('melgan-discriminator')]
 g_vars = g_vars + glowtts_vars
 
 checkpoint = 2500
 epoch = 200000
-path = 'vits-male-hifigan'
+path = 'vits-2fold-male-melgan'
 
 global_step_generator = tf.Variable(
     0, trainable=False, name='global_step_generator'
@@ -293,64 +286,6 @@ global_step_generator = tf.Variable(
 global_step_discriminator = tf.Variable(
     0, trainable=False, name='global_step_discriminator'
 )
-
-# parameters = {
-#     'optimizer_params': {'beta1': 0.9, 'beta2': 0.98, 'epsilon': 1e-9},
-#     'lr_policy_params': {
-#         'warmup_steps': 10000,
-#         'learning_rate': 1.0,
-#     },
-# }
-
-
-# def noam_schedule(step, channels, learning_rate=1.0, warmup_steps=4000):
-#     return learning_rate * channels ** -0.5 * \
-#         tf.minimum(step ** -0.5, step * warmup_steps ** -1.5)
-
-
-# def learning_rate_scheduler(global_step):
-#     return noam_schedule(
-#         tf.cast(global_step, tf.float32),
-#         config.channels,
-#         **parameters['lr_policy_params'],
-#     )
-
-
-# lr_generator = learning_rate_scheduler(global_step_generator)
-# optimizer = tf.train.AdamOptimizer(learning_rate=lr_generator, beta1=0.9, beta2=0.98, epsilon=1e-09)
-# tvars = g_vars
-# gvs = optimizer.compute_gradients(generator_loss, tvars)
-# gvs = [(g, v) for g, v in gvs if g is not None]
-# grads, tvars = list(zip(*gvs))
-# all_finite = tf.constant(True, dtype=tf.bool)
-# (grads, _) = tf.clip_by_global_norm(
-#     grads,
-#     clip_norm=1.0,
-#     use_norm=tf.cond(
-#         all_finite, lambda: tf.global_norm(grads), lambda: tf.constant(1.0)
-#     ),
-# )
-# g_optimizer = optimizer.apply_gradients(
-#     zip(grads, tvars), global_step=global_step_generator
-# )
-
-# lr_discriminator = learning_rate_scheduler(global_step_discriminator)
-# optimizer = tf.train.AdamOptimizer(learning_rate=lr_discriminator, beta1=0.9, beta2=0.98, epsilon=1e-09)
-# tvars = d_vars
-# gvs = optimizer.compute_gradients(discriminator_loss, tvars)
-# gvs = [(g, v) for g, v in gvs if g is not None]
-# grads, tvars = list(zip(*gvs))
-# all_finite = tf.constant(True, dtype=tf.bool)
-# (grads, _) = tf.clip_by_global_norm(
-#     grads,
-#     clip_norm=1.0,
-#     use_norm=tf.cond(
-#         all_finite, lambda: tf.global_norm(grads), lambda: tf.constant(1.0)
-#     ),
-# )
-# d_optimizer = optimizer.apply_gradients(
-#     zip(grads, tvars), global_step=global_step_discriminator
-# )
 
 g_optimizer = train.optimizer.adamw.create_optimizer(
     generator_loss,
@@ -382,36 +317,7 @@ d_optimizer = train.optimizer.adamw.create_optimizer(
     global_step=global_step_discriminator,
 )
 
-# g_boundaries = [100_00, 200_00, 300_00, 400_00, 500_00, 600_00, 700_00]
-# g_values = [0.000125, 0.000125, 0.0000625, 0.0000625, 0.0000625, 0.00003125, 0.000015625, 0.000001]
-
-# d_boundaries = [100_00, 200_00, 300_00, 40_000, 50_000]
-# d_values = [
-#     0.00025,
-#     0.000_125,
-#     0.000_062_5,
-#     0.000_031_25,
-#     0.000_015_625,
-#     0.000_001,
-# ]
-
-# g_piece_wise = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
-#     g_boundaries, g_values
-# )
-# g_lr = g_piece_wise(global_step_generator)
-# g_optimizer = tf.train.AdamOptimizer(g_lr).minimize(
-#     generator_loss, var_list=g_vars, global_step=global_step_generator
-# )
-
-# d_piece_wise = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
-#     d_boundaries, d_values
-# )
-# d_lr = d_piece_wise(global_step_discriminator)
-# d_optimizer = tf.train.AdamOptimizer(d_lr).minimize(
-#     discriminator_loss,
-#     var_list=d_vars,
-#     global_step=global_step_discriminator,
-# )
+summaries = tf.summary.merge_all()
 
 sess = tf.InteractiveSession()
 sess.run(tf.global_variables_initializer())
@@ -425,8 +331,8 @@ if ckpt_path:
     print(f'restoring checkpoint from {ckpt_path}')
 
 for i in range(0, epoch):
-    d_losses, d_loss, _ = sess.run([discriminator_losses, discriminator_loss, d_optimizer])
     g_losses, g_loss, _ = sess.run([generator_losses, generator_loss, g_optimizer])
+    d_losses, d_loss, _ = sess.run([discriminator_losses, discriminator_loss, d_optimizer])
 
     if i % 100 == 0:
         s = sess.run(summaries)

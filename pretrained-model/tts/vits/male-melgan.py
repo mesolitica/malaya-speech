@@ -1,6 +1,7 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
 import tensorflow as tf
 import numpy as np
@@ -9,7 +10,7 @@ from itertools import cycle
 import re
 import json
 
-with open('mels-male.json') as fopen:
+with open('mels-male-v2.json') as fopen:
     files = json.load(fopen)
 
 reduction_factor = 1
@@ -92,7 +93,7 @@ def generate(files):
         }
 
 
-def get_dataset(files, batch_size=12, shuffle_size=32, thread_count=24):
+def get_dataset(files, batch_size=16, shuffle_size=32, thread_count=24):
     def get():
         dataset = tf.data.Dataset.from_generator(
             generate,
@@ -143,7 +144,7 @@ features
 
 import malaya_speech
 import malaya_speech.train
-from malaya_speech.train.model import vits, melgan, revsic_glowtts as glowtts
+from malaya_speech.train.model import vits, melgan, hifigan
 from malaya_speech.train.model.vits.slicing import rand_slice_segments
 from malaya_speech.train.model import stft
 import malaya_speech.config
@@ -152,8 +153,8 @@ import malaya_speech.train as train
 
 segment_size = 8192
 hop_size = 256
-config = glowtts.Config(mel=80, vocabs=len(MALAYA_SPEECH_SYMBOLS))
-model = glowtts.Model(config)
+config = vits.Config(mel=80, vocabs=len(MALAYA_SPEECH_SYMBOLS))
+model = vits.Model(config)
 
 melgan_config = malaya_speech.config.melgan_config
 generator = melgan.Generator(
@@ -166,9 +167,9 @@ discriminator = melgan.MultiScaleDiscriminator(
 )
 
 mels_loss = melgan.loss.TFMelSpectrogram()
-
 mse_loss = tf.keras.losses.MeanSquaredError()
 mae_loss = tf.keras.losses.MeanAbsoluteError()
+
 
 text = features['text_ids']
 text_lengths = features['len_text_ids'][:, 0]
@@ -176,15 +177,18 @@ mel_outputs = features['mel']
 mel_lengths = features['len_mel'][:, 0]
 wavs = features['audio']
 
+losses, attn, latent, z_slice, ids_slice = model.compute_loss(text=text,
+                                                              textlen=text_lengths,
+                                                              mel=mel_outputs,
+                                                              mellen=mel_lengths)
+
+mel = vits.slice_segments(mel_outputs, ids_slice, model.segment_size // model.hop_size, np.log(1e-2))
+y = vits.slice_segments(tf.expand_dims(wavs, -1), ids_slice * model.hop_size, model.segment_size)
+
 
 def compute_per_example_discriminator_losses():
 
-    _, losses, attn = model.compute_loss(text=text, textlen=text_lengths, mel=mel_outputs, mellen=mel_lengths)
-    losses['mel_'].set_shape((None, None, 80))
-    mel_hat, ids_slice = rand_slice_segments(losses['mel_'], mel_lengths, segment_size // hop_size, np.log(1e-2))
-    mel = vits.slice_segments(mel_outputs, ids_slice, segment_size // hop_size, np.log(1e-2))
-    y = vits.slice_segments(tf.expand_dims(wavs, -1), ids_slice * hop_size, segment_size)
-    y_hat = generator(mel_hat, training=True)
+    y_hat = generator(z_slice, training=True)
     p = discriminator(y)
     p_hat = discriminator(y_hat)
 
@@ -213,13 +217,8 @@ def compute_per_example_discriminator_losses():
 
 
 def compute_per_example_generator_losses():
-    _, losses, attn = model.compute_loss(text=text, textlen=text_lengths, mel=mel_outputs, mellen=mel_lengths)
-    losses['mel_'].set_shape((None, None, 80))
-    mel_hat, ids_slice = rand_slice_segments(losses['mel_'],
-                                             mel_lengths, segment_size // hop_size, np.log(1e-2))
-    mel = vits.slice_segments(mel_outputs, ids_slice, segment_size // hop_size, np.log(1e-2))
-    y = vits.slice_segments(tf.expand_dims(wavs, -1), ids_slice * hop_size, segment_size)
-    y_hat = generator(mel_hat, training=True)
+
+    y_hat = generator(z_slice, training=True)
     p = discriminator(y)
     p_hat = discriminator(y_hat)
 
@@ -237,21 +236,18 @@ def compute_per_example_generator_losses():
                 p[i][j], p_hat[i][j], loss_fn=mae_loss
             )
     fm_loss /= (i + 1) * (j + 1)
-    adv_loss += 10 * fm_loss
-
-    per_example_losses = adv_loss
 
     a = calculate_2d_loss(tf.squeeze(y, -1), tf.squeeze(y_hat, -1), loss_fn=mels_loss)
-    mel_loss = calculate_3d_loss(mel, mel_hat, loss_fn=mae_loss)
-    per_example_losses = per_example_losses + mel_loss * 45 + losses['nll'] + losses['durloss']
-
+    mels_spectrogram_loss = tf.reduce_mean(a)
+    mel_loss = calculate_3d_loss(mel, z_slice, loss_fn=mae_loss) * 45.0
+    kl_loss = losses['kl'] * 1.0
+    per_example_losses = adv_loss + fm_loss * 10 + mel_loss + kl_loss + losses['durloss']
     dict_metrics_losses = {
         'adversarial_loss': adv_loss,
         'fm_loss': fm_loss,
-        'gen_loss': adv_loss,
-        'mels_spectrogram_loss': tf.reduce_mean(a),
+        'mels_spectrogram_loss': mels_spectrogram_loss,
         'mel_loss': mel_loss,
-        'nll': losses['nll'],
+        'kl': losses['kl'],
         'durloss': losses['durloss'],
     }
 
@@ -271,7 +267,7 @@ for k, v in discriminator_losses.items():
 
 tf.summary.scalar('discriminator_loss', discriminator_loss)
 tf.summary.scalar('generator_loss', generator_loss)
-summaries = tf.summary.merge_all()
+
 
 t_vars = tf.trainable_variables()
 d_vars = [var for var in t_vars if var.name.startswith('melgan-discriminator')]
@@ -282,7 +278,7 @@ g_vars = g_vars + glowtts_vars
 
 checkpoint = 2500
 epoch = 200000
-path = 'glowtts-male-melgan'
+path = 'vits-male-melgan'
 
 global_step_generator = tf.Variable(
     0, trainable=False, name='global_step_generator'
@@ -291,48 +287,37 @@ global_step_discriminator = tf.Variable(
     0, trainable=False, name='global_step_discriminator'
 )
 
-parameters = {
-    'optimizer_params': {'beta1': 0.9, 'beta2': 0.98, 'epsilon': 1e-9},
-    'lr_policy_params': {
-        'warmup_steps': 4000,
-        'learning_rate': 1.0,
-    },
-}
-
-
-def noam_schedule(step, channels, learning_rate=1.0, warmup_steps=4000):
-    return learning_rate * channels ** -0.5 * \
-        tf.minimum(step ** -0.5, step * warmup_steps ** -1.5)
-
-
-def learning_rate_scheduler(global_step):
-    return noam_schedule(
-        tf.cast(global_step, tf.float32),
-        config.channels,
-        **parameters['lr_policy_params'],
-    )
-
-
-lr = learning_rate_scheduler(global_step_generator)
-optimizer = tf.train.AdamOptimizer(learning_rate=lr, beta1=0.9, beta2=0.98, epsilon=1e-09)
-gvs = optimizer.compute_gradients(generator_loss, g_vars)
-gvs = [(g, v) for g, v in gvs if g is not None]
-grads, tvars = list(zip(*gvs))
-all_finite = tf.constant(True, dtype=tf.bool)
-(grads, _) = tf.clip_by_global_norm(
-    grads,
+g_optimizer = train.optimizer.adamw.create_optimizer(
+    generator_loss,
+    init_lr=1e-4,
+    num_train_steps=epoch,
+    num_warmup_steps=10000,
+    end_learning_rate=1e-6,
+    weight_decay_rate=0.01,
+    beta_1=0.8,
+    beta_2=0.99,
+    epsilon=1e-9,
     clip_norm=1.0,
-    use_norm=tf.cond(
-        all_finite, lambda: tf.global_norm(grads), lambda: tf.constant(1.0)
-    ),
-)
-g_optimizer = optimizer.apply_gradients(
-    zip(grads, tvars), global_step=global_step_generator
+    tvars=g_vars,
+    global_step=global_step_generator,
 )
 
-d_optimizer = tf.train.AdamOptimizer(0.0001, beta1=0.5, beta2=0.9).minimize(
-    discriminator_loss, var_list=d_vars, global_step=global_step_discriminator
+d_optimizer = train.optimizer.adamw.create_optimizer(
+    discriminator_loss,
+    init_lr=1e-4,
+    num_train_steps=epoch,
+    num_warmup_steps=10000,
+    end_learning_rate=1e-6,
+    weight_decay_rate=0.01,
+    beta_1=0.8,
+    beta_2=0.99,
+    epsilon=1e-9,
+    clip_norm=1.0,
+    tvars=d_vars,
+    global_step=global_step_discriminator,
 )
+
+summaries = tf.summary.merge_all()
 
 sess = tf.InteractiveSession()
 sess.run(tf.global_variables_initializer())
@@ -346,14 +331,18 @@ if ckpt_path:
     print(f'restoring checkpoint from {ckpt_path}')
 
 for i in range(0, epoch):
-    g_loss, _ = sess.run([generator_loss, g_optimizer])
-    d_loss, _ = sess.run([discriminator_loss, d_optimizer])
-    s = sess.run(summaries)
-    writer.add_summary(s, i)
+    g_losses, g_loss, _ = sess.run([generator_losses, generator_loss, g_optimizer])
+    d_losses, d_loss, _ = sess.run([discriminator_losses, discriminator_loss, d_optimizer])
+
+    if i % 100 == 0:
+        s = sess.run(summaries)
+        writer.add_summary(s, i)
 
     if i % checkpoint == 0:
         saver.save(sess, f'{path}/model.ckpt', global_step=i)
 
-    print(i, g_loss, d_loss)
+    print('generator', i, g_loss, g_losses)
+    print('discriminator', i, d_loss, d_losses)
+    print()
 
 saver.save(sess, f'{path}/model.ckpt', global_step=epoch)
