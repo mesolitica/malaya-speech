@@ -49,3 +49,13 @@ Guidelines for responsible deployment of synthetic voice technology, https://doc
   - Texts from Malaysia Malay Parliament.
   - Sentences between 2 words and 25 words.
   - transcription, https://huggingface.co/datasets/huseinzol05/Malay-TTS-Osman/resolve/main/populated-parliament.json
+
+5. https://huggingface.co/datasets/huseinzol05/Malay-TTS-Yasmin/resolve/main/normalized-texts.json
+
+  - text normalization for https://huggingface.co/datasets/huseinzol05/Malay-TTS-Osman/resolve/main/populated-text.json
+  - rules at [text-normalization-azure-yasmin.ipynb](text-normalization-azure-yasmin.ipynb).
+
+6. https://huggingface.co/datasets/huseinzol05/Malay-TTS-Yasmin/resolve/main/normalized-parliaments.json
+
+  - text normalization for https://huggingface.co/datasets/huseinzol05/Malay-TTS-Osman/resolve/main/populated-parliament.json
+  - rules at [text-normalization-azure-yasmin.ipynb](text-normalization-azure-yasmin.ipynb).
