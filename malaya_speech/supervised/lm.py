@@ -7,7 +7,7 @@ def load(model, module, **kwargs):
         file=model,
         module=module,
         keys={
-            'model': 'model.trie.klm',
+            'model': 'model.klm',
         },
         quantized=False,
         **kwargs,

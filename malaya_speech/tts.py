@@ -7,8 +7,10 @@ from malaya_speech.utils.text import (
 )
 from malaya_speech.supervised import tts
 import numpy as np
-import re
+import logging
 from typing import Callable
+
+logger = logging.getLogger('malaya_speech.tts')
 
 _tacotron2_availability = {
     'male': {
@@ -174,6 +176,7 @@ def load_text_ids(
     """
     Load text normalizer module use by Malaya-Speech TTS.
     """
+
     try:
         import malaya
     except BaseException:
@@ -181,7 +184,9 @@ def load_text_ids(
             'malaya not installed. Please install it by `pip install malaya` and try again.'
         )
 
-    normalizer = malaya.normalize.normalizer(date=False, time=False)
+    logger.warning('to get better speech synthesis, make sure Malaya version >= 4.7.5')
+
+    normalizer = malaya.normalize.normalizer()
     sentence_tokenizer = malaya.text.function.split_into_sentences
 
     return TextIDS(

@@ -16,7 +16,7 @@ from malaya_boilerplate import utils
 from malaya_speech import package, url
 import os
 
-MALAYA_USE_HUGGINGFACE = os.environ.get('MALAYA_USE_HUGGINGFACE', 'false').lower() == 'true'
+MALAYA_USE_HUGGINGFACE = os.environ.get('MALAYA_USE_HUGGINGFACE', 'true').lower() == 'true'
 
 
 def print_cache(location=None):

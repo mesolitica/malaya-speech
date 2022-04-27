@@ -213,7 +213,7 @@ class Model(tf.keras.Model):
             # T + R
             timestep = timestep + rest
         # [B, T // F, C x F]
-        folded = tf.reshape(inputs, [bsize, timestep // self.factor, -1])
+        folded = tf.reshape(inputs, [bsize, timestep // self.factor, channels * self.factor])
         # T / F
         lengths = tf.cast(tf.math.ceil(lengths / self.factor), tf.int32)
         return folded, lengths
@@ -231,7 +231,7 @@ class Model(tf.keras.Model):
         # B, T // F, _
         bsize, timestep, _ = shape_list(inputs)
         # [B, T, C]
-        recovered = tf.reshape(inputs, [bsize, timestep * self.factor, -1])
+        recovered = tf.reshape(inputs, [bsize, timestep * self.factor, self.mel])
         return recovered, lengths * self.factor
 
     def quantize(self, logdur: tf.Tensor, mask: tf.Tensor) -> tf.Tensor:

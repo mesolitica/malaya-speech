@@ -19,6 +19,7 @@ from .hifigan import config_v3 as hifigan_config_v3
 from .hifigan import config_v4 as hifigan_config_v4
 from .mb_melgan import config as mb_melgan_config
 from .melgan import config as melgan_config
+from .melgan import config_v2 as melgan_config_v2
 from .speakernet_featurizer import config as speakernet_featurizer_config
 from .tacotron2 import config as tacotron2_config
 from .transducer_featurizer import config as transducer_featurizer_config

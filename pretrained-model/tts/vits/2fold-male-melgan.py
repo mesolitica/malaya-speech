@@ -144,7 +144,7 @@ features
 
 import malaya_speech
 import malaya_speech.train
-from malaya_speech.train.model import vits, melgan, hifigan
+from malaya_speech.train.model import vits_fold as vits, melgan, hifigan
 from malaya_speech.train.model.vits.slicing import rand_slice_segments
 from malaya_speech.train.model import stft
 import malaya_speech.config
