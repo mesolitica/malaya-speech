@@ -17,26 +17,50 @@ _tacotron2_availability = {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
         'Combined loss': 0.1838,
+        'Understand punctuation': True,
+        'Is lowercase': True,
     },
     'female': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
         'Combined loss': 0.1887,
+        'Understand punctuation': True,
+        'Is lowercase': True,
     },
     'husein': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
         'Combined loss': 0.1165,
+        'Understand punctuation': True,
+        'Is lowercase': True,
     },
     'haqkiem': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
         'Combined loss': 0.1375,
+        'Understand punctuation': True,
+        'Is lowercase': True,
     },
     'female-singlish': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
         'Combined loss': 0.0923,
+        'Understand punctuation': True,
+        'Is lowercase': True,
+    },
+    'yasmin': {
+        'Size (MB)': 104,
+        'Quantized Size (MB)': 26.3,
+        'Combined loss': 0.06874,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+    },
+    'osman': {
+        'Size (MB)': 104,
+        'Quantized Size (MB)': 26.3,
+        'Combined loss': 0.06874,
+        'Understand punctuation': True,
+        'Is lowercase': False,
     },
 }
 _fastspeech2_availability = {
@@ -44,26 +68,64 @@ _fastspeech2_availability = {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
         'Combined loss': 1.8,
+        'Understand punctuation': True,
+        'Is lowercase': True,
     },
     'female': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
         'Combined loss': 1.932,
+        'Understand punctuation': True,
+        'Is lowercase': True,
     },
     'husein': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
         'Combined loss': 0.5832,
+        'Understand punctuation': True,
+        'Is lowercase': True,
     },
     'haqkiem': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
         'Combined loss': 0.5663,
+        'Understand punctuation': True,
+        'Is lowercase': True,
     },
     'female-singlish': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
         'Combined loss': 0.5112,
+        'Understand punctuation': True,
+        'Is lowercase': True,
+    },
+    'yasmin': {
+        'Size (MB)': 125,
+        'Quantized Size (MB)': 31.7,
+        'Combined loss': 0.5112,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+    },
+    'yasmin-small': {
+        'Size (MB)': 32.9,
+        'Quantized Size (MB)': 8.5,
+        'Combined loss': 0.7994,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+    },
+    'osman': {
+        'Size (MB)': 125,
+        'Quantized Size (MB)': 31.7,
+        'Combined loss': 0.5112,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+    },
+    'osman-small': {
+        'Size (MB)': 32.9,
+        'Quantized Size (MB)': 8.5,
+        'Combined loss': 0.7994,
+        'Understand punctuation': True,
+        'Is lowercase': False,
     },
 }
 
@@ -72,21 +134,29 @@ _fastpitch_availability = {
         'Size (MB)': 123,
         'Quantized Size (MB)': 31.1,
         'Combined loss': 1.614,
+        'Understand punctuation': True,
+        'Is lowercase': True,
     },
     'female': {
         'Size (MB)': 123,
         'Quantized Size (MB)': 31.1,
         'Combined loss': 1.669,
+        'Understand punctuation': True,
+        'Is lowercase': True,
     },
     'husein': {
         'Size (MB)': 123,
         'Quantized Size (MB)': 31.1,
         'Combined loss': 0.52515,
+        'Understand punctuation': True,
+        'Is lowercase': True,
     },
     'haqkiem': {
         'Size (MB)': 123,
         'Quantized Size (MB)': 31.1,
         'Combined loss': 0.5186,
+        'Understand punctuation': True,
+        'Is lowercase': True,
     },
 }
 
@@ -95,26 +165,50 @@ _glowtts_availability = {
         'Size (MB)': 119,
         'Quantized Size (MB)': 27.6,
         'Combined loss': -1.429,
+        'Understand punctuation': True,
+        'Is lowercase': True,
     },
     'female': {
         'Size (MB)': 119,
         'Quantized Size (MB)': 27.6,
         'Combined loss': -1.464,
+        'Understand punctuation': True,
+        'Is lowercase': True,
     },
     'haqkiem': {
         'Size (MB)': 119,
         'Quantized Size (MB)': 27.6,
         'Combined loss': -1.649,
+        'Understand punctuation': True,
+        'Is lowercase': True,
     },
     'female-singlish': {
         'Size (MB)': 119,
         'Quantized Size (MB)': 27.6,
         'Combined loss': -1.728,
+        'Understand punctuation': True,
+        'Is lowercase': True,
+    },
+    'yasmin': {
+        'Size (MB)': 119,
+        'Quantized Size (MB)': 27.6,
+        'Combined loss': -1.908,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+    },
+    'osman': {
+        'Size (MB)': 119,
+        'Quantized Size (MB)': 27.6,
+        'Combined loss': -1.908,
+        'Understand punctuation': True,
+        'Is lowercase': False,
     },
     'multispeaker': {
         'Size (MB)': 404,
         'Quantized Size (MB)': 79.9,
         'Combined loss': -1.882,
+        'Understand punctuation': True,
+        'Is lowercase': True,
     }
 }
 
@@ -170,6 +264,7 @@ def available_glowtts():
 def load_text_ids(
     pad_to: int = 8,
     understand_punct: bool = True,
+    is_lower: bool = True,
     true_case_model: Callable = None,
     **kwargs
 ):
@@ -179,12 +274,14 @@ def load_text_ids(
 
     try:
         import malaya
+        from packaging import version
     except BaseException:
         raise ModuleNotFoundError(
             'malaya not installed. Please install it by `pip install malaya` and try again.'
         )
 
-    logger.warning('to get better speech synthesis, make sure Malaya version >= 4.7.5')
+    if version.parse(malaya.__version__) < version.parse('4.7.5'):
+        logger.warning('To get better speech synthesis, make sure Malaya version >= 4.7.5')
 
     normalizer = malaya.normalize.normalizer()
     sentence_tokenizer = malaya.text.function.split_into_sentences
@@ -192,6 +289,7 @@ def load_text_ids(
     return TextIDS(
         pad_to=pad_to,
         understand_punct=understand_punct,
+        is_lower=is_lower,
         normalizer=normalizer,
         sentence_tokenizer=sentence_tokenizer,
         true_case_model=true_case_model,
@@ -199,7 +297,7 @@ def load_text_ids(
 
 
 def tacotron2(
-    model: str = 'male',
+    model: str = 'yasmin',
     quantized: bool = False,
     pad_to: int = 8,
     true_case_model: Callable = None,
@@ -210,7 +308,7 @@ def tacotron2(
 
     Parameters
     ----------
-    model : str, optional (default='male')
+    model : str, optional (default='yasmin')
         Model architecture supported. Allowed values:
 
         * ``'female'`` - Tacotron2 trained on female voice.
@@ -239,8 +337,12 @@ def tacotron2(
             'model not supported, please check supported models from `malaya_speech.tts.available_tacotron2()`.'
         )
 
+    selected_model = _tacotron2_availability[model]
+
     text_ids = load_text_ids(
         pad_to=pad_to,
+        understand_punct=selected_model['Understand punctuation'],
+        is_lower=selected_model['Is lowercase'],
         true_case_model=true_case_model,
         quantized=quantized,
         **kwargs
@@ -297,8 +399,12 @@ def fastspeech2(
             'model not supported, please check supported models from `malaya_speech.tts.available_fastspeech2()`.'
         )
 
+    selected_model = _fastspeech2_availability[model]
+
     text_ids = load_text_ids(
         pad_to=pad_to,
+        understand_punct=selected_model['Understand punctuation'],
+        is_lower=selected_model['Is lowercase'],
         true_case_model=true_case_model,
         quantized=quantized,
         **kwargs
@@ -353,8 +459,12 @@ def fastpitch(
             'model not supported, please check supported models from `malaya_speech.tts.available_fastpitch()`.'
         )
 
+    selected_model = _fastpitch_availability[model]
+
     text_ids = load_text_ids(
         pad_to=pad_to,
+        understand_punct=selected_model['Understand punctuation'],
+        is_lower=selected_model['Is lowercase'],
         true_case_model=true_case_model,
         quantized=quantized,
         **kwargs
@@ -408,8 +518,12 @@ def glowtts(model: str = 'male',
             'model not supported, please check supported models from `malaya_speech.tts.available_glowtts()`.'
         )
 
+    selected_model = _glowtts_availability[model]
+
     text_ids = load_text_ids(
         pad_to=pad_to,
+        understand_punct=selected_model['Understand punctuation'],
+        is_lower=selected_model['Is lowercase'],
         true_case_model=true_case_model,
         quantized=quantized,
         **kwargs

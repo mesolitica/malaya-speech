@@ -25,7 +25,7 @@ _melgan_availability = {
     'yasmin': {
         'Size (MB)': 17.3,
         'Quantized Size (MB)': 4.53,
-        'Mel loss': 0.4819,
+        'Mel loss': 0.4867,
     },
     'osman': {
         'Size (MB)': 17.3,
@@ -38,6 +38,11 @@ _melgan_availability = {
         'Mel loss': 0.4463,
     },
     'universal-1024': {
+        'Size (MB)': 78.4,
+        'Quantized Size (MB)': 19.9,
+        'Mel loss': 0.4591,
+    },
+    'universal-384': {
         'Size (MB)': 78.4,
         'Quantized Size (MB)': 19.9,
         'Mel loss': 0.4591,

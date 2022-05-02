@@ -43,3 +43,5 @@ Tensorboard, https://tensorboard.dev/experiment/pngbnpN5QMSoiRnYZJ5qlQ/
 Tensorboard, https://tensorboard.dev/experiment/IY8aWnsbSKOFPlUoUKLVMw/
 
 5. Female Singlish speaker, last update 13th January 2021, [melgan-female-singlish-output.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/melgan-female-singlish-output.tar.gz)
+
+6. Yasmin speaker, last update 30th April 2022, [melgan-yasmin-output.tar](https://huggingface.co/huseinzol05/pretrained-vocoder/resolve/main/melgan-yasmin-output.tar).

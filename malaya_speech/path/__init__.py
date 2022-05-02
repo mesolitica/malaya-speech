@@ -17,6 +17,8 @@ STATS_VOCODER_HAQKIEM = 'vocoder-stats/haqkiem.npy'
 STATS_VOCODER_FEMALE_SINGLISH = 'vocoder-stats/female-singlish.npy'
 STATS_VOCODER_FEMALE_SINGLISH_V1 = 'vocoder-stats/female-singlish-v1.npy'
 STATS_VOCODER_HUSEIN = 'vocoder-stats/husein.npy'
+STATS_VOCODER_YASMIN = 'vocoder-stats/yasmin.npy'
+STATS_VOCODER_OSMAN = 'vocoder-stats/osman.npy'
 
 TRANSDUCER_VOCABS = {
     'malay': TRANSDUCER_VOCAB,
@@ -37,4 +39,6 @@ STATS_VOCODER = {
     'female-singlish': STATS_VOCODER_FEMALE_SINGLISH,
     'female-singlish-v1': STATS_VOCODER_FEMALE_SINGLISH_V1,
     'husein': STATS_VOCODER_HUSEIN,
+    'yasmin': STATS_VOCODER_YASMIN,
+    'osman': STATS_VOCODER_OSMAN,
 }

@@ -12,20 +12,31 @@ _availability = {
         'Size (MB)': 70.8,
         'Quantized Size (MB)': 17.7,
         'Embedding Size': 1024,
-        'EER': 0.1407,
+        'EER': 0.13944,
     },
     'vggvox-v2': {
         'Size (MB)': 43.2,
         'Quantized Size (MB)': 7.92,
         'Embedding Size': 512,
-        'EER': 0.0445,
+        'EER': 0.0446,
     },
     'speakernet': {
         'Size (MB)': 35,
         'Quantized Size (MB)': 8.88,
         'Embedding Size': 7205,
-        'EER': 0.02122,
+        'EER': 0.3000285,
+    }
+}
+
+trillsson_accuracy = {
+    'trillsson-1': {
+        'url': 'https://tfhub.dev/google/nonsemantic-speech-benchmark/trillsson1/1',
+        'EER': 0.3804599,
     },
+    'trillsson-2': {
+        'url': 'https://tfhub.dev/google/nonsemantic-speech-benchmark/trillsson2/1',
+        'EER': 0.3898799,
+    }
 }
 
 
@@ -42,7 +53,7 @@ def available_model():
 
 
 @check_type
-def deep_model(model: str = 'speakernet', quantized: bool = False, **kwargs):
+def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     """
     Load Speaker2Vec model.
 

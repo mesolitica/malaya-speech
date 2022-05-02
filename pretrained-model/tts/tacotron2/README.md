@@ -50,3 +50,7 @@ python3 tacotron2-husein.py
 7. Female Singlish speaker, last update 21th September 2021, [tacotron2-female-singlish-output-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/tacotron2-female-singlish-output-v2.tar.gz)
 
   - Lower case, understand `.,?!` punctuations.
+
+8. Yasmin speaker, last update 29th April 2022, [tacotron2-yasmin-output.tar](https://huggingface.co/huseinzol05/pretrained-tacotron2/resolve/main/tacotron2-yasmin-output.tar).
+
+  - Case sensitive, understand `.,?!` punctuations.

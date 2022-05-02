@@ -6,15 +6,9 @@
 
 ## how-to
 
-1. Generate speech alignment from Tacotron2, 
+1. Generate speech alignment from Tacotron2, notebooks in [calculate-alignment](calculate-alignment). 
 
-Male speaker, [calculate-alignment-tacotron2-male-train.ipynb](calculate-alignment-tacotron2-male-train.ipynb) and [calculate-alignment-tacotron2-male-test.ipynb](calculate-alignment-tacotron2-male-test.ipynb]).
-
-Female speaker, [calculate-alignment-tacotron2-female-train.ipynb](calculate-alignment-tacotron2-female-train.ipynb) and [calculate-alignment-tacotron2-female-test.ipynb](calculate-alignment-tacotron2-female-test.ipynb]).
-
-Husein speaker, [calculate-alignment-tacotron2-husein.ipynb](calculate-alignment-tacotron2-husein.ipynb).
-
-1. Run training script,
+2. Run training script,
 
 Female speaker,
 
@@ -90,3 +84,12 @@ python3 fastspeech2-husein.py
 12. Female Singlish speaker, last update 22nd September 2021, [fastspeech2-female-singlish-output-v2.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/pretrained/fastspeech2-female-singlish-output-v2.tar.gz)
 
   - Lower case, understand `.,?!` punctuations.
+
+13. Yasmin speaker, last update 29th April 2022, [fastspeech2-small-yasmin-output.tar](https://huggingface.co/huseinzol05/pretrained-fastspeech2/resolve/main/fastspeech2-small-yasmin-output.tar).
+
+  - Case sensitive, understand `.,?!` punctuations.
+  - Small model.
+
+14. Yasmin speaker, last update 29th April 2022, [fastspeech2-yasmin-output.tar](https://huggingface.co/huseinzol05/pretrained-fastspeech2/resolve/main/fastspeech2-yasmin-output.tar).
+
+  - Case sensitive, understand `.,?!` punctuations.

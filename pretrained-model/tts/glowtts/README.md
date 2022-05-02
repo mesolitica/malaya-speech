@@ -38,3 +38,7 @@ python3 glowtts-female.py
 
   - Lower case, understand `.,?!` punctuations.
   - Improved Male dataset.
+
+7. Yasmin speaker, last update 30th April 2022, [glowtts-yasmin-output.tar](https://huggingface.co/huseinzol05/pretrained-glowtts/resolve/main/glowtts-yasmin-output.tar).
+
+  - Case sensitive, understand `.,?!` punctuations.

@@ -18,7 +18,7 @@ from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 import malaya_speech.train as train
 import re
 
-with open('mels-yasmin.json') as fopen:
+with open('mels-osman.json') as fopen:
     files = json.load(fopen)
 
 import random
@@ -29,7 +29,7 @@ minlen = 32
 pad_to = 8
 data_min = 1e-2
 
-mel_stat = np.load('../speech-bahasa/yasmin-stats/stats.npy')
+mel_stat = np.load('../speech-bahasa/osman-stats/stats.npy')
 
 _pad = 'pad'
 _start = 'start'
@@ -306,7 +306,7 @@ dev_dataset = get_dataset(files['test'])
 train.run_training(
     train_fn=train_dataset,
     model_fn=model_fn,
-    model_dir='tacotron2-yasmin',
+    model_dir='tacotron2-osman',
     num_gpus=1,
     log_step=1,
     save_checkpoint_step=2000,
