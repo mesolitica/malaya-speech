@@ -1,5 +1,6 @@
 from ..universal_melgan.model import TFReflectionPad1d
-from ..utils import shape_list, WeightNormalization
+from ..melgan.layer import WeightNormalization
+from ..utils import shape_list
 from .layer import get_initializer, LVCBlock
 import tensorflow as tf
 
@@ -66,9 +67,3 @@ class Generator(tf.keras.Model):
             z = res_block(z, c)
         z = self.conv_post(z)
         return z
-
-    def remove(self):
-        self.conv_pre.layers[1].remove()
-        self.conv_post.layers[2].remove()
-        for res_block in self.res_stack:
-            res_block.remove()

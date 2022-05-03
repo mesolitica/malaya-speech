@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
-from ..utils import shape_list, WeightNormalization
+from ..utils import shape_list
+from ..melgan.layer import WeightNormalization
 from ..universal_melgan.model import TFConvTranspose1d
 
 
@@ -98,14 +99,6 @@ class KernelPredictor(tf.keras.layers.Layer):
         bias = tf.reshape(b, (batch, self.conv_layers, cond_length, self.conv_out_channels))
         return kernels, bias
 
-    def remove(self):
-        self.input_conv.layers[0].remove()
-        self.kernel_conv.remove()
-        self.bias_conv.remove()
-        for block in self.residual_convs:
-            block.layers[1].remove()
-            block.layers[3].remove()
-
 
 """
 LVCBlock(
@@ -171,11 +164,6 @@ class LVCBlock(tf.keras.layers.Layer):
                 tf.keras.layers.LeakyReLU(alpha=0.2),
             ])
             self.convs.append(conv)
-
-    def remove(self):
-        self.kernel_predictor.remove()
-        for conv in self.convs:
-            conv.layers[1].remove()
 
     def call(self, x, c, **kwargs):
         """

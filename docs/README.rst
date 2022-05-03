@@ -100,6 +100,7 @@ Malaya-Speech also released pretrained models, simply check at `malaya-speech/pr
 -  **BEST-RQ**, Self-supervised learning with random-projection quantizer for speech recognition, https://arxiv.org/pdf/2202.01855.pdf
 -  **LightSpeech**, Lightweight and Fast Text to Speech with Neural Architecture Search, https://arxiv.org/abs/2102.04040
 -  **VITS**, Conditional Variational Autoencoder with Adversarial Learning for End-to-End Text-to-Speech, https://arxiv.org/pdf/2106.06103.pdf 
+-  **UnivNet**, A Neural Vocoder with Multi-Resolution Spectrogram Discriminators for High-Fidelity Waveform Generation, https://arxiv.org/abs/2106.07889
 
 References
 -----------

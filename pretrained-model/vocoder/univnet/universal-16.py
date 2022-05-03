@@ -16,34 +16,31 @@ import malaya_speech.config
 from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 import random
 
-mels = glob('output-universal/mels/*.npy')
-mels.extend(glob('speech-augmentation/mels/*.npy'))
-random.shuffle(mels)
-file_cycle = cycle(mels)
-
 
 def generate(batch_max_steps=8192, hop_size=256):
     while True:
-        f = next(file_cycle)
-        mel = np.load(f)
-        audio = np.load(f.replace('mels', 'audios'))
+        npys = glob('universal-audio/*.npy')
+        random.shuffle(npys)
+        for f in npys:
+            audio = np.load(f)
+            mel = np.load(f.replace('-audio', '-mel'))
 
-        batch_max_frames = batch_max_steps // hop_size
-        if len(audio) < len(mel) * hop_size:
-            audio = np.pad(audio, [[0, len(mel) * hop_size - len(audio)]])
+            batch_max_frames = batch_max_steps // hop_size
+            if len(audio) < len(mel) * hop_size:
+                audio = np.pad(audio, [[0, len(mel) * hop_size - len(audio)]])
 
-        if len(mel) > batch_max_frames:
-            interval_start = 0
-            interval_end = len(mel) - batch_max_frames
-            start_frame = random.randint(interval_start, interval_end)
-            start_step = start_frame * hop_size
-            audio = audio[start_step: start_step + batch_max_steps]
-            mel = mel[start_frame: start_frame + batch_max_frames, :]
-        else:
-            audio = np.pad(audio, [[0, batch_max_steps - len(audio)]])
-            mel = np.pad(mel, [[0, batch_max_frames - len(mel)], [0, 0]])
+            if len(mel) > batch_max_frames:
+                interval_start = 0
+                interval_end = len(mel) - batch_max_frames
+                start_frame = random.randint(interval_start, interval_end)
+                start_step = start_frame * hop_size
+                audio = audio[start_step: start_step + batch_max_steps]
+                mel = mel[start_frame: start_frame + batch_max_frames, :]
+            else:
+                audio = np.pad(audio, [[0, batch_max_steps - len(audio)]])
+                mel = np.pad(mel, [[0, batch_max_frames - len(mel)], [0, 0]])
 
-        yield {'mel': mel, 'audio': audio}
+            yield {'mel': mel, 'audio': audio}
 
 
 dataset = tf.data.Dataset.from_generator(
