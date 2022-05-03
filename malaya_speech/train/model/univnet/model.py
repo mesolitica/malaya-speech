@@ -61,7 +61,8 @@ class Generator(tf.keras.Model):
         z (Tensor): the noise sequence (batch, in_length, noise_dim)
         """
         if z is None:
-            z = tf.random.normal(tf.shape(c))
+            b, l, _ = shape_list(c)
+            z = tf.random.normal(shape=(b, l, self.noise_dim))
         z = self.conv_pre(z)
         for res_block in self.res_stack:
             z = res_block(z, c)
