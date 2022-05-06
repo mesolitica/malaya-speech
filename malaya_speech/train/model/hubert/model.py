@@ -279,5 +279,6 @@ class Model(tf.keras.Model):
             "logit_u_list": logit_u_list,
             "padding_mask": padding_mask,
             "features_pen": features_pen,
+            'x': x,
         }
         return result

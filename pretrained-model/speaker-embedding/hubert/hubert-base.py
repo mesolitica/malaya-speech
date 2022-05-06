@@ -8,8 +8,6 @@ import malaya_speech
 import malaya_speech.train as train
 from malaya_speech.train.model.conformer.model import Model as ConformerModel
 from malaya_speech.train.model import hubert
-import tensorflow.keras as keras
-import tensorflow.keras.backend as K
 import numpy as np
 import string
 import json
@@ -27,9 +25,9 @@ train_set = glob('/home/husein/youtube/voxceleb-dev/*.wav')
 test_set = glob('/home/husein/youtube/voxceleb-wav/*.wav')
 
 sr = 16000
-maxlen = 18
-minlen = 3
-weight_decay = 1e-5
+maxlen = 15
+minlen = 2
+kmean = hubert.kmeans.ApplyKmeans_TF('kmean.km')
 
 
 def generate(files):
@@ -37,61 +35,79 @@ def generate(files):
         random.shuffle(files)
         for f in files:
             f = f.decode() if isinstance(f, bytes) else f
-            x, _ = malaya_speech.load(f)
+            wav_data, _ = malaya_speech.load(f)
             label = os.path.split(f)[1].replace('wav-', '').split('-')[1]
             y = int(ids[label])
 
-            len_x = len(x)
+            len_x = len(wav_data) / sr
 
-            if (len_x / sr) < minlen:
+            if len_x < minlen:
                 continue
 
-            if (len_x / sr) > maxlen:
-                x = augmentation.random_sampling(x, sr, random.randint(1000 * minlen, 1000 * maxlen))
+            if len_x > maxlen:
+                wav_data = augmentation.random_sampling(wav_data, sr, random.randint(1000 * minlen, 1000 * maxlen))
 
             yield {
-                'waveforms': x,
-                'waveforms_length': [len(x)],
+                'waveforms': wav_data,
+                'waveforms_length': [len(wav_data)],
                 'Y': [y],
             }
 
 
-def get_dataset(files, batch_size=4, shuffle_size=32, thread_count=24):
+def preprocess_inputs(example):
+    v = featurizer.vectorize(example['waveforms'])
+    deltas = malaya_speech.utils.tf_featurization.deltas(v)
+    ddeltas = malaya_speech.utils.tf_featurization.deltas(deltas)
+    concated = tf.concat([v, deltas, ddeltas], axis=1)
+    s = tf.compat.v1.numpy_function(kmean, [concated], tf.int64)
+    s = tf.cast(s, tf.int32)
+    kmean_tf = tf.reshape(s, (-1,)) + 3
+    example['targets'] = kmean_tf
+    return example
+
+
+def get_dataset(
+    file,
+    batch_size=4,
+    shuffle_size=20,
+    thread_count=24,
+    maxlen_feature=1800,
+):
     def get():
         dataset = tf.data.Dataset.from_generator(
             generate,
-            {
-                'waveforms': tf.float32,
-                'waveforms_length': tf.int32,
-                'Y': tf.int32,
-            },
+            {'waveforms': tf.float32,
+             'waveforms_length': tf.int32,
+             'Y': tf.int32,
+             },
             output_shapes={
                 'waveforms': tf.TensorShape([None]),
                 'waveforms_length': tf.TensorShape([None]),
                 'Y': tf.TensorShape([None]),
             },
-            args=(files,),
+            args=(file,),
         )
-        dataset = dataset.filter(
-            lambda x: tf.less(tf.shape(x['waveforms'])[0] / sr, maxlen)
-        )
-        dataset = dataset.filter(
-            lambda x: tf.greater(tf.shape(x['waveforms'])[0] / sr, minlen)
+        dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
+        dataset = dataset.map(
+            preprocess_inputs, num_parallel_calls=thread_count
         )
         dataset = dataset.padded_batch(
-            shuffle_size,
+            batch_size,
             padded_shapes={
                 'waveforms': tf.TensorShape([None]),
                 'waveforms_length': tf.TensorShape([None]),
+                'targets': tf.TensorShape([None]),
                 'Y': tf.TensorShape([None]),
             },
             padding_values={
                 'waveforms': tf.constant(0, dtype=tf.float32),
                 'waveforms_length': tf.constant(0, dtype=tf.int32),
+                'targets': tf.constant(0, dtype=tf.int32),
                 'Y': tf.constant(0, dtype=tf.int32),
             },
         )
         return dataset
+
     return get
 
 
@@ -105,12 +121,6 @@ class Encoder:
 
 
 total_steps = 3000000
-
-
-def amsoftmax_loss(y_true, y_pred, scale=30, margin=0.35):
-    y_pred = y_true * (y_pred - margin) + (1 - y_true) * y_pred
-    y_pred *= scale
-    return K.categorical_crossentropy(y_true, y_pred, from_logits=True)
 
 
 def model_fn(features, labels, mode, params):
@@ -130,40 +140,47 @@ def model_fn(features, labels, mode, params):
     model = hubert.Model(cfg, encoder, ['pad', 'eos', 'unk'] + [str(i) for i in range(100)])
     X = features['waveforms']
     X_len = features['waveforms_length'][:, 0]
-    Y = features['Y']
-    Y_onehot = tf.one_hot(Y, depth=num_class)
+    Y = features['targets']
+    r = model(X, padding_mask=X_len, target_list=Y)
 
-    r = model(X, padding_mask=X_len, features_only=True, mask=False)
-    first_token_tensor = tf.squeeze(r['x'][:, 0:1, :], axis=1)
-    pooled_output = keras.layers.Dense(cfg.final_dim * 2, activation='tanh',
-                                       kernel_initializer='orthogonal',
-                                       use_bias=True, trainable=True,
-                                       kernel_regularizer=keras.regularizers.l2(weight_decay),
-                                       bias_regularizer=keras.regularizers.l2(weight_decay))(first_token_tensor)
-    logits = keras.layers.Dense(num_class,
-                                kernel_initializer='orthogonal',
-                                use_bias=False, trainable=True,
-                                kernel_constraint=keras.constraints.unit_norm(),
-                                kernel_regularizer=keras.regularizers.l2(weight_decay),
-                                bias_regularizer=keras.regularizers.l2(weight_decay),
-                                name='prediction')(pooled_output)
-    loss = tf.reduce_mean(amsoftmax_loss(Y_onehot, logits))
+    target_m = tf.zeros((tf.shape(r['logit_m_list'])[0],), dtype=tf.int32)
+    target_u = tf.zeros((tf.shape(r['logit_u_list'])[0],), dtype=tf.int32)
+
+    sample_size = tf.cast(tf.shape(target_m)[0], tf.float32)
+    entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=target_m, logits=r['logit_m_list'])
+    entropy_m = tf.reduce_sum(entropy) / sample_size
+
+    sample_size = tf.cast(tf.shape(target_u)[0], tf.float32)
+    entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=target_u, logits=r['logit_u_list'])
+    entropy_u = tf.reduce_sum(entropy) / sample_size
+
+    seq = r['x']
+    Y = features['Y']
+    first_token_tensor = tf.squeeze(seq[:, 0:1, :], axis=1)
+    pooled_output = tf.keras.layers.Dense(embedding_dim, activation='tanh',
+                                          use_bias=True, trainable=True)(first_token_tensor)
+    logits = tf.keras.layers.Dense(num_class, trainable=True,)(pooled_output)
+    entropy_speakers = tf.reduce_mean(
+        tf.nn.sparse_softmax_cross_entropy_with_logits(
+            logits=logits, labels=Y
+        )
+    )
+
+    loss = entropy_m * 0.95 + entropy_u * 0.05 + entropy_speakers
+
+    tf.identity(entropy_m, 'entropy_m')
+    tf.summary.scalar('entropy_m', entropy_m)
+
+    tf.identity(entropy_u, 'entropy_u')
+    tf.summary.scalar('entropy_u', entropy_u)
+
+    tf.identity(loss, 'train_loss')
+
     accuracy = tf.metrics.accuracy(
         labels=Y, predictions=tf.argmax(logits, axis=1)
     )
 
     tf.identity(accuracy[1], name='train_accuracy')
-
-    tf.identity(loss, 'train_loss')
-
-    variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-    init_checkpoint = 'hubert-conformer-base-output-3mixed/model.ckpt-2000000'
-
-    assignment_map, initialized_variable_names = train.get_assignment_map_from_checkpoint(
-        variables, init_checkpoint
-    )
-
-    tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
         train_op = train.optimizer.adamw.create_optimizer(
@@ -195,7 +212,7 @@ def model_fn(features, labels, mode, params):
 
 train_hooks = [
     tf.train.LoggingTensorHook(
-        ['train_accuracy', 'train_loss'], every_n_iter=1
+        ['entropy_m', 'entropy_u', 'entropy_speakers', 'train_accuracy', 'train_loss'], every_n_iter=1
     )
 ]
 

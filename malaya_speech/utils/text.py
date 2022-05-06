@@ -16,6 +16,34 @@ _small_letters = 'abcdefghijklmnopqrstuvwxyz'
 _rejected = '\'():;"'
 _punct = ':;,.?'
 
+PRONUNCIATION = {
+    'A': 'ae',
+    'B': 'bi',
+    'C': 'si',
+    'D': 'di',
+    'E': 'ei',
+    'F': 'ef',
+    'G': 'ji',
+    'H': 'hesh',
+    'I': 'ai',
+    'J': 'jei',
+    'K': 'kei',
+    'L': 'el',
+    'M': 'eim',
+    'N': 'ein',
+    'O': 'ou',
+    'P': 'pi',
+    'Q': 'qeu',
+    'R': 'ar',
+    'S': 'es',
+    'T': 'ti',
+    'U': 'yu',
+    'V': 'vi',
+    'W': 'dablui',
+    'X': 'ex',
+    'Y': 'wai',
+    'Z': 'zed',
+}
 
 TTS_SYMBOLS = (
     [_pad, _start, _eos] + list(_special) + list(_punctuation) + list(_letters)

@@ -9,7 +9,7 @@
 from malaya_boilerplate.utils import get_home
 
 version = '1.2'
-bump_version = '1.2.7'
+bump_version = '1.2.6'
 __version__ = bump_version
 
 package = 'malaya-speech'
@@ -57,5 +57,6 @@ from .utils import (
     padding,
     split,
     subword,
-    tf_featurization)
+    tf_featurization
+)
 from .utils.read import load, resample
