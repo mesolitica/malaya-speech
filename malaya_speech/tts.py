@@ -58,7 +58,7 @@ _tacotron2_availability = {
     'osman': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
-        'Combined loss': 0.06874,
+        'Combined loss': 0.06911,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
