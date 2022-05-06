@@ -1,20 +1,12 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
 import tensorflow as tf
 import numpy as np
 from glob import glob
 from itertools import cycle
-import malaya_speech
-import malaya_speech.train
-from malaya_speech.train.model import univnet_nonorm as univnet
-from malaya_speech.train.model import universal_melgan as melgan
-from malaya_speech.train.model import melgan as melgan_loss
-from malaya_speech.train.model import stft
-import malaya_speech.config
-from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 import random
 
 
@@ -66,28 +58,42 @@ dataset = dataset.padded_batch(
 )
 
 features = dataset.make_one_shot_iterator().get_next()
+features
 
-gen_config = univnet.GeneratorConfig()
-melgan_config = malaya_speech.config.universal_melgan_config
+import malaya_speech
+import malaya_speech.train
+from malaya_speech.train.model import melgan, hifigan
+from malaya_speech.train.model import stft
+import malaya_speech.config
+from malaya_speech.train.loss import calculate_2d_loss, calculate_3d_loss
 
-generator = univnet.Generator(gen_config, name='universalunivnet-generator')
-discriminator = melgan.MultiScaleDiscriminator(
-    melgan.WaveFormDiscriminatorConfig(
-        **melgan_config['melgan_waveform_discriminator_params']
+hifigan_config = malaya_speech.config.hifigan_config_v2
+hifigan_config['hifigan_generator_params']['filters'] = 1024
+hifigan_config['hifigan_generator_params']['stacks'] = 4
+hifigan_config['hifigan_generator_params']['stack_kernel_size'] = [3, 5, 7, 9]
+hifigan_config['hifigan_generator_params']['stack_dilation_rate'] = [[1, 2], [2, 6], [3, 12], [4, 20]]
+generator = hifigan.MultiGenerator(
+    hifigan.GeneratorConfig(**hifigan_config['hifigan_generator_params']),
+    name='hifigan_generator',
+)
+multiperiod_discriminator = hifigan.MultiPeriodDiscriminator(
+    hifigan.DiscriminatorConfig(
+        **hifigan_config['hifigan_discriminator_params']
     ),
-    melgan.STFTDiscriminatorConfig(
-        **melgan_config['melgan_stft_discriminator_params']
-    ),
-    name='universalmelgan-discriminator',
+    name='hifigan_multiperiod_discriminator',
+)
+multiscale_discriminator = melgan.MultiScaleDiscriminator(
+    melgan.DiscriminatorConfig(
+        **hifigan_config['melgan_discriminator_params'],
+        name='melgan_multiscale_discriminator',
+    )
+)
+discriminator = hifigan.Discriminator(
+    multiperiod_discriminator, multiscale_discriminator
 )
 
-stft_loss_params = {
-    'fft_lengths': [1024, 2048, 512],
-    'frame_steps': [120, 240, 50],
-    'frame_lengths': [600, 1200, 240],
-}
-stft_loss = stft.loss.MultiResolutionSTFT(**stft_loss_params)
-mels_loss = melgan_loss.loss.TFMelSpectrogram()
+stft_loss = stft.loss.MultiResolutionSTFT(**hifigan_config['stft_loss_params'])
+mels_loss = melgan.loss.TFMelSpectrogram()
 mse_loss = tf.keras.losses.MeanSquaredError()
 mae_loss = tf.keras.losses.MeanAbsoluteError()
 
@@ -110,16 +116,20 @@ def compute_per_example_generator_losses(features):
 
     adv_loss = 0.0
     for i in range(len(p_hat)):
-        adv_loss += mse_loss(tf.ones_like(p_hat[i][-1]), p_hat[i][-1])
+        adv_loss += calculate_3d_loss(
+            tf.ones_like(p_hat[i][-1]), p_hat[i][-1], loss_fn=mse_loss
+        )
     adv_loss /= i + 1
 
     fm_loss = 0.0
     for i in range(len(p_hat)):
         for j in range(len(p_hat[i]) - 1):
-            fm_loss += mae_loss(p[i][j], p_hat[i][j])
-    fm_loss /= (i + 1) * (j + 1)
-    adv_loss += 10 * fm_loss
+            fm_loss += calculate_3d_loss(
+                p[i][j], p_hat[i][j], loss_fn=mae_loss
+            )
 
+    fm_loss /= (i + 1) * (j + 1)
+    adv_loss += 10.0 * fm_loss
     generator_loss += 4.0 * adv_loss
 
     per_example_losses = generator_loss
@@ -146,9 +156,12 @@ def compute_per_example_discriminator_losses(features):
     real_loss = 0.0
     fake_loss = 0.0
     for i in range(len(p)):
-        real_loss += mse_loss(tf.ones_like(p[i][-1]), p[i][-1])
-        fake_loss += mse_loss(tf.zeros_like(p_hat[i][-1]), p_hat[i][-1])
-
+        real_loss += calculate_3d_loss(
+            tf.ones_like(p[i][-1]), p[i][-1], loss_fn=mse_loss
+        )
+        fake_loss += calculate_3d_loss(
+            tf.zeros_like(p_hat[i][-1]), p_hat[i][-1], loss_fn=mse_loss
+        )
     real_loss /= i + 1
     fake_loss /= i + 1
     dis_loss = real_loss + fake_loss
@@ -183,41 +196,60 @@ for k, v in discriminator_losses.items():
 summaries = tf.summary.merge_all()
 
 t_vars = tf.trainable_variables()
-d_vars = [
-    var
-    for var in t_vars
-    if var.name.startswith('universalmelgan-discriminator')
-]
-g_vars = [
-    var for var in t_vars if var.name.startswith('universalunivnet-generator')
-]
+d_vars = [var for var in t_vars if var.name.startswith('discriminator')]
+g_vars = [var for var in t_vars if var.name.startswith('hifigan_generator')]
 
 global_step_generator = tf.Variable(
-    100000, trainable=False, name='global_step_generator'
+    50000, trainable=False, name='global_step_generator'
 )
 global_step_discriminator = tf.Variable(
-    100000, trainable=False, name='global_step_discriminator'
+    50000, trainable=False, name='global_step_discriminator'
 )
 
-d_optimizer = tf.train.AdamOptimizer(0.00001, beta1=0.5, beta2=0.9).minimize(
-    discriminator_loss, var_list=d_vars, global_step=global_step_discriminator
+g_boundaries = [100_000, 200_000, 300_000, 400_000, 500_000, 600_000, 700_000]
+g_values = [0.000125, 0.000125, 0.0000625, 0.0000625, 0.0000625, 0.00003125, 0.000015625, 0.000001]
+
+d_boundaries = [100_000, 200_000, 300_000, 400_000, 500_000]
+d_values = [
+    0.00025,
+    0.000_125,
+    0.000_062_5,
+    0.000_031_25,
+    0.000_015_625,
+    0.000_001,
+]
+
+g_piece_wise = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
+    g_boundaries, g_values
 )
-g_optimizer = tf.train.AdamOptimizer(0.0001, beta1=0.5, beta2=0.9).minimize(
+g_lr = g_piece_wise(global_step_generator)
+g_optimizer = tf.train.AdamOptimizer(g_lr).minimize(
     generator_loss, var_list=g_vars, global_step=global_step_generator
 )
+
+d_piece_wise = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
+    d_boundaries, d_values
+)
+d_lr = d_piece_wise(global_step_discriminator)
+d_optimizer = tf.train.AdamOptimizer(d_lr).minimize(
+    discriminator_loss,
+    var_list=d_vars,
+    global_step=global_step_discriminator,
+)
+
 
 sess = tf.InteractiveSession()
 sess.run(tf.global_variables_initializer())
 
 saver = tf.train.Saver(var_list=g_vars)
-saver.restore(sess, tf.train.latest_checkpoint('universal-univnet-32-generator'))
+saver.restore(sess, tf.train.latest_checkpoint('hifigan-1024'))
 
 saver = tf.train.Saver()
 
 checkpoint = 10000
 write_tensorboard = 100
 epoch = 4_000_000
-path = 'universal-univnet-32-combined'
+path = 'hifigan-1024-combined'
 
 writer = tf.summary.FileWriter(f'./{path}')
 
@@ -228,7 +260,7 @@ if ckpt_path:
 
 global_step = sess.run(global_step_generator)
 for i in range(global_step, epoch):
-    g_loss, _, g_losses = sess.run([generator_loss, g_optimizer, generator_losses])
+    g_loss, _ = sess.run([generator_loss, g_optimizer])
     d_loss, _ = sess.run([discriminator_loss, d_optimizer])
     i = sess.run(global_step_generator)
 
@@ -239,6 +271,6 @@ for i in range(global_step, epoch):
     if i % checkpoint == 0:
         saver.save(sess, f'{path}/model.ckpt', global_step=i)
 
-    print(i, g_loss, d_loss, g_losses)
+    print(i, g_loss, d_loss)
 
 saver.save(sess, f'{path}/model.ckpt', global_step=epoch)

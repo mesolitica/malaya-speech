@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
 import tensorflow as tf
@@ -200,7 +200,7 @@ if ckpt_path:
     saver.restore(sess, ckpt_path)
 
 for i in range(epoch):
-    g_loss, _ = sess.run([generator_loss, g_optimizer])
+    g_loss, _, g_losses = sess.run([generator_loss, g_optimizer, generator_losses])
     d_loss, _ = sess.run([discriminator_loss, d_optimizer])
     s = sess.run(summaries)
     writer.add_summary(s, i)
@@ -211,4 +211,4 @@ for i in range(epoch):
     if i % write_tensorboard == 0:
         writer.add_summary(s, i)
 
-    print(i, g_loss, d_loss)
+    print(i, g_loss, d_loss, g_losses)

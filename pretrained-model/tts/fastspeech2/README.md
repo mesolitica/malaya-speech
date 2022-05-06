@@ -93,3 +93,12 @@ python3 fastspeech2-husein.py
 14. Yasmin speaker, last update 29th April 2022, [fastspeech2-yasmin-output.tar](https://huggingface.co/huseinzol05/pretrained-fastspeech2/resolve/main/fastspeech2-yasmin-output.tar).
 
   - Case sensitive, understand `.,?!` punctuations.
+
+15. Osman speaker, last update 29th April 2022, [fastspeech2-small-osman-output.tar](https://huggingface.co/huseinzol05/pretrained-fastspeech2/resolve/main/fastspeech2-small-osman-output.tar).
+
+  - Case sensitive, understand `.,?!` punctuations.
+  - Small model.
+
+16. Osman speaker, last update 29th April 2022, [fastspeech2-osman-output.tar](https://huggingface.co/huseinzol05/pretrained-fastspeech2/resolve/main/fastspeech2-osman-output.tar).
+
+  - Case sensitive, understand `.,?!` punctuations.

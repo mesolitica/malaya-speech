@@ -63,6 +63,7 @@ _tacotron2_availability = {
         'Is lowercase': False,
     },
 }
+
 _fastspeech2_availability = {
     'male': {
         'Size (MB)': 125,
@@ -102,7 +103,7 @@ _fastspeech2_availability = {
     'yasmin': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
-        'Combined loss': 0.5112,
+        'Combined loss': 0.7212,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
@@ -116,14 +117,14 @@ _fastspeech2_availability = {
     'osman': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
-        'Combined loss': 0.5112,
+        'Combined loss': 0.7341,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
     'osman-small': {
         'Size (MB)': 32.9,
         'Quantized Size (MB)': 8.5,
-        'Combined loss': 0.7994,
+        'Combined loss': 0.8182,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
@@ -315,6 +316,8 @@ def tacotron2(
         * ``'male'`` - Tacotron2 trained on male voice.
         * ``'husein'`` - Tacotron2 trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
         * ``'haqkiem'`` - Tacotron2 trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
+        * ``'yasmin'`` - Tacotron2 trained on female Yasmin voice.
+        * ``'osman'`` - Tacotron2 trained on male Osman voice.
         * ``'female-singlish'`` - Tacotron2 trained on female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
 
     quantized : bool, optional (default=False)
@@ -376,6 +379,8 @@ def fastspeech2(
         * ``'male'`` - Fastspeech2 trained on male voice.
         * ``'husein'`` - Fastspeech2 trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
         * ``'haqkiem'`` - Fastspeech2 trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
+        * ``'yasmin'`` - Fastspeech2 trained on female Yasmin voice.
+        * ``'osman'`` - Fastspeech2 trained on male Osman voice.
         * ``'female-singlish'`` - Fastspeech2 trained on female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
 
     quantized : bool, optional (default=False)
@@ -495,6 +500,8 @@ def glowtts(model: str = 'male',
         * ``'male'`` - GlowTTS trained on male voice.
         * ``'haqkiem'`` - GlowTTS trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
         * ``'female-singlish'`` - GlowTTS trained on female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
+        * ``'yasmin'`` - GlowTTS trained on female Yasmin voice.
+        * ``'osman'`` - GlowTTS trained on male Osman voice.
         * ``'multispeaker'`` - Multispeaker GlowTTS trained on male, female, husein and haqkiem voices, also able to do voice conversion.
 
     quantized : bool, optional (default=False)

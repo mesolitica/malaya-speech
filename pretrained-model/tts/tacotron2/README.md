@@ -54,3 +54,7 @@ python3 tacotron2-husein.py
 8. Yasmin speaker, last update 29th April 2022, [tacotron2-yasmin-output.tar](https://huggingface.co/huseinzol05/pretrained-tacotron2/resolve/main/tacotron2-yasmin-output.tar).
 
   - Case sensitive, understand `.,?!` punctuations.
+
+8. Osman speaker, last update 29th April 2022, [tacotron2-osman-output.tar](https://huggingface.co/huseinzol05/pretrained-tacotron2/resolve/main/tacotron2-osman-output.tar).
+
+  - Case sensitive, understand `.,?!` punctuations.
