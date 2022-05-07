@@ -1,6 +1,9 @@
 from malaya_speech.supervised import classification
 from herpetologist import check_type
 
+# EER calculation, https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/speaker-embedding/calculate-EER
+# EER tested on VoxCeleb2 test set.
+
 _availability = {
     'deep-speaker': {
         'Size (MB)': 96.7,

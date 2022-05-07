@@ -3,7 +3,7 @@ import numpy as np
 from malaya_speech.model.frame import Frame
 from malaya_speech.utils.astype import int_to_float
 from malaya_speech.utils.padding import sequence_1d
-from malaya_speech.utils.char import CTC_VOCAB
+from malaya_speech.utils.char import CTC_VOCAB, CTC_VOCAB_IDX
 from malaya_speech.utils.char import decode as char_decode
 from malaya_speech.utils.activation import softmax
 from malaya_speech.utils.read import resample
@@ -292,8 +292,7 @@ class Wav2Vec2_Aligner(Abstract):
         logits, seq_lens = self._get_logits([input], [len(input)])
         logits = np.transpose(logits, axes=(1, 0, 2))
         o = log_softmax(logits, axis=-1)[0]
-        dictionary = {c: i for i, c in enumerate(CTC_VOCAB)}
-        tokens = [dictionary[c] for c in transcription]
+        tokens = [CTC_VOCAB_IDX[c] for c in transcription]
         trellis = get_trellis(o, tokens)
         path = backtrack(trellis, o, tokens)
         segments = merge_repeats(path, transcription)

@@ -51,7 +51,7 @@ def transducer_load(model, module, languages, quantized=False, stt=True, **kwarg
         )
         vocab = []
         for no, language in enumerate(languages):
-            vocab.append(subword_load(path[f'vocab_{no}'].replace('.subwords', '')))
+            vocab.append(subword_load(path[f'vocab_{no}']))
     else:
         path = check_file(
             file=model,
@@ -60,7 +60,7 @@ def transducer_load(model, module, languages, quantized=False, stt=True, **kwarg
             quantized=quantized,
             **kwargs,
         )
-        vocab = subword_load(path['vocab'].replace('.subwords', ''))
+        vocab = subword_load(path['vocab'])
     g = load_graph(path['model'], **kwargs)
     featurizer = STTFeaturizer(normalize_per_feature=True)
 
@@ -131,7 +131,7 @@ def wav2vec_transducer_load(model, module, quantized=False, **kwargs):
         **kwargs,
     )
     g = load_graph(path['model'], **kwargs)
-    vocab = subword_load(path['vocab'].replace('.subwords', ''))
+    vocab = subword_load(path['vocab'])
 
     inputs = [
         'X_placeholder',

@@ -483,7 +483,7 @@ def fastpitch(
     )
 
 
-def glowtts(model: str = 'male',
+def glowtts(model: str = 'yasmin',
             quantized: bool = False,
             pad_to: int = 2,
             true_case_model: Callable = None,
@@ -493,7 +493,7 @@ def glowtts(model: str = 'male',
 
     Parameters
     ----------
-    model : str, optional (default='male')
+    model : str, optional (default='yasmin')
         Model architecture supported. Allowed values:
 
         * ``'female'`` - GlowTTS trained on female voice.

@@ -249,7 +249,7 @@ class SubwordTextEncoder(text_encoder.TextEncoder):
 
     @classmethod
     def _filename(cls, filename_prefix):
-        return filename_prefix + '.subwords'
+        return filename_prefix
 
     def save_to_file(self, filename_prefix):
         """Save the vocabulary to a file."""

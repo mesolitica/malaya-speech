@@ -541,7 +541,7 @@ class Transducer(Abstract):
         -------
         result: str
         """
-        return self.predict([input], decoder=decoder, **kwargs)[0]
+        return self.predict([input])[0]
 
 
 class TransducerAligner(Abstract):
