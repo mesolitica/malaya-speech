@@ -26,3 +26,7 @@ from .transducer_featurizer import config as transducer_featurizer_config
 from .transformer import config as transformer_config
 from .universal_melgan import config as universal_melgan_config
 from .universal_mb_melgan import config as universal_mb_melgan_config
+from .vit import (
+    tiny_config as vit_tiny_config,
+    base_config as vit_base_config,
+)
