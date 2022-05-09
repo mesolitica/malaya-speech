@@ -27,7 +27,7 @@ test_set = glob('/home/husein/youtube/voxceleb-wav/*.wav')
 sr = 16000
 maxlen = 15
 minlen = 2
-kmean = hubert.kmeans.ApplyKmeans_TF('kmean.km')
+embedding_dim = 512
 
 
 def generate(files):
@@ -54,21 +54,9 @@ def generate(files):
             }
 
 
-def preprocess_inputs(example):
-    v = featurizer.vectorize(example['waveforms'])
-    deltas = malaya_speech.utils.tf_featurization.deltas(v)
-    ddeltas = malaya_speech.utils.tf_featurization.deltas(deltas)
-    concated = tf.concat([v, deltas, ddeltas], axis=1)
-    s = tf.compat.v1.numpy_function(kmean, [concated], tf.int64)
-    s = tf.cast(s, tf.int32)
-    kmean_tf = tf.reshape(s, (-1,)) + 3
-    example['targets'] = kmean_tf
-    return example
-
-
 def get_dataset(
     file,
-    batch_size=4,
+    batch_size=8,
     shuffle_size=20,
     thread_count=24,
     maxlen_feature=1800,
@@ -88,21 +76,16 @@ def get_dataset(
             args=(file,),
         )
         dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
-        dataset = dataset.map(
-            preprocess_inputs, num_parallel_calls=thread_count
-        )
         dataset = dataset.padded_batch(
             batch_size,
             padded_shapes={
                 'waveforms': tf.TensorShape([None]),
                 'waveforms_length': tf.TensorShape([None]),
-                'targets': tf.TensorShape([None]),
                 'Y': tf.TensorShape([None]),
             },
             padding_values={
                 'waveforms': tf.constant(0, dtype=tf.float32),
                 'waveforms_length': tf.constant(0, dtype=tf.int32),
-                'targets': tf.constant(0, dtype=tf.int32),
                 'Y': tf.constant(0, dtype=tf.int32),
             },
         )
@@ -137,42 +120,21 @@ def model_fn(features, labels, mode, params):
         dropout_features=0.0,
         final_dim=256,
     )
-    model = hubert.Model(cfg, encoder, ['pad', 'eos', 'unk'] + [str(i) for i in range(100)])
+    model = hubert.Model(cfg, encoder)
     X = features['waveforms']
     X_len = features['waveforms_length'][:, 0]
-    Y = features['targets']
-    r = model(X, padding_mask=X_len, target_list=Y)
-
-    target_m = tf.zeros((tf.shape(r['logit_m_list'])[0],), dtype=tf.int32)
-    target_u = tf.zeros((tf.shape(r['logit_u_list'])[0],), dtype=tf.int32)
-
-    sample_size = tf.cast(tf.shape(target_m)[0], tf.float32)
-    entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=target_m, logits=r['logit_m_list'])
-    entropy_m = tf.reduce_sum(entropy) / sample_size
-
-    sample_size = tf.cast(tf.shape(target_u)[0], tf.float32)
-    entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=target_u, logits=r['logit_u_list'])
-    entropy_u = tf.reduce_sum(entropy) / sample_size
+    Y = features['Y'][:, 0]
 
     seq = r['x']
-    Y = features['Y']
     first_token_tensor = tf.squeeze(seq[:, 0:1, :], axis=1)
     pooled_output = tf.keras.layers.Dense(embedding_dim, activation='tanh',
                                           use_bias=True, trainable=True)(first_token_tensor)
     logits = tf.keras.layers.Dense(num_class, trainable=True,)(pooled_output)
-    entropy_speakers = tf.reduce_mean(
+    loss = tf.reduce_mean(
         tf.nn.sparse_softmax_cross_entropy_with_logits(
             logits=logits, labels=Y
         )
     )
-
-    loss = entropy_m * 0.95 + entropy_u * 0.05 + entropy_speakers
-
-    tf.identity(entropy_m, 'entropy_m')
-    tf.summary.scalar('entropy_m', entropy_m)
-
-    tf.identity(entropy_u, 'entropy_u')
-    tf.summary.scalar('entropy_u', entropy_u)
 
     tf.identity(loss, 'train_loss')
 
@@ -187,7 +149,7 @@ def model_fn(features, labels, mode, params):
             loss,
             init_lr=5e-5,
             num_train_steps=total_steps,
-            num_warmup_steps=100000,
+            num_warmup_steps=50000,
             end_learning_rate=0.0,
             weight_decay_rate=0.01,
             beta_1=0.9,

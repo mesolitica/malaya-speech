@@ -1,5 +1,6 @@
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
@@ -25,9 +26,22 @@ from transformers import (
     set_seed,
 )
 from transformers.trainer_utils import get_last_checkpoint
+from packaging import version
 import tensorflow as tf
 import random
 import json
+import logging
+import shutil
+
+if is_apex_available():
+    from apex import amp
+
+
+if version.parse(torch.__version__) >= version.parse("1.6"):
+    _is_native_amp_available = True
+    from torch.cuda.amp import autocast
+
+logger = logging.getLogger(__name__)
 
 CTC_VOCAB = [''] + list(string.ascii_lowercase + string.digits) + [' ']
 
@@ -48,10 +62,11 @@ def download_file_cloud(url, filename):
     return version
 
 
-def get_dataset(files, directory='tfrecord'):
-    # os.system(f'rm -rf {directory}')
+def get_dataset(files, directory='tfrecord', overwrite_directory=True):
+    if overwrite_directory:
+        shutil.rmtree(directory)
     for f in files:
-        filename = os.path.join(directory, os.path.split(f)[1])
+        filename = os.path.join(directory, '-'.join(f.split('/')[-2:]))
         if os.path.exists(filename):
             continue
         try:
@@ -84,13 +99,11 @@ def parse(serialized_example):
     return features
 
 
-import random
-
-
 class MalayaDataset(torch.utils.data.Dataset):
-    def __init__(self, files, directory, batch_files=5):
+    def __init__(self, files, directory, batch_files=5, max_batch=999999, overwrite_directory=True,
+                 start=False):
         self.files = [t.replace('gs://mesolitica-tpu-general',
-                                'https://f000.backblazeb2.com/file/malay-dataset/speech/mixed') for t in files]
+                                'https://huggingface.co/huseinzol05/STT-Mixed-TFRecord/resolve/main') for t in files]
         self.directory = directory
         self.batch_files = batch_files
         self.i = 0
@@ -98,15 +111,26 @@ class MalayaDataset(torch.utils.data.Dataset):
         self.sr = 16000
         self.maxlen = 16
         self.minlen = 2
+        self.max_batch = max_batch
+        self.overwrite_directory = overwrite_directory
+        if start:
+            self.get_dataset()
 
-    def get_dataset(self):
-        #         if self.i >= len(self.files) or self.i == 0:
-        #             self.i = 0
-        #             random.shuffle(self.files)
+    def get_dataset(self, num_cpu_threads=4, thread_count=12):
+        if self.i >= len(self.files) or self.i == 0:
+            self.i = 0
+            random.shuffle(self.files)
         b = self.files[self.i: self.i + self.batch_files]
-        tfrecords = get_dataset(b, directory=self.directory)
-        d = tf.data.TFRecordDataset(tfrecords)
-        d = d.map(parse, num_parallel_calls=10)
+        tfrecords = get_dataset(b, directory=self.directory, overwrite_directory=self.overwrite_directory)
+        d = tf.data.Dataset.from_tensor_slices(tf.constant(tfrecords))
+        d = d.shuffle(buffer_size=len(tfrecords))
+        cycle_length = min(num_cpu_threads, len(tfrecords))
+        d = d.interleave(
+            tf.data.TFRecordDataset,
+            cycle_length=cycle_length,
+            block_length=thread_count)
+        d = d.shuffle(buffer_size=100)
+        d = d.map(parse, num_parallel_calls=num_cpu_threads)
         d = d.filter(
             lambda x: tf.less(tf.shape(x['waveforms'])[0] / self.sr, self.maxlen)
         )
@@ -116,22 +140,31 @@ class MalayaDataset(torch.utils.data.Dataset):
         self.d = d.as_numpy_iterator()
         self.i += self.batch_files
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx, raise_exception=False):
         try:
-            r = next(d)
-        except:
+            r = next(self.d)
+        except Exception as e:
+            if raise_exception:
+                raise
+            print('Exception __getitem__', e)
             self.get_dataset()
-            r = next(d)
+            r = next(self.d)
         r = {'speech': [r['waveforms']], 'sampling_rate': [16000],
              'target_text': ''.join([CTC_VOCAB[t] for t in r['targets']])}
         return r
 
     def __len__(self):
-        return 9999999
+        return self.max_batch
 
 
 with open('3mixed-train-test-v2.json') as fopen:
     dataset = json.load(fopen)
+
+test_set = [
+    'gs://mesolitica-tpu-general/mandarin/0-35.tfrecord',
+    'gs://mesolitica-tpu-general/malay/2-25.tfrecord',
+    'gs://mesolitica-tpu-general/singlish/2-34.tfrecord'
+]
 
 
 @dataclass
@@ -322,8 +355,13 @@ def main():
 
     logger.info("Training/evaluation parameters %s", training_args)
     set_seed(training_args.seed)
-    train_dataset = MalayaDataset(dataset['train'], directory='tfrecord')
-    eval_dataset = MalayaDataset(dataset['test'], directory='tfrecord-test')
+    train_dataset = MalayaDataset(dataset['train'], directory='tfrecord-300m')
+    eval_dataset = MalayaDataset(
+        test_set,
+        directory='tfrecord-300m-test',
+        max_batch=100,
+        overwrite_directory=False
+    )
 
     vocab_dict = {v: k for k, v in enumerate(CTC_VOCAB)}
     vocab_dict["|"] = vocab_dict[" "]
@@ -335,7 +373,7 @@ def main():
         json.dump(vocab_dict, vocab_file)
 
     tokenizer = Wav2Vec2CTCTokenizer(
-        "vocab.json",
+        "ctc-vocab.json",
         unk_token="[UNK]",
         pad_token="[PAD]",
         word_delimiter_token="|",
@@ -363,7 +401,6 @@ def main():
         inputs = processor(batch["speech"], sampling_rate=batch["sampling_rate"][0])
         batch["input_values"] = inputs.input_values[0]
         batch["input_length"] = len(batch["input_values"])
-        # Setup the processor for targets
         with processor.as_target_processor():
             batch["labels"] = processor(batch["target_text"]).input_ids
         return batch
@@ -386,6 +423,7 @@ def main():
         pred_str = processor.batch_decode(pred_ids)
         # we do not want to group tokens when computing the metrics
         label_str = processor.batch_decode(pred.label_ids, group_tokens=False)
+        print(list(zip(pred_str, label_str)))
 
         wer = wer_metric.compute(predictions=pred_str, references=label_str)
 
@@ -410,6 +448,8 @@ def main():
         else:
             checkpoint = None
 
+        print('checkpoint', checkpoint)
+
         processor.save_pretrained(training_args.output_dir)
 
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
@@ -428,8 +468,8 @@ def main():
     if training_args.do_eval:
         logger.info("*** Evaluate ***")
         metrics = trainer.evaluate()
-        max_val_samples = len(eval_dataset)
-        metrics["eval_samples"] = len(eval_dataset)
+        max_val_samples = 100
+        metrics["eval_samples"] = 100
 
         trainer.log_metrics("eval", metrics)
         trainer.save_metrics("eval", metrics)

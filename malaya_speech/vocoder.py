@@ -78,6 +78,11 @@ _hifigan_availability = {
         'Quantized Size (MB)': 2.49,
         'Mel loss': 0.5547,
     },
+    'universal-1024': {
+        'Size (MB)': 178,
+        'Quantized Size (MB)': 45,
+        'Mel loss': 0.3617,
+    },
     'universal-768': {
         'Size (MB)': 72.8,
         'Quantized Size (MB)': 18.5,

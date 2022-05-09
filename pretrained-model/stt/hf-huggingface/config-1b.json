@@ -1,6 +1,6 @@
 {
-    "model_name_or_path": "facebook/wav2vec2-xls-r-300m",
-    "output_dir": "wav2vec2-mixed",
+    "model_name_or_path": "facebook/wav2vec2-xls-r-1b",
+    "output_dir": "wav2vec2-mixed-1b",
     "overwrite_output_dir": false,
     "num_train_epochs": 50,
     "per_device_eval_batch_size": 4,
@@ -23,7 +23,7 @@
     "do_train": true,
     "do_eval": true,
     "group_by_length": false,
-    "gradient_accumulation_steps": 3,
+    "gradient_accumulation_steps": 5,
     "gradient_checkpointing": true,
     "ignore_data_skip": true,
     "chars_to_ignore": [",", "?", ".", "!", "-", ";", ":", "\"\"", "%", "'", "\"", "�", "'", "\u2018", "\u2019", "_", "，", "！", "\u0142", "\u0144", "\u014d", "\u2013", "\u2014", "\\", "\\\\", "\u201c", "\u201d", "\\[", "\\]"]
