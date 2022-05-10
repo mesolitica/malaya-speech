@@ -32,6 +32,16 @@ Simple ambients gathered from Youtube.
 
 Gather Youtube urls for indonesian, english and low quality english audiobooks only.
 
+`Azure-TTS <https://github.com/huseinzol05/malaya-speech/tree/master/data/azure-tts>`_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Semisupervised Malay TTS dataset from Azure TTS cloud.
+
+`Emotion <https://github.com/huseinzol05/malaya-speech/tree/master/data/emotion>`_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Speech emotion dataset used by Malaya-Speech for speech emotion detection.
+
 `IIUM <https://github.com/huseinzol05/malaya-speech/tree/master/data/iium>`_
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -105,6 +115,11 @@ Check hyperlocal language detection models at https://malaya-speech.readthedocs.
      journal = {GitHub repository},
      howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/language}}
    }
+
+`mixed-stt <https://github.com/huseinzol05/malaya-speech/tree/master/data/mixed-stt>`_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Malay, Singlish and Mandarin STT dataset in TFRecord format. Included scripts how to load using ``torch.dataset``.
 
 `news <https://github.com/huseinzol05/malaya-speech/tree/master/data/news>`_
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
