@@ -148,3 +148,8 @@ with open('3mixed-train-test.json') as fopen:
 
 dataset = MalayaDataset(dataset[:5], directory='tfrecord', shuffle=False, overwrite_directory=False)
 print(dataset[0])
+
+"""
+{'speech': [array([-0.00034647, -0.00051971, -0.00043309, ..., -0.00017324,
+       -0.00060632, -0.00060632], dtype=float32)], 'sampling_rate': [16000], 'target_text': 'the charity run was held on a tuesday'}
+"""
