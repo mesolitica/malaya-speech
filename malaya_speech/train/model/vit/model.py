@@ -76,14 +76,14 @@ def get_2d_position_codes(height, width, out_dim, normalization_max=6.2831852):
     """
     y_coords = tf.cast(tf.range(height), tf.float32)
     if normalization_max is not None:
-        y_coords = y_coords / (height - 1) * normalization_max
+        y_coords = y_coords / (tf.cast(height, tf.float32) - 1) * normalization_max
     y_coords = positional_encoding(y_coords, out_dim//2)
     y_coords = tf.expand_dims(y_coords, 2)
     y_coords = tf.concat([y_coords, tf.zeros_like(y_coords)], -1)
 
     x_coords = tf.cast(tf.range(width), tf.float32)
     if normalization_max is not None:
-        x_coords = x_coords / (width - 1) * normalization_max
+        x_coords = x_coords / (tf.cast(width, tf.float32) - 1) * normalization_max
     x_coords = positional_encoding(x_coords, out_dim//2)
     x_coords = tf.expand_dims(x_coords, 1)
     x_coords = tf.concat([tf.zeros_like(x_coords), x_coords], -1)
