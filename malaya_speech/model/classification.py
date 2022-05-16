@@ -8,6 +8,59 @@ from malaya_speech.utils.activation import softmax
 from malaya_speech.model.abstract import Abstract
 
 
+class Transformer2Vec(Abstract):
+    def __init__(
+        self,
+        input_nodes,
+        output_nodes,
+        sess,
+        model,
+        label,
+        name,
+        vectorizer=None,
+        extra=None,
+    ):
+        self._input_nodes = input_nodes
+        self._output_nodes = output_nodes
+        self._sess = sess
+        self.labels = label
+        self.__model__ = model
+        self.__name__ = name
+
+    def vectorize(self, inputs):
+        """
+        Vectorize inputs.
+
+        Parameters
+        ----------
+        inputs: List[np.array]
+            List[np.array] or List[malaya_speech.model.frame.Frame].
+
+        Returns
+        -------
+        result: np.array
+            returned [B, D].
+        """
+
+        inputs = [
+            input.array if isinstance(input, Frame) else input
+            for input in inputs
+        ]
+        inputs, lengths = padding_sequence_nd(
+            inputs, dim=0, return_len=True
+        )
+
+        r = self._execute(
+            inputs=[inputs, lengths],
+            input_labels=['X_placeholder', 'X_len_placeholder'],
+            output_labels=['logits'],
+        )
+        return r['logits']
+
+    def __call__(self, inputs):
+        return self.vectorize(inputs)
+
+
 class Speakernet(Abstract):
     def __init__(
         self,
@@ -323,6 +376,7 @@ class MarbleNetClassification(Abstract):
     def predict_proba(self, inputs):
         """
         Predict inputs, will return probability.
+
         Parameters
         ----------
         inputs: List[np.array]
@@ -350,6 +404,7 @@ class MarbleNetClassification(Abstract):
     def predict(self, inputs):
         """
         Predict inputs, will return labels.
+
         Parameters
         ----------
         inputs: List[np.array]
@@ -365,6 +420,7 @@ class MarbleNetClassification(Abstract):
     def __call__(self, input):
         """
         Predict input, will return label.
+
         Parameters
         ----------
         inputs: np.array

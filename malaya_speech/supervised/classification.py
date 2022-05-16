@@ -7,6 +7,7 @@ from malaya_speech.utils import (
 from malaya_speech.model.classification import (
     Speakernet,
     Speaker2Vec,
+    Transformer2Vec,
     SpeakernetClassification,
     MarbleNetClassification,
     Classification,
@@ -15,6 +16,8 @@ from malaya_speech.utils import featurization
 from malaya_speech.config import (
     speakernet_featurizer_config as speakernet_config,
 )
+
+transformer_models = ['conformer-tiny', 'conformer-base', 'vit-tiny', 'vit-base']
 
 
 def load(model, module, extra, label, quantized=False, **kwargs):
@@ -40,6 +43,8 @@ def load(model, module, extra, label, quantized=False, **kwargs):
     if module == 'speaker-vector':
         if model == 'speakernet':
             model_class = Speakernet
+        elif model in transformer_models:
+            model_class = Transformer2Vec
         else:
             model_class = Speaker2Vec
     else:
@@ -52,7 +57,7 @@ def load(model, module, extra, label, quantized=False, **kwargs):
 
     if model == 'speakernet':
         inputs = ['Placeholder', 'Placeholder_1']
-    elif 'marblenet' in model:
+    elif 'marblenet' in model or model in transformer_models:
         inputs = ['X_placeholder', 'X_len_placeholder']
     else:
         inputs = ['Placeholder']
