@@ -42,6 +42,11 @@ _melgan_availability = {
         'Quantized Size (MB)': 19.9,
         'Mel loss': 0.4591,
     },
+    'universal-384': {
+        'Size (MB)': 11.3,
+        'Quantized Size (MB)': 3.06,
+        'Mel loss': 0.4445,
+    },
 }
 
 _mbmelgan_availability = {
@@ -79,9 +84,9 @@ _hifigan_availability = {
         'Mel loss': 0.5547,
     },
     'universal-1024': {
-        'Size (MB)': 178,
-        'Quantized Size (MB)': 45,
-        'Mel loss': 0.3617,
+        'Size (MB)': 170,
+        'Quantized Size (MB)': 42.9,
+        'Mel loss': 0.3346,
     },
     'universal-768': {
         'Size (MB)': 72.8,
@@ -142,6 +147,7 @@ def melgan(model: str = 'universal-1024', quantized: bool = False, **kwargs):
         * ``'female-singlish'`` - MelGAN trained on Female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
         * ``'universal'`` - Universal MelGAN trained on multiple speakers.
         * ``'universal-1024'`` - Universal MelGAN with 1024 filters trained on multiple speakers.
+        * ``'universal-384'`` - Universal MelGAN with 384 filters trained on multiple speakers.
 
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
@@ -213,6 +219,7 @@ def hifigan(model: str = 'universal-768', quantized: bool = False, **kwargs):
 
         * ``'female'`` - HiFiGAN trained on female voice.
         * ``'male'`` - HiFiGAN trained on male voice.
+        * ``'universal-1024'`` - Universal HiFiGAN with 1024 filters trained on multiple speakers.
         * ``'universal-768'`` - Universal HiFiGAN with 768 filters trained on multiple speakers.
         * ``'universal-512'`` - Universal HiFiGAN with 512 filters trained on multiple speakers.
 
