@@ -1,5 +1,5 @@
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
 from dataclasses import dataclass, field
@@ -355,7 +355,7 @@ def main():
 
     logger.info("Training/evaluation parameters %s", training_args)
     set_seed(training_args.seed)
-    train_dataset = MalayaDataset(dataset['train'], directory='tfrecord-300m')
+    train_dataset = MalayaDataset(dataset['train'], directory='tfrecord-1b')
     eval_dataset = MalayaDataset(
         test_set,
         directory='tfrecord-300m-test',

@@ -22,6 +22,7 @@ from transformers import (
     Wav2Vec2FeatureExtractor,
     Wav2Vec2ForCTC,
     Wav2Vec2Processor,
+    is_apex_available,
     set_seed,
 )
 from transformers.trainer_utils import get_last_checkpoint
@@ -31,7 +32,9 @@ import random
 import json
 import logging
 import shutil
-from multiprocessing import Pool
+
+if is_apex_available():
+    from apex import amp
 
 
 if version.parse(torch.__version__) >= version.parse("1.6"):
@@ -47,32 +50,29 @@ def download_file_cloud(url, filename):
     r = requests.get(url, stream=True)
     total_size = int(r.headers['content-length'])
     version = int(r.headers.get('X-Bz-Upload-Timestamp', 0))
-    try:
-        local_size = os.path.getsize(filename)
-        if local_size == total_size:
-            print(f'{filename} local size matched with cloud size')
-            return version
-    except Exception as e:
-        print(e)
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, 'wb') as f:
-        for data in r.iter_content(chunk_size=1_048_576):
+        for data in tqdm(
+            iterable=r.iter_content(chunk_size=1_048_576),
+            total=total_size / 1_048_576,
+            unit='MB',
+            unit_scale=True,
+        ):
             f.write(data)
+    return version
 
 
 def get_dataset(files, directory='tfrecord', overwrite_directory=True):
-    os.makedirs(directory, exist_ok=True)
     if overwrite_directory:
         shutil.rmtree(directory)
-    files_to_download = []
     for f in files:
         filename = os.path.join(directory, '-'.join(f.split('/')[-2:]))
-        files_to_download.append((f, filename))
-
-    pool = Pool(processes=len(files))
-    pool.starmap(download_file_cloud, files_to_download)
-    pool.close()
-    pool.join()
+        if os.path.exists(filename):
+            continue
+        try:
+            download_file_cloud(f, filename)
+        except Exception as e:
+            print(e)
     tfrecords = glob(f'{directory}/*.tfrecord')
     return tfrecords
 
@@ -100,7 +100,7 @@ def parse(serialized_example):
 
 
 class MalayaDataset(torch.utils.data.Dataset):
-    def __init__(self, files, directory, batch_files=10, max_batch=999999, overwrite_directory=True,
+    def __init__(self, files, directory, batch_files=5, max_batch=999999, overwrite_directory=True,
                  start=False):
         self.files = [t.replace('gs://mesolitica-tpu-general',
                                 'https://huggingface.co/huseinzol05/STT-Mixed-TFRecord/resolve/main') for t in files]
@@ -274,7 +274,13 @@ class DataCollatorCTCWithPadding:
 
 
 class CTCTrainer(Trainer):
-    def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]]) -> torch.Tensor:
+    def training_step(
+        self,
+        teacher: nn.Module,
+        model: nn.Module,
+        inputs: Dict[str, Union[torch.Tensor, Any]],
+        temperature: float = 1.0,
+    ) -> torch.Tensor:
         """
         Perform a training step on a batch of inputs.
         Subclass and override to inject custom behavior.
@@ -288,23 +294,27 @@ class CTCTrainer(Trainer):
         Return:
             :obj:`torch.Tensor`: The tensor with training loss on this batch.
         """
-
+        teacher.eval()
         model.train()
         inputs = self._prepare_inputs(inputs)
 
         if self.use_amp:
             with autocast():
-                loss = self.compute_loss(model, inputs)
+                loss, logits = self.compute_loss(model, inputs, return_outputs)
+                with torch.no_grad():
+                    teacher_logits = teacher(**inputs)
         else:
-            loss = self.compute_loss(model, inputs)
+            loss, logits = self.compute_loss(model, inputs, return_outputs)
+            with torch.no_grad():
+                teacher_logits = teacher(**inputs)
 
-        if self.args.n_gpu > 1:
-            if model.module.config.ctc_loss_reduction == "mean":
-                loss = loss.mean()
-            elif model.module.config.ctc_loss_reduction == "sum":
-                loss = loss.sum() / (inputs["labels"] >= 0).sum()
-            else:
-                raise ValueError(f"{model.config.ctc_loss_reduction} is not valid. Choose one of ['mean', 'sum']")
+        loss_fct = nn.KLDivLoss(reduction='batchmean')
+        loss_teaching = (
+            loss_fct(
+                F.log_softmax(logits / self.args.temperature, dim=-1),
+                F.softmax(teacher_logits / self.args.temperature, dim=-1))
+            * (self.args.temperature ** 2))
+        loss = self.args.alpha_ce * loss_ce + self.args.alpha_squad * loss
 
         if self.args.gradient_accumulation_steps > 1:
             loss = loss / self.args.gradient_accumulation_steps
@@ -431,6 +441,7 @@ def main():
 
     data_collator = DataCollatorCTCWithPadding(processor=processor, padding=True)
     trainer = CTCTrainer(
+        teacher=teacher,
         model=model,
         data_collator=data_collator,
         args=training_args,
