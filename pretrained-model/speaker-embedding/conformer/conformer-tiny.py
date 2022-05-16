@@ -21,7 +21,7 @@ import tensorflow.keras.backend as K
 config = malaya_speech.config.conformer_tiny_encoder_config
 
 sr = 16000
-maxlen = 18
+maxlen = 16
 minlen = 2
 prob_aug = 0.9
 weight_decay = 1e-5
@@ -33,7 +33,6 @@ with open('/home/husein/youtube/voxceleb2-label.json') as fopen:
 num_class = len(ids)
 
 train_set = glob('/home/husein/youtube/voxceleb-dev/*.wav')
-test_set = glob('/home/husein/youtube/voxceleb-wav/*.wav')
 
 parameters = {
     'optimizer_params': {'beta1': 0.9, 'beta2': 0.98, 'epsilon': 10e-9},
@@ -120,7 +119,7 @@ def preprocess_inputs(example):
 
 def get_dataset(
     file,
-    batch_size=32,
+    batch_size=96,
     shuffle_size=16,
     thread_count=24,
     maxlen_feature=1800,
@@ -186,6 +185,7 @@ def model_fn(features, labels, mode, params):
     )
 
     tf.identity(accuracy[1], name='train_accuracy')
+    tf.summary.scalar('train_accuracy', accuracy[1])
     tf.identity(loss, 'train_loss')
 
     if mode == tf.estimator.ModeKeys.TRAIN:
@@ -224,7 +224,6 @@ train_hooks = [
 
 
 train_dataset = get_dataset(train_set)
-test_dataset = get_dataset(test_set)
 
 train.run_training(
     train_fn=train_dataset,
@@ -234,6 +233,5 @@ train.run_training(
     log_step=1,
     save_checkpoint_step=25000,
     max_steps=total_steps,
-    eval_fn=test_dataset,
     train_hooks=train_hooks,
 )

@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
 import numpy as np
@@ -10,22 +10,25 @@ import random
 import json
 import malaya_speech.train as train
 import malaya_speech.config
-import malaya_speech.train.model.conformer as conformer
 import malaya_speech.augmentation.spectrogram as mask_augmentation
 import malaya_speech.augmentation.waveform as augmentation
+from malaya_speech.train.model import vit
 import malaya_speech
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow.keras.backend as K
 
-config = malaya_speech.config.conformer_base_encoder_config
+config = malaya_speech.config.vit_tiny_config
+config['dim'] = 384
+config['mlp_ratio'] = 4
+config['image_height'] = 80
+config['image_width'] = 620
 
 sr = 16000
-maxlen = 16
+maxlen = 18
 minlen = 2
-prob_aug = 0.9
-weight_decay = 1e-6
 embedding_dim = 512
+data_min = np.log(1e-2)
 
 with open('/home/husein/youtube/voxceleb2-label.json') as fopen:
     ids = json.load(fopen)
@@ -34,41 +37,10 @@ num_class = len(ids)
 
 train_set = glob('/home/husein/youtube/voxceleb-dev/*.wav')
 
-parameters = {
-    'optimizer_params': {'beta1': 0.9, 'beta2': 0.98, 'epsilon': 10e-9},
-    'lr_policy_params': {
-        'warmup_steps': 40000,
-        'max_lr': (0.05 / config['dmodel']),
-    },
-}
-
 featurizer = malaya_speech.tf_featurization.STTFeaturizer(
     normalize_per_feature=True
 )
 n_mels = featurizer.num_feature_bins
-
-
-def transformer_schedule(step, d_model, warmup_steps=4000, max_lr=None):
-    arg1 = tf.math.rsqrt(tf.cast(step, tf.float32))
-    arg2 = step * (warmup_steps ** -1.5)
-    arg1 = tf.cast(arg1, tf.float32)
-    arg2 = tf.cast(arg2, tf.float32)
-    lr = tf.math.rsqrt(tf.cast(d_model, tf.float32)) * tf.math.minimum(
-        arg1, arg2
-    )
-    if max_lr is not None:
-        max_lr = tf.cast(max_lr, tf.float32)
-        return tf.math.minimum(max_lr, lr)
-    return lr
-
-
-def learning_rate_scheduler(global_step):
-
-    return transformer_schedule(
-        tf.cast(global_step, tf.float32),
-        config['dmodel'],
-        **parameters['lr_policy_params'],
-    )
 
 
 def mel_augmentation(features):
@@ -119,7 +91,7 @@ def preprocess_inputs(example):
 
 def get_dataset(
     file,
-    batch_size=32,
+    batch_size=64,
     shuffle_size=16,
     thread_count=24,
     maxlen_feature=1800,
@@ -149,7 +121,7 @@ def get_dataset(
                 'targets': tf.TensorShape([None]),
             },
             padding_values={
-                'inputs': tf.constant(0, dtype=tf.float32),
+                'inputs': tf.constant(np.log(data_min), dtype=tf.float32),
                 'inputs_length': tf.constant(0, dtype=tf.int32),
                 'targets': tf.constant(0, dtype=tf.int32),
             },
@@ -163,12 +135,11 @@ total_steps = 2000_000
 
 
 def model_fn(features, labels, mode, params):
-    conformer_model = conformer.Model(
-        kernel_regularizer=None, bias_regularizer=None, **config
-    )
-    v = tf.expand_dims(features['inputs'], -1)
+    model = vit.Model(**config)
+    X = tf.expand_dims(features['inputs'], -1)
+    X_resize = tf.image.resize(X, (config['image_width'], config['image_height']),)
+    seq = model(X_resize, training=True)
     Y = features['targets'][:, 0]
-    seq = conformer_model(v)
     first_token_tensor = tf.squeeze(seq[:, 0:1, :], axis=1)
     pooled_output = keras.layers.Dense(embedding_dim, activation='tanh',
                                        use_bias=True, trainable=True)(first_token_tensor)
@@ -184,7 +155,6 @@ def model_fn(features, labels, mode, params):
     )
 
     tf.identity(accuracy[1], name='train_accuracy')
-    tf.summary.scalar('train_accuracy', accuracy[1])
     tf.identity(loss, 'train_loss')
 
     if mode == tf.estimator.ModeKeys.TRAIN:
@@ -198,7 +168,7 @@ def model_fn(features, labels, mode, params):
             beta_1=0.9,
             beta_2=0.999,
             epsilon=1e-6,
-            clip_norm=1.0,
+            clip_norm=3.0,
         )
         estimator_spec = tf.estimator.EstimatorSpec(
             mode=mode, loss=loss, train_op=train_op
@@ -227,7 +197,7 @@ train_dataset = get_dataset(train_set)
 train.run_training(
     train_fn=train_dataset,
     model_fn=model_fn,
-    model_dir='conformer-base-voxceleb',
+    model_dir='vit-tiny-voxceleb',
     num_gpus=1,
     log_step=1,
     save_checkpoint_step=25000,
