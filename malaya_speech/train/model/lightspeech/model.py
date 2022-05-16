@@ -48,7 +48,7 @@ class ConvSeparable(tf.keras.layers.Layer):
         self.padding = padding
         std = math.sqrt((4 * (1.0 - dropout)) / (kernel_size * out_channels))
 
-        self.depthwise_conv = tf.keras.layers.DepthwiseConv2D(in_channels, (self.kernel_size, 1),
+        self.depthwise_conv = tf.keras.layers.DepthwiseConv2D((self.kernel_size, 1),
                                                               padding=padding, use_bias=False,
                                                               depthwise_initializer=tf.keras.initializers.RandomNormal(
                                                                   mean=0.0, stddev=std, seed=None
@@ -98,8 +98,8 @@ class EncSepConvLayer(tf.keras.layers.Layer):
         super().__init__(**kwargs)
         self.dropout = tf.keras.layers.Dropout(dropout)
         self.activation_fn = ACT2FN[activation]
-        self.conv1 = ConvSeparable_v2(c, c, kernel_size, dropout=dropout)
-        self.conv2 = ConvSeparable_v2(c, c, kernel_size, dropout=dropout)
+        self.conv1 = ConvSeparable(c, c, kernel_size, dropout=dropout)
+        self.conv2 = ConvSeparable(c, c, kernel_size, dropout=dropout)
         self.layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-5)
 
     def call(self, inputs, training=False):
