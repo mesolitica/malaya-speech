@@ -617,15 +617,21 @@ class TFFastSpeechLengthRegulator(tf.keras.layers.Layer):
         batch_size = input_shape[0]
         hidden_size = input_shape[-1]
 
-        outputs = tf.zeros(
-            shape=[
-                0,
-                max_durations,
-                self.config.encoder_self_attention_params.hidden_size,
-            ],
-            dtype=encoder_hidden_states.dtype,
-        )
-        encoder_masks = tf.zeros(shape=[0, max_durations], dtype=tf.int32)
+        outputs = tf.fill([0, max_durations, self.config.encoder_self_attention_params.hidden_size], 0)
+        outputs = tf.cast(outputs, encoder_hidden_states.dtype)
+
+        encoder_masks = tf.fill([0, max_durations], 0)
+        encoder_masks = tf.cast(encoder_masks, tf.int32)
+
+        # outputs = tf.zeros(
+        #     shape=[
+        #         0,
+        #         max_durations,
+        #         self.config.encoder_self_attention_params.hidden_size,
+        #     ],
+        #     dtype=encoder_hidden_states.dtype,
+        # )
+        # encoder_masks = tf.zeros(shape=[0, max_durations], dtype=tf.int32)
 
         def condition(
             i,

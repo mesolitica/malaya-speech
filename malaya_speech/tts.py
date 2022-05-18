@@ -214,6 +214,24 @@ _glowtts_availability = {
 }
 
 
+_lightspeech_availability = {
+    'yasmin': {
+        'Size (MB)': 119,
+        'Quantized Size (MB)': 27.6,
+        'Combined loss': -1.908,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+    },
+    'osman': {
+        'Size (MB)': 119,
+        'Quantized Size (MB)': 27.6,
+        'Combined loss': -1.908,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+    },
+}
+
+
 def available_tacotron2():
     """
     List available Tacotron2, Text to Mel models.
@@ -259,6 +277,17 @@ def available_glowtts():
     return describe_availability(
         _glowtts_availability,
         text='`haqkiem` and `female-singlish` combined loss from training set',
+    )
+
+
+def available_lightspeech():
+    """
+    List available LightSpeech, Text to Mel models.
+    """
+    from malaya_speech.utils import describe_availability
+
+    return describe_availability(
+        _lightspeech_availability,
     )
 
 
