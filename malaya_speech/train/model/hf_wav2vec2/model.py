@@ -474,7 +474,7 @@ class TFWav2Vec2WeightNormConv1D(Conv1D):
         )
         self.explicit_padding = explicit_padding
         self.filter_axis = 2
-        self.initialized = True
+        self.initialized = False
         self.kernel_norm_axes = tf.constant([0, 1])
 
     def _init_norm(self):

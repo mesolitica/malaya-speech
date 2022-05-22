@@ -155,10 +155,10 @@ _ctc_availability = {
 _huggingface_availability = {
     'malay-huggingface/wav2vec2-xls-r-300m-mixed': {
         'Size (MB)': 1180,
-        'WER': 0.2411256,
-        'CER': 0.0787939,
-        'WER-LM': 0.13276059,
-        'CER-LM': 0.05748197,
+        'WER': 0.1415146,
+        'CER': 0.048555,
+        'WER-LM': 0.098091,
+        'CER-LM': 0.039775,
         'Language': ['malay', 'singlish', 'mandarin'],
     },
     'malay-huggingface/wav2vec2-xls-r-1b-mixed': {
@@ -420,7 +420,7 @@ def huggingface(model: str = 'malay-huggingface/wav2vec2-xls-r-300m-mixed'):
 
     Parameters
     ----------
-    model : str, optional (default='conformer')
+    model : str, optional (default='malay-huggingface/wav2vec2-xls-r-300m-mixed')
         Model architecture supported. Allowed values:
 
         * ``'malay-huggingface/wav2vec2-xls-r-300m-mixed'`` - wav2vec2 XLS-R 300M finetuned on (Malay + Singlish + Mandarin) languages.
@@ -435,15 +435,4 @@ def huggingface(model: str = 'malay-huggingface/wav2vec2-xls-r-300m-mixed'):
             'model not supported, please check supported models from `malaya_speech.stt.available_huggingface()`.'
         )
 
-    from packaging import version
-    import tensorflow as tf
-
-    if version.parse(tf.__version__) < version.parse('2.0'):
-        raise Exception('Tensorflow version must > 2.0 to use huggingface models.')
-
-    try:
-        from transformers import TFWav2Vec2ForCTC
-    except BaseException:
-        raise ModuleNotFoundError(
-            'transformers not installed. Please install it by `pip install transformers>=4.18.0` and try again.'
-        )
+    return stt.huggingface_load(model=model)

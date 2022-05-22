@@ -1,12 +1,13 @@
 import tensorflow as tf
 import numpy as np
+from itertools import groupby
 from malaya_speech.model.frame import Frame
 from malaya_speech.utils.astype import int_to_float
 from malaya_speech.utils.padding import sequence_1d
-from malaya_speech.utils.char import CTC_VOCAB, CTC_VOCAB_IDX
+from malaya_speech.utils.char import HF_CTC_VOCAB, HF_CTC_VOCAB_IDX
 from malaya_speech.utils.char import decode as char_decode
-from malaya_speech.utils.activation import softmax
 from malaya_speech.utils.read import resample
+from malaya_speech.utils.activation import softmax
 from malaya_speech.utils.aligner import (
     get_trellis,
     backtrack,
@@ -18,101 +19,28 @@ from scipy.special import log_softmax
 from typing import Callable
 
 
-class CTC(Abstract):
-    def __init__(self, input_nodes, output_nodes, sess, model, name):
-        self._input_nodes = input_nodes
-        self._output_nodes = output_nodes
-        self._sess = sess
+def batching(audios):
+    batch, lens = sequence_1d(audios, return_len=True)
+    attentions = [[1] * l for l in lens]
+    attentions = sequence_1d(attentions)
+    normed_input_values = []
+
+    for vector, length in zip(batch, attentions.sum(-1)):
+        normed_slice = (vector - vector[:length].mean()) / np.sqrt(vector[:length].var() + 1e-7)
+        if length < normed_slice.shape[0]:
+            normed_slice[length:] = 0.0
+
+        normed_input_values.append(normed_slice)
+
+    normed_input_values = np.array(normed_input_values)
+    return normed_input_values.astype(np.float32), attentions
+
+
+class HuggingFace_CTC(Abstract):
+    def __init__(self, hf_model, model, name):
+        self.hf_model = hf_model
         self.__model__ = model
         self.__name__ = name
-
-
-class Wav2Vec2_CTC(Abstract):
-    def __init__(self, input_nodes, output_nodes, sess, model, name):
-        self._input_nodes = input_nodes
-        self._output_nodes = output_nodes
-        self._sess = sess
-        self.__model__ = model
-        self.__name__ = name
-        self._beam_width = 0
-
-    def _check_decoder(self, decoder, beam_width):
-        decoder = decoder.lower()
-        if decoder not in ['greedy', 'beam']:
-            raise ValueError('mode only supports [`greedy`, `beam`]')
-        if beam_width < 1:
-            raise ValueError('beam_width must bigger than 0')
-        return decoder
-
-    def _get_logits(self, padded, lens):
-        r = self._execute(
-            inputs=[padded, lens],
-            input_labels=['X_placeholder', 'X_len_placeholder'],
-            output_labels=['logits', 'seq_lens'],
-        )
-        return r['logits'], r['seq_lens']
-
-    def _tf_ctc(self, padded, lens, beam_width, **kwargs):
-        if tf.executing_eagerly():
-            logits, seq_lens = self._get_logits(padded, lens)
-            decoded = tf.compat.v1.nn.ctc_beam_search_decoder(
-                logits,
-                seq_lens,
-                beam_width=beam_width,
-                top_paths=1,
-                merge_repeated=True,
-                **kwargs,
-            )
-            preds = tf.sparse.to_dense(tf.compat.v1.to_int32(decoded[0][0]))
-        else:
-            if beam_width != self._beam_width:
-                self._beam_width = beam_width
-                self._decoded = tf.compat.v1.nn.ctc_beam_search_decoder(
-                    self._output_nodes['logits'],
-                    self._output_nodes['seq_lens'],
-                    beam_width=self._beam_width,
-                    top_paths=1,
-                    merge_repeated=True,
-                    **kwargs,
-                )[0][0]
-
-            r = self._sess.run(
-                self._decoded,
-                feed_dict={
-                    self._input_nodes['X_placeholder']: padded,
-                    self._input_nodes['X_len_placeholder']: lens,
-                },
-            )
-            preds = np.zeros(r.dense_shape, dtype=np.int32)
-            for i in range(r.values.shape[0]):
-                preds[r.indices[i][0], r.indices[i][1]] = r.values[i]
-        return preds
-
-    def _predict(
-        self, inputs, decoder: str = 'beam', beam_width: int = 100, **kwargs
-    ):
-
-        decoder = self._check_decoder(decoder, beam_width)
-
-        inputs = [
-            input.array if isinstance(input, Frame) else input
-            for input in inputs
-        ]
-
-        padded, lens = sequence_1d(inputs, return_len=True)
-
-        if decoder == 'greedy':
-            beam_width = 1
-
-        decoded = self._tf_ctc(padded, lens, beam_width, **kwargs)
-
-        results = []
-        for i in range(len(decoded)):
-            r = char_decode(decoded[i], lookup=CTC_VOCAB).replace(
-                '<PAD>', ''
-            )
-            results.append(r)
-        return results
 
     def greedy_decoder(self, inputs):
         """
@@ -127,24 +55,17 @@ class Wav2Vec2_CTC(Abstract):
         -------
         result: List[str]
         """
-        return self._predict(inputs=inputs, decoder='greedy')
+        logits = self.predict_logits(inputs=inputs)
+        argmax = np.argmax(logits, axis=-1)
 
-    def beam_decoder(self, inputs, beam_width: int = 100, **kwargs):
-        """
-        Transcribe inputs using beam decoder.
-
-        Parameters
-        ----------
-        input: List[np.array]
-            List[np.array] or List[malaya_speech.model.frame.Frame].
-        beam_width: int, optional (default=100)
-            beam size for beam decoder.
-
-        Returns
-        -------
-        result: List[str]
-        """
-        return self._predict(inputs=inputs, decoder='beam', beam_width=beam_width)
+        results = []
+        for i in range(len(argmax)):
+            tokens = char_decode(argmax[i], lookup=HF_CTC_VOCAB)
+            grouped_tokens = [token_group[0] for token_group in groupby(tokens)]
+            filtered_tokens = list(filter(lambda token: token != '_', grouped_tokens))
+            r = ''.join(filtered_tokens).strip()
+            results.append(r)
+        return results
 
     def predict(self, inputs):
         """
@@ -182,15 +103,9 @@ class Wav2Vec2_CTC(Abstract):
             input.array if isinstance(input, Frame) else input
             for input in inputs
         ]
-
-        padded, lens = sequence_1d(inputs, return_len=True)
-        logits, seq_lens = self._get_logits(padded, lens)
-        logits = np.transpose(logits, axes=(1, 0, 2))
-        logits = norm_func(logits, axis=-1)
-        results = []
-        for i in range(len(logits)):
-            results.append(logits[i][: seq_lens[i]])
-        return results
+        normed_input_values, attentions = batching(inputs)
+        out = self.hf_model(normed_input_values, attention_mask=attentions)
+        return out[0].numpy()
 
     def gradio(self, record_mode: bool = True,
                lm_func: Callable = None,
@@ -205,7 +120,7 @@ class Wav2Vec2_CTC(Abstract):
         lm_func: Callable, optional (default=None)
             if not None, will pass a logits with shape [T, D].
 
-        **kwargs: keyword arguments for beam decoder and `iface.launch`.
+        **kwargs: keyword arguments for `iface.launch`.
         """
         try:
             import gradio as gr
@@ -224,9 +139,9 @@ class Wav2Vec2_CTC(Abstract):
                 logits = self.predict_logits(inputs=[data])[0]
                 return lm_func(logits)
             else:
-                return self.beam_decoder(inputs=[data], **kwargs)[0]
+                return self.greedy_decoder(inputs=[data])[0]
 
-        title = 'Wav2Vec2-STT using Beam Decoder'
+        title = 'HuggingFace-Wav2Vec2-STT'
         if lm_func is not None:
             title = f'{title} with LM'
 
@@ -256,21 +171,11 @@ class Wav2Vec2_CTC(Abstract):
         return self.predict([input])[0]
 
 
-class Wav2Vec2_Aligner(Abstract):
-    def __init__(self, input_nodes, output_nodes, sess, model, name):
-        self._input_nodes = input_nodes
-        self._output_nodes = output_nodes
-        self._sess = sess
+class HuggingFace_Aligner(Abstract):
+    def __init__(self, hf_model, model, name):
+        self.hf_model = hf_model
         self.__model__ = model
         self.__name__ = name
-
-    def _get_logits(self, padded, lens):
-        r = self._execute(
-            inputs=[padded, lens],
-            input_labels=['X_placeholder', 'X_len_placeholder'],
-            output_labels=['logits', 'seq_lens'],
-        )
-        return r['logits'], r['seq_lens']
 
     def predict(self, input, transcription: str, sample_rate: int = 16000):
         """
@@ -290,12 +195,13 @@ class Wav2Vec2_Aligner(Abstract):
         """
 
         input = input.array if isinstance(input, Frame) else input
-        logits, seq_lens = self._get_logits([input], [len(input)])
-        logits = np.transpose(logits, axes=(1, 0, 2))
+        normed_input_values, attentions = batching([input])
+        out = self.hf_model(normed_input_values, attention_mask=attentions)
+        logits = out[0].numpy()
         o = log_softmax(logits, axis=-1)[0]
-        tokens = [CTC_VOCAB_IDX[c] for c in transcription]
-        trellis = get_trellis(o, tokens)
-        path = backtrack(trellis, o, tokens)
+        tokens = [HF_CTC_VOCAB_IDX[c] for c in transcription]
+        trellis = get_trellis(o, tokens, blank_id=len(HF_CTC_VOCAB) - 1)
+        path = backtrack(trellis, o, tokens, blank_id=len(HF_CTC_VOCAB) - 1)
         segments = merge_repeats(path, transcription)
         word_segments = merge_words(segments)
 

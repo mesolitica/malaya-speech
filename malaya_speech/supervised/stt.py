@@ -4,13 +4,18 @@ from malaya_speech.utils import (
     generate_session,
     nodes_session,
 )
+from malaya_speech.utils.char import HF_CTC_VOCAB
 from malaya_speech.utils.read import load as load_wav
 from malaya_speech.utils.subword import load as subword_load
 from malaya_speech.utils.tf_featurization import STTFeaturizer
 from malaya_speech.model.transducer import Transducer, TransducerAligner
 from malaya_speech.model.wav2vec import Wav2Vec2_CTC, Wav2Vec2_Aligner
+from malaya_speech.model.huggingface import HuggingFace_CTC, HuggingFace_Aligner
 from malaya_speech.path import TRANSDUCER_VOCABS, TRANSDUCER_MIXED_VOCABS
 import os
+import logging
+
+logger = logging.getLogger('malaya_speech.supervised.stt')
 
 
 def get_vocab(language):
@@ -189,4 +194,55 @@ def wav2vec2_ctc_load(model, module, quantized=False, stt=True, **kwargs):
         sess=generate_session(graph=g, **kwargs),
         model=model,
         name=module,
+    )
+
+
+def huggingface_load(model, stt=True):
+    from packaging import version
+    import tensorflow as tf
+
+    if version.parse(tf.__version__) < version.parse('2.0'):
+        raise Exception('Tensorflow version must >= 2.0 to use huggingface models.')
+
+    if 'wav2vec2-xls-r' in model:
+        from malaya_speech.train.model import hf_wav2vec2
+        from huggingface_hub import hf_hub_download
+
+        config_file = hf_hub_download(repo_id=model, filename='config.json')
+        checkpoint_file = hf_hub_download(repo_id=model, filename='tf_model.h5')
+
+        config = hf_wav2vec2.Wav2Vec2Config.from_json_file(config_file)
+        hf_model = hf_wav2vec2.TFWav2Vec2ForCTC(config)
+        hf_model(
+            tf.random.normal(shape=(1, 1000)),
+            attention_mask=tf.ones(shape=(1, 1000), dtype=tf.int32)
+        )
+        hf_model.load_weights(checkpoint_file)
+
+    else:
+        logging.info('load model using `transformers.TFWav2Vec2ForCTC`.')
+
+        try:
+            from transformers import TFWav2Vec2ForCTC
+        except BaseException:
+            raise ModuleNotFoundError(
+                'transformers not installed. Please install it by `pip install transformers>=4.18.0` and try again.'
+            )
+
+        hf_model = TFWav2Vec2ForCTC.from_pretrained(
+            model,
+            ctc_loss_reduction='mean',
+            pad_token_id=len(HF_CTC_VOCAB) - 1,
+            vocab_size=len(HF_CTC_VOCAB),
+        )
+
+    if stt:
+        selected_model = HuggingFace_CTC
+    else:
+        selected_model = HuggingFace_Aligner
+
+    return selected_model(
+        hf_model=hf_model,
+        model=model,
+        name='speech-to-text-huggingface'
     )

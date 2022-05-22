@@ -1,5 +1,5 @@
 from malaya_speech.supervised import stt
-from malaya_speech.stt import _ctc_availability
+from malaya_speech.stt import _ctc_availability, _huggingface_availability
 from herpetologist import check_type
 
 _availability = {
@@ -37,6 +37,15 @@ def available_ctc():
     from malaya_speech.utils import describe_availability
 
     return describe_availability(_ctc_availability)
+
+
+def available_huggingface():
+    """
+    List available HuggingFace Malaya-Speech Aligner models.
+    """
+    from malaya_speech.utils import describe_availability
+
+    return describe_availability(_huggingface_availability)
 
 
 @check_type
@@ -122,3 +131,29 @@ def deep_ctc(
         stt=False,
         **kwargs
     )
+
+
+@check_type
+def huggingface(model: str = 'malay-huggingface/wav2vec2-xls-r-300m-mixed'):
+    """
+    Load Finetuned models from HuggingFace. 
+    This is simply a wrapper to call `transformers.AutoModelForCTC`.
+
+    Parameters
+    ----------
+    model : str, optional (default='malay-huggingface/wav2vec2-xls-r-300m-mixed')
+        Model architecture supported. Allowed values:
+
+        * ``'malay-huggingface/wav2vec2-xls-r-300m-mixed'`` - wav2vec2 XLS-R 300M finetuned on (Malay + Singlish + Mandarin) languages.
+        * ``'malay-huggingface/wav2vec2-xls-r-1b-mixed'`` - wav2vec2 XLS-R 1B finetuned on (Malay + Singlish + Mandarin) languages.
+    Returns
+    -------
+    result : malaya_speech.model.huggingface.CTC class
+    """
+    model = model.lower()
+    if model not in _huggingface_availability:
+        raise ValueError(
+            'model not supported, please check supported models from `malaya_speech.stt.available_huggingface()`.'
+        )
+
+    return stt.huggingface_load(model=model, stt=False)
