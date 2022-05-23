@@ -22,6 +22,9 @@ import os
 import re
 import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
+import logging
+
+logger = logging.getLogger('malaya_speech.train.model.hf_config')
 
 
 class PretrainedConfig:

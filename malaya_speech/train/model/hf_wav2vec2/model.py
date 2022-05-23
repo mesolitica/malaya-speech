@@ -474,7 +474,10 @@ class TFWav2Vec2WeightNormConv1D(Conv1D):
         )
         self.explicit_padding = explicit_padding
         self.filter_axis = 2
-        self.initialized = False
+        if tf.executing_eagerly():
+            self.initialized = False
+        else:
+            self.initialized = True
         self.kernel_norm_axes = tf.constant([0, 1])
 
     def _init_norm(self):
@@ -494,8 +497,10 @@ class TFWav2Vec2WeightNormConv1D(Conv1D):
             input_shape = tf.TensorShape((input_shape[0], input_shape[1] + self.explicit_padding * 2, input_shape[2]))
             super().build(input_shape)
 
-            self.kernel = tf.Variable(tf.transpose(self.kernel), name="weight_v", trainable=True)
-            # self.kernel = tf.transpose(self.kernel)
+            if tf.executing_eagerly():
+                self.kernel = tf.Variable(tf.transpose(self.kernel), name="weight_v", trainable=True)
+            else:
+                self.kernel = tf.transpose(self.kernel)
             self.weight_v = self.kernel
 
             self.weight_g = self.add_weight(
@@ -505,7 +510,8 @@ class TFWav2Vec2WeightNormConv1D(Conv1D):
                 dtype=self.weight_v.dtype,
                 trainable=True,
             )
-            self.bias = self.add_weight(name="bias", shape=(self.filters,), initializer="zeros", trainable=True)
+            if tf.executing_eagerly():
+                self.bias = self.add_weight(name="bias", shape=(self.filters,), initializer="zeros", trainable=True)
 
     def call(self, inputs):
         if not self.initialized:

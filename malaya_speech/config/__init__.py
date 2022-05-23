@@ -13,6 +13,7 @@ from .fastspeech import config as fastspeech_config
 from .fastspeech2 import config as fastspeech2_config
 from .fastspeech2 import config_v2 as fastspeech2_config_v2
 from .glowtts import config as glowtts_config
+from .hf_wav2vec2 import config_300m as hf_wav2vec2_300m_config
 from .hifigan import config as hifigan_config
 from .hifigan import config_v2 as hifigan_config_v2
 from .hifigan import config_v3 as hifigan_config_v3
