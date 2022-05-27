@@ -2,6 +2,16 @@ import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
+import tensorflow as tf
+try:
+    tf.config.set_visible_devices([], 'GPU')
+    visible_devices = tf.config.get_visible_devices()
+    for device in visible_devices:
+        assert device.device_type != 'GPU'
+except:
+    pass
+
+
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 import sys
@@ -26,7 +36,6 @@ from transformers import (
 )
 from transformers.trainer_utils import get_last_checkpoint
 from packaging import version
-import tensorflow as tf
 import random
 import json
 import logging
@@ -44,20 +53,23 @@ CTC_VOCAB = [''] + list(string.ascii_lowercase + string.digits) + [' ']
 
 
 def download_file_cloud(url, filename):
-    r = requests.get(url, stream=True)
-    total_size = int(r.headers['content-length'])
-    version = int(r.headers.get('X-Bz-Upload-Timestamp', 0))
     try:
-        local_size = os.path.getsize(filename)
-        if local_size == total_size:
-            print(f'{filename} local size matched with cloud size')
-            return version
+        r = requests.get(url, stream=True)
+        total_size = int(r.headers['content-length'])
+        version = int(r.headers.get('X-Bz-Upload-Timestamp', 0))
+        try:
+            local_size = os.path.getsize(filename)
+            if local_size == total_size:
+                print(f'{filename} local size matched with cloud size')
+                return version
+        except Exception as e:
+            print(e)
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, 'wb') as f:
+            for data in r.iter_content(chunk_size=1_048_576):
+                f.write(data)
     except Exception as e:
-        print(e)
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    with open(filename, 'wb') as f:
-        for data in r.iter_content(chunk_size=1_048_576):
-            f.write(data)
+        print(f'download_file_cloud error: {e}')
 
 
 def get_dataset(files, directory='tfrecord', overwrite_directory=True):
@@ -123,6 +135,7 @@ class MalayaDataset(torch.utils.data.Dataset):
         b = self.files[self.i: self.i + self.batch_files]
         tfrecords = get_dataset(b, directory=self.directory, overwrite_directory=self.overwrite_directory)
         d = tf.data.Dataset.from_tensor_slices(tf.constant(tfrecords))
+        d = d.repeat(2)
         d = d.shuffle(buffer_size=len(tfrecords))
         cycle_length = min(num_cpu_threads, len(tfrecords))
         d = d.interleave(

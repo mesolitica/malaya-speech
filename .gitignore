@@ -27,3 +27,5 @@ pipeline.png
 test/out
 test/checkpoint
 *egg-info
+test/config.json
+test/ctc-vocab.json

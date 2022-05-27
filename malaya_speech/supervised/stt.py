@@ -197,12 +197,15 @@ def wav2vec2_ctc_load(model, module, quantized=False, stt=True, **kwargs):
     )
 
 
-def huggingface_load(model, stt=True):
+def huggingface_load(model, stt=True, **kwargs):
     from packaging import version
+    from malaya_boilerplate import frozen_graph
     import tensorflow as tf
 
     if version.parse(tf.__version__) < version.parse('2.0'):
         raise Exception('Tensorflow version must >= 2.0 to use huggingface models.')
+
+    device = frozen_graph.get_device(**kwargs)
 
     if 'wav2vec2-xls-r' in model:
         from malaya_speech.train.model import hf_wav2vec2
@@ -213,11 +216,13 @@ def huggingface_load(model, stt=True):
 
         config = hf_wav2vec2.Wav2Vec2Config.from_json_file(config_file)
         hf_model = hf_wav2vec2.TFWav2Vec2ForCTC(config)
-        hf_model(
-            tf.random.normal(shape=(1, 1000)),
-            attention_mask=tf.ones(shape=(1, 1000), dtype=tf.int32)
-        )
-        hf_model.load_weights(checkpoint_file)
+
+        with tf.device(device):
+            hf_model(
+                tf.random.normal(shape=(1, 1000)),
+                attention_mask=tf.ones(shape=(1, 1000), dtype=tf.int32)
+            )
+            hf_model.load_weights(checkpoint_file)
 
     else:
         logging.info('load model using `transformers.TFWav2Vec2ForCTC`.')
@@ -229,12 +234,13 @@ def huggingface_load(model, stt=True):
                 'transformers not installed. Please install it by `pip install transformers>=4.18.0` and try again.'
             )
 
-        hf_model = TFWav2Vec2ForCTC.from_pretrained(
-            model,
-            ctc_loss_reduction='mean',
-            pad_token_id=len(HF_CTC_VOCAB) - 1,
-            vocab_size=len(HF_CTC_VOCAB),
-        )
+        with tf.device(device):
+            hf_model = TFWav2Vec2ForCTC.from_pretrained(
+                model,
+                ctc_loss_reduction='mean',
+                pad_token_id=len(HF_CTC_VOCAB) - 1,
+                vocab_size=len(HF_CTC_VOCAB),
+            )
 
     if stt:
         selected_model = HuggingFace_CTC
