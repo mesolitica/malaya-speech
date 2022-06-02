@@ -1,6 +1,7 @@
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
+os.environ['WANDB_DISABLED'] = 'true'
 
 import tensorflow as tf
 try:
@@ -8,10 +9,12 @@ try:
     visible_devices = tf.config.get_visible_devices()
     for device in visible_devices:
         assert device.device_type != 'GPU'
-except BaseException:
+except:
     pass
 
+
 from dataclasses import dataclass, field
+from collections import defaultdict
 from typing import Any, Dict, List, Optional, Union
 import sys
 import string
@@ -31,11 +34,10 @@ from transformers import (
     Wav2Vec2FeatureExtractor,
     Wav2Vec2ForCTC,
     Wav2Vec2Processor,
-    Wav2Vec2Config,
+    is_apex_available,
     set_seed,
 )
 from transformers.trainer_utils import get_last_checkpoint
-import torch.nn.functional as F
 from packaging import version
 import random
 import json
@@ -43,6 +45,8 @@ import logging
 import shutil
 from multiprocessing import Pool
 
+if is_apex_available():
+    from apex import amp
 
 if version.parse(torch.__version__) >= version.parse("1.6"):
     _is_native_amp_available = True
@@ -113,7 +117,7 @@ def parse(serialized_example):
 
 
 class MalayaDataset(torch.utils.data.Dataset):
-    def __init__(self, files, directory, batch_files=10, max_batch=999999, overwrite_directory=True,
+    def __init__(self, files, directory, batch_files=10, max_batch=50000, overwrite_directory=True,
                  start=False):
         self.files = files
         self.directory = directory
@@ -121,8 +125,8 @@ class MalayaDataset(torch.utils.data.Dataset):
         self.i = 0
         self.d = None
         self.sr = 16000
-        self.maxlen = 12
-        self.minlen = 0.5
+        self.maxlen = 16
+        self.minlen = 2
         self.max_batch = max_batch
         self.overwrite_directory = overwrite_directory
         if start:
@@ -175,6 +179,16 @@ with open('huggingface-3mixed-train-test.json') as fopen:
 
 with open('huggingface-khursani-malay.json') as fopen:
     khursani_dataset = json.load(fopen)
+
+languages = defaultdict(list)
+
+for f in dataset['train']:
+    l = f.split('/')[-2]
+    languages[l].append(f)
+
+train_set = random.sample(languages['mandarin'], 650) + \
+    random.sample(languages['singlish'], 650) + \
+    languages['malay'] + khursani_dataset
 
 test_set = [
     'https://huggingface.co/huseinzol05/STT-Mixed-TFRecord/resolve/main/mandarin/0-35.tfrecord',
@@ -290,42 +304,37 @@ class DataCollatorCTCWithPadding:
 
 
 class CTCTrainer(Trainer):
-    def __init__(self, *args, teacher=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.teacher = teacher
+    def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]]) -> torch.Tensor:
+        """
+        Perform a training step on a batch of inputs.
+        Subclass and override to inject custom behavior.
+        Args:
+            model (:obj:`nn.Module`):
+                The model to train.
+            inputs (:obj:`Dict[str, Union[torch.Tensor, Any]]`):
+                The inputs and targets of the model.
+                The dictionary will be unpacked before being fed to the model. Most models expect the targets under the
+                argument :obj:`labels`. Check your model's documentation for all accepted arguments.
+        Return:
+            :obj:`torch.Tensor`: The tensor with training loss on this batch.
+        """
 
-        if self.place_model_on_device:
-            self._move_model_to_device(self.teacher, self.args.device)
-
-        self.teacher.eval()
-
-    def training_step(self, model, inputs: Dict[str, Union[torch.Tensor, Any]]) -> torch.Tensor:
         model.train()
         inputs = self._prepare_inputs(inputs)
 
         if self.use_amp:
             with autocast():
-                loss, outputs = self.compute_loss(model, inputs, return_outputs=True)
-                logits = outputs.get('logits')
-                with torch.no_grad():
-                    teacher_logits = self.teacher(**inputs).logits
+                loss = self.compute_loss(model, inputs)
         else:
-            loss, outputs = self.compute_loss(model, inputs, return_outputs=True)
-            logits = outputs.get('logits')
-            with torch.no_grad():
-                teacher_logits = self.teacher(**inputs).logits
+            loss = self.compute_loss(model, inputs)
 
-        alpha_ce = 0.5
-        alpha_squad = 0.5
-        temperature = 1.0
-
-        loss_fct = nn.KLDivLoss(reduction='batchmean')
-        loss_teaching = (
-            loss_fct(
-                F.log_softmax(logits / temperature, dim=-1),
-                F.softmax(teacher_logits / temperature, dim=-1))
-            * (temperature ** 2))
-        loss = alpha_ce * loss_teaching + alpha_squad * loss
+        if self.args.n_gpu > 1:
+            if model.module.config.ctc_loss_reduction == "mean":
+                loss = loss.mean()
+            elif model.module.config.ctc_loss_reduction == "sum":
+                loss = loss.sum() / (inputs["labels"] >= 0).sum()
+            else:
+                raise ValueError(f"{model.config.ctc_loss_reduction} is not valid. Choose one of ['mean', 'sum']")
 
         if self.args.gradient_accumulation_steps > 1:
             loss = loss / self.args.gradient_accumulation_steps
@@ -376,7 +385,7 @@ def main():
 
     logger.info("Training/evaluation parameters %s", training_args)
     set_seed(training_args.seed)
-    train_dataset = MalayaDataset(dataset['train'], directory='tfrecord-300m')
+    train_dataset = MalayaDataset(train_set, directory='tfrecord-300m')
     eval_dataset = MalayaDataset(
         test_set,
         directory='tfrecord-300m-test',
@@ -403,7 +412,7 @@ def main():
         feature_size=1, sampling_rate=16_000, padding_value=0.0, do_normalize=True, return_attention_mask=True
     )
     processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
-    teacher = Wav2Vec2ForCTC.from_pretrained(
+    model = Wav2Vec2ForCTC.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=model_args.cache_dir,
         activation_dropout=model_args.activation_dropout,
@@ -416,23 +425,8 @@ def main():
         pad_token_id=processor.tokenizer.pad_token_id,
         vocab_size=len(processor.tokenizer),
     )
-    teacher.freeze_feature_extractor()
-
-    student_config = Wav2Vec2Config.from_pretrained(model_args.model_name_or_path,
-                                                    num_hidden_layers=8,
-                                                    hidden_size=768,
-                                                    intermediate_size=768 * 4,
-                                                    cache_dir=model_args.cache_dir,
-                                                    activation_dropout=model_args.activation_dropout,
-                                                    attention_dropout=model_args.attention_dropout,
-                                                    hidden_dropout=model_args.hidden_dropout,
-                                                    feat_proj_dropout=model_args.feat_proj_dropout,
-                                                    mask_time_prob=model_args.mask_time_prob,
-                                                    layerdrop=model_args.layerdrop,
-                                                    ctc_loss_reduction="mean",
-                                                    pad_token_id=processor.tokenizer.pad_token_id,
-                                                    vocab_size=len(processor.tokenizer),)
-    student = Wav2Vec2ForCTC(student_config)
+    model.freeze_feature_extractor()
+    model.config.ctc_zero_infinity = True
 
     def prepare_dataset(batch):
         inputs = processor(batch["speech"], sampling_rate=batch["sampling_rate"][0])
@@ -468,8 +462,7 @@ def main():
 
     data_collator = DataCollatorCTCWithPadding(processor=processor, padding=True)
     trainer = CTCTrainer(
-        model=student,
-        teacher=teacher,
+        model=model,
         data_collator=data_collator,
         args=training_args,
         compute_metrics=compute_metrics,

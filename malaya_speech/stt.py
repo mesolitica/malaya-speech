@@ -153,12 +153,12 @@ _ctc_availability = {
 }
 
 _huggingface_availability = {
-    'malay-huggingface/wav2vec2-xls-r-300m-mixed': {
+    'mesolitica/wav2vec2-xls-r-300m-mixed': {
         'Size (MB)': 1180,
-        'WER': 0.1415146,
-        'CER': 0.048555,
-        'WER-LM': 0.098091,
-        'CER-LM': 0.039775,
+        'WER': 0.1322198,
+        'CER': 0.0481054,
+        'WER-LM': 0.0988016,
+        'CER-LM': 0.0411965,
         'Language': ['malay', 'singlish', 'mandarin'],
     },
 }
@@ -405,17 +405,17 @@ def deep_transducer(
 
 
 @check_type
-def huggingface(model: str = 'malay-huggingface/wav2vec2-xls-r-300m-mixed', **kwargs):
+def huggingface(model: str = 'mesolitica/wav2vec2-xls-r-300m-mixed', **kwargs):
     """
     Load Finetuned models from HuggingFace. 
-    This is simply a wrapper to call `transformers.AutoModelForCTC`.
+    This is simply a wrapper to call `malaya_speech.train.model.hf_wav2vec2.model.TFWav2Vec2ForCTC`.
 
     Parameters
     ----------
-    model : str, optional (default='malay-huggingface/wav2vec2-xls-r-300m-mixed')
+    model : str, optional (default='mesolitica/wav2vec2-xls-r-300m-mixed')
         Model architecture supported. Allowed values:
 
-        * ``'malay-huggingface/wav2vec2-xls-r-300m-mixed'`` - wav2vec2 XLS-R 300M finetuned on (Malay + Singlish + Mandarin) languages.
+        * ``'mesolitica/wav2vec2-xls-r-300m-mixed'`` - wav2vec2 XLS-R 300M finetuned on (Malay + Singlish + Mandarin) languages.
     Returns
     -------
     result : malaya_speech.model.huggingface.CTC class

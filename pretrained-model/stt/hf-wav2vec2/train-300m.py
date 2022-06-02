@@ -1,6 +1,7 @@
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
+os.environ['WANDB_DISABLED'] = 'true'
 
 import tensorflow as tf
 try:
@@ -32,6 +33,7 @@ from transformers import (
     Wav2Vec2FeatureExtractor,
     Wav2Vec2ForCTC,
     Wav2Vec2Processor,
+    is_apex_available,
     set_seed,
 )
 from transformers.trainer_utils import get_last_checkpoint
@@ -42,6 +44,8 @@ import logging
 import shutil
 from multiprocessing import Pool
 
+if is_apex_available():
+    from apex import amp
 
 if version.parse(torch.__version__) >= version.parse("1.6"):
     _is_native_amp_available = True
@@ -112,10 +116,9 @@ def parse(serialized_example):
 
 
 class MalayaDataset(torch.utils.data.Dataset):
-    def __init__(self, files, directory, batch_files=10, max_batch=999999, overwrite_directory=True,
+    def __init__(self, files, directory, batch_files=10, max_batch=50000, overwrite_directory=True,
                  start=False):
-        self.files = [t.replace('gs://mesolitica-tpu-general',
-                                'https://huggingface.co/huseinzol05/STT-Mixed-TFRecord/resolve/main') for t in files]
+        self.files = files
         self.directory = directory
         self.batch_files = batch_files
         self.i = 0
@@ -170,13 +173,16 @@ class MalayaDataset(torch.utils.data.Dataset):
         return self.max_batch
 
 
-with open('3mixed-train-test-v2.json') as fopen:
+with open('huggingface-3mixed-train-test.json') as fopen:
     dataset = json.load(fopen)
 
+with open('huggingface-khursani-malay.json') as fopen:
+    khursani_dataset = json.load(fopen)
+
 test_set = [
-    'gs://mesolitica-tpu-general/mandarin/0-35.tfrecord',
-    'gs://mesolitica-tpu-general/malay/2-25.tfrecord',
-    'gs://mesolitica-tpu-general/singlish/2-34.tfrecord'
+    'https://huggingface.co/huseinzol05/STT-Mixed-TFRecord/resolve/main/mandarin/0-35.tfrecord',
+    'https://huggingface.co/huseinzol05/STT-Mixed-TFRecord/resolve/main/malay/2-25.tfrecord',
+    'https://huggingface.co/huseinzol05/STT-Mixed-TFRecord/resolve/main/singlish/2-34.tfrecord'
 ]
 
 
@@ -368,7 +374,7 @@ def main():
 
     logger.info("Training/evaluation parameters %s", training_args)
     set_seed(training_args.seed)
-    train_dataset = MalayaDataset(dataset['train'], directory='tfrecord-300m')
+    train_dataset = MalayaDataset(dataset['train'] + khursani_dataset, directory='tfrecord-300m')
     eval_dataset = MalayaDataset(
         test_set,
         directory='tfrecord-300m-test',
@@ -409,6 +415,7 @@ def main():
         vocab_size=len(processor.tokenizer),
     )
     model.freeze_feature_extractor()
+    model.config.ctc_zero_infinity = True
 
     def prepare_dataset(batch):
         inputs = processor(batch["speech"], sampling_rate=batch["sampling_rate"][0])

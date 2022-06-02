@@ -1,6 +1,22 @@
+#!/usr/bin/env python
+# coding=utf-8
+# Copyright 2021 The HuggingFace Inc. team. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
+os.environ['WANDB_DISABLED'] = 'true'
 
 import tensorflow as tf
 try:
@@ -11,6 +27,7 @@ try:
 except BaseException:
     pass
 
+
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 import sys
@@ -20,37 +37,42 @@ import numpy as np
 import transformers
 import requests
 import datasets
+import torch
 from torch import nn
-from glob import glob
-from tqdm import tqdm
+import transformers
 from transformers import (
     HfArgumentParser,
     Trainer,
     TrainingArguments,
+    Wav2Vec2Config,
+    Wav2Vec2ForPreTraining,
     Wav2Vec2CTCTokenizer,
     Wav2Vec2FeatureExtractor,
     Wav2Vec2ForCTC,
     Wav2Vec2Processor,
-    Wav2Vec2Config,
+    is_apex_available,
     set_seed,
 )
 from transformers.trainer_utils import get_last_checkpoint
-import torch.nn.functional as F
+from transformers.models.wav2vec2.modeling_wav2vec2 import _compute_mask_indices, _sample_negative_indices
 from packaging import version
-import random
+
 import json
 import logging
+import random
+from glob import glob
+from tqdm import tqdm
 import shutil
 from multiprocessing import Pool
 
+if is_apex_available():
+    from apex import amp
 
 if version.parse(torch.__version__) >= version.parse("1.6"):
     _is_native_amp_available = True
     from torch.cuda.amp import autocast
 
 logger = logging.getLogger(__name__)
-
-CTC_VOCAB = [''] + list(string.ascii_lowercase + string.digits) + [' ']
 
 
 def download_file_cloud(url, filename):
@@ -121,8 +143,8 @@ class MalayaDataset(torch.utils.data.Dataset):
         self.i = 0
         self.d = None
         self.sr = 16000
-        self.maxlen = 12
-        self.minlen = 0.5
+        self.maxlen = 16
+        self.minlen = 1
         self.max_batch = max_batch
         self.overwrite_directory = overwrite_directory
         if start:
@@ -162,8 +184,7 @@ class MalayaDataset(torch.utils.data.Dataset):
             print('Exception __getitem__', e)
             self.get_dataset()
             r = next(self.d)
-        r = {'speech': [r['waveforms']], 'sampling_rate': [16000],
-             'target_text': ''.join([CTC_VOCAB[t] for t in r['targets']])}
+        r = {'speech': [r['waveforms']], 'sampling_rate': 16000}
         return r
 
     def __len__(self):
@@ -227,11 +248,16 @@ class ModelArguments:
 
 
 @dataclass
-class DataCollatorCTCWithPadding:
+class DataCollatorForWav2Vec2Pretraining:
     """
-    Data collator that will dynamically pad the inputs received.
+    Data collator that will dynamically pad the inputs received and prepare masked indices
+    for self-supervised pretraining.
+
     Args:
-        processor (:class:`~transformers.Wav2Vec2Processor`)
+        model (:class:`~transformers.Wav2Vec2ForPreTraining`):
+            The Wav2Vec2 model used for pretraining. The data collator needs to have access
+            to config and ``_get_feat_extract_output_lengths`` function for correct padding.
+        feature_extractor (:class:`~transformers.Wav2Vec2FeatureExtractor`):
             The processor used for proccessing the data.
         padding (:obj:`bool`, :obj:`str` or :class:`~transformers.tokenization_utils_base.PaddingStrategy`, `optional`, defaults to :obj:`True`):
             Select a strategy to pad the returned sequences (according to the model's padding side and padding index)
@@ -244,88 +270,109 @@ class DataCollatorCTCWithPadding:
               different lengths).
         max_length (:obj:`int`, `optional`):
             Maximum length of the ``input_values`` of the returned list and optionally padding length (see above).
-        max_length_labels (:obj:`int`, `optional`):
-            Maximum length of the ``labels`` returned list and optionally padding length (see above).
         pad_to_multiple_of (:obj:`int`, `optional`):
             If set will pad the sequence to a multiple of the provided value.
             This is especially useful to enable the use of Tensor Cores on NVIDIA hardware with compute capability >=
             7.5 (Volta).
     """
 
-    processor: Wav2Vec2Processor
-    padding: Union[bool, str] = True
+    model: Wav2Vec2ForPreTraining
+    feature_extractor: Wav2Vec2FeatureExtractor
+    padding: Union[bool, str] = "longest"
     max_length: Optional[int] = None
-    max_length_labels: Optional[int] = None
     pad_to_multiple_of: Optional[int] = None
-    pad_to_multiple_of_labels: Optional[int] = None
 
     def __call__(self, features: List[Dict[str, Union[List[int], torch.Tensor]]]) -> Dict[str, torch.Tensor]:
-        # split inputs and labels since they have to be of different lenghts and need
-        # different padding methods
-        input_features = [{"input_values": feature["input_values"]} for feature in features]
-        label_features = [{"input_ids": feature["labels"]} for feature in features]
+        # reformat list to dict and set to pytorch format
 
-        batch = self.processor.pad(
-            input_features,
+        batch = self.feature_extractor.pad(
+            features,
             padding=self.padding,
             max_length=self.max_length,
             pad_to_multiple_of=self.pad_to_multiple_of,
             return_tensors="pt",
         )
-        with self.processor.as_target_processor():
-            labels_batch = self.processor.pad(
-                label_features,
-                padding=self.padding,
-                max_length=self.max_length_labels,
-                pad_to_multiple_of=self.pad_to_multiple_of_labels,
-                return_tensors="pt",
+
+        device = batch["input_values"].device
+        batch_size = batch["input_values"].shape[0]
+
+        mask_indices_seq_length = self.model._get_feat_extract_output_lengths(batch["input_values"].shape[-1])
+        # make sure masked sequence length is a Python scalar
+        mask_indices_seq_length = int(mask_indices_seq_length)
+
+        # make sure that no loss is computed on padded inputs
+        if batch.get("attention_mask") is not None:
+            # compute real output lengths according to convolution formula
+            batch["sub_attention_mask"] = self.model._get_feature_vector_attention_mask(
+                mask_indices_seq_length, batch["attention_mask"]
             )
 
-        # replace padding with -100 to ignore loss correctly
-        labels = labels_batch["input_ids"].masked_fill(labels_batch.attention_mask.ne(1), -100)
+        features_shape = (batch_size, mask_indices_seq_length)
 
-        batch["labels"] = labels
+        # sample randomly masked indices
+        mask_time_indices = _compute_mask_indices(
+            features_shape,
+            self.model.config.mask_time_prob,
+            self.model.config.mask_time_length,
+            attention_mask=batch.get("sub_attention_mask"),
+        )
+
+        # sample negative indices
+        sampled_negative_indices = _sample_negative_indices(
+            features_shape,
+            self.model.config.num_negatives,
+            mask_time_indices=mask_time_indices,
+        )
+        batch["mask_time_indices"] = torch.tensor(mask_time_indices, dtype=torch.long, device=device)
+        batch["sampled_negative_indices"] = torch.tensor(sampled_negative_indices, dtype=torch.long, device=device)
+
+        print(batch)
 
         return batch
 
 
-class CTCTrainer(Trainer):
-    def __init__(self, *args, teacher=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.teacher = teacher
+class PretrainedTrainer(Trainer):
+    def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]]) -> torch.Tensor:
+        """
+        Perform a training step on a batch of inputs.
+        Subclass and override to inject custom behavior.
+        Args:
+            model (:obj:`nn.Module`):
+                The model to train.
+            inputs (:obj:`Dict[str, Union[torch.Tensor, Any]]`):
+                The inputs and targets of the model.
+                The dictionary will be unpacked before being fed to the model. Most models expect the targets under the
+                argument :obj:`labels`. Check your model's documentation for all accepted arguments.
+        Return:
+            :obj:`torch.Tensor`: The tensor with training loss on this batch.
+        """
 
-        if self.place_model_on_device:
-            self._move_model_to_device(self.teacher, self.args.device)
-
-        self.teacher.eval()
-
-    def training_step(self, model, inputs: Dict[str, Union[torch.Tensor, Any]]) -> torch.Tensor:
         model.train()
         inputs = self._prepare_inputs(inputs)
 
         if self.use_amp:
             with autocast():
-                loss, outputs = self.compute_loss(model, inputs, return_outputs=True)
-                logits = outputs.get('logits')
-                with torch.no_grad():
-                    teacher_logits = self.teacher(**inputs).logits
+                num_losses = inputs["mask_time_indices"].sum()
+                sub_attention_mask = inputs.pop("sub_attention_mask", None)
+                sub_attention_mask = (
+                    sub_attention_mask if sub_attention_mask is not None else torch.ones_like(
+                        inputs["mask_time_indices"])
+                )
+                percent_masked = num_losses / sub_attention_mask.sum()
+
+                outputs = model(**inputs)
+                loss = outputs.loss
         else:
-            loss, outputs = self.compute_loss(model, inputs, return_outputs=True)
-            logits = outputs.get('logits')
-            with torch.no_grad():
-                teacher_logits = self.teacher(**inputs).logits
+            num_losses = inputs["mask_time_indices"].sum()
+            sub_attention_mask = inputs.pop("sub_attention_mask", None)
+            sub_attention_mask = (
+                sub_attention_mask if sub_attention_mask is not None else torch.ones_like(
+                    inputs["mask_time_indices"])
+            )
+            percent_masked = num_losses / sub_attention_mask.sum()
 
-        alpha_ce = 0.5
-        alpha_squad = 0.5
-        temperature = 1.0
-
-        loss_fct = nn.KLDivLoss(reduction='batchmean')
-        loss_teaching = (
-            loss_fct(
-                F.log_softmax(logits / temperature, dim=-1),
-                F.softmax(teacher_logits / temperature, dim=-1))
-            * (temperature ** 2))
-        loss = alpha_ce * loss_teaching + alpha_squad * loss
+            outputs = model(**inputs)
+            loss = outputs.loss
 
         if self.args.gradient_accumulation_steps > 1:
             loss = loss / self.args.gradient_accumulation_steps
@@ -376,7 +423,12 @@ def main():
 
     logger.info("Training/evaluation parameters %s", training_args)
     set_seed(training_args.seed)
-    train_dataset = MalayaDataset(dataset['train'], directory='tfrecord-300m')
+
+    # train_dataset = MalayaDataset(test_set,
+    #                               directory='tfrecord-300m-test',
+    #                               max_batch=100,
+    #                               overwrite_directory=False)
+    train_dataset = MalayaDataset(dataset['train'] + khursani_dataset, directory='tfrecord-300m')
     eval_dataset = MalayaDataset(
         test_set,
         directory='tfrecord-300m-test',
@@ -384,63 +436,26 @@ def main():
         overwrite_directory=False
     )
 
-    vocab_dict = {v: k for k, v in enumerate(CTC_VOCAB)}
-    vocab_dict["|"] = vocab_dict[" "]
-    del vocab_dict[" "]
-    vocab_dict["[UNK]"] = len(vocab_dict)
-    vocab_dict["[PAD]"] = len(vocab_dict)
+    # 2. Now we preprocess the datasets including loading the audio, resampling and normalization
+    # Thankfully, `datasets` takes care of automatically loading and resampling the audio,
+    # so that we just need to set the correct target sampling rate and normalize the input
+    # via the `feature_extractor`
+    feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(model_args.model_name_or_path)
 
-    with open("ctc-vocab.json", "w") as vocab_file:
-        json.dump(vocab_dict, vocab_file)
-
-    tokenizer = Wav2Vec2CTCTokenizer(
-        "ctc-vocab.json",
-        unk_token="[UNK]",
-        pad_token="[PAD]",
-        word_delimiter_token="|",
-    )
-    feature_extractor = Wav2Vec2FeatureExtractor(
-        feature_size=1, sampling_rate=16_000, padding_value=0.0, do_normalize=True, return_attention_mask=True
-    )
-    processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
-    teacher = Wav2Vec2ForCTC.from_pretrained(
-        model_args.model_name_or_path,
-        cache_dir=model_args.cache_dir,
-        activation_dropout=model_args.activation_dropout,
-        attention_dropout=model_args.attention_dropout,
-        hidden_dropout=model_args.hidden_dropout,
-        feat_proj_dropout=model_args.feat_proj_dropout,
-        mask_time_prob=model_args.mask_time_prob,
-        layerdrop=model_args.layerdrop,
-        ctc_loss_reduction="mean",
-        pad_token_id=processor.tokenizer.pad_token_id,
-        vocab_size=len(processor.tokenizer),
-    )
-    teacher.freeze_feature_extractor()
-
-    student_config = Wav2Vec2Config.from_pretrained(model_args.model_name_or_path,
-                                                    num_hidden_layers=8,
-                                                    hidden_size=768,
-                                                    intermediate_size=768 * 4,
-                                                    cache_dir=model_args.cache_dir,
-                                                    activation_dropout=model_args.activation_dropout,
-                                                    attention_dropout=model_args.attention_dropout,
-                                                    hidden_dropout=model_args.hidden_dropout,
-                                                    feat_proj_dropout=model_args.feat_proj_dropout,
-                                                    mask_time_prob=model_args.mask_time_prob,
-                                                    layerdrop=model_args.layerdrop,
-                                                    ctc_loss_reduction="mean",
-                                                    pad_token_id=processor.tokenizer.pad_token_id,
-                                                    vocab_size=len(processor.tokenizer),)
-    student = Wav2Vec2ForCTC(student_config)
+    # only normalized-inputs-training is supported
+    if not feature_extractor.do_normalize:
+        raise ValueError(
+            "Training is only supported for normalized inputs. Make sure ``feature_extractor.do_normalize == True``"
+        )
 
     def prepare_dataset(batch):
-        inputs = processor(batch["speech"], sampling_rate=batch["sampling_rate"][0])
-        batch["input_values"] = inputs.input_values[0]
-        batch["input_length"] = len(batch["input_values"])
-        with processor.as_target_processor():
-            batch["labels"] = processor(batch["target_text"]).input_ids
-        return batch
+
+        inputs = feature_extractor(
+            batch["speech"], sampling_rate=batch["sampling_rate"]
+        )
+
+        new_batch = {'input_values': inputs.input_values[0]}
+        return new_batch
 
     train_dataset = train_dataset.map(
         prepare_dataset,
@@ -449,33 +464,32 @@ def main():
         prepare_dataset,
     )
 
-    wer_metric = datasets.load_metric("wer")
+    # 3. Load model
+    config = Wav2Vec2Config.from_pretrained(model_args.model_name_or_path)
 
-    def compute_metrics(pred):
-        pred_logits = pred.predictions
-        pred_ids = np.argmax(pred_logits, axis=-1)
+    # pretraining is only supported for "newer" stable layer norm architecture
+    # apply_spec_augment has to be True, mask_feature_prob has to be 0.0
+    if not config.do_stable_layer_norm or config.feat_extract_norm != "layer":
+        raise ValueError(
+            "PreTraining is only supported for ``config.do_stable_layer_norm=True`` and"
+            " ``config.feat_extract_norm='layer'"
+        )
 
-        pred.label_ids[pred.label_ids == -100] = processor.tokenizer.pad_token_id
+    # initialize random model
+    model = Wav2Vec2ForPreTraining(config)
 
-        pred_str = processor.batch_decode(pred_ids)
-        # we do not want to group tokens when computing the metrics
-        label_str = processor.batch_decode(pred.label_ids, group_tokens=False)
-        print(list(zip(pred_str, label_str)))
+    # 4. Define data collator, optimizer and scheduler
+    data_collator = DataCollatorForWav2Vec2Pretraining(
+        model=model, feature_extractor=feature_extractor, padding=True,
+    )
 
-        wer = wer_metric.compute(predictions=pred_str, references=label_str)
-
-        return {"wer": wer}
-
-    data_collator = DataCollatorCTCWithPadding(processor=processor, padding=True)
-    trainer = CTCTrainer(
-        model=student,
-        teacher=teacher,
+    trainer = PretrainedTrainer(
+        model=model,
         data_collator=data_collator,
         args=training_args,
-        compute_metrics=compute_metrics,
         train_dataset=train_dataset if training_args.do_train else None,
         eval_dataset=eval_dataset if training_args.do_eval else None,
-        tokenizer=processor.feature_extractor,
+        tokenizer=feature_extractor,
     )
 
     if training_args.do_train:
@@ -488,7 +502,7 @@ def main():
 
         print('checkpoint', checkpoint)
 
-        processor.save_pretrained(training_args.output_dir)
+        feature_extractor.save_pretrained(training_args.output_dir)
 
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
         trainer.save_model()

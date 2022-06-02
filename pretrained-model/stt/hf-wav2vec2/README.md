@@ -11,7 +11,7 @@ https://huggingface.co/docs/transformers/model_doc/wav2vec2, trained on https://
 1. Run finetune,
 
 ```bash
-python3 train-300m.py config-300m.json
+python3 train-300m-v2.py config-300m-v2.json
 ```
 
 ### 1B model
@@ -40,5 +40,4 @@ CUDA_VISIBLE_DEVICES='' python3 -m tensorboard.main --logdir=runs --host=0.0.0.0
 
 ## download
 
-1. https://huggingface.co/malay-huggingface/wav2vec2-xls-r-300m-mixed
-2. https://huggingface.co/malay-huggingface/wav2vec2-xls-r-1b-mixed
+1. https://huggingface.co/mesolitica/wav2vec2-xls-r-300m-mixed
