@@ -4,7 +4,21 @@ https://huggingface.co/docs/transformers/model_doc/wav2vec2, trained on https://
 
 **This directory is very lack of comments, able to understand HuggingFace, Torch Dataset, Tensorflow, Tensorflow Dataset is really helpful**.
 
-## how-to
+## how-to pretrain
+
+1. Pretrain `BASE` size,
+
+```bash
+python3 pretrain_v2.py config-pretrained-base.json
+```
+
+2. Pretrain `MINI` size,
+
+```bash
+python3 pretrain_mini.py config-pretrained-mini.json
+```
+
+## how-to finetuned
 
 ### 300M model
 

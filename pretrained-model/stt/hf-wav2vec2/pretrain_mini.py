@@ -454,7 +454,12 @@ def main():
     )
 
     # 3. Load model
-    config = Wav2Vec2Config.from_pretrained(model_args.model_name_or_path)
+    config = Wav2Vec2Config.from_pretrained(
+        model_args.model_name_or_path,
+        num_hidden_layers=4,
+        hidden_size=256,
+        intermediate_size=1024,
+    )
 
     # pretraining is only supported for "newer" stable layer norm architecture
     # apply_spec_augment has to be True, mask_feature_prob has to be 0.0
