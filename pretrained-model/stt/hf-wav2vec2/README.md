@@ -54,4 +54,6 @@ CUDA_VISIBLE_DEVICES='' python3 -m tensorboard.main --logdir=runs --host=0.0.0.0
 
 ## download
 
-1. https://huggingface.co/mesolitica/wav2vec2-xls-r-300m-mixed
+1. Finetuned Wav2Vec2 XLS-R 300M on mixed language, https://huggingface.co/mesolitica/wav2vec2-xls-r-300m-mixed
+2. Pretrained Wav2Vec2 BASE on mixed language, https://huggingface.co/mesolitica/pretrained-wav2vec2-base-mixed
+3. Pretrained Wav2Vec2 MINI on mixed language, https://huggingface.co/mesolitica/pretrained-wav2vec2-mini-mixed

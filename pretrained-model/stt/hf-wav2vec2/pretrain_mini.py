@@ -452,6 +452,7 @@ def main():
     train_dataset = train_dataset.map(
         prepare_dataset,
     )
+    print(model_args)
 
     # 3. Load model
     config = Wav2Vec2Config.from_pretrained(
@@ -459,6 +460,8 @@ def main():
         num_hidden_layers=4,
         hidden_size=256,
         intermediate_size=1024,
+        num_attention_heads=4,
+        mask_time_prob=model_args.mask_time_prob,
     )
 
     # pretraining is only supported for "newer" stable layer norm architecture

@@ -454,7 +454,9 @@ def main():
     )
 
     # 3. Load model
-    config = Wav2Vec2Config.from_pretrained(model_args.model_name_or_path)
+    print(model_args)
+    config = Wav2Vec2Config.from_pretrained(model_args.model_name_or_path,
+                                            mask_time_prob=model_args.mask_time_prob)
 
     # pretraining is only supported for "newer" stable layer norm architecture
     # apply_spec_augment has to be True, mask_feature_prob has to be 0.0
