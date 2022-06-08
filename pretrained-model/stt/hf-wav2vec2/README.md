@@ -18,14 +18,14 @@ python3 pretrain_v2.py config-pretrained-base.json
 python3 pretrain_mini.py config-pretrained-mini.json
 ```
 
-## how-to finetuned
+## how-to finetune
 
 ### 300M model
 
 1. Run finetune,
 
 ```bash
-python3 train-300m-v2.py config-300m-v2.json
+python3 finetune.py config-300m-v2.json
 ```
 
 ### 1B model
@@ -33,7 +33,7 @@ python3 train-300m-v2.py config-300m-v2.json
 1. Run finetune,
 
 ```bash
-python3 train-1b.py config-1b.json
+python3 finetune.py config-1b.json
 ```
 
 ### 300M only [0, 1, 2, 3, 20, 21, 22, 23] layers
@@ -46,7 +46,15 @@ python3 train-1b.py config-1b.json
 python3 train-300m-8layers.py config-300m-8layers.json
 ```
 
-### Run Tensorboard
+## how-to distill
+
+1. Run teacher-student distillation,
+
+```bash
+python3 distill.py
+```
+
+## Run Tensorboard
 
 ```bash
 CUDA_VISIBLE_DEVICES='' python3 -m tensorboard.main --logdir=runs --host=0.0.0.0

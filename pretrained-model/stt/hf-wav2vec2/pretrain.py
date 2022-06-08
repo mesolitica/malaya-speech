@@ -15,9 +15,29 @@
 
 """ Pre-Training a 🤗 Wav2Vec2 model on unlabeled audio data """
 
+"""
+python3 pretrain.py \
+--model_name_or_path="patrickvonplaten/wav2vec2-base-v2" \
+--output_dir="./wav2vec2-pretrained" \
+--mixed_precision="fp16" \
+--max_train_steps="500000" \
+--num_warmup_steps="32000" \
+--gradient_accumulation_steps="1" \
+--learning_rate="1e-4" \
+--weight_decay="0.01" \
+--logging_steps="100" \
+--saving_steps="1000" \
+--per_device_train_batch_size="10" \
+--adam_beta1="0.9" \
+--adam_beta2="0.98" \
+--adam_epsilon="1e-06" \
+--mask_time_prob="0.2"
+"""
+
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
+os.environ['WANDB_DISABLED'] = 'false'
 
 import tensorflow as tf
 try:
@@ -28,9 +48,13 @@ try:
 except:
     pass
 
+import json
+import random
 import argparse
 import math
 import os
+import requests
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Union
@@ -61,9 +85,11 @@ from transformers.utils import get_full_repo_name
 from glob import glob
 from tqdm import tqdm
 import shutil
+import logging
+import sys
 from multiprocessing import Pool
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def download_file_cloud(url, filename):
@@ -134,8 +160,8 @@ class MalayaDataset(torch.utils.data.Dataset):
         self.i = 0
         self.d = None
         self.sr = 16000
-        self.maxlen = 16
-        self.minlen = 0.5
+        self.maxlen = 12
+        self.minlen = 1
         self.max_batch = max_batch
         self.overwrite_directory = overwrite_directory
         if start:
@@ -175,8 +201,7 @@ class MalayaDataset(torch.utils.data.Dataset):
             print('Exception __getitem__', e)
             self.get_dataset()
             r = next(self.d)
-        r = {'speech': [r['waveforms']], 'sampling_rate': [16000],
-             'target_text': ''.join([CTC_VOCAB[t] for t in r['targets']])}
+        r = {'speech': [r['waveforms']], 'sampling_rate': 16000}
         return r
 
     def __len__(self):
@@ -188,6 +213,22 @@ with open('huggingface-3mixed-train-test.json') as fopen:
 
 with open('huggingface-khursani-malay.json') as fopen:
     khursani_dataset = json.load(fopen)
+
+languages = defaultdict(list)
+
+for f in dataset['train']:
+    l = f.split('/')[-2]
+    languages[l].append(f)
+
+train_set = random.sample(languages['mandarin'], 650) + \
+    random.sample(languages['singlish'], 650) + \
+    languages['malay'] + khursani_dataset
+
+test_set = [
+    'https://huggingface.co/huseinzol05/STT-Mixed-TFRecord/resolve/main/mandarin/0-35.tfrecord',
+    'https://huggingface.co/huseinzol05/STT-Mixed-TFRecord/resolve/main/malay/2-25.tfrecord',
+    'https://huggingface.co/huseinzol05/STT-Mixed-TFRecord/resolve/main/singlish/2-34.tfrecord'
+]
 
 
 def parse_args():
@@ -369,6 +410,21 @@ def parse_args():
         default=1e-8,
         help="Epsilon for AdamW optimizer",
     )
+    parser.add_argument(
+        "--mixed_precision",
+        type=str,
+        default='no',
+        choices=["no", "fp16", "bf16"],
+        help="Whether or not to use mixed precision training. "
+        "Choose between FP16 and BF16 (bfloat16) training. "
+        "BF16 training is only supported on Nvidia Ampere GPUs and PyTorch 1.10 or later.",
+    )
+    parser.add_argument(
+        "--mask_time_prob",
+        type=float,
+        default=0.2,
+        help="Propability of each feature vector along the time axis to be chosen as the start of the vector",
+    )
     parser.add_argument("--push_to_hub", action="store_true", help="Whether or not to push the model to the Hub.")
     parser.add_argument(
         "--hub_model_id", type=str, help="The name of the repository to keep in sync with the local `output_dir`."
@@ -522,13 +578,11 @@ def main():
             os.makedirs(args.output_dir, exist_ok=True)
     accelerator.wait_for_everyone()
 
-    train_dataset = MalayaDataset(dataset['train'] + khursani_dataset, directory='tfrecord-300m')
-    eval_dataset = MalayaDataset(
-        test_set,
-        directory='tfrecord-300m-test',
-        max_batch=100,
-        overwrite_directory=False
-    )
+    # train_dataset = MalayaDataset(test_set,
+    #                               directory='tfrecord-300m-test',
+    #                               max_batch=100000,
+    #                               overwrite_directory=False)
+    train_dataset = MalayaDataset(train_set, directory='tfrecord-300m')
 
     # 2. Now we preprocess the datasets including loading the audio, resampling and normalization
     # Thankfully, `datasets` takes care of automatically loading and resampling the audio,
@@ -547,21 +601,12 @@ def main():
         inputs = feature_extractor(
             batch["speech"], sampling_rate=batch["sampling_rate"]
         )
-        batch["input_values"] = inputs.input_values[0]
-        batch["input_length"] = len(inputs.input_values[0])
 
-        return batch
-
-    # load via mapped files via path
-    cache_file_names = None
-    if args.train_cache_file_name is not None:
-        cache_file_names = {"train": args.train_cache_file_name, "validation": args.validation_cache_file_name}
+        new_batch = {'input_values': inputs.input_values[0]}
+        return new_batch
 
     with accelerator.main_process_first():
         train_dataset = train_dataset.map(
-            prepare_dataset,
-        )
-        eval_dataset = eval_dataset.map(
             prepare_dataset,
         )
 
@@ -574,7 +619,9 @@ def main():
         return
 
     # 3. Load model
-    config = Wav2Vec2Config.from_pretrained(args.model_name_or_path)
+    config = Wav2Vec2Config.from_pretrained(args.model_name_or_path,
+                                            mask_time_prob=args.mask_time_prob,
+                                            )
 
     # pretraining is only supported for "newer" stable layer norm architecture
     # apply_spec_augment has to be True, mask_feature_prob has to be 0.0
@@ -601,9 +648,6 @@ def main():
         collate_fn=data_collator,
         batch_size=args.per_device_train_batch_size,
     )
-    eval_dataloader = DataLoader(
-        eval_dataset, collate_fn=data_collator, batch_size=args.per_device_eval_batch_size
-    )
 
     # Optimizer
     optimizer = AdamW(
@@ -614,8 +658,8 @@ def main():
     )
 
     # Prepare everything with our `accelerator`.
-    model, optimizer, train_dataloader, eval_dataloader = accelerator.prepare(
-        model, optimizer, train_dataloader, eval_dataloader
+    model, optimizer, train_dataloader = accelerator.prepare(
+        model, optimizer, train_dataloader
     )
 
     # Scheduler and math around the number of training steps.
@@ -633,11 +677,17 @@ def main():
         num_training_steps=args.max_train_steps,
     )
 
+    logging.basicConfig(
+        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+        datefmt="%m/%d/%Y %H:%M:%S",
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
+    logger.setLevel(logging.INFO)
+
     # 5. Train
     total_batch_size = args.per_device_train_batch_size * accelerator.num_processes * args.gradient_accumulation_steps
 
     logger.info("***** Running training *****")
-    logger.info(f"  Num examples = {len(vectorized_datasets['train'])}")
     logger.info(f"  Num Epochs = {args.num_train_epochs}")
     logger.info(f"  Instantaneous batch size per device = {args.per_device_train_batch_size}")
     logger.info(f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}")
@@ -766,41 +816,6 @@ def main():
             # if completed steps > `args.max_train_steps` stop
             if completed_steps >= args.max_train_steps:
                 break
-
-        # 7. Validate!
-        model.eval()
-
-        # init logs
-        val_logs = {
-            "val_loss": 0,
-            "val_contrastive_loss": 0,
-            "val_diversity_loss": 0,
-            "val_num_losses": 0,
-        }
-        for step, batch in enumerate(eval_dataloader):
-            with torch.no_grad():
-                batch.pop("sub_attention_mask", None)
-                outputs = model(**batch)
-
-            val_logs["val_loss"] += outputs.loss
-            val_logs["val_contrastive_loss"] += outputs.contrastive_loss
-            val_logs["val_diversity_loss"] += outputs.diversity_loss
-            val_logs["val_num_losses"] += batch["mask_time_indices"].sum()
-
-        # sum over devices in multi-processing
-        if accelerator.num_processes > 1:
-            val_logs = {k: accelerator.gather(v).sum() for k, v in val_logs.items()}
-
-        val_logs = {k: v / val_logs["val_num_losses"] for k, v in val_logs.items()}
-
-        log_str = ""
-        for k, v in val_logs.items():
-            log_str += "| {}: {:.3e}".format(k, v.item())
-
-        if accelerator.is_local_main_process:
-            progress_bar.write(log_str)
-            if is_wandb_available():
-                wandb.log(val_logs)
 
         if args.output_dir is not None:
             accelerator.wait_for_everyone()

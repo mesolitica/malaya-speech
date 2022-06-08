@@ -29,6 +29,7 @@ except BaseException:
 
 
 from dataclasses import dataclass, field
+from collections import defaultdict
 from typing import Any, Dict, List, Optional, Union
 import sys
 import string
@@ -196,6 +197,16 @@ with open('huggingface-3mixed-train-test.json') as fopen:
 
 with open('huggingface-khursani-malay.json') as fopen:
     khursani_dataset = json.load(fopen)
+
+languages = defaultdict(list)
+
+for f in dataset['train']:
+    l = f.split('/')[-2]
+    languages[l].append(f)
+
+train_set = random.sample(languages['mandarin'], 650) + \
+    random.sample(languages['singlish'], 650) + \
+    languages['malay'] + khursani_dataset
 
 test_set = [
     'https://huggingface.co/huseinzol05/STT-Mixed-TFRecord/resolve/main/mandarin/0-35.tfrecord',
@@ -426,7 +437,7 @@ def main():
     #                               directory='tfrecord-300m-test',
     #                               max_batch=100,
     #                               overwrite_directory=False)
-    train_dataset = MalayaDataset(dataset['train'] + khursani_dataset, directory='tfrecord-300m')
+    train_dataset = MalayaDataset(train_set, directory='tfrecord-300m')
 
     # 2. Now we preprocess the datasets including loading the audio, resampling and normalization
     # Thankfully, `datasets` takes care of automatically loading and resampling the audio,
@@ -455,8 +466,15 @@ def main():
 
     # 3. Load model
     print(model_args)
-    config = Wav2Vec2Config.from_pretrained(model_args.model_name_or_path,
-                                            mask_time_prob=model_args.mask_time_prob)
+    config = Wav2Vec2Config.from_pretrained(
+        model_args.model_name_or_path,
+        mask_time_prob=model_args.mask_time_prob,
+        activation_dropout=model_args.activation_dropout,
+        attention_dropout=model_args.attention_dropout,
+        hidden_dropout=model_args.hidden_dropout,
+        feat_proj_dropout=model_args.feat_proj_dropout,
+        layerdrop=model_args.layerdrop,
+    )
 
     # pretraining is only supported for "newer" stable layer norm architecture
     # apply_spec_augment has to be True, mask_feature_prob has to be 0.0
