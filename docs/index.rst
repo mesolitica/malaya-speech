@@ -40,7 +40,13 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
-   :caption: ASR Module
+   :caption: Language Model Module
+   
+   language-model
+
+.. toctree::
+   :maxdepth: 2
+   :caption: ASR RNNT Module
 
    load-stt-transducer-model
    load-stt-transducer-model-lm
@@ -48,19 +54,27 @@ Contents:
    load-stt-transducer-model-2mixed
    load-stt-transducer-model-3mixed
    stt-transducer-gradio
-   transcribe-long-audio
-   ctc-language-model
+
+.. toctree::
+   :maxdepth: 2
+   :caption: ASR CTC Module
+
    load-stt-ctc-model
    load-stt-ctc-model-ctc-decoders
    load-stt-ctc-model-pyctcdecode
    load-stt-ctc-model-3mixed
    stt-ctc-gradio
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Extra ASR Module
+
+   transcribe-long-audio
    realtime-asr
    realtime-asr-mixed
    realtime-asr-rubberband
    realtime-alignment
    
-
 .. toctree::
    :maxdepth: 2
    :caption: Force Alignment Module

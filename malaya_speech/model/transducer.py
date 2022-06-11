@@ -162,7 +162,7 @@ class Transducer(Abstract):
                 max_idx = ytu_.argmax()
                 idx_list = set(np.where(ytu_ >= token_min_logp)[0]) | {max_idx}
                 for k in idx_list:
-                    w = self._vocabs[k]
+                    w = self._vocabs.get(k, ' ')
                     if isinstance(w, bytes):
                         w = w.decode(encoding='ISO-8859-1')
                     w = w.replace('_', ' ')

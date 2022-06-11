@@ -328,7 +328,6 @@ def tacotron2(
     model: str = 'yasmin',
     quantized: bool = False,
     pad_to: int = 8,
-    true_case_model: Callable = None,
     **kwargs
 ):
     """
@@ -387,7 +386,6 @@ def fastspeech2(
     model: str = 'male',
     quantized: bool = False,
     pad_to: int = 8,
-    true_case_model: Callable = None,
     **kwargs
 ):
     """
@@ -446,7 +444,6 @@ def fastpitch(
     model: str = 'male',
     quantized: bool = False,
     pad_to: int = 8,
-    true_case_model: Callable = None,
     **kwargs
 ):
     """
@@ -501,7 +498,6 @@ def fastpitch(
 def glowtts(model: str = 'yasmin',
             quantized: bool = False,
             pad_to: int = 2,
-            true_case_model: Callable = None,
             **kwargs):
     """
     Load GlowTTS TTS model.
@@ -560,7 +556,6 @@ def lightspeech(
     model: str = 'male',
     quantized: bool = False,
     pad_to: int = 8,
-    true_case_model: Callable = None,
     **kwargs
 ):
     """
@@ -579,9 +574,6 @@ def lightspeech(
         Quantized model not necessary faster, totally depends on the machine.
     pad_to : int, optional (default=8)
         size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
-    true_case_model: Callable, optional (default=None)
-        load any true case model, eg, malaya true case model from https://malaya.readthedocs.io/en/latest/load-true-case.html
-        the interface must accept a string, return a string, eg, string = true_case_model(string)
 
     Returns
     -------
