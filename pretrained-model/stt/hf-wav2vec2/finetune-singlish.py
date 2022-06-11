@@ -139,7 +139,7 @@ class MalayaDataset(torch.utils.data.Dataset):
         b = self.files[self.i: self.i + self.batch_files]
         tfrecords = get_dataset(b, directory=self.directory, overwrite_directory=self.overwrite_directory)
         d = tf.data.Dataset.from_tensor_slices(tf.constant(tfrecords))
-        d = d.repeat(3)
+        d = d.repeat(2)
         d = d.shuffle(buffer_size=len(tfrecords))
         cycle_length = min(num_cpu_threads, len(tfrecords))
         d = d.interleave(
@@ -177,22 +177,15 @@ class MalayaDataset(torch.utils.data.Dataset):
 with open('huggingface-3mixed-train-test.json') as fopen:
     dataset = json.load(fopen)
 
-with open('huggingface-khursani-malay.json') as fopen:
-    khursani_dataset = json.load(fopen)
-
 languages = defaultdict(list)
 
 for f in dataset['train']:
     l = f.split('/')[-2]
     languages[l].append(f)
 
-train_set = random.sample(languages['mandarin'], 650) + \
-    random.sample(languages['singlish'], 650) + \
-    languages['malay'] + khursani_dataset
+train_set = languages['singlish']
 
 test_set = [
-    'https://huggingface.co/huseinzol05/STT-Mixed-TFRecord/resolve/main/mandarin/0-35.tfrecord',
-    'https://huggingface.co/huseinzol05/STT-Mixed-TFRecord/resolve/main/malay/2-25.tfrecord',
     'https://huggingface.co/huseinzol05/STT-Mixed-TFRecord/resolve/main/singlish/2-34.tfrecord'
 ]
 
@@ -386,6 +379,12 @@ def main():
     logger.info("Training/evaluation parameters %s", training_args)
     set_seed(training_args.seed)
     train_dataset = MalayaDataset(train_set, directory='tfrecord-300m')
+    # train_dataset = MalayaDataset(
+    #     test_set,
+    #     directory='tfrecord-300m-test',
+    #     max_batch=100,
+    #     overwrite_directory=False
+    # )
     eval_dataset = MalayaDataset(
         test_set,
         directory='tfrecord-300m-test',

@@ -1,6 +1,6 @@
 # Fastpitch
 
-**This directory is very lack of comments, able to understand Tensorflow, Tensorflow estimator, Tensorflow Dataset is really helpful**.
+**This directory is very lack of comments, able to understand Tensorflow, Tensorflow estimator and Tensorflow Dataset are really helpful**.
 
 **Fastpitch2 required alignment from Tacotron2**.
 

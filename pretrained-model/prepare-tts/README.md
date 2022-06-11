@@ -2,7 +2,7 @@
 
 Prepare TTS dataset for TTS models.
 
-**This directory is very lack of comments, able to understand Tensorflow, Tensorflow estimator, Tensorflow Dataset is really helpful**.
+**This directory is very lack of comments, able to understand Tensorflow, Tensorflow estimator and Tensorflow Dataset are really helpful**.
 
 ## how-to
 

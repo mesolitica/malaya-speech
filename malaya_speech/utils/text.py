@@ -4,6 +4,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 import inspect
+from typing import Callable
 
 _pad = 'pad'
 _start = 'start'
@@ -167,14 +168,12 @@ class TextIDS:
         is_lower: bool = True,
         normalizer=None,
         sentence_tokenizer=None,
-        true_case_model=None,
     ):
         self.pad_to = pad_to
         self.understand_punct = understand_punct
         self.is_lower = is_lower
         self.normalizer = normalizer
         self.sentence_tokenizer = sentence_tokenizer
-        self.true_case_model = true_case_model
 
         normalizer_parameters = list(inspect.signature(self.normalizer.normalize).parameters)
         self.kwargs = {
@@ -194,7 +193,8 @@ class TextIDS:
         string: str,
         normalize: bool = True,
         assume_newline_fullstop: bool = False,
-        **kwargs
+        true_case_func: Callable = None,
+        **kwargs,
     ):
         """
         Normalize a string for TTS task.
@@ -208,6 +208,8 @@ class TextIDS:
         assume_newline_fullstop: bool, optional (default=False)
             Assume a string is a multiple sentences, will split using
             `malaya.text.function.split_into_sentences`.
+        true_case_func: Callable, optional (default=None)
+            Callable function to do true case, eg, https://malaya.readthedocs.io/en/latest/load-true-case.html
 
         Returns
         -------
@@ -228,21 +230,25 @@ class TextIDS:
 
         string = string.replace(':', ',').replace(';', ',')
         if normalize and self.normalizer is not None:
-            string = self.normalizer.normalize(string, **self.kwargs)
+            string = self.normalizer.normalize(string, **{**self.kwargs, **kwargs})
             string = string['normalize']
         else:
             string = string
         string = put_spacing_num(string)
         string = ''.join([c for c in string if c in TTS_SYMBOLS])
 
-        if self.true_case_model is not None:
-            string = self.true_case_model(string)
+        if true_case_func is not None:
+            string = true_case_func(string)
 
         if not self.understand_punct:
             string = ''.join([c for c in string if c not in _punct])
         string = re.sub(r'[ ]+', ' ', string).strip()
         if self.is_lower:
             string = string.lower()
+
+        if string[-1] not in '.,?!':
+            string = string + '.'
+
         ids = tts_encode(string, TTS_SYMBOLS, add_eos=False)
         text_input = np.array(ids)
         num_pad = self.pad_to - ((len(text_input) + 2) % self.pad_to)

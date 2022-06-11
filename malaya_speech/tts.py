@@ -216,16 +216,16 @@ _glowtts_availability = {
 
 _lightspeech_availability = {
     'yasmin': {
-        'Size (MB)': 119,
-        'Quantized Size (MB)': 27.6,
-        'Combined loss': -1.908,
+        'Size (MB)': 39.9,
+        'Quantized Size (MB)': 10.2,
+        'Combined loss': 0.7541,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
     'osman': {
-        'Size (MB)': 119,
-        'Quantized Size (MB)': 27.6,
-        'Combined loss': -1.908,
+        'Size (MB)': 39.9,
+        'Quantized Size (MB)': 10.2,
+        'Combined loss': 0.7541,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
@@ -295,8 +295,7 @@ def load_text_ids(
     pad_to: int = 8,
     understand_punct: bool = True,
     is_lower: bool = True,
-    true_case_model: Callable = None,
-    **kwargs
+    **kwargs,
 ):
     """
     Load text normalizer module use by Malaya-Speech TTS.
@@ -322,7 +321,6 @@ def load_text_ids(
         is_lower=is_lower,
         normalizer=normalizer,
         sentence_tokenizer=sentence_tokenizer,
-        true_case_model=true_case_model,
     )
 
 
@@ -354,9 +352,6 @@ def tacotron2(
         Quantized model not necessary faster, totally depends on the machine.
     pad_to : int, optional (default=8)
         size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
-    true_case_model: Callable, optional (default=None)
-        load any true case model, eg, malaya true case model from https://malaya.readthedocs.io/en/latest/load-true-case.html
-        the interface must accept a string, return a string, eg, string = true_case_model(string)
 
     Returns
     -------
@@ -375,7 +370,6 @@ def tacotron2(
         pad_to=pad_to,
         understand_punct=selected_model['Understand punctuation'],
         is_lower=selected_model['Is lowercase'],
-        true_case_model=true_case_model,
         quantized=quantized,
         **kwargs
     )
@@ -417,9 +411,6 @@ def fastspeech2(
         Quantized model not necessary faster, totally depends on the machine.
     pad_to : int, optional (default=8)
         size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
-    true_case_model: Callable, optional (default=None)
-        load any true case model, eg, malaya true case model from https://malaya.readthedocs.io/en/latest/load-true-case.html
-        the interface must accept a string, return a string, eg, string = true_case_model(string)
 
     Returns
     -------
@@ -439,7 +430,6 @@ def fastspeech2(
         pad_to=pad_to,
         understand_punct=selected_model['Understand punctuation'],
         is_lower=selected_model['Is lowercase'],
-        true_case_model=true_case_model,
         quantized=quantized,
         **kwargs
     )
@@ -477,9 +467,6 @@ def fastpitch(
         Quantized model not necessary faster, totally depends on the machine.
     pad_to : int, optional (default=8)
         size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
-    true_case_model: Callable, optional (default=None)
-        load any true case model, eg, malaya true case model from https://malaya.readthedocs.io/en/latest/load-true-case.html
-        the interface must accept a string, return a string, eg, string = true_case_model(string)
 
     Returns
     -------
@@ -499,7 +486,6 @@ def fastpitch(
         pad_to=pad_to,
         understand_punct=selected_model['Understand punctuation'],
         is_lower=selected_model['Is lowercase'],
-        true_case_model=true_case_model,
         quantized=quantized,
         **kwargs
     )
@@ -538,9 +524,6 @@ def glowtts(model: str = 'yasmin',
         Quantized model not necessary faster, totally depends on the machine.
     pad_to : int, optional (default=2)
         size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 2.
-    true_case_model: Callable, optional (default=None)
-        load any true case model, eg, malaya true case model from https://malaya.readthedocs.io/en/latest/load-true-case.html
-        the interface must accept a string, return a string, eg, string = true_case_model(string)
 
     Returns
     -------
@@ -560,7 +543,6 @@ def glowtts(model: str = 'yasmin',
         pad_to=pad_to,
         understand_punct=selected_model['Understand punctuation'],
         is_lower=selected_model['Is lowercase'],
-        true_case_model=true_case_model,
         quantized=quantized,
         **kwargs
     )
@@ -568,6 +550,63 @@ def glowtts(model: str = 'yasmin',
     return tts.glowtts_load(
         model=model,
         module='text-to-speech-glowtts',
+        normalizer=text_ids,
+        quantized=quantized,
+        **kwargs
+    )
+
+
+def lightspeech(
+    model: str = 'male',
+    quantized: bool = False,
+    pad_to: int = 8,
+    true_case_model: Callable = None,
+    **kwargs
+):
+    """
+    Load LightSpeech TTS model.
+
+    Parameters
+    ----------
+    model : str, optional (default='male')
+        Model architecture supported. Allowed values:
+
+        * ``'yasmin'`` - LightSpeech trained on female Yasmin voice.
+        * ``'osman'`` - LightSpeech trained on male Osman voice.
+
+    quantized : bool, optional (default=False)
+        if True, will load 8-bit quantized model.
+        Quantized model not necessary faster, totally depends on the machine.
+    pad_to : int, optional (default=8)
+        size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
+    true_case_model: Callable, optional (default=None)
+        load any true case model, eg, malaya true case model from https://malaya.readthedocs.io/en/latest/load-true-case.html
+        the interface must accept a string, return a string, eg, string = true_case_model(string)
+
+    Returns
+    -------
+    result : malaya_speech.model.synthesis.Fastspeech class
+    """
+
+    model = model.lower()
+
+    if model not in _lightspeech_availability:
+        raise ValueError(
+            'model not supported, please check supported models from `malaya_speech.tts.available_lightspeech()`.'
+        )
+
+    selected_model = _lightspeech_availability[model]
+
+    text_ids = load_text_ids(
+        pad_to=pad_to,
+        understand_punct=selected_model['Understand punctuation'],
+        is_lower=selected_model['Is lowercase'],
+        quantized=quantized,
+        **kwargs
+    )
+    return tts.fastspeech_load(
+        model=model,
+        module='text-to-speech-lightspeech',
         normalizer=text_ids,
         quantized=quantized,
         **kwargs

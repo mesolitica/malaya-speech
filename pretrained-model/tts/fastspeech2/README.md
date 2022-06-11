@@ -1,6 +1,6 @@
 # Fastspeech2
 
-**This directory is very lack of comments, able to understand Tensorflow, Tensorflow estimator, Tensorflow Dataset is really helpful**.
+**This directory is very lack of comments, able to understand Tensorflow, Tensorflow estimator and Tensorflow Dataset are really helpful**.
 
 **Fastspeech2 required alignment from Tacotron2**.
 

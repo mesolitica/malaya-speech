@@ -398,9 +398,11 @@ class GlowTTS_MultiSpeaker(Abstract):
         self.__model__ = model
         self.__name__ = name
 
-    def _predict(self, string, left_audio, right_audio,
+    def _predict(self,
+                 string, left_audio, right_audio,
                  temperature: float = 0.3333,
-                 length_ratio: float = 1.0, **kwargs):
+                 length_ratio: float = 1.0,
+                 **kwargs):
         t, ids = self._normalizer.normalize(string, **kwargs)
         left_v = self._speaker_vector([left_audio])
         right_v = self._speaker_vector([right_audio])

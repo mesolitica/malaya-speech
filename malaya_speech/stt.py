@@ -407,8 +407,7 @@ def deep_transducer(
 @check_type
 def huggingface(model: str = 'mesolitica/wav2vec2-xls-r-300m-mixed', **kwargs):
     """
-    Load Finetuned models from HuggingFace. 
-    This is simply a wrapper to call `malaya_speech.train.model.hf_wav2vec2.model.TFWav2Vec2ForCTC`.
+    Load Finetuned models from HuggingFace.
 
     Parameters
     ----------
@@ -416,6 +415,7 @@ def huggingface(model: str = 'mesolitica/wav2vec2-xls-r-300m-mixed', **kwargs):
         Model architecture supported. Allowed values:
 
         * ``'mesolitica/wav2vec2-xls-r-300m-mixed'`` - wav2vec2 XLS-R 300M finetuned on (Malay + Singlish + Mandarin) languages.
+
     Returns
     -------
     result : malaya_speech.model.huggingface.CTC class

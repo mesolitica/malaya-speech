@@ -2,7 +2,7 @@
 
 https://huggingface.co/docs/transformers/model_doc/wav2vec2, trained on https://github.com/huseinzol05/malaya-speech/tree/master/data/mixed-stt
 
-**This directory is very lack of comments, able to understand HuggingFace, Torch Dataset, Tensorflow, Tensorflow Dataset is really helpful**.
+**This directory is very lack of comments, able to understand HuggingFace, Torch Dataset, Tensorflow and Tensorflow Dataset are really helpful**.
 
 ## how-to pretrain
 
@@ -12,7 +12,13 @@ https://huggingface.co/docs/transformers/model_doc/wav2vec2, trained on https://
 python3 pretrain_v2.py config-pretrained-base.json
 ```
 
-2. Pretrain `MINI` size,
+2. Pretrain `SMALL` size,
+
+```bash
+python3 pretrain_small.py config-pretrained-small.json
+```
+
+3. Pretrain `MINI` size,
 
 ```bash
 python3 pretrain_mini.py config-pretrained-mini.json

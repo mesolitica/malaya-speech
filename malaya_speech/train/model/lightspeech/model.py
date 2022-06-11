@@ -337,3 +337,89 @@ class Model(tf.keras.Model):
             energy_outputs,
         )
         return outputs
+
+    def inference(
+        self, input_ids, speed_ratios, f0_ratios, energy_ratios, **kwargs
+    ):
+        speaker_ids = tf.convert_to_tensor([0], tf.int32)
+        attention_mask = tf.math.not_equal(input_ids, 0)
+        embedding_output = self.embeddings(
+            [input_ids, speaker_ids], training=False
+        )
+        encoder_output = self.encoder(
+            [embedding_output, attention_mask], training=False
+        )
+        last_encoder_hidden_states = encoder_output[0]
+
+        # expand ratios
+        speed_ratios = tf.expand_dims(speed_ratios, 1)  # [B, 1]
+        f0_ratios = tf.expand_dims(f0_ratios, 1)  # [B, 1]
+        energy_ratios = tf.expand_dims(energy_ratios, 1)  # [B, 1]
+
+        # energy predictor, here use last_encoder_hidden_states, u can use more hidden_states layers
+        # rather than just use last_hidden_states of encoder for energy_predictor.
+        duration_outputs = self.duration_predictor(
+            [last_encoder_hidden_states, speaker_ids, attention_mask]
+        )  # [batch_size, length]
+        duration_outputs = tf.nn.relu(tf.math.exp(duration_outputs) - 1.0)
+        duration_outputs = tf.cast(
+            tf.math.round(duration_outputs * speed_ratios), tf.int32
+        )
+
+        f0_outputs = self.f0_predictor(
+            [last_encoder_hidden_states, speaker_ids, attention_mask],
+            training=False,
+        )
+        f0_outputs *= f0_ratios
+
+        energy_outputs = self.energy_predictor(
+            [last_encoder_hidden_states, speaker_ids, attention_mask],
+            training=False,
+        )
+        energy_outputs *= energy_ratios
+
+        f0_embedding = self.f0_dropout(
+            self.f0_embeddings(tf.expand_dims(f0_outputs, 2)), training=True
+        )
+        energy_embedding = self.energy_dropout(
+            self.energy_embeddings(tf.expand_dims(energy_outputs, 2)),
+            training=True,
+        )
+
+        # sum features
+        last_encoder_hidden_states += f0_embedding + energy_embedding
+
+        length_regulator_outputs, encoder_masks = self.length_regulator(
+            [last_encoder_hidden_states, duration_outputs], training=False
+        )
+
+        # create decoder positional embedding
+        decoder_pos = tf.range(
+            1, tf.shape(length_regulator_outputs)[1] + 1, dtype=tf.int32
+        )
+        masked_decoder_pos = tf.expand_dims(decoder_pos, 0) * encoder_masks
+
+        last_decoder_hidden_states = self.decoder(
+            [
+                length_regulator_outputs,
+                encoder_masks,
+                masked_decoder_pos,
+            ],
+            training=False,
+        )
+
+        # here u can use sum or concat more than 1 hidden states layers from decoder.
+        mel_before = self.mel_dense(last_decoder_hidden_states)
+        mel_after = (
+            self.postnet([mel_before, encoder_masks], training=True)
+            + mel_before
+        )
+
+        outputs = (
+            mel_before,
+            mel_after,
+            duration_outputs,
+            f0_outputs,
+            energy_outputs,
+        )
+        return outputs

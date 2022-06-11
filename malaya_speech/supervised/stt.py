@@ -4,7 +4,6 @@ from malaya_speech.utils import (
     generate_session,
     nodes_session,
 )
-from malaya_speech.utils.char import HF_CTC_VOCAB
 from malaya_speech.utils.read import load as load_wav
 from malaya_speech.utils.subword import load as subword_load
 from malaya_speech.utils.tf_featurization import STTFeaturizer
@@ -12,10 +11,10 @@ from malaya_speech.model.transducer import Transducer, TransducerAligner
 from malaya_speech.model.wav2vec import Wav2Vec2_CTC, Wav2Vec2_Aligner
 from malaya_speech.model.huggingface import HuggingFace_CTC, HuggingFace_Aligner
 from malaya_speech.path import TRANSDUCER_VOCABS, TRANSDUCER_MIXED_VOCABS
+from packaging import version
+from malaya_boilerplate import frozen_graph
+import tensorflow as tf
 import os
-import logging
-
-logger = logging.getLogger('malaya_speech.supervised.stt')
 
 
 def get_vocab(language):
@@ -198,16 +197,11 @@ def wav2vec2_ctc_load(model, module, quantized=False, stt=True, **kwargs):
 
 
 def huggingface_load(model, stt=True, **kwargs):
-    from packaging import version
-    from malaya_boilerplate import frozen_graph
-    import tensorflow as tf
 
     if version.parse(tf.__version__) < version.parse('2.0'):
-        raise Exception('Tensorflow version must >= 2.0 to use huggingface models.')
+        raise Exception('Tensorflow version must >= 2.0 to use HuggingFace models.')
 
-    device = frozen_graph.get_device(**kwargs)
-
-    if 'wav2vec2-xls-r' in model:
+    if 'wav2vec2' in model:
         from malaya_speech.train.model import hf_wav2vec2
         from huggingface_hub import hf_hub_download
 
@@ -217,6 +211,8 @@ def huggingface_load(model, stt=True, **kwargs):
         config = hf_wav2vec2.Wav2Vec2Config.from_json_file(config_file)
         hf_model = hf_wav2vec2.TFWav2Vec2ForCTC(config)
 
+        device = frozen_graph.get_device(**kwargs)
+
         with tf.device(device):
             hf_model(
                 tf.random.normal(shape=(1, 1000)),
@@ -225,22 +221,7 @@ def huggingface_load(model, stt=True, **kwargs):
             hf_model.load_weights(checkpoint_file)
 
     else:
-        logging.info('load model using `transformers.TFWav2Vec2ForCTC`.')
-
-        try:
-            from transformers import TFWav2Vec2ForCTC
-        except BaseException:
-            raise ModuleNotFoundError(
-                'transformers not installed. Please install it by `pip install transformers>=4.18.0` and try again.'
-            )
-
-        with tf.device(device):
-            hf_model = TFWav2Vec2ForCTC.from_pretrained(
-                model,
-                ctc_loss_reduction='mean',
-                pad_token_id=len(HF_CTC_VOCAB) - 1,
-                vocab_size=len(HF_CTC_VOCAB),
-            )
+        raise Exception('Only support `Wav2Vec2` model from HuggingFace.')
 
     if stt:
         selected_model = HuggingFace_CTC
