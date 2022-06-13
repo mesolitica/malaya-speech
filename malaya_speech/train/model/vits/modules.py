@@ -37,7 +37,7 @@ class DDSConv(tf.keras.layers.Layer):
             y = self.convs_1x1[i](y)
             y = self.norms_2[i](y, training=training)
             y = gelu(y)
-            y = self.drop(y)
+            y = self.drop(y, training=training)
             x = x + y
         return x * x_mask
 
@@ -69,7 +69,7 @@ class ConvReluNorm(tf.keras.layers.Layer):
         x_org = x
         for i in range(self.n_layers):
             x = self.conv_layers[i](x * x_mask)
-            x = self.norm_layers[i](x)
+            x = self.norm_layers[i](x, training=training)
             x = self.relu_drop(x, training=training)
         x = x_org + self.proj(x)
         return x * x_mask
@@ -131,9 +131,9 @@ class WN(tf.keras.layers.Layer):
             acts = self.drop(acts, training=training)
             res_skip_acts = self.res_skip_layers[i](acts)
             if i < self.n_layers - 1:
-                res_acts = res_skip_acts[:, :self.hidden_channels, :]
+                res_acts = res_skip_acts[:, :, :self.hidden_channels]
                 x = (x + res_acts) * x_mask
-                output = output + res_skip_acts[:, self.hidden_channels:, :]
+                output = output + res_skip_acts[:, :, self.hidden_channels:]
             else:
                 output = output + res_skip_acts
         return output * x_mask
@@ -207,7 +207,7 @@ class Log(tf.keras.layers.Layer):
     def __init__(self, **kwargs):
         super(Log, self).__init__(**kwargs)
 
-    def call(self, x, mask, reverse=False):
+    def call(self, x, mask, reverse=False, training=True):
         if not reverse:
             y = tf.log(tf.clip_by_value(x, 1e-5, tf.max(x))) * x_mask
         else:
@@ -219,7 +219,7 @@ class Flip(tf.keras.layers.Layer):
     def __init__(self, **kwargs):
         super(Flip, self).__init__(**kwargs)
 
-    def call(self, x, mask, reverse=False):
+    def call(self, x, mask, g=None, reverse=False, training=True):
         if not reverse:
             x = tf.reverse(x, [2])
             logdet = tf.zeros([tf.shape(x)[0]])
@@ -236,7 +236,7 @@ class ElementwiseAffine(tf.keras.layers.Layer):
         self.m = tf.Variable(tf.zeros([channels, 1]))
         self.logs = tf.Variable(tf.zeros([channels, 1]))
 
-    def call(self, x, x_mask, reverse=False):
+    def call(self, x, x_mask, reverse=False, training=True):
         if not reverse:
             y = self.m + tf.exp(self.logs) * x
             y = y * x_mask
@@ -274,10 +274,10 @@ class ResidualCouplingLayer(tf.keras.layers.Layer):
         self.post = tf.keras.layers.Conv1D(self.half_channels * (2 - mean_only), 1,
                                            kernel_initializer='zeros', bias_initializer='zeros')
 
-    def call(self, x, x_mask, g=None, reverse=False):
+    def call(self, x, x_mask, g=None, reverse=False, training=True):
         x0, x1 = x[:, :, :self.half_channels], x[:, :, self.half_channels:]
         h = self.pre(x0) * x_mask
-        h = self.enc(h, x_mask, g=g)
+        h = self.enc(h, x_mask, g=g, training=training)
         stats = self.post(h) * x_mask
         if not self.mean_only:
             m, logs = stats[:, :, :self.half_channels], x[:, :, self.half_channels:]
