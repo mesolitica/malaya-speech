@@ -31,3 +31,4 @@ from .vit import (
     tiny_config as vit_tiny_config,
     base_config as vit_base_config,
 )
+from .vits import base_config as vits_base_config

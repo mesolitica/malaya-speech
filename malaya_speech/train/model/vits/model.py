@@ -27,13 +27,67 @@ from typing import Dict, Optional, Tuple
 import tensorflow as tf
 import numpy as np
 
-from .config import Config
-from .durator import DurationPredictor
-from .flow import WaveNetFlow
-from .posterior import PosteriorEncoder
-from .transformer import Transformer
 from .slicing import rand_slice_segments
+from . import commons, modules, attentions
 from ..utils import shape_list
+
+
+class DurationPredictor(tf.keras.layers.Layer):
+    def __init__(self, filter_channels, kernel_size, p_dropout, gin_channels=0, **kwargs):
+        super(DurationPredictor, self).__init__(**kwargs)
+
+        self.filter_channels = filter_channels
+        self.kernel_size = kernel_size
+        self.p_dropout = p_dropout
+        self.gin_channels = gin_channels
+
+        self.drop = tf.keras.layers.Dropout(p_dropout)
+        self.conv_1 = tf.keras.layers.Conv1D(filter_channels, kernel_size, padding='SAME')
+        self.norm_1 = tf.keras.layers.LayerNormalization(axis=-1)
+        self.conv_2 = tf.keras.layers.Conv1D(filter_channels, kernel_size, padding='SAME')
+        self.norm_2 = tf.keras.layers.LayerNormalization(axis=-1)
+        self.proj = tf.keras.layers.Conv1D(1, 1)
+
+        if gin_channels != 0:
+            self.cond = tf.keras.layers.Conv1D(in_channels, 1, padding='SAME')
+
+    def call(self, x, x_mask, g=None, training=True):
+        if g is not None:
+            x = x + self.cond(g)
+        x = self.conv_1(x * x_mask)
+        x = tf.nn.relu(x)
+        x = self.norm_1(x)
+        x = self.drop(x, training=training)
+        x = self.conv_2(x * x_mask)
+        x = tf.nn.relu(x)
+        x = self.norm_2(x)
+        x = self.drop(x, training=training)
+        x = self.proj(x * x_mask)
+        return x *
+
+
+class TextEncoder(tf.keras.layers.Layer):
+    def __init__(self, n_vocab,
+                 out_channels,
+                 hidden_channels,
+                 filter_channels,
+                 n_heads,
+                 n_layers,
+                 kernel_size,
+                 p_dropout, **kwargs):
+        super(TextEncoder, self).__init__(**kwargs)
+
+        self.n_vocab = n_vocab
+        self.out_channels = out_channels
+        self.hidden_channels = hidden_channels
+        self.filter_channels = filter_channels
+        self.n_heads = n_heads
+        self.n_layers = n_layers
+        self.kernel_size = kernel_size
+        self.p_dropout = p_dropout
+
+        self.emb = tf.keras.layers.Embedding(n_vocab, hidden_channels)
+        self.encoder = Transformer(config)
 
 
 class Model(tf.keras.Model):
