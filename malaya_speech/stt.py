@@ -161,22 +161,6 @@ _huggingface_availability = {
         'CER-LM': 0.0411965,
         'Language': ['malay', 'singlish', 'mandarin'],
     },
-    'mesolitica/wav2vec2-mini-malay': {
-        'Size (MB)': 32.7,
-        'WER': 0.1322198,
-        'CER': 0.0481054,
-        'WER-LM': 0.0988016,
-        'CER-LM': 0.0411965,
-        'Language': ['malay'],
-    },
-    'mesolitica/wav2vec2-mini-singlish': {
-        'Size (MB)': 32.7,
-        'WER': 0.1322198,
-        'CER': 0.0481054,
-        'WER-LM': 0.0988016,
-        'CER-LM': 0.0411965,
-        'Language': ['singlish'],
-    },
 }
 
 google_accuracy = {
@@ -423,7 +407,7 @@ def deep_transducer(
 @check_type
 def huggingface(model: str = 'mesolitica/wav2vec2-xls-r-300m-mixed', **kwargs):
     """
-    Load Finetuned models from HuggingFace.
+    Load Finetuned models from HuggingFace. Required Tensorflow >= 2.0.
 
     Parameters
     ----------

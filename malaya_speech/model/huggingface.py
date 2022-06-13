@@ -60,7 +60,7 @@ class HuggingFace_CTC(Abstract):
 
         results = []
         for i in range(len(argmax)):
-            tokens = char_decode(argmax[i], lookup=HF_CTC_VOCAB)
+            tokens = char_decode(argmax[i], lookup=HF_CTC_VOCAB + ['_'])
             grouped_tokens = [token_group[0] for token_group in groupby(tokens)]
             filtered_tokens = list(filter(lambda token: token != '_', grouped_tokens))
             r = ''.join(filtered_tokens).strip()
@@ -105,7 +105,7 @@ class HuggingFace_CTC(Abstract):
         ]
         normed_input_values, attentions = batching(inputs)
         out = self.hf_model(normed_input_values, attention_mask=attentions)
-        return out[0].numpy()
+        return norm_func(out[0].numpy(), axis=-1)
 
     def gradio(self, record_mode: bool = True,
                lm_func: Callable = None,
@@ -200,8 +200,8 @@ class HuggingFace_Aligner(Abstract):
         logits = out[0].numpy()
         o = log_softmax(logits, axis=-1)[0]
         tokens = [HF_CTC_VOCAB_IDX[c] for c in transcription]
-        trellis = get_trellis(o, tokens, blank_id=len(HF_CTC_VOCAB) - 1)
-        path = backtrack(trellis, o, tokens, blank_id=len(HF_CTC_VOCAB) - 1)
+        trellis = get_trellis(o, tokens, blank_id=len(HF_CTC_VOCAB))
+        path = backtrack(trellis, o, tokens, blank_id=len(HF_CTC_VOCAB))
         segments = merge_repeats(path, transcription)
         word_segments = merge_words(segments)
 

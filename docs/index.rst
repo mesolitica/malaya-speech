@@ -67,6 +67,14 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+   :caption: ASR HuggingFace Module
+
+   stt-huggingface
+   stt-huggingface-ctc-decoders
+   stt-huggingface-pyctcdecode
+
+.. toctree::
+   :maxdepth: 2
    :caption: Extra ASR Module
 
    transcribe-long-audio
@@ -81,6 +89,7 @@ Contents:
 
    force-alignment
    force-alignment-ctc
+   force-alignment-huggingface
    put-comma-force-alignment
 
 .. toctree::
@@ -109,6 +118,7 @@ Contents:
    tts-fastpitch-model
    tts-glowtts-model
    tts-glowtts-multispeaker-model
+   tts-lightspeech-model
    tts-singlish
    tts-long-text
    tts-gradio

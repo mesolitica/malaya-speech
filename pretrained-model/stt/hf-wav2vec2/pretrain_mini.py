@@ -136,7 +136,7 @@ def parse(serialized_example):
 
 
 class MalayaDataset(torch.utils.data.Dataset):
-    def __init__(self, files, directory, batch_files=10, max_batch=999999, overwrite_directory=True,
+    def __init__(self, files, directory, batch_files=10, max_batch=100000, overwrite_directory=True,
                  start=False):
         self.files = files
         self.directory = directory
@@ -158,7 +158,7 @@ class MalayaDataset(torch.utils.data.Dataset):
         b = self.files[self.i: self.i + self.batch_files]
         tfrecords = get_dataset(b, directory=self.directory, overwrite_directory=self.overwrite_directory)
         d = tf.data.Dataset.from_tensor_slices(tf.constant(tfrecords))
-        d = d.repeat(2)
+        d = d.repeat(4)
         d = d.shuffle(buffer_size=len(tfrecords))
         cycle_length = min(num_cpu_threads, len(tfrecords))
         d = d.interleave(
@@ -204,7 +204,7 @@ for f in dataset['train']:
     l = f.split('/')[-2]
     languages[l].append(f)
 
-train_set = random.sample(languages['mandarin'], 650) + \
+train_set = random.sample(languages['mandarin'], 600) + \
     random.sample(languages['singlish'], 650) + \
     languages['malay'] + khursani_dataset
 
@@ -253,6 +253,30 @@ class ModelArguments:
             "help": "Propability of each feature vector along the time axis to be chosen as the start of the vector"
             "span to be masked. Approximately ``mask_time_prob * sequence_length // mask_time_length`` feature"
             "vectors will be masked along the time axis. This is only relevant if ``apply_spec_augment is True``."
+        },
+    )
+    num_hidden_layers: Optional[float] = field(
+        default=12,
+        metadata={
+            "help": "num_hidden_layers."
+        },
+    )
+    hidden_size: Optional[float] = field(
+        default=1024,
+        metadata={
+            "help": "hidden_size."
+        },
+    )
+    intermediate_size: Optional[float] = field(
+        default=4096,
+        metadata={
+            "help": "intermediate_size."
+        },
+    )
+    num_attention_heads: Optional[float] = field(
+        default=12,
+        metadata={
+            "help": "num_attention_heads."
         },
     )
     layerdrop: Optional[float] = field(default=0.0, metadata={"help": "The LayerDrop probability."})
@@ -468,10 +492,10 @@ def main():
     # 3. Load model
     config = Wav2Vec2Config.from_pretrained(
         model_args.model_name_or_path,
-        num_hidden_layers=4,
-        hidden_size=256,
-        intermediate_size=1024,
-        num_attention_heads=4,
+        num_hidden_layers=model_args.num_hidden_layers,
+        hidden_size=model_args.hidden_size,
+        intermediate_size=model_args.intermediate_size,
+        num_attention_heads=model_args.num_attention_heads,
         mask_time_prob=model_args.mask_time_prob,
         activation_dropout=model_args.activation_dropout,
         attention_dropout=model_args.attention_dropout,

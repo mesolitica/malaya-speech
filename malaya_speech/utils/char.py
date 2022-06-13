@@ -12,7 +12,7 @@ VOCAB_SIZE = 256
 BLANK = 0
 CTC_VOCAB = [''] + list(string.ascii_lowercase + string.digits) + [' ']
 CTC_VOCAB_IDX = {c: i for i, c in enumerate(CTC_VOCAB)}
-HF_CTC_VOCAB = [''] + list(string.ascii_lowercase + string.digits) + [' ', '?', '_']
+HF_CTC_VOCAB = [''] + list(string.ascii_lowercase + string.digits) + [' ', '?']
 HF_CTC_VOCAB_IDX = {c: i for i, c in enumerate(HF_CTC_VOCAB)}
 
 
