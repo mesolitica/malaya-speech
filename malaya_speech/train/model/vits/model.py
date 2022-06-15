@@ -279,8 +279,8 @@ class DiscriminatorP(tf.keras.layers.Layer):
 
         def f1():
             n_pad = self.period - (t % self.period)
-            x = tf.pad(x, [[0, 0], [0, n_pad], [0, 0]])
-            return x
+            x_ = tf.pad(x, [[0, 0], [0, n_pad], [0, 0]])
+            return x_
 
         x = tf.cond(tf.math.not_equal(t % self.period, 0), f1, lambda: x)
         t = tf.shape(x)[1]
@@ -343,6 +343,7 @@ class DiscriminatorS(tf.keras.layers.Layer):
 
     def call(self, x):
         fmap = []
+        b, t, c = shape_list(x)
 
         for l in self.convs:
             x = l(x)

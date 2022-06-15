@@ -270,14 +270,25 @@ class Convolution(object):
         )
 
     def _build_op(self, _, padding):
-        return nn_ops._NonAtrousConvolution(
-            self.input_shape,
-            filter_shape=self.filter_shape,
-            padding=padding,
-            data_format=self.data_format,
-            strides=self.strides,
-            name=self.name,
-        )
+        try:
+            return nn_ops._NonAtrousConvolution(
+                self.input_shape,
+                filter_shape=self.filter_shape,
+                padding=padding,
+                data_format=self.data_format,
+                strides=self.strides,
+                name=self.name,
+            )
+        except:
+            from . import ops
+            return ops._NonAtrousConvolution(
+                self.input_shape,
+                filter_shape=self.filter_shape,
+                padding=padding,
+                data_format=self.data_format,
+                strides=self.strides,
+                name=self.name,
+            )
 
     def __call__(self, inp, filter):
         return self.conv_op(inp, filter)
