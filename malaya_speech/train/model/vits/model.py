@@ -1,27 +1,3 @@
-"""
-MIT License
-
-Copyright (c) 2021 YoungJoong Kim
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
-
 from typing import Dict, Optional, Tuple
 
 import tensorflow as tf
@@ -500,9 +476,13 @@ class Model(tf.keras.Model):
 
         w = tf.reduce_sum(tf.expand_dims(attn, -1), 1)
         logw_ = tf.log(w + 1e-6) * x_mask
-        logw = self.dp(x, x_mask, g=g, training=training)
+        logw = self.dp(tf.stop_gradient(x), x_mask, g=g, training=training)
 
-        l_length = tf.reduce_sum((logw - logw_)**2, [1, 2]) / tf.reduce_sum(x_mask)
+        l_length = tf.reduce_sum(tf.square(logw - logw_), axis=[1, 2]) / tf.cast(y_lengths, tf.float32)
+        l_length = tf.reduce_mean(l_length)
+
+        # l_length = tf.reduce_sum((logw - logw_)**2, [1, 2]) / tf.reduce_sum(x_mask)
+        # l_length = tf.reduce_sum(l_length)
 
         z_slice, ids_slice = commons.rand_slice_segments(z, y_lengths, self.segment_size)
         o = self.dec(z_slice, g=g)
