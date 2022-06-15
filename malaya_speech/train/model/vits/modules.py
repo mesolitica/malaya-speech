@@ -1,6 +1,7 @@
 import tensorflow as tf
 from ..fastspeech.layer import gelu
 from ..melgan.layer import WeightNormalization
+from ..utils import WeightNormalization as K_WeightNormalization
 from . import commons
 
 LRELU_SLOPE = 0.1
@@ -26,8 +27,8 @@ class DDSConv(tf.keras.layers.Layer):
             self.convs_sep.append(tf.keras.layers.DepthwiseConv2D((self.kernel_size, 1), padding='SAME',
                                                                   dilation_rate=dilation))
             self.convs_1x1.append(tf.keras.layers.Conv1D(channels, 1, padding='SAME'))
-            self.norms_1.append(tf.keras.layers.LayerNormalization(axis=-1))
-            self.norms_2.append(tf.keras.layers.LayerNormalization(axis=-1))
+            self.norms_1.append(tf.keras.layers.LayerNormalization(axis=-1, epsilon=1e-5))
+            self.norms_2.append(tf.keras.layers.LayerNormalization(axis=-1, epsilon=1e-5))
 
     def call(self, x, x_mask, training=True):
         for i in range(self.n_layers):
@@ -55,12 +56,12 @@ class ConvReluNorm(tf.keras.layers.Layer):
         self.norm_layers = []
 
         self.conv_layers.append(tf.keras.layers.Conv1D(hidden_channels, kernel_size, padding='SAME'))
-        self.norm_layers.append(tf.keras.layers.LayerNormalization(axis=-1))
+        self.norm_layers.append(tf.keras.layers.LayerNormalization(axis=-1, epsilon=1e-5))
         self.relu_drop = tf.keras.Sequential([tf.keras.layers.ReLU(),
                                               tf.keras.layers.Dropout(p_dropout)])
         for _ in range(n_layers-1):
             self.conv_layers.append(tf.keras.layers.Conv1D(hidden_channels, kernel_size, padding='SAME'))
-            self.norm_layers.append(tf.keras.layers.LayerNormalization(axis=-1))
+            self.norm_layers.append(tf.keras.layers.LayerNormalization(axis=-1, epsilon=1e-5))
 
         self.proj = tf.keras.layers.Conv1D(out_channels, 1, padding='SAME',
                                            kernel_initializer='zeros', bias_initializer='zeros')
@@ -121,7 +122,7 @@ class WN(tf.keras.layers.Layer):
             x_in = self.in_layers[i](x)
             if g is not None:
                 cond_offset = i * 2 * self.hidden_channels
-                g_l = g[:, cond_offset:cond_offset+2*self.hidden_channels, :]
+                g_l = g[:, :, cond_offset:cond_offset+2*self.hidden_channels]
             else:
                 g_l = tf.zeros_like(x_in)
             acts = commons.fused_add_tanh_sigmoid_multiply(
@@ -137,6 +138,17 @@ class WN(tf.keras.layers.Layer):
             else:
                 output = output + res_skip_acts
         return output * x_mask
+
+    def remove_weight_norm(self):
+        try:
+            if self.gin_channels != 0:
+                self.gin_channels = self.gin_channels.remove()
+            for i in range(len(self.in_layers)):
+                self.in_layers[i] = self.in_layers[i].remove()
+            for i in range(len(self.res_skip_layers)):
+                self.res_skip_layers[i] = self.res_skip_layers[i].remove()
+        except Exception as e:
+            print(e)
 
 
 class ResBlock1(tf.keras.layers.Layer):
@@ -162,7 +174,7 @@ class ResBlock1(tf.keras.layers.Layer):
                                                        padding='SAME', kernel_initializer=initializer))
         ]
 
-    def call(self, x, x_mask, training=True):
+    def call(self, x, x_mask=None, training=True):
         for c1, c2 in zip(self.convs1, self.convs2):
             xt = tf.keras.layers.LeakyReLU(alpha=LRELU_SLOPE)(x)
             if x_mask is not None:
@@ -191,7 +203,7 @@ class ResBlock2(tf.keras.layers.Layer):
                                                        padding='SAME', kernel_initializer=initializer)),
         ]
 
-    def call(self, x, x_mask, training=True):
+    def call(self, x, x_mask=None, training=True):
         for c in self.convs:
             xt = tf.keras.layers.LeakyReLU(alpha=LRELU_SLOPE)(x)
             if x_mask is not None:

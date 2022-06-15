@@ -1,3 +1,2 @@
-# from .model import Model
 from .config import HParams
-from .slicing import slice_segments
+from .model import Model

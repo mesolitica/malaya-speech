@@ -79,7 +79,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
             scores = scores + self._attention_bias_proximal(t_s)
         if mask is not None:
             # mask must shape [B, H, t_t, t_s]
-            mask_ = tf.tile(attn_mask, [1, self.n_heads, 1, 1])
+            mask_ = tf.tile(mask, [1, self.n_heads, 1, 1])
             scores = index_put_constant(scores, tf.equal(mask_, 0), 1e-4)
         p_attn = tf.nn.softmax(scores, axis=-1)
         p_attn = self.drop(p_attn, training=training)
@@ -107,7 +107,8 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         y: [h or 1, m, d]
         ret: [b, h, l, m]
         """
-        ret = tf.matmul(x, tf.transpose(tf.expand_dims(y, 0), [0, 2, 1]))
+        # [b, 1, 9, 96] -> [b, 1]
+        ret = tf.matmul(x, tf.transpose(tf.expand_dims(y, 0), [0, 1, 3, 2]))
         return ret
 
     def _get_relative_embeddings(self, relative_embeddings, length):
@@ -170,7 +171,7 @@ class FFN(tf.keras.layers.Layer):
         self.conv_2 = tf.keras.layers.Conv1D(out_channels, kernel_size, padding='SAME')
         self.drop = tf.keras.layers.Dropout(p_dropout)
 
-    def forward(self, x, x_mask, training=True):
+    def call(self, x, x_mask, training=True):
         x = self.conv_1(x * x_mask)
         if self.activation == "gelu":
             x = x * tf.sigmoid(1.702 * x)
@@ -201,21 +202,21 @@ class Encoder(tf.keras.layers.Layer):
         for i in range(self.n_layers):
             self.attn_layers.append(MultiHeadAttention(hidden_channels, hidden_channels,
                                     n_heads, p_dropout=p_dropout, window_size=window_size))
-            self.norm_layers_1.append(tf.keras.layers.LayerNormalization(axis=-1))
+            self.norm_layers_1.append(tf.keras.layers.LayerNormalization(axis=-1, epsilon=1e-5))
             self.ffn_layers.append(FFN(hidden_channels,
                                    filter_channels, kernel_size, p_dropout=p_dropout))
-            self.norm_layers_2.append(tf.keras.layers.LayerNormalization(axis=-1))
+            self.norm_layers_2.append(tf.keras.layers.LayerNormalization(axis=-1, epsilon=1e-5))
 
-        def call(self, x, x_mask, training=True):
-            x_mask_t = tf.transpose(x_mask, [0, 2, 1])
-            attn_mask = tf.expand_dims(x_mask_t, 2) * tf.expand_dims(x_mask_t, -1)
-            x = x * x_mask
-            for i in range(self.n_layers):
-                y = self.attn_layers[i](x, x, attn_mask_t)
-                y = self.drop(y, training=training)
-                x = self.norm_layers_1[i](x + y, training=training)
-                y = self.ffn_layers[i](x, x_mask, training=training)
-                y = self.drop(y, training=training)
-                x = self.norm_layers_2[i](x + y, training=training)
-            x = x * x_mask
-            return x
+    def call(self, x, x_mask, training=True):
+        x_mask_t = tf.transpose(x_mask, [0, 2, 1])
+        attn_mask = tf.expand_dims(x_mask_t, 2) * tf.expand_dims(x_mask_t, -1)
+        x = x * x_mask
+        for i in range(self.n_layers):
+            y = self.attn_layers[i](x, x, attn_mask)
+            y = self.drop(y, training=training)
+            x = self.norm_layers_1[i](x + y, training=training)
+            y = self.ffn_layers[i](x, x_mask, training=training)
+            y = self.drop(y, training=training)
+            x = self.norm_layers_2[i](x + y, training=training)
+        x = x * x_mask
+        return x

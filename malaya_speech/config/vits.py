@@ -14,7 +14,7 @@ base_config = {
         'upsample_initial_channel': 512,
         'upsample_kernel_sizes': [16, 16, 4, 4],
         'n_layers_q': 3,
-        'use_spectral_norm': False
+        'use_spectral_norm': False,
     },
     'train': {
         'log_interval': 200,
