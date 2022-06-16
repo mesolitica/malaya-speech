@@ -6,6 +6,7 @@ import math
 
 from . import commons, modules, attentions
 from ..melgan.layer import WeightNormalization, GroupConv1D
+from ..melgan.model import TFReflectionPad1d
 from ..utils import shape_list
 
 
@@ -205,7 +206,14 @@ class Generator(tf.keras.layers.Layer):
         super(Generator, self).__init__(**kwargs)
         self.num_kernels = len(resblock_kernel_sizes)
         self.num_upsamples = len(upsample_rates)
-        self.conv_pre = tf.keras.layers.Conv1D(upsample_initial_channel, 7, 1, padding='SAME')
+
+        kernel_size = 7
+        self.early_pad = TFReflectionPad1d(
+            (kernel_size - 1) // 2,
+            padding_type='REFLECT',
+            name='last_reflect_padding',
+        )
+        self.conv_pre = tf.keras.layers.Conv1D(upsample_initial_channel, kernel_size, 1)
         resblock = modules.ResBlock1 if resblock == '1' else modules.ResBlock2
 
         initializer = tf.keras.initializers.RandomNormal(
@@ -230,13 +238,19 @@ class Generator(tf.keras.layers.Layer):
             for j, (k, d) in enumerate(zip(resblock_kernel_sizes, resblock_dilation_sizes)):
                 self.resblocks.append(resblock(ch, k, d))
 
-        self.conv_post = tf.keras.layers.Conv1D(1, 7, 1, padding='same', use_bias=False)
+        self.last_pad = TFReflectionPad1d(
+            (kernel_size - 1) // 2,
+            padding_type='REFLECT',
+            name='last_reflect_padding',
+        )
+
+        self.conv_post = tf.keras.layers.Conv1D(1, kernel_size, 1, use_bias=False)
 
         if gin_channels != 0:
             self.cond = tf.keras.layers.Conv1D(upsample_initial_channel, 1, padding='same')
 
     def call(self, x, g=None, training=True):
-        x = self.conv_pre(x)
+        x = self.conv_pre(self.early_pad(x))
         if g is not None:
             x = x + self.cond(g)
 
@@ -252,7 +266,7 @@ class Generator(tf.keras.layers.Layer):
             x = xs / self.num_kernels
 
         x = tf.keras.layers.LeakyReLU()(x)
-        x = self.conv_post(x)
+        x = self.conv_post(self.last_pad(x))
         x = tf.tanh(x)
 
         return x
