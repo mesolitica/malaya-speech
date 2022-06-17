@@ -1,46 +1,13 @@
 import tensorflow as tf
+import math
 from ..fastspeech.layer import gelu
 from ..melgan.layer import WeightNormalization
 from ..utils import WeightNormalization as K_WeightNormalization
+from ..utils import shape_list
 from . import commons
+from .transforms import piecewise_rational_quadratic_transform_tf
 
 LRELU_SLOPE = 0.1
-
-
-class DDSConv(tf.keras.layers.Layer):
-    def __init__(self, channels, kernel_size, n_layers, p_dropout=0., **kwargs):
-        super(DDSConv, self).__init__(**kwargs)
-
-        self.channels = channels
-        self.kernel_size = kernel_size
-        self.n_layers = n_layers
-        self.p_dropout = p_dropout
-
-        self.drop = tf.keras.layers.Dropout(p_dropout)
-        self.convs_sep = []
-        self.convs_1x1 = []
-        self.norms_1 = []
-        self.norms_2 = []
-
-        for i in range(n_layers):
-            dilation = kernel_size ** i
-            self.convs_sep.append(tf.keras.layers.DepthwiseConv2D((self.kernel_size, 1), padding='SAME',
-                                                                  dilation_rate=dilation))
-            self.convs_1x1.append(tf.keras.layers.Conv1D(channels, 1, padding='SAME'))
-            self.norms_1.append(tf.keras.layers.LayerNormalization(axis=-1, epsilon=1e-5))
-            self.norms_2.append(tf.keras.layers.LayerNormalization(axis=-1, epsilon=1e-5))
-
-    def call(self, x, x_mask, training=True):
-        for i in range(self.n_layers):
-            y = self.convs_sep[i](x * x_mask)
-            y = self.norms_1[i](y, training=training)
-            y = gelu(y)
-            y = self.convs_1x1[i](y)
-            y = self.norms_2[i](y, training=training)
-            y = gelu(y)
-            y = self.drop(y, training=training)
-            x = x + y
-        return x * x_mask
 
 
 class ConvReluNorm(tf.keras.layers.Layer):
@@ -219,9 +186,11 @@ class Log(tf.keras.layers.Layer):
     def __init__(self, **kwargs):
         super(Log, self).__init__(**kwargs)
 
-    def call(self, x, mask, reverse=False, training=True):
+    def call(self, x, x_mask, g=None, reverse=False, training=True):
         if not reverse:
-            y = tf.log(tf.clip_by_value(x, 1e-5, tf.max(x))) * x_mask
+            y = tf.log(tf.clip_by_value(x, 1e-5, tf.reduce_max(x))) * x_mask
+            logdet = tf.reduce_sum(-y, axis=[2, 1])
+            return y, logdet
         else:
             x = tf.exp(x) * x_mask
             return x
@@ -245,14 +214,14 @@ class ElementwiseAffine(tf.keras.layers.Layer):
     def __init__(self, channels, **kwargs):
         super(ElementwiseAffine, self).__init__(**kwargs)
         self.channels = channels
-        self.m = tf.Variable(tf.zeros([channels, 1]))
-        self.logs = tf.Variable(tf.zeros([channels, 1]))
+        self.m = tf.Variable(tf.zeros([1, channels]))
+        self.logs = tf.Variable(tf.zeros([1, channels]))
 
-    def call(self, x, x_mask, reverse=False, training=True):
+    def call(self, x, x_mask, g=None, reverse=False, training=True):
         if not reverse:
             y = self.m + tf.exp(self.logs) * x
             y = y * x_mask
-            logdet = tf.reduce_sum(self.logs * x_mask, axis=[1, 2])
+            logdet = tf.reduce_sum(self.logs * x_mask, axis=[2, 1])
             return y, logdet
         else:
             x = (x - self.m) * tf.exp(-self.logs) * x_mask
@@ -305,4 +274,92 @@ class ResidualCouplingLayer(tf.keras.layers.Layer):
         else:
             x1 = (x1 - m) * tf.exp(-logs) * x_mask
             x = tf.concat([x0, x1], 2)
+            return x
+
+
+class DDSConv(tf.keras.layers.Layer):
+    def __init__(self, channels, kernel_size, n_layers, p_dropout=0., **kwargs):
+        super(DDSConv, self).__init__(**kwargs)
+
+        self.channels = channels
+        self.kernel_size = kernel_size
+        self.n_layers = n_layers
+        self.p_dropout = p_dropout
+
+        self.drop = tf.keras.layers.Dropout(p_dropout)
+        self.convs_sep = []
+        self.convs_1x1 = []
+        self.norms_1 = []
+        self.norms_2 = []
+
+        for i in range(n_layers):
+            dilation = kernel_size ** i
+            self.convs_sep.append(tf.keras.layers.DepthwiseConv2D((self.kernel_size, 1), padding='SAME',
+                                                                  dilation_rate=dilation))
+            self.convs_1x1.append(tf.keras.layers.Conv1D(channels, 1, padding='SAME'))
+            self.norms_1.append(tf.keras.layers.LayerNormalization(axis=-1, epsilon=1e-5))
+            self.norms_2.append(tf.keras.layers.LayerNormalization(axis=-1, epsilon=1e-5))
+
+    def call(self, x, x_mask, g=None, training=True):
+        if g is not None:
+            x = x + g
+        for i in range(self.n_layers):
+            y = self.convs_sep[i](tf.expand_dims(x * x_mask, 2))[:, :, 0]
+            y = self.norms_1[i](y, training=training)
+            y = gelu(y)
+            y = self.convs_1x1[i](y)
+            y = self.norms_2[i](y, training=training)
+            y = gelu(y)
+            y = self.drop(y, training=training)
+            x = x + y
+        return x * x_mask
+
+
+class ConvFlow(tf.keras.layers.Layer):
+    def __init__(self, in_channels, filter_channels, kernel_size, n_layers, num_bins=10, tail_bound=5.0, **kwargs):
+        super(ConvFlow, self).__init__(**kwargs)
+
+        self.in_channels = in_channels
+        self.filter_channels = filter_channels
+        self.kernel_size = kernel_size
+        self.n_layers = n_layers
+        self.num_bins = num_bins
+        self.tail_bound = tail_bound
+        self.half_channels = in_channels // 2
+
+        self.pre = tf.keras.layers.Conv1D(filter_channels, 1, padding='SAME')
+        self.convs = DDSConv(filter_channels, kernel_size, n_layers, p_dropout=0.)
+        self.proj = tf.keras.layers.Conv1D(self.half_channels * (num_bins * 3 - 1), 1,
+                                           kernel_initializer='zeros', bias_initializer='zeros')
+
+    def call(self, x, x_mask, g=None, reverse=False, training=True):
+        x0, x1 = x[:, :, :self.half_channels], x[:, :, self.half_channels:]
+        h = self.pre(x0)
+        h = self.convs(h, x_mask, g=g, training=training)
+        h = self.proj(h) * x_mask
+
+        x1 = tf.transpose(x1, [0, 2, 1])
+        h = tf.transpose(h, [0, 2, 1])
+        b, c, t = shape_list(x1)
+        h = tf.transpose(tf.reshape(h, [b, c, -1, t]), [0, 1, 3, 2])
+
+        unnormalized_widths = h[:, :, :, :self.num_bins] / math.sqrt(self.filter_channels)
+        unnormalized_heights = h[:, :, :, self.num_bins:2*self.num_bins] / math.sqrt(self.filter_channels)
+        unnormalized_derivatives = h[:, :, :, 2 * self.num_bins:]
+
+        x1, logabsdet = piecewise_rational_quadratic_transform_tf(x1,
+                                                                  unnormalized_widths,
+                                                                  unnormalized_heights,
+                                                                  unnormalized_derivatives,
+                                                                  inverse=reverse,
+                                                                  tails='linear',
+                                                                  tail_bound=self.tail_bound
+                                                                  )
+        x1 = tf.transpose(x1, [0, 2, 1])
+        logabsdet = tf.transpose(logabsdet, [0, 2, 1])
+        x = tf.concat([x0, x1], 2) * x_mask
+        logdet = tf.reduce_sum(logabsdet * x_mask, axis=[2, 1])
+        if not reverse:
+            return x, logdet
+        else:
             return x

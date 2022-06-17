@@ -10,6 +10,88 @@ from ..melgan.model import TFReflectionPad1d
 from ..utils import shape_list
 
 
+class StochasticDurationPredictor(tf.keras.layers.Layer):
+    def __init__(self, in_channels, filter_channels, kernel_size, p_dropout, n_flows=4, gin_channels=0, **kwargs):
+        super(StochasticDurationPredictor, self).__init__(**kwargs)
+        filter_channels = in_channels  # it needs to be removed from future version.
+        self.in_channels = in_channels
+        self.filter_channels = filter_channels
+        self.kernel_size = kernel_size
+        self.p_dropout = p_dropout
+        self.n_flows = n_flows
+        self.gin_channels = gin_channels
+
+        self.log_flow = modules.Log()
+        self.flows = []
+        self.flows.append(modules.ElementwiseAffine(2))
+        for i in range(n_flows):
+            self.flows.append(modules.ConvFlow(2, filter_channels, kernel_size, n_layers=3))
+            self.flows.append(modules.Flip())
+
+        self.post_pre = tf.keras.layers.Conv1D(filter_channels, 1, padding='SAME')
+        self.post_proj = tf.keras.layers.Conv1D(filter_channels, 1, padding='SAME')
+        self.post_convs = modules.DDSConv(filter_channels, kernel_size, n_layers=3, p_dropout=p_dropout)
+
+        self.post_flows = []
+        self.post_flows.append(modules.ElementwiseAffine(2))
+        for i in range(4):
+            self.post_flows.append(modules.ConvFlow(2, filter_channels, kernel_size, n_layers=3))
+            self.post_flows.append(modules.Flip())
+
+        self.pre = tf.keras.layers.Conv1D(filter_channels, 1, padding='SAME')
+        self.proj = tf.keras.layers.Conv1D(filter_channels, 1, padding='SAME')
+        self.convs = modules.DDSConv(filter_channels, kernel_size, n_layers=3, p_dropout=p_dropout)
+        if gin_channels != 0:
+            self.cond = tf.keras.layers.Conv1D(filter_channels, 1, padding='SAME')
+
+    def call(self, x, x_mask, w=None, g=None, reverse=False, noise_scale=1.0, training=True):
+        x = self.pre(x)
+        if g is not None:
+            x = x + self.cond(tf.stop_gradient(g))
+        x = self.convs(x, x_mask, training=training)
+        x = self.proj(x) * x_mask
+        if not reverse:
+            # original is [b, 1, t_t]
+            b, t_t, _ = shape_list(w)
+            flows = self.flows
+            logdet_tot_q = 0
+            h_w = self.post_pre(w)
+            h_w = self.post_convs(h_w, x_mask, training=training)
+            h_w = self.post_proj(h_w) * x_mask
+            e_q = tf.random.normal(shape=(b, t_t, 2)) * x_mask
+            z_q = e_q
+            for flow in self.post_flows:
+                z_q, logdet_q = flow(z_q, x_mask, g=(x + h_w), training=training)
+                logdet_tot_q += logdet_q
+            z_u, z1 = z_q[:, :, :1], z_q[:, :, 1:]
+            u = tf.sigmoid(z_u) * x_mask
+            z0 = (w - u) * x_mask
+            logdet_tot_q += tf.reduce_sum((tf.math.log_sigmoid(z_u) + tf.math.log_sigmoid(-z_u)) * x_mask, axis=[2, 1])
+
+            logq = tf.reduce_sum(-0.5 * (math.log(2*math.pi) + (e_q**2)) * x_mask, axis=[2, 1]) - logdet_tot_q
+
+            logdet_tot = 0
+            z0, logdet = self.log_flow(z0, x_mask)
+            logdet_tot += logdet
+            z = tf.concat([z0, z1], 2)
+            for flow in flows:
+                z, logdet = flow(z, x_mask, g=x, reverse=reverse, training=training)
+                logdet_tot = logdet_tot + logdet
+
+            nll = tf.reduce_sum(0.5 * (math.log(2*math.pi) + (z**2)) * x_mask, axis=[2, 1]) - logdet_tot
+            return nll + logq
+        else:
+            b, t_t, _ = shape_list(x)
+            flows = list(reversed(self.flows))
+            flows = flows[:-2] + [flows[-1]]
+            z = tf.random.normal(shape=(b, t_t, 2)) * noise_scale
+            for flow in flows:
+                z = flow(z, x_mask, g=x, reverse=reverse, training=training)
+            z0, z1 = z[:, :, :1], z[:, :, 1:]
+            logw = z0
+            return logw
+
+
 class DurationPredictor(tf.keras.layers.Layer):
     def __init__(self, filter_channels, kernel_size, p_dropout, gin_channels=0, **kwargs):
         super(DurationPredictor, self).__init__(**kwargs)
@@ -31,13 +113,13 @@ class DurationPredictor(tf.keras.layers.Layer):
 
     def call(self, x, x_mask, g=None, training=True):
         if g is not None:
-            x = x + self.cond(g)
+            x = x + self.cond(tf.stop_gradient(g))
         x = self.conv_1(x * x_mask)
-        x = tf.nn.relu(x)
+        x = tf.nn.relu6(x)
         x = self.norm_1(x, training=training)
         x = self.drop(x, training=training)
         x = self.conv_2(x * x_mask)
-        x = tf.nn.relu(x)
+        x = tf.nn.relu6(x)
         x = self.norm_2(x, training=training)
         x = self.drop(x, training=training)
         x = self.proj(x * x_mask)
@@ -418,7 +500,7 @@ class Model(tf.keras.Model):
                  upsample_kernel_sizes,
                  n_speakers=0,
                  gin_channels=0,
-                 use_sdp=False,
+                 use_sdp=True,
                  **kwargs):
         super().__init__()
         self.n_vocab = n_vocab
@@ -457,10 +539,9 @@ class Model(tf.keras.Model):
         self.flow = ResidualCouplingBlock(inter_channels, hidden_channels, 5, 1, 4, gin_channels=gin_channels)
 
         if use_sdp:
-            raise Exception('not yet implemented `use_sdp`')
-            self.dp = StochasticDurationPredictor(hidden_channels, 192, 3, 0.5, 4, gin_channels=gin_channels)
+            self.dp = StochasticDurationPredictor(hidden_channels, 192, 3, 0.3, 4, gin_channels=gin_channels)
         else:
-            self.dp = DurationPredictor(256, 3, 0.5, gin_channels=gin_channels)
+            self.dp = DurationPredictor(256, 3, 0.1, gin_channels=gin_channels)
 
         if n_speakers > 1:
             self.emb_g = tf.keras.layers.Embedding(n_speakers, gin_channels)
@@ -489,34 +570,49 @@ class Model(tf.keras.Model):
         m_p = tf.matmul(attn, m_p)
         logs_p = tf.matmul(attn, logs_p)
 
-        w = tf.reduce_sum(tf.expand_dims(attn, -1), 1)
-        logw_ = tf.log(w + 1e-6) * x_mask
-        logw = self.dp(tf.stop_gradient(x), x_mask, g=g, training=training)
+        w = tf.reduce_sum(attn, 1)
 
-        l_length = tf.reduce_sum(tf.square(logw - logw_), axis=[1, 2]) / tf.cast(y_lengths, tf.float32)
-        l_length = tf.reduce_mean(l_length)
+        if self.use_sdp:
+            l_length = self.dp(tf.stop_gradient(x), x_mask, tf.expand_dims(w, -1), g=g, training=training)
+            l_length = l_length / tf.reduce_sum(x_mask)
+        else:
+            logw = self.dp(tf.stop_gradient(x), x_mask, g=g, training=training)
+            logw = tf.squeeze(logw, axis=-1)
 
-        # l_length = tf.reduce_sum((logw - logw_)**2, [1, 2]) / tf.reduce_sum(x_mask)
-        # l_length = tf.reduce_sum(l_length)
+            loss_f = tf.losses.mean_squared_error
+            log_duration = tf.math.log(tf.cast(tf.math.add(w, 1), tf.float32)) * x_mask[:, :, 0]
+            l_length = loss_f(log_duration, logw)
+
+            # l_length = tf.reduce_sum(tf.square(logw - logw_), axis=[1, 2]) / tf.cast(y_lengths, tf.float32)
+            # l_length = tf.reduce_mean(l_length)
+
+            # l_length = tf.reduce_sum((logw - logw_)**2, [1, 2]) / tf.reduce_sum(x_mask)
+            # l_length = tf.reduce_sum(l_length)
 
         z_slice, ids_slice = commons.rand_slice_segments(z, y_lengths, self.segment_size)
         o = self.dec(z_slice, g=g)
         return o, l_length, attn, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
 
     def infer(self, x, x_lengths, sid=None, noise_scale=1, length_scale=1, noise_scale_w=1.,
-              training=False, max_duration=80):
+              training=False):
         x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths, training=training)
         if self.n_speakers > 0:
             g = tf.expand_dims(self.emb_g(sid), -1)
         else:
             g = None
 
-        logw = self.dp(x, x_mask, g=g, training=training)
-        w = tf.exp(logw) * x_mask * length_scale
-        w_ceil = tf.math.ceil(w)
-        y_lengths = tf.clip_by_value(w_ceil, 1., max_duration)
-        y_mask = tf.expand_dims(commons.sequence_mask(tf.reduce_sum(y_lengths, [1, 2]), None), 2)
-        attn, _ = self.align(y_lengths[:, :, 0])
+        if self.use_sdp:
+            logw = self.dp(x, x_mask, g=g, reverse=True, noise_scale=noise_scale_w, training=training)
+            w = tf.math.exp(logw) * x_mask * length_scale
+            w_ceil = tf.math.ceil(w)[:, :, 0]
+        else:
+            logw = self.dp(x, x_mask, g=g, training=training)
+            w = tf.nn.relu(tf.math.exp(logw) - 1.0) * x_mask
+            w_ceil = tf.math.round(w * length_scale)[:, :, 0]
+
+        # y_mask = tf.expand_dims(commons.sequence_mask(tf.reduce_sum(y_lengths, [1, 2]), None), 2)
+        attn, y_mask = self.align(w_ceil)
+        y_mask = tf.expand_dims(y_mask, 2)
 
         m_p = tf.matmul(attn, m_p)
         logs_p = tf.matmul(attn, logs_p)

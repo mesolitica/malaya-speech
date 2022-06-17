@@ -22,7 +22,7 @@ files = glob('/home/ubuntu/speech-bahasa/output-yasmin/audios/*.npy')
 files.extend(glob('/home/ubuntu/speech-bahasa/output-yasmin-parliament/audios/*.npy'))
 
 sr = 22050
-maxlen = 15 * sr
+maxlen = 14 * sr
 minlen = 0.2 * sr
 pad_to = 8
 total_steps = 500_000
@@ -308,13 +308,17 @@ global_step_discriminator = tf.Variable(
 )
 
 total_steps = 500000
-init_lr = 1e-4
-warmups = 20000
+init_lr = 2e-4
+warmups = 10000
 
 d_optimizer = malaya_speech.train.optimizer.adamw.create_optimizer(loss_disc,
                                                                    init_lr,
                                                                    total_steps,
                                                                    warmups,
+                                                                   weight_decay_rate=0.01,
+                                                                   beta_1=0.8,
+                                                                   beta_2=0.99,
+                                                                   epsilon=1e-9,
                                                                    tvars=d_vars,
                                                                    global_step=global_step_discriminator)
 
@@ -322,6 +326,10 @@ g_optimizer = malaya_speech.train.optimizer.adamw.create_optimizer(loss,
                                                                    init_lr,
                                                                    total_steps,
                                                                    warmups,
+                                                                   weight_decay_rate=0.01,
+                                                                   beta_1=0.8,
+                                                                   beta_2=0.99,
+                                                                   epsilon=1e-8,
                                                                    tvars=g_vars,
                                                                    global_step=global_step_generator)
 
@@ -331,9 +339,9 @@ sess = tf.InteractiveSession()
 sess.run(tf.global_variables_initializer())
 saver = tf.train.Saver()
 
-checkpoint = 5000
+checkpoint = 1000
 write_tensorboard = 100
-path = 'vits-yasmin'
+path = 'vits-yasmin-v3'
 
 writer = tf.summary.FileWriter(f'./{path}')
 
