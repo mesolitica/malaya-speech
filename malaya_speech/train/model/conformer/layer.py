@@ -13,13 +13,8 @@
 # limitations under the License.
 
 import tensorflow as tf
-from ..utils import shape_list
+from ..utils import shape_list, merge_two_last_dims
 import typing
-
-
-def merge_two_last_dims(x):
-    b, _, f, c = shape_list(x)
-    return tf.reshape(x, shape=[b, -1, f * c])
 
 
 class SWISH(tf.keras.layers.Layer):
@@ -369,6 +364,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
     def call_attention(
         self, query, key, value, logits, training=False, mask=None
     ):
+
         if mask is not None:
             if len(mask.shape) < 2:
                 raise ValueError("'mask' must have atleast 2 dimensions")
@@ -530,6 +526,7 @@ class RelPositionMultiHeadAttention(MultiHeadAttention):
 
     def call(self, inputs, training=False, mask=None):
         query, key, value, pos = inputs
+        print(query.shape, key.shape, value.shape, pos.shape)
 
         query, key, value = self.call_qkv(
             query, key, value, training=training

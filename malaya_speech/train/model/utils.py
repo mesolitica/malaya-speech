@@ -46,6 +46,11 @@ def shape_list(x):
     return [dynamic[i] if s is None else s for i, s in enumerate(static)]
 
 
+def merge_two_last_dims(x):
+    b, _, f, c = shape_list(x)
+    return tf.reshape(x, shape=[b, -1, f * c])
+
+
 def get_mask_between(start, end, maxlen):
     s = tf.math.logical_not(tf.sequence_mask(start, maxlen))
     e = tf.sequence_mask(end, maxlen)

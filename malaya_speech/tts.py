@@ -231,6 +231,27 @@ _lightspeech_availability = {
     },
 }
 
+_vits_availability = {
+    'yasmin': {
+        'Size (MB)': 114,
+        'Quantized Size (MB)': 29.7,
+        'mel loss': 0.37,
+        'kl loss': 1.431,
+        'duration loss': 0.057,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+    },
+    'yasmin-sdp': {
+        'Size (MB)': 39.9,
+        'Quantized Size (MB)': 10.2,
+        'mel loss': 0.37,
+        'kl loss': 1.431,
+        'duration loss': 0.057,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+    },
+}
+
 
 def available_tacotron2():
     """
@@ -288,6 +309,17 @@ def available_lightspeech():
 
     return describe_availability(
         _lightspeech_availability,
+    )
+
+
+def available_vits():
+    """
+    List available VITS, End-to-End models.
+    """
+    from malaya_speech.utils import describe_availability
+
+    return describe_availability(
+        _vits_availability,
     )
 
 
@@ -599,6 +631,55 @@ def lightspeech(
     return tts.fastspeech_load(
         model=model,
         module='text-to-speech-lightspeech',
+        normalizer=text_ids,
+        quantized=quantized,
+        **kwargs
+    )
+
+
+def vits(model: str = 'yasmin-sdp', quantized=False, **kwargs):
+    """
+    Load VITS End-to-End TTS model.
+
+    Parameters
+    ----------
+    model : str, optional (default='male')
+        Model architecture supported. Allowed values:
+
+        * ``'yasmin'`` - VITS trained on female Yasmin voice.
+        * ``'yasmin-sdp'`` - VITS + Stochastic Duration Predictor trained on female Yasmin voice.
+        * ``'osman-sdp'`` - VITS + Stochastic Duration Predictor trained on male Osman voice.
+
+    quantized : bool, optional (default=False)
+        if True, will load 8-bit quantized model.
+        Quantized model not necessary faster, totally depends on the machine.
+    pad_to : int, optional (default=8)
+        size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
+
+    Returns
+    -------
+    result : malaya_speech.model.synthesis.VITS class
+    """
+
+    model = model.lower()
+
+    if model not in _vits_availability:
+        raise ValueError(
+            'model not supported, please check supported models from `malaya_speech.tts.available_vits()`.'
+        )
+
+    selected_model = _vits_availability[model]
+
+    text_ids = load_text_ids(
+        pad_to=pad_to,
+        understand_punct=selected_model['Understand punctuation'],
+        is_lower=selected_model['Is lowercase'],
+        quantized=quantized,
+        **kwargs
+    )
+    return tts.vits_load(
+        model=model,
+        module='text-to-speech-vits',
         normalizer=text_ids,
         quantized=quantized,
         **kwargs

@@ -262,8 +262,12 @@ class Model(tf.keras.Model):
         Returns:
             `logits` with shape [B, T, U, vocab]
         """
-        features, predicted, prediction_length = inputs
-        enc = self.encoder(features, training=training)
+        if len(inputs) == 3:
+            features, predicted, prediction_length = inputs
+            enc = self.encoder(features, training=training)
+        if len(inputs) == 4:
+            features, features_length, predicted, prediction_length = inputs
+            enc = self.encoder(features, features_length, training=training)
         pred = self.predict_net(
             [predicted, prediction_length], training=training
         )
