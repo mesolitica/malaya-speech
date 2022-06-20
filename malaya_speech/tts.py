@@ -360,7 +360,7 @@ def tacotron2(
     model: str = 'yasmin',
     quantized: bool = False,
     pad_to: int = 8,
-    **kwargs
+    **kwargs,
 ):
     """
     Load Tacotron2 Text-to-Mel TTS model.
@@ -418,7 +418,7 @@ def fastspeech2(
     model: str = 'male',
     quantized: bool = False,
     pad_to: int = 8,
-    **kwargs
+    **kwargs,
 ):
     """
     Load Fastspeech2 Text-to-Mel TTS model.
@@ -476,7 +476,7 @@ def fastpitch(
     model: str = 'male',
     quantized: bool = False,
     pad_to: int = 8,
-    **kwargs
+    **kwargs,
 ):
     """
     Load Fastspitch Text-to-Mel TTS model.
@@ -527,10 +527,12 @@ def fastpitch(
     )
 
 
-def glowtts(model: str = 'yasmin',
-            quantized: bool = False,
-            pad_to: int = 2,
-            **kwargs):
+def glowtts(
+    model: str = 'yasmin',
+    quantized: bool = False,
+    pad_to: int = 2,
+    **kwargs,
+):
     """
     Load GlowTTS Text-to-Mel TTS model.
 
@@ -588,7 +590,7 @@ def lightspeech(
     model: str = 'male',
     quantized: bool = False,
     pad_to: int = 8,
-    **kwargs
+    **kwargs,
 ):
     """
     Load LightSpeech Text-to-Mel TTS model.
@@ -637,7 +639,12 @@ def lightspeech(
     )
 
 
-def vits(model: str = 'yasmin-sdp', quantized=False, **kwargs):
+def vits(
+    model: str = 'yasmin-sdp',
+    quantized=False,
+    pad_to: int = 8,
+    **kwargs,
+):
     """
     Load VITS End-to-End TTS model.
 

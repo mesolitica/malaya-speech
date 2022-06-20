@@ -119,6 +119,7 @@ Contents:
    tts-glowtts-model
    tts-glowtts-multispeaker-model
    tts-lightspeech-model
+   tts-vits
    tts-singlish
    tts-long-text
    tts-gradio

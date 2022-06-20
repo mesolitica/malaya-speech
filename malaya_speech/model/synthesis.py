@@ -10,17 +10,21 @@ from typing import Callable
 
 
 class TTS:
-    def gradio(self, vocoder: Callable, **kwargs):
+    def gradio(self, vocoder: Callable = None, **kwargs):
         """
         Text-to-Speech on Gradio interface.
 
         Parameters
         ----------
-        vocoder: bool, Callable
+        vocoder: Callable, optional (default=None)
             vocoder object that has `predict` method, prefer from malaya_speech itself.
+            Not required if using End-to-End TTS model such as VITS.
 
         **kwargs: keyword arguments for `predict` and `iface.launch`.
         """
+        if 'vits' not in self.__name__ and vocoder is None:
+            raise ValueError('required vocoder.')
+
         try:
             import gradio as gr
         except BaseException:
@@ -30,11 +34,15 @@ class TTS:
 
         def pred(string):
             r = self.predict(string=string, **kwargs)
-            if 'universal' in str(vocoder):
-                o = r['universal-output']
+
+            if 'vits' in self.__name__:
+                y_ = r['y']
             else:
-                o = r['mel-output']
-            y_ = vocoder(o)
+                if 'universal' in str(vocoder):
+                    o = r['universal-output']
+                else:
+                    o = r['mel-output']
+                y_ = vocoder(o)
             data = float_to_int(y_)
             return (22050, data)
 
@@ -481,6 +489,71 @@ class GlowTTS_MultiSpeaker(Abstract):
         return self._predict(string=string,
                              left_audio=original_audio, right_audio=target_audio,
                              temperature=temperature, length_ratio=length_ratio, **kwargs)
+
+    def __call__(self, input, **kwargs):
+        return self.predict(input, **kwargs)
+
+
+class VITS(Abstract, TTS):
+    def __init__(
+        self, input_nodes, output_nodes, normalizer, sess, model, name
+    ):
+        self._input_nodes = input_nodes
+        self._output_nodes = output_nodes
+        self._normalizer = normalizer
+        self._sess = sess
+        self.__model__ = model
+        self.__name__ = name
+
+    def predict(
+        self,
+        string,
+        temperature: float = 0.5,
+        temperature_durator: float = 1.0,
+        length_ratio: float = 1.0,
+        **kwargs,
+    ):
+        """
+        Change string to waveform.
+
+        Parameters
+        ----------
+        string: str
+        temperature: float, optional (default=0.5)
+            Decoder model trying to decode with encoder(text) + random.normal() * temperature.
+        temperature_durator: float, optional (default=1.0)
+            Durator trying to predict alignment with random.normal() * temperature_durator.
+            Only useful for SDP-based models.
+        length_ratio: float, optional (default=1.0)
+            Increase this variable will increase time voice generated.
+
+        Returns
+        -------
+        result: Dict[string, ids, mel-output, alignment, y]
+        """
+        t, ids = self._normalizer.normalize(string, **kwargs)
+        inputs = [[ids], [len(ids)], [temperature], [length_ratio]]
+        input_labels = [
+            'input_ids',
+            'lens',
+            'temperature',
+            'length_ratio',
+        ]
+        if 'sdp' in self.__model__:
+            inputs.append([temperature_durator])
+            input_labels.append('temperature_durator')
+        r = self._execute(
+            inputs=inputs,
+            input_labels=input_labels,
+            output_labels=['mel_output', 'alignment_histories', 'y_hat'],
+        )
+        return {
+            'string': t,
+            'ids': ids,
+            'mel-output': r['mel_output'],
+            'alignment': r['alignment_histories'][0].T,
+            'y': r['y_hat'],
+        }
 
     def __call__(self, input, **kwargs):
         return self.predict(input, **kwargs)

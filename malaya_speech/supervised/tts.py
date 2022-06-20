@@ -9,7 +9,8 @@ from malaya_speech.model.synthesis import (
     Fastspeech,
     Fastpitch,
     GlowTTS,
-    GlowTTS_MultiSpeaker
+    GlowTTS_MultiSpeaker,
+    VITS,
 )
 from malaya_speech.path import STATS_VOCODER
 from malaya_speech import speaker_vector
@@ -121,6 +122,35 @@ def glowtts_load(
         speaker_vector=speaker_model,
         stats=stats,
         sess=generate_session(graph=g, **kwargs),
+        model=model,
+        name=module,
+    )
+
+
+def vits_load(
+    model, module, normalizer, quantized=False, **kwargs,
+):
+    path = check_file(
+        file=model,
+        module=module,
+        keys={'model': 'model.pb'},
+        quantized=quantized,
+        **kwargs,
+    )
+
+    inputs = ['input_ids', 'lens', 'temperature', 'length_ratio']
+    if 'sdp' in model:
+        inputs.append('temperature_durator')
+
+    outputs = ['mel_output', 'alignment_histories', 'y_hat']
+    g = load_graph(path['model'], **kwargs)
+    input_nodes, output_nodes = nodes_session(g, inputs, outputs)
+    sess = generate_session(graph=g, **kwargs)
+    return VITS(
+        input_nodes=input_nodes,
+        output_nodes=output_nodes,
+        normalizer=normalizer,
+        sess=sess,
         model=model,
         name=module,
     )
