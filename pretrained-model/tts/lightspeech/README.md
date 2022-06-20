@@ -18,10 +18,10 @@ python3 lightspeech-osman.py
 
 ## download
 
-1. Yasmin speaker, last update 29th April 2022, [fastspeech2-yasmin-output.tar](https://huggingface.co/huseinzol05/pretrained-fastspeech2/resolve/main/fastspeech2-yasmin-output.tar).
+1. Yasmin speaker, last update 13th June 2022, [yasmin-yasmin-output.tar](https://huggingface.co/huseinzol05/pretrained-lightspeech/blob/main/lightspeech-yasmin-output.tar).
 
   - Case sensitive, understand `.,?!` punctuations.
 
-2. Osman speaker, last update 29th April 2022, [lightspeech-osman-output.tar](https://huggingface.co/huseinzol05/pretrained-lightspeech/blob/main/lightspeech-osman-output.tar).
+2. Osman speaker, last update 13th June 2022, [lightspeech-osman-output.tar](https://huggingface.co/huseinzol05/pretrained-lightspeech/blob/main/lightspeech-osman-output.tar).
 
   - Case sensitive, understand `.,?!` punctuations.

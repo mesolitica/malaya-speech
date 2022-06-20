@@ -363,7 +363,7 @@ def tacotron2(
     **kwargs
 ):
     """
-    Load Tacotron2 TTS model.
+    Load Tacotron2 Text-to-Mel TTS model.
 
     Parameters
     ----------
@@ -421,7 +421,7 @@ def fastspeech2(
     **kwargs
 ):
     """
-    Load Fastspeech2 TTS model.
+    Load Fastspeech2 Text-to-Mel TTS model.
 
     Parameters
     ----------
@@ -479,7 +479,7 @@ def fastpitch(
     **kwargs
 ):
     """
-    Load Fastspitch TTS model.
+    Load Fastspitch Text-to-Mel TTS model.
 
     Parameters
     ----------
@@ -532,7 +532,7 @@ def glowtts(model: str = 'yasmin',
             pad_to: int = 2,
             **kwargs):
     """
-    Load GlowTTS TTS model.
+    Load GlowTTS Text-to-Mel TTS model.
 
     Parameters
     ----------
@@ -591,7 +591,7 @@ def lightspeech(
     **kwargs
 ):
     """
-    Load LightSpeech TTS model.
+    Load LightSpeech Text-to-Mel TTS model.
 
     Parameters
     ----------
