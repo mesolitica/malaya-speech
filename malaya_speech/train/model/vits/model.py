@@ -576,6 +576,7 @@ class Model(tf.keras.Model):
         if self.use_sdp:
             l_length = self.dp(tf.stop_gradient(x), x_mask, tf.expand_dims(w, -1), g=g, training=training)
             l_length = l_length / tf.reduce_sum(x_mask)
+            l_length = tf.reduce_sum(l_length)
         else:
             logw = self.dp(tf.stop_gradient(x), x_mask, g=g, training=training)
             logw = tf.squeeze(logw, axis=-1)
