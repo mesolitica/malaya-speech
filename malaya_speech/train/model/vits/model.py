@@ -539,6 +539,7 @@ class Model(tf.keras.Model):
         self.flow = ResidualCouplingBlock(inter_channels, hidden_channels, 5, 1, 4, gin_channels=gin_channels)
 
         if use_sdp:
+            print('using StochasticDurationPredictor')
             self.dp = StochasticDurationPredictor(hidden_channels, 192, 3, 0.3, 4, gin_channels=gin_channels)
         else:
             self.dp = DurationPredictor(256, 3, 0.1, gin_channels=gin_channels)
@@ -603,8 +604,8 @@ class Model(tf.keras.Model):
 
         if self.use_sdp:
             logw = self.dp(x, x_mask, g=g, reverse=True, noise_scale=noise_scale_w, training=training)
-            w = tf.math.exp(logw) * x_mask * length_scale
-            w_ceil = tf.math.ceil(w)[:, :, 0]
+            w = tf.math.exp(logw) * x_mask
+            w_ceil = tf.math.ceil(w * length_scale)[:, :, 0]
         else:
             logw = self.dp(x, x_mask, g=g, training=training)
             w = tf.nn.relu(tf.math.exp(logw) - 1.0) * x_mask

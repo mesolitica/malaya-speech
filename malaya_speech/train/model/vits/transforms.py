@@ -99,8 +99,10 @@ def unconstrained_rational_quadratic_spline_tf(inputs,
     unnormalized_derivatives = unnormalized_derivatives[tf.tile(tf.expand_dims(inside_interval_mask, -1), [1, 1, 1, d])]
     unnormalized_derivatives = tf.reshape(unnormalized_derivatives, [-1, d])
 
+    inputs_ = inputs[inside_interval_mask]
+
     outputs_, logabsdet_ = rational_quadratic_spline_tf(
-        inputs=inputs[inside_interval_mask],
+        inputs=inputs_,
         unnormalized_widths=unnormalized_widths,
         unnormalized_heights=unnormalized_heights,
         unnormalized_derivatives=unnormalized_derivatives,
@@ -110,12 +112,13 @@ def unconstrained_rational_quadratic_spline_tf(inputs,
         min_bin_height=min_bin_height,
         min_derivative=min_derivative
     )
-    print(outputs_.shape, logabsdet_.shape)
-    outputs_ = tf.reshape(outputs_, tf.shape(inside_interval_mask))
-    logabsdet_ = tf.reshape(logabsdet_, tf.shape(inside_interval_mask))
-
-    outputs = tf.where(inside_interval_mask, outputs_, outputs)
-    logabsdet = tf.where(inside_interval_mask, logabsdet_, logabsdet)
+    indices = tf.where(inside_interval_mask)
+    outputs = tf.tensor_scatter_nd_update(
+        outputs, indices, outputs_, name=None
+    )
+    logabsdet = tf.tensor_scatter_nd_update(
+        logabsdet, indices, logabsdet_, name=None
+    )
 
     return outputs, logabsdet
 
