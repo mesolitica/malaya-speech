@@ -540,7 +540,7 @@ class Model(tf.keras.Model):
 
         if use_sdp:
             print('using StochasticDurationPredictor')
-            self.dp = StochasticDurationPredictor(hidden_channels, 192, 3, 0.3, 4, gin_channels=gin_channels)
+            self.dp = StochasticDurationPredictor(hidden_channels, 192, 3, 0.2, 4, gin_channels=gin_channels)
         else:
             self.dp = DurationPredictor(256, 3, 0.1, gin_channels=gin_channels)
 
