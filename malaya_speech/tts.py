@@ -242,8 +242,8 @@ _vits_availability = {
         'Is lowercase': False,
     },
     'yasmin-sdp': {
-        'Size (MB)': 39.9,
-        'Quantized Size (MB)': 10.2,
+        'Size (MB)': 116,
+        'Quantized Size (MB)': 30.9,
         'mel loss': 0.37,
         'kl loss': 1.431,
         'duration loss': 0.057,

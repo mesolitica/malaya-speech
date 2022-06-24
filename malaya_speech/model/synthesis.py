@@ -541,7 +541,7 @@ class VITS(Abstract, TTS):
         ]
         if 'sdp' in self.__model__:
             inputs.append([temperature_durator])
-            input_labels.append('temperature_durator')
+            input_labels.append('noise_scale_w')
         r = self._execute(
             inputs=inputs,
             input_labels=input_labels,

@@ -140,7 +140,7 @@ def vits_load(
 
     inputs = ['input_ids', 'lens', 'temperature', 'length_ratio']
     if 'sdp' in model:
-        inputs.append('temperature_durator')
+        inputs.append('noise_scale_w')
 
     outputs = ['mel_output', 'alignment_histories', 'y_hat']
     g = load_graph(path['model'], **kwargs)
