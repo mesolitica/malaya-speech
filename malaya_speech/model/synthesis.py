@@ -509,7 +509,7 @@ class VITS(Abstract, TTS):
         self,
         string,
         temperature: float = 0.5,
-        temperature_durator: float = 1.0,
+        temperature_durator: float = 0.5,
         length_ratio: float = 1.0,
         **kwargs,
     ):
