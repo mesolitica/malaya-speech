@@ -38,7 +38,20 @@ GPU version
 
 Only **Python 3.6.0 and above** and **Tensorflow 1.15.0 and above** are supported.
 
-We recommend to use **virtualenv** for development. All examples tested on Tensorflow version 1.15.4, 1.15.5, 2.4.1, 2.5 and 2.9.
+All examples tested on Tensorflow version 1.15.4, 1.15.5, 2.4.1, 2.5 and 2.9.
+
+Development Release
+---------------------------------
+
+Install from `master` branch,
+::
+
+    $ pip install git+https://github.com/huseinzol05/malaya-speech.git
+
+
+We recommend to use **virtualenv** for development. 
+
+Documentation at https://malaya-speech.readthedocs.io/en/latest/
 
 Features
 --------
@@ -58,7 +71,7 @@ Features
 -  **SpeechSplit Conversion**, detailed speaking style conversion by disentangling speech into content, timbre, rhythm and pitch using PyWorld and PySPTK.
 -  **Speech-to-Text**, End-to-End Speech to Text for Malay, Mixed (Malay, Singlish and Mandarin) and Singlish using RNNT, Wav2Vec2, HuBERT and BEST-RQ CTC.
 -  **Super Resolution**, Super Resolution 4x for Waveform.
--  **Text-to-Speech**, Text to Speech for Malay and Singlish using Tacotron2, FastSpeech2, FastPitch, GlowTTS and LightSpeech.
+-  **Text-to-Speech**, Text to Speech for Malay and Singlish using Tacotron2, FastSpeech2, FastPitch, GlowTTS, LightSpeech and VITS.
 -  **Vocoder**, convert Mel to Waveform using MelGAN, Multiband MelGAN and Universal MelGAN Vocoder.
 -  **Voice Activity Detection**, detect voice activities using Finetuned Speaker Vector.
 -  **Voice Conversion**, Many-to-One, One-to-Many, Many-to-Many, and Zero-shot Voice Conversion.

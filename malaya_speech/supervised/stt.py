@@ -11,7 +11,6 @@ from malaya_speech.model.transducer import Transducer, TransducerAligner
 from malaya_speech.model.wav2vec import Wav2Vec2_CTC, Wav2Vec2_Aligner
 from malaya_speech.model.huggingface import HuggingFace_CTC, HuggingFace_Aligner
 from malaya_speech.path import TRANSDUCER_VOCABS, TRANSDUCER_MIXED_VOCABS
-from packaging import version
 from malaya_boilerplate import frozen_graph
 import tensorflow as tf
 import os
@@ -197,9 +196,9 @@ def wav2vec2_ctc_load(model, module, quantized=False, stt=True, **kwargs):
 
 
 def huggingface_load(model, stt=True, **kwargs):
+    from malaya_boilerplate.utils import check_tf2_huggingface
 
-    if version.parse(tf.__version__) < version.parse('2.0'):
-        raise Exception('Tensorflow version must >= 2.0 to use HuggingFace models.')
+    check_tf2_huggingface()
 
     if 'wav2vec2' in model:
         from malaya_speech.train.model import hf_wav2vec2

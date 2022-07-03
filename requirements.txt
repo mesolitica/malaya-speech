@@ -9,4 +9,4 @@ unidecode
 tqdm
 tornado
 scipy>=1.5.4
-malaya-boilerplate>=0.0.19
+malaya-boilerplate>=0.0.20
