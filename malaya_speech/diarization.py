@@ -98,7 +98,7 @@ def clustering(
     vad_results,
     speaker_vector,
     model,
-    norm_function: Callable = l2_normalize,
+    norm_function=l2_normalize,
     log_distance_metric: str = None,
     return_embedding: bool = False,
 ):
@@ -154,72 +154,3 @@ def clustering(
         return results, activities
     else:
         return results
-
-
-# @check_type
-# def spectral_cluster(
-#     vad_results,
-#     speaker_vector,
-#     min_clusters: int = None,
-#     max_clusters: int = None,
-#     norm_function: Callable = l2_normalize,
-#     log_distance_metric: str = None,
-#     return_embedding: bool = False,
-#     **kwargs,
-# ):
-#     """
-#     Speaker diarization using SpectralCluster, https://github.com/wq2012/SpectralCluster
-
-#     Parameters
-#     ----------
-#     vad_results: List[Tuple[Frame, label]]
-#         results from VAD.
-#     speaker_vector: callable
-#         speaker vector object.
-#     min_clusters: int, optional (default=None)
-#         minimal number of clusters allowed (only effective if not None).
-#     max_clusters: int, optional (default=None)
-#         maximal number of clusters allowed (only effective if not None).
-#         can be used together with min_clusters to fix the number of clusters.
-#     norm_function: Callable, optional(default=malaya_speech.utils.dist.l2_normalize)
-#         normalize function for speaker vectors.
-#     log_distance_metric: str, optional (default=None)
-#         post distance norm in log scale metrics.
-
-#     Returns
-#     -------
-#     result : List[Tuple[Frame, label]]
-#     """
-#     try:
-#         from spectralcluster import SpectralClusterer
-
-#     except BaseException:
-#         raise ModuleNotFoundError(
-#             'spectralcluster not installed. Please install it by `pip install spectralcluster` and try again.'
-#         )
-
-#     clusterer = SpectralClusterer(
-#         min_clusters=min_clusters,
-#         max_clusters=max_clusters,
-#         **kwargs,
-#     )
-
-#     speakers, activities, mapping = _group_vad(
-#         vad_results,
-#         norm_function=norm_function,
-#         log_distance_metric=log_distance_metric
-#     )
-
-#     cluster_labels = clusterer.predict(activities)
-
-#     for k, v in mapping.items():
-#         speakers[v] = f'speaker {cluster_labels[k]}'
-
-#     results = []
-#     for no, result in enumerate(vad_results):
-#         results.append((result[0], speakers[no]))
-
-#     if return_embedding:
-#         return results, activities
-#     else:
-#         return results
