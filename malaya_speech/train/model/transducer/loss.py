@@ -1,4 +1,4 @@
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 
 def rnnt_loss(logits, labels, label_length, logit_length, blank=0):

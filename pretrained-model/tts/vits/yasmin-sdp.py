@@ -244,8 +244,7 @@ Y = tf.expand_dims(features['wav'], -1)
 stft_shape = tf.shape(padded_features)
 batch_size = tf.shape(T)[0]
 
-model = vits.Model(len(MALAYA_SPEECH_SYMBOLS), spec_channels, segment_size, **hparams.model,
-                   use_sdp=False)
+model = vits.Model(len(MALAYA_SPEECH_SYMBOLS), spec_channels, segment_size, **hparams.model)
 y_hat, l_length, attn, ids_slice, x_mask, z_mask,\
     (z, z_p, m_p, logs_p, m_q, logs_q) = model(T, T_lengths, padded_features, padded_lens)
 

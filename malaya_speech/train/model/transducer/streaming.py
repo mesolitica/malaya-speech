@@ -13,7 +13,7 @@
 # limitations under the License.
 """ http://arxiv.org/abs/1811.06621 """
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from .layer import (
     Embedding,
     get_rnn,

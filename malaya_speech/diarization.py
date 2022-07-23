@@ -1,5 +1,4 @@
 from scipy.spatial.distance import cdist
-from malaya_speech.model.clustering import ClusteringAP
 from malaya_speech.utils.dist import l2_normalize, compute_log_dist_matrix
 import numpy as np
 from herpetologist import check_type
@@ -73,13 +72,35 @@ def speaker_similarity(
         return results
 
 
+def _group_vad(vad_results, speaker_vector, norm_function=None, log_distance_metric='cosine'):
+    speakers, activities, mapping = [], [], {}
+    for no, result in enumerate(vad_results):
+        if result[1]:
+            speakers.append('got')
+            mapping[len(activities)] = no
+            vector = speaker_vector([result[0]])[0]
+            activities.append(vector)
+        else:
+            speakers.append('not a speaker')
+
+    activities = np.array(activities)
+    if norm_function is not None:
+        activities = norm_function(activities)
+
+    if log_distance_metric is not None:
+        activities = compute_log_dist_matrix(activities, log_distance_metric)
+
+    return speakers, activities, mapping
+
+
 @check_type
-def n_clustering(
+def clustering(
     vad_results,
     speaker_vector,
     model,
     norm_function: Callable = l2_normalize,
-    return_embedding=False,
+    log_distance_metric: str = None,
+    return_embedding: bool = False,
 ):
     """
     Speaker diarization using any clustering model.
@@ -91,158 +112,36 @@ def n_clustering(
     speaker_vector: callable
         speaker vector object.
     model: callable
-        Prefer any sklearn unsupervised clustering model. 
-        Required `fit_predict` or `apply` method.
-    norm_function: Callable, optional(default=malaya_speech.utils.dist.l2_normalize)
-        normalize function for speaker vectors.
-    log_distance_metric: str, optional (default='cosine')
-        post distance norm in log scale metrics.
-
-    Returns
-    -------
-    result : List[Tuple[Frame, label]]
-    """
-    if not hasattr(model, 'fit_predict') and not hasattr(model, 'apply'):
-        raise ValueError('model must have `fit_predict` or `apply` method.')
-
-    speakers, activities, mapping = [], [], {}
-    for no, result in enumerate(vad_results):
-        if result[1]:
-            speakers.append('got')
-            mapping[len(activities)] = no
-            vector = speaker_vector([result[0]])[0]
-            activities.append(vector)
-        else:
-            speakers.append('not a speaker')
-
-    activities = np.array(activities)
-    if norm_function:
-        activities = norm_function(activities)
-
-    if hasattr(model, 'fit_predict'):
-        cluster_labels = model.fit_predict(activities)
-    if hasattr(model, 'apply'):
-        cluster_labels = model.apply(activities)
-    for k, v in mapping.items():
-        speakers[v] = f'speaker {cluster_labels[k]}'
-
-    results = []
-    for no, result in enumerate(vad_results):
-        results.append((result[0], speakers[no]))
-
-    if return_embedding:
-        return results, activities
-    else:
-        return results
-
-
-@check_type
-def affinity_propagation(
-    vad_results,
-    speaker_vector,
-    norm_function: Callable = l2_normalize,
-    log_distance_metric: str = 'cosine',
-    damping: float = 0.8,
-    preference: float = None,
-    return_embedding=False,
-):
-    """
-    Speaker diarization using sklearn Affinity Propagation.
-
-    Parameters
-    ----------
-    vad_results: List[Tuple[Frame, label]]
-        results from VAD.
-    speaker_vector: callable
-        speaker vector object.
-    norm_function: Callable, optional(default=malaya_speech.utils.dist.l2_normalize)
-        normalize function for speaker vectors.
-    log_distance_metric: str, optional (default='cosine')
-        post distance norm in log scale metrics.
-
-    Returns
-    -------
-    result : List[Tuple[Frame, label]]
-    """
-
-    affinity = ClusteringAP(
-        metric=log_distance_metric, damping=damping, preference=preference
-    )
-    return n_clustering(
-        vad_results=vad_results,
-        speaker_vector=speaker_vector,
-        model=affinity,
-        norm_function=norm_function,
-        return_embedding=return_embedding,
-    )
-
-
-@check_type
-def spectral_cluster(
-    vad_results,
-    speaker_vector,
-    min_clusters: int = None,
-    max_clusters: int = None,
-    norm_function: Callable = l2_normalize,
-    log_distance_metric: str = None,
-    return_embedding=False,
-    **kwargs,
-):
-    """
-    Speaker diarization using SpectralCluster, https://github.com/wq2012/SpectralCluster
-
-    Parameters
-    ----------
-    vad_results: List[Tuple[Frame, label]]
-        results from VAD.
-    speaker_vector: callable
-        speaker vector object.
-    min_clusters: int, optional (default=None)
-        minimal number of clusters allowed (only effective if not None).
-    max_clusters: int, optional (default=None)
-        maximal number of clusters allowed (only effective if not None).
-        can be used together with min_clusters to fix the number of clusters.
+        Any unsupervised clustering model.
+        Required `fit_predict` or `apply` or `predict` method.
     norm_function: Callable, optional(default=malaya_speech.utils.dist.l2_normalize)
         normalize function for speaker vectors.
     log_distance_metric: str, optional (default=None)
         post distance norm in log scale metrics.
+        this parameter is necessary for model that required square array input.
+        Common value is one of ['cosine', 'angular'].
 
     Returns
     -------
     result : List[Tuple[Frame, label]]
     """
-    try:
-        from spectralcluster import SpectralClusterer
 
-    except BaseException:
-        raise ModuleNotFoundError(
-            'spectralcluster not installed. Please install it by `pip install spectralcluster` and try again.'
-        )
+    if not hasattr(model, 'fit_predict') and not hasattr(model, 'apply') and not hasattr(model, 'predict'):
+        raise ValueError('model must have `fit_predict` or `apply` or `predict` method.')
 
-    clusterer = SpectralClusterer(
-        min_clusters=min_clusters,
-        max_clusters=max_clusters,
-        **kwargs,
+    speakers, activities, mapping = _group_vad(
+        vad_results,
+        speaker_vector=speaker_vector,
+        norm_function=norm_function,
+        log_distance_metric=log_distance_metric
     )
 
-    speakers, activities, mapping = [], [], {}
-    for no, result in enumerate(vad_results):
-        if result[1]:
-            speakers.append('got')
-            mapping[len(activities)] = no
-            vector = speaker_vector([result[0]])[0]
-            activities.append(vector)
-        else:
-            speakers.append('not a speaker')
-
-    activities = np.array(activities)
-    if norm_function:
-        activities = norm_function(activities)
-
-    if log_distance_metric:
-        activities = compute_log_dist_matrix(activities, log_distance_metric)
-
-    cluster_labels = clusterer.predict(activities)
+    if hasattr(model, 'fit_predict'):
+        cluster_labels = model.fit_predict(activities)
+    elif hasattr(model, 'predict'):
+        cluster_labels = model.predict(activities)
+    elif hasattr(model, 'apply'):
+        cluster_labels = model.apply(activities)
 
     for k, v in mapping.items():
         speakers[v] = f'speaker {cluster_labels[k]}'
@@ -255,3 +154,72 @@ def spectral_cluster(
         return results, activities
     else:
         return results
+
+
+# @check_type
+# def spectral_cluster(
+#     vad_results,
+#     speaker_vector,
+#     min_clusters: int = None,
+#     max_clusters: int = None,
+#     norm_function: Callable = l2_normalize,
+#     log_distance_metric: str = None,
+#     return_embedding: bool = False,
+#     **kwargs,
+# ):
+#     """
+#     Speaker diarization using SpectralCluster, https://github.com/wq2012/SpectralCluster
+
+#     Parameters
+#     ----------
+#     vad_results: List[Tuple[Frame, label]]
+#         results from VAD.
+#     speaker_vector: callable
+#         speaker vector object.
+#     min_clusters: int, optional (default=None)
+#         minimal number of clusters allowed (only effective if not None).
+#     max_clusters: int, optional (default=None)
+#         maximal number of clusters allowed (only effective if not None).
+#         can be used together with min_clusters to fix the number of clusters.
+#     norm_function: Callable, optional(default=malaya_speech.utils.dist.l2_normalize)
+#         normalize function for speaker vectors.
+#     log_distance_metric: str, optional (default=None)
+#         post distance norm in log scale metrics.
+
+#     Returns
+#     -------
+#     result : List[Tuple[Frame, label]]
+#     """
+#     try:
+#         from spectralcluster import SpectralClusterer
+
+#     except BaseException:
+#         raise ModuleNotFoundError(
+#             'spectralcluster not installed. Please install it by `pip install spectralcluster` and try again.'
+#         )
+
+#     clusterer = SpectralClusterer(
+#         min_clusters=min_clusters,
+#         max_clusters=max_clusters,
+#         **kwargs,
+#     )
+
+#     speakers, activities, mapping = _group_vad(
+#         vad_results,
+#         norm_function=norm_function,
+#         log_distance_metric=log_distance_metric
+#     )
+
+#     cluster_labels = clusterer.predict(activities)
+
+#     for k, v in mapping.items():
+#         speakers[v] = f'speaker {cluster_labels[k]}'
+
+#     results = []
+#     for no, result in enumerate(vad_results):
+#         results.append((result[0], speakers[no]))
+
+#     if return_embedding:
+#         return results, activities
+#     else:
+#         return results

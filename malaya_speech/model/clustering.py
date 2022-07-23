@@ -1,29 +1,37 @@
-from malaya_speech.utils.dist import compute_log_dist_matrix
+# The MIT License (MIT)
+#
+# Copyright (c) 2021- CNRS
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
 
-class ClusteringAP:
-    def __init__(self, damping=0.8, preference=None, metric='angular'):
-
-        self.damping = damping
-        self.preference = preference
-        self.metric = metric
-
-    def apply(self, fX):
+class HiddenMarkovModelClustering:
+    def __init__(
+        self,
+        metric: str = 'cosine',
+        constrained_assignment: bool = False,
+    ):
         try:
-            from sklearn.cluster import AffinityPropagation
+            from hmmlearn.hmm import GaussianHMM
         except BaseException:
             raise ModuleNotFoundError(
-                'sklearn not installed. Please install it by `pip install sklearn` and try again.'
-            )
+                'hmmlearn not installed. Please install it using `pip3 install hmmlearn` and try again.')
 
-        clusterer = AffinityPropagation(
-            damping=self.damping,
-            max_iter=100,
-            convergence_iter=15,
-            preference=self.preference,
-            affinity='precomputed',
-        )
-        distance_matrix = compute_log_dist_matrix(fX, metric=self.metric)
-        cluster_labels = clusterer.fit_predict(distance_matrix)
-
-        return cluster_labels
+        if metric not in ['euclidean', 'cosine']:
+            raise ValueError("`metric` must be one of `['euclidean', 'cosine']`")
