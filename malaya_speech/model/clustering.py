@@ -20,8 +20,100 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial.distance import pdist
 import numpy as np
+
+
+class AgglomerativeClustering:
+    def __init__(
+        self,
+        min_clusters: int,
+        max_clusters: int,
+        metric: str = 'cosine',
+        threshold: float = 0.25,
+        method: str = 'centroid',
+    ):
+        """
+        Load malaya-speech AgglomerativeClustering, originallly from pyannote, https://github.com/pyannote/pyannote-audio/blob/develop/pyannote/audio/pipelines/clustering.py
+
+        Parameters
+        ----------
+        min_clusters: int
+            minimum cluster size, must bigger than 0
+        max_clusters: int
+            maximum cluster size, must equal or bigger than `min_clusters`.
+            if equal to `min_clusters`, will directly fit into HMM without calculating the best cluster size.
+        metric: str, optional (default='cosine')
+            Only support `cosine` and `euclidean`.
+        threshold: float, optional (default=0.35)
+            minimum threshold to assume current iteration of cluster is the best fit.
+        method: str, optional (default='centroid')
+            All available methods at https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html
+        """
+
+        if min_clusters <= 0:
+            raise ValueError('`min_clusters` must bigger than 0')
+
+        if min_clusters > max_clusters:
+            raise ValueError('`min_clusters` cannot bigger than `max_clusters`')
+
+        self.min_clusters = min_clusters
+        self.max_clusters = max_clusters
+        self.metric = metric
+        self.threshold = threshold
+        self.method = method
+
+    def fit_predict(self, X):
+        """
+        Fit predict.
+
+        Parameters
+        ----------
+        X: np.array
+            inputs with size of [batch_size, embedding size]
+
+        Returns
+        -------
+        result: np.array
+        """
+
+        num_embeddings, _ = X.shape
+        if num_embeddings == 1:
+            return np.zeros((1,), dtype=np.int64)
+
+        if self.metric == 'cosine' and self.method in ['centroid', 'median', 'ward']:
+            with np.errstate(divide='ignore', invalid='ignore'):
+                embeddings = X / np.linalg.norm(X, axis=-1, keepdims=True)
+            dendrogram = linkage(
+                embeddings, method=self.method, metric='euclidean'
+            )
+        else:
+            dendrogram = linkage(
+                X, method=self.method, metric=self.metric
+            )
+
+        if self.min_clusters == self.max_clusters:
+            threshold = (
+                dendrogram[-self.min_clusters, 2]
+                if self.min_clusters < num_embeddings
+                else -np.inf
+            )
+
+        else:
+            max_threshold = (
+                dendrogram[-self.min_clusters, 2]
+                if self.min_clusters < num_embeddings
+                else -np.inf
+            )
+            min_threshold = (
+                dendrogram[-self.max_clusters, 2]
+                if self.max_clusters < num_embeddings
+                else -np.inf
+            )
+            threshold = min(max(self.threshold, min_threshold), max_threshold)
+
+        return fcluster(dendrogram, threshold, criterion='distance') - 1
 
 
 class HiddenMarkovModelClustering:
@@ -92,6 +184,18 @@ class HiddenMarkovModelClustering:
         return hmm
 
     def fit_predict(self, X):
+        """
+        Fit predict.
+
+        Parameters
+        ----------
+        X: np.array
+            inputs with size of [batch_size, embedding size]
+
+        Returns
+        -------
+        result: np.array
+        """
 
         if len(X) <= self.max_clusters:
             raise ValueError('sample size must bigger than `max_cluster`')

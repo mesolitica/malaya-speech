@@ -51,6 +51,18 @@ malaya_speech.model.classification.Classification
 .. autoclass:: malaya_speech.model.classification.Classification()
     :members:
 
+malaya_speech.model.clustering.AgglomerativeClustering
+--------------------------------------------------------
+
+.. autoclass:: malaya_speech.model.clustering.AgglomerativeClustering()
+    :members:
+
+malaya_speech.model.clustering.HiddenMarkovModelClustering
+------------------------------------------------------------
+
+.. autoclass:: malaya_speech.model.clustering.HiddenMarkovModelClustering()
+    :members:
+
 malaya_speech.model.huggingface.HuggingFace_CTC
 ---------------------------------------------------
 

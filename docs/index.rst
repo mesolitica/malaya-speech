@@ -160,6 +160,7 @@ Contents:
    load-speaker-change
    load-diarization-speaker-similarity
    load-diarization-clustering
+   load-diarization-clustering-agglomerative
    load-diarization-clustering-hmm
    load-diarization-speaker-change
    load-diarization-timestamp
