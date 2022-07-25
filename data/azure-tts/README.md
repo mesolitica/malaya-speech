@@ -32,30 +32,20 @@ Guidelines for responsible deployment of synthetic voice technology, https://doc
   - Sentences between 2 words and 25 words.
   - transcription, https://huggingface.co/datasets/huseinzol05/Malay-TTS-Yasmin/resolve/main/populated-parliament.json
 
-3. https://huggingface.co/datasets/huseinzol05/Malay-TTS-Osman/resolve/main/tts-malay-osman.tar.gz
+3. https://huggingface.co/datasets/mesolitica/azure-tts-osman/resolve/main/news-wavs.tar
 
   - 24000 sample rate, super clean.
   - narrator `ms-MY-OsmanNeural`.
   - approximate 94.5 hours.
   - Texts from Malay Wikipedia and News.
   - Sentences between 2 words and 20 words.
-  - transcription, https://huggingface.co/datasets/huseinzol05/Malay-TTS-Osman/resolve/main/populated-text.json
+  - transcription, https://huggingface.co/datasets/mesolitica/azure-tts-osman/resolve/main/postprocessing-edge-tts-news.json
 
-4. https://huggingface.co/datasets/huseinzol05/Malay-TTS-Osman/resolve/main/tts-malay-osman-parliament.tar.gz
+4. https://huggingface.co/datasets/mesolitica/azure-tts-osman/resolve/main/parliament-wavs.tar
 
   - 24000 sample rate, super clean.
   - narrator `ms-MY-OsmanNeural`.
   - approximate 133.2 hours.
   - Texts from Malaysia Malay Parliament.
   - Sentences between 2 words and 25 words.
-  - transcription, https://huggingface.co/datasets/huseinzol05/Malay-TTS-Osman/resolve/main/populated-parliament.json
-
-5. https://huggingface.co/datasets/huseinzol05/Malay-TTS-Yasmin/resolve/main/normalized-texts.json
-
-  - text normalization for https://huggingface.co/datasets/huseinzol05/Malay-TTS-Osman/resolve/main/populated-text.json
-  - rules at [text-normalization-azure-yasmin.ipynb](text-normalization-azure-yasmin.ipynb).
-
-6. https://huggingface.co/datasets/huseinzol05/Malay-TTS-Yasmin/resolve/main/normalized-parliaments.json
-
-  - text normalization for https://huggingface.co/datasets/huseinzol05/Malay-TTS-Osman/resolve/main/populated-parliament.json
-  - rules at [text-normalization-azure-yasmin.ipynb](text-normalization-azure-yasmin.ipynb).
+  - transcription, https://huggingface.co/datasets/mesolitica/azure-tts-osman/resolve/main/postprocessing-edge-tts-parliament.json
