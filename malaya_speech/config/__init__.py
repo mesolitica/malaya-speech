@@ -21,6 +21,7 @@ from .hifigan import config_v4 as hifigan_config_v4
 from .mb_melgan import config as mb_melgan_config
 from .melgan import config as melgan_config
 from .melgan import config_v2 as melgan_config_v2
+from .nuwave2 import config as nuwave2_config
 from .speakernet_featurizer import config as speakernet_featurizer_config
 from .squeezeformer import (
     xs_encoder_config as squeezeformer_xs_encoder_config,

@@ -14,23 +14,23 @@ Guidelines for responsible deployment of synthetic voice technology, https://doc
 
 ## Download
 
-1. https://huggingface.co/datasets/huseinzol05/Malay-TTS-Yasmin/resolve/main/tts-malay-yasmin.tar.gz
+1. https://huggingface.co/datasets/mesolitica/azure-tts-yasmin/resolve/main/news-wavs.tar
 
   - 24000 sample rate, super clean.
   - narrator `ms-MY-YasminNeural`.
   - approximate 99.4 hours.
   - Texts from Malay Wikipedia and News.
   - Sentences between 2 words and 20 words.
-  - transcription, https://huggingface.co/datasets/huseinzol05/Malay-TTS-Yasmin/resolve/main/populated-text.json
+  - transcription, https://huggingface.co/datasets/mesolitica/azure-tts-yasmin/resolve/main/postprocessing-edge-tts-news.json
 
-2. https://huggingface.co/datasets/huseinzol05/Malay-TTS-Yasmin/resolve/main/tts-malay-yasmin-parliament.tar.gz
+2. https://huggingface.co/datasets/mesolitica/azure-tts-yasmin/resolve/main/parliament-wavs.tar
 
   - 24000 sample rate, super clean.
   - narrator `ms-MY-YasminNeural`.
   - approximate 142 hours.
   - Texts from Malaysia Malay Parliament.
   - Sentences between 2 words and 25 words.
-  - transcription, https://huggingface.co/datasets/huseinzol05/Malay-TTS-Yasmin/resolve/main/populated-parliament.json
+  - transcription, https://huggingface.co/datasets/mesolitica/azure-tts-yasmin/resolve/main/postprocessing-edge-tts-parliament.json
 
 3. https://huggingface.co/datasets/mesolitica/azure-tts-osman/resolve/main/news-wavs.tar
 
@@ -49,3 +49,17 @@ Guidelines for responsible deployment of synthetic voice technology, https://doc
   - Texts from Malaysia Malay Parliament.
   - Sentences between 2 words and 25 words.
   - transcription, https://huggingface.co/datasets/mesolitica/azure-tts-osman/resolve/main/postprocessing-edge-tts-parliament.json
+
+5. https://huggingface.co/datasets/mesolitica/synthetic-azure-tts/resolve/main/yasmin-synthetic.tar
+
+  - 24000 sample rate, super clean.
+  - narrator `ms-MY-YasminNeural`.
+  - Random texts generated using [edge-tts-synthetic-yasmin.ipynb](edge-tts-synthetic-yasmin.ipynb).
+  - transcription, [synthetic-data-tts.json](synthetic-data-tts.json).
+
+5. https://huggingface.co/datasets/mesolitica/synthetic-azure-tts/resolve/main/osman-synthetic.tar
+
+  - 24000 sample rate, super clean.
+  - narrator `ms-MY-OsmanNeural`.
+  - Random texts generated using [edge-tts-synthetic-osman.ipynb](edge-tts-synthetic-osman.ipynb).
+  - transcription, [synthetic-data-tts.json](synthetic-data-tts.json).

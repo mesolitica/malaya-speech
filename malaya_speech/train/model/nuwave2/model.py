@@ -1,10 +1,11 @@
 import tensorflow.compat.v1 as tf
 from math import sqrt, log, atan, exp
 from ..utils import shape_list
+from ..initializer import HeNormal
 
 
 class DiffusionEmbedding(tf.keras.layers.Layer):
-    def __init__(self, hparam, **kwargs):
+    def __init__(self, hparams, **kwargs):
         super(DiffusionEmbedding, self).__init__(**kwargs)
 
         self.n_channels = hparams.dpm.pos_emb_channels
@@ -34,7 +35,7 @@ class BSFT(tf.keras.layers.Layer):
     def __init__(self, nhidden, out_channels, **kwargs):
         super(BSFT, self).__init__(**kwargs)
         initializer = HeNormal()
-        self.mlp_shared = tf.keras.layers.Conv1D(hidden, kernel_size=3, padding='SAME')
+        self.mlp_shared = tf.keras.layers.Conv1D(nhidden, kernel_size=3, padding='SAME')
         self.mlp_gamma = tf.keras.layers.Conv1D(out_channels, kernel_size=3, padding='SAME',
                                                 kernel_initializer=initializer)
         self.mlp_beta = tf.keras.layers.Conv1D(out_channels, kernel_size=3, padding='SAME',
@@ -121,7 +122,10 @@ class FourierUnit(tf.keras.layers.Layer):
 
 
 class SpectralTransform(tf.keras.layers.Layer):
-    def __init__(self, in_channels, out_channels, bsft_channels, **audio_kwargs):
+    def __init__(self, in_channels, out_channels, bsft_channels, filter_length=1024,
+                 hop_length=256,
+                 win_length=1024,
+                 sampling_rate=48000, **audio_kwargs):
         super(SpectralTransform, self).__init__(**audio_kwargs)
         initializer = HeNormal()
         self.conv1 = tf.keras.layers.Conv1D(out_channels // 2, kernel_size=1, padding='SAME',
@@ -141,6 +145,10 @@ class SpectralTransform(tf.keras.layers.Layer):
 class FFC(tf.keras.layers.Layer):
     def __init__(self, in_channels, out_channels, bsft_channels, kernel_size=3,
                  ratio_gin=0.5, ratio_gout=0.5, padding=1,
+                 filter_length=1024,
+                 hop_length=256,
+                 win_length=1024,
+                 sampling_rate=48000,
                  **audio_kwargs):
         super(FFC, self).__init__(**audio_kwargs)
         in_cg = int(in_channels * ratio_gin)
@@ -173,7 +181,11 @@ class FFC(tf.keras.layers.Layer):
 
 
 class ResidualBlock(tf.keras.layers.Layer):
-    def __init__(self, residual_channels, pos_emb_dim, bsft_channels, **audio_kwargs):
+    def __init__(self, residual_channels, pos_emb_dim, bsft_channels,
+                 filter_length=1024,
+                 hop_length=256,
+                 win_length=1024,
+                 sampling_rate=48000, **audio_kwargs):
         super(ResidualBlock, self).__init__(**audio_kwargs)
         initializer = HeNormal()
         self.ffc1 = FFC(residual_channels, 2*residual_channels, bsft_channels,
