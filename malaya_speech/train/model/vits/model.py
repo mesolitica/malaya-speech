@@ -375,7 +375,7 @@ class DiscriminatorP(tf.keras.layers.Layer):
 
         def f1():
             n_pad = self.period - (t % self.period)
-            x_ = tf.pad(x, [[0, 0], [0, n_pad], [0, 0]])
+            x_ = tf.pad(x, [[0, 0], [0, n_pad], [0, 0]], mode='REFLECT')
             return x_
 
         x = tf.cond(tf.math.not_equal(t % self.period, 0), f1, lambda: x)
