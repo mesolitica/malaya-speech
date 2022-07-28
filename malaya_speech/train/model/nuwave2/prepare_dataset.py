@@ -68,20 +68,13 @@ class Dataset:
         return wav.astype(np.float32), wav_l.astype(np.float32), band
 
     def batch(self, wavs, wav_ls, bands):
-        wav_list = list()
-        wav_l_list = list()
-        band_list = list()
-        for wav, wav_l, band in batch:
-            wav_list.append(wav)
-            wav_l_list.append(wav_l)
-            band_list.append(band)
 
-        wav_list = np.stack(wav_list, axis=0)
-        wav_l_list = np.stack(wav_l_list, axis=0)
-        band_list = np.stack(band_list, axis=0)
+        wav_list = np.stack(wavs, axis=0)
+        wav_l_list = np.stack(wav_ls, axis=0)
+        band_list = np.stack(bands, axis=0)
 
         t = ((1 - np.random.uniform(size=(1,))) + np.arange(wav_list.shape[0]) / wav_list.shape[0]) % 1
 
         # tf, ((1 - tf.random.uniform(shape = (1,))) + tf.range(10,dtype=tf.float32) / 10) % 1
 
-        return wav_list, wav_l_list, band_list, t
+        return wav_list, wav_l_list, band_list, t.astype(np.float32)

@@ -2,6 +2,9 @@ import tensorflow.compat.v1 as tf
 from math import sqrt, log, atan, exp
 from ..utils import shape_list
 from ..initializer import HeNormal
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class DiffusionEmbedding(tf.keras.layers.Layer):
@@ -23,8 +26,8 @@ class DiffusionEmbedding(tf.keras.layers.Layer):
         emb = log(10000) / (half_dim - 1)
         emb = tf.range(half_dim, dtype=tf.float32) * -emb
         emb = self.linear_scale * tf.expand_dims(noise_level, 1) * tf.expand_dims(emb, 0)
-        emb = tf.concat([tf.math.sin(x), tf.math.cos(x)], axis=-1)
-        x = self.projection1(x)
+        emb = tf.concat([tf.math.sin(emb), tf.math.cos(emb)], axis=-1)
+        x = self.projection1(emb)
         x = tf.nn.swish(x)
         x = self.projection2(x)
         x = tf.nn.swish(x)
@@ -42,22 +45,19 @@ class BSFT(tf.keras.layers.Layer):
                                                kernel_initializer=initializer)
 
     def call(self, x, band):
-        # x: (B, 2C, n_fft/2+1, T)
+        # x: (B, 2C, n_fft/2+1, T), (N, C, H, W)
         # band: (B, 2, n_fft // 2 + 1) -> (B, N, n_fft // 2 + 1)
 
-        # x tf: (B, 2C, T, n_fft/2+1)
-        # band tf: (B, n_fft // 2 + 1, 2) -> (B, n_fft // 2 + 1, N)
+        # x tf: (B, T, n_fft/2+1, 2C), (N, H, W, C)
+        # band tf: (B, n_fft // 2 + 1, N)
 
         actv = tf.nn.swish(self.mlp_shared(band))
-
-        # torch, (B, N, n_fft // 2 + 1) - > (B, M, n_fft // 2 + 1, 1)
-        # tf, (B, n_fft // 2 + 1, N) - > (B, 1, M, n_fft // 2 + 1)
-        gamma = tf.expand_dims(tf.transpose(self.mlp_gamma(actv), (0, 2, 1)), 1)
-        beta = tf.expand_dims(tf.transpose(self.mlp_beta(actv), (0, 2, 1)), 1)
+        gamma = tf.expand_dims(self.mlp_gamma(actv), 1)
+        beta = tf.expand_dims(self.mlp_beta(actv), 1)
 
         # apply scale and bias
         # torch, (B, 2C, n_fft/2+1, T) * (B, M, n_fft // 2 + 1, 1)
-        # tf, (B, 2C, T, n_fft/2+1) * (B, 1, M, n_fft // 2 + 1)
+        # tf, (B, T, n_fft/2+1, 2C) * (B, 1, M, n_fft // 2 + 1)
         out = x * (1 + gamma) + beta
 
         return out
@@ -84,7 +84,8 @@ class FourierUnit(tf.keras.layers.Layer):
 
     def call(self, x, band):
         batch = shape_list(x)[0]
-        x = tf.reshape(x, (-1, x.shape[-1]))
+        x = tf.transpose(x, [0, 2, 1])
+        x = tf.reshape(x, (-1, tf.shape(x)[-1]))
         p = int((self.n_fft-self.hop_size)/2)
         padded = tf.pad(x, [[0, 0], [p, p]], mode='reflect')
         ffted_tf = tf.signal.stft(
@@ -94,21 +95,21 @@ class FourierUnit(tf.keras.layers.Layer):
             fft_length=None,
             window_fn=tf.signal.hann_window,
             pad_end=False,
-        )
-        r = tf.expand_dims(tf.math.real(ffted_tf), -1)
-        i = tf.expand_dims(tf.math.imag(ffted_tf), -1)
-        ffted_tf = tf.concat([r, i], axis=-1)
-        ffted_tf = tf.transpose(ffted_tf, (0, 3, 1, 2))
+        )  # [BC, T, n_fft/2+1]
+        ffted_tf = tf.stack([tf.math.real(ffted_tf), tf.math.imag(ffted_tf)], axis=1)
+        # (B, n_fft/2+1, T, 2C)
+        # (BC, 2, n_fft/2+1, T)
         ffted_tf_shape = shape_list(ffted_tf)
         ffted_tf = tf.reshape(ffted_tf, (batch, -1, ffted_tf_shape[2], ffted_tf_shape[3]))
+        ffted_tf = tf.transpose(ffted_tf, [0, 2, 3, 1])
 
         ffted_tf = tf.nn.relu(self.bsft(ffted_tf, band))
-        ffted_tf = self.conv_layer(ffted_tf)
+        ffted_tf = self.conv_layer(ffted_tf)  # (B, T, n_fft/2+1, N)
+        ffted_tf = tf.transpose(ffted_tf, [0, 3, 1, 2])  # (B, N, T, n_fft/2+1)
 
+        # [BC, 2, T, n_fft/2+1]
         ffted_tf = tf.reshape(ffted_tf, (-1, 2, ffted_tf_shape[2], ffted_tf_shape[3]))
-        ffted_tf = tf.transpose(ffted_tf, (0, 2, 3, 1))
-
-        ffted_tf = tf.complex(ffted_tf[:, :, :, 0], ffted_tf[:, :, :, 1])
+        ffted_tf = tf.complex(ffted_tf[:, 0, :, :], ffted_tf[:, 1, :, :])
 
         output = tf.signal.inverse_stft(
             ffted_tf,
@@ -118,6 +119,7 @@ class FourierUnit(tf.keras.layers.Layer):
             window_fn=tf.signal.hann_window,
         )[:, p:-p]
         output = tf.reshape(output, (batch, -1, x.shape[-1]))
+        output = tf.transpose(output, [0, 2, 1])
         return output
 
 
@@ -196,7 +198,7 @@ class ResidualBlock(tf.keras.layers.Layer):
                                                         kernel_initializer=initializer)
 
     def call(self, x, band, noise_level):
-        noise_level = tf.expand_dims(self.diffusion_projection(noise_level), -1)
+        noise_level = tf.expand_dims(self.diffusion_projection(noise_level), 1)
         y = x + noise_level
         y_l, y_g = y[:, :, :-self.ffc1.global_in_num], y[:, :, -self.ffc1.global_in_num:]
         y_l, y_g = self.ffc1(y_l, y_g, band)
@@ -220,8 +222,7 @@ class NuWave2(tf.keras.layers.Layer):
         self.input_projection = tf.keras.layers.Conv1D(hparams.arch.residual_channels,
                                                        kernel_size=1, padding='SAME',
                                                        kernel_initializer=initializer)
-        self.diffusion_embedding = DiffusionEmbedding(
-            hparams)
+        self.diffusion_embedding = DiffusionEmbedding(hparams)
         audio_kwargs = dict(filter_length=hparams.audio.filter_length, hop_length=hparams.audio.hop_length,
                             win_length=hparams.audio.win_length, sampling_rate=hparams.audio.sampling_rate)
         self.residual_layers = [
@@ -247,16 +248,17 @@ class NuWave2(tf.keras.layers.Layer):
         x = tf.nn.swish(x)
         noise_level = self.diffusion_embedding(noise_level)
 
-        band = tf.cast(tf.one_hot(band, depth=2), tf.int32)
+        band = tf.one_hot(band, depth=2)
         skip = 0.
         for layer in self.residual_layers:
+            logger.info(f'{x}, {band}, {noise_level}')
             x, skip_connection = layer(x, band, noise_level)
             # skip.append(skip_connection)
             skip += skip_connection
         x = skip / sqrt(self.len_res)
         x = self.skip_projection(x)
         x = tf.nn.swish(x)
-        x = tf.squeeze(self.output_projection(x), 1)
+        x = self.output_projection(x)[:, :, 0]
         return x
 
 
@@ -265,7 +267,7 @@ class Diffusion(tf.keras.layers.Layer):
         super(Diffusion, self).__init__(**kwargs)
 
         self.hparams = hparams
-        # self.model = model(hparams)
+        self.model = NuWave2(hparams)
 
         self.logsnr_min = hparams.logsnr.logsnr_min
         self.logsnr_max = hparams.logsnr.logsnr_max
@@ -279,3 +281,99 @@ class Diffusion(tf.keras.layers.Layer):
 
         alpha_sq, sigma_sq = tf.sigmoid(logsnr), tf.sigmoid(-logsnr)
         return logsnr, norm_nlogsnr, alpha_sq, sigma_sq
+
+    def call(self, y, y_l, band, t, z=None):
+        logsnr, norm_nlogsnr, alpha_sq, sigma_sq = self.snr(t)
+        if z == None:
+            noise = self.model(y, y_l, band, norm_nlogsnr)
+        else:
+            noise = z
+        return noise, logsnr, (alpha_sq, sigma_sq)
+
+    def denoise(self, y, y_l, band, t, h):
+        noise, logsnr_t, (alpha_sq_t, sigma_sq_t) = self.call(y, y_l, band, t)
+
+        f_t = - self.logsnr_a * tf.tan(self.logsnr_a * t + self.logsnr_b)
+        g_t_sq = 2 * self.logsnr_a * tf.tan(self.logsnr_a * t + self.logsnr_b)
+
+        dzt_det = (f_t * y - 0.5 * g_t_sq * (-noise / tf.sqrt(sigma_sq_t))) * h
+
+        denoised = y - dzt_det
+        return denoised
+
+    def denoise_ddim(self, y, y_l, band, logsnr_t, logsnr_s, z=None):
+        norm_nlogsnr = (self.logsnr_max - logsnr_t) / (self.logsnr_max - self.logsnr_min)
+
+        alpha_sq_t, sigma_sq_t = tf.sigmoid(logsnr_t), tf.sigmoid(-logsnr_t)
+
+        if z == None:
+            noise = self.model(y, y_l, band, norm_nlogsnr)
+        else:
+            noise = z
+
+        alpha_sq_s, sigma_sq_s = tf.sigmoid(logsnr_s), tf.sigmoid(-logsnr_s)
+
+        pred = (y - tf.sqrt(sigma_sq_t) * noise) / tf.sqrt(alpha_sq_t)
+
+        denoised = tf.sqrt(alpha_sq_s) * pred + tf.sqrt(sigma_sq_s) * noise
+        return denoised, pred
+
+    def diffusion(self, signal, noise, s, t=None):
+        bsize = tf.shape(s)[0]
+
+        time = s if t is None else tf.concat([s, t], axis=0)
+
+        _, _, alpha_sq, sigma_sq = self.snr(time)
+        if t is not None:
+            alpha_sq_s, alpha_sq_t = alpha_sq[:bsize], alpha_sq[bsize:]
+            sigma_sq_s, sigma_sq_t = sigma_sq[:bsize], sigma_sq[bsize:]
+
+            alpha_sq_tbars = alpha_sq_t / alpha_sq_s
+            sigma_sq_tbars = sigma_sq_t - alpha_sq_tbars * sigma_sq_s
+
+            alpha_sq, sigma_sq = alpha_sq_tbars, sigma_sq_tbars
+
+        alpha = tf.sqrt(alpha_sq)
+        sigma = tf.sqrt(sigma_sq)
+
+        noised = tf.expand_dims(alpha, -1) * signal + tf.expand_dims(sigma, -1) * noise
+        return alpha, sigma, noised
+
+
+class Model(tf.keras.Model):
+    def __init__(self, hparams, **kwargs):
+        super().__init__(**kwargs)
+
+        self.model = Diffusion(hparams)
+
+    def call(self, wav, wav_l, band, t):
+        z = tf.random.normal(tf.shape(wav))
+        _, _, diffusion = self.model.diffusion(wav, z, t)
+
+        estim, logsnr, _ = self.model(diffusion, wav_l, band, t)
+        return estim, z, logsnr, wav, diffusion, logsnr
+
+    def common_step(self, wav, wav_l, band, t):
+        noise_estimation, z, logsnr, wav, wav_noisy, logsnr = self(wav, wav_l, band, t)
+
+        loss = self.loss(noise_estimation, z)
+        return loss, wav, wav_noisy, z, noise_estimation, logsnr
+
+    def inference(self, wav_l, band, step, noise_schedule=None):
+        signal = tf.random.normal(tf.shape(wav_l))
+        signal_list = []
+        for i in range(step):
+            if noise_schedule == None:
+                t = (1.0 - (i+0.5) * 1.0/step) * tf.ones(shape=(tf.shape(signal)[0],))
+                signal = self.model.denoise(signal, wav_l, band, t, 1.0/step)
+            else:
+                logsnr_t = noise_schedule[i] * tf.ones(shape=(tf.shape(signal)[0],))
+                if i == step-1:
+                    logsnr_s = self.hparams.logsnr.logsnr_max * tf.ones(shape=(tf.shape(signal)[0],))
+                else:
+                    logsnr_s = noise_schedule[i+1] * tf.ones(shape=(tf.shape(signal)[0],))
+                signal, recon = self.model.denoise_ddim(signal, wav_l, band, logsnr_t, logsnr_s)
+            signal_list.append(signal)
+
+        wav_recon = tf.clip_by_value(signal, -1, 1)
+        return wav_recon, signal_list
