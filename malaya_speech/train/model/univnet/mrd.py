@@ -43,7 +43,6 @@ class DiscriminatorR(tf.keras.layers.Layer):
         x = self.spectrogram(x)
 
         for l in self.convs:
-            print(l)
             x = l(x)
             x = tf.keras.layers.LeakyReLU(alpha=self.LRELU_SLOPE)(x)
             fmap.append(x)
