@@ -23,6 +23,7 @@ from .layer import (
 )
 from ..utils import shape_list
 import collections
+import inspect
 
 Hypothesis = collections.namedtuple(
     'Hypothesis', ('index', 'prediction', 'states')
@@ -334,11 +335,18 @@ class Model(tf.keras.Model):
             )
             encoded_length = tf.reduce_sum(input_mask, axis=1)
         else:
-            encoded = self.encoder(features, training=training)
-            encoded_length = (
-                encoded_length
-                // self.encoder.conv_subsampling.time_reduction_factor
-            )
+            parameters = list(inspect.signature(self.encoder.call).parameters)
+            if 'inputs_length' in parameters:
+                encoded = self.encoder(features, encoded_length, training=training)
+            else:
+                encoded = self.encoder(features, training=training)
+
+            if hasattr(self.encoder, 'encoder'):
+                time_reduction_factor = self.encoder.encoder.conv_subsampling.time_reduction_factor
+            else:
+                time_reduction_factor = self.encoder.conv_subsampling.time_reduction_factor
+            encoded_length = encoded_length // time_reduction_factor
+
         total = tf.shape(features)[0]
         batch = tf.constant(0, dtype=tf.int32)
         maxlen = tf.reduce_max(encoded_length)
@@ -484,11 +492,18 @@ class Model(tf.keras.Model):
             )
             encoded_length = tf.reduce_sum(input_mask, axis=1)
         else:
-            encoded = self.encoder(features, training=training)
-            encoded_length = (
-                encoded_length
-                // self.encoder.conv_subsampling.time_reduction_factor
-            )
+            parameters = list(inspect.signature(self.encoder.call).parameters)
+            if 'inputs_length' in parameters:
+                encoded = self.encoder(features, encoded_length, training=training)
+            else:
+                encoded = self.encoder(features, training=training)
+
+            if hasattr(self.encoder, 'encoder'):
+                time_reduction_factor = self.encoder.encoder.conv_subsampling.time_reduction_factor
+            else:
+                time_reduction_factor = self.encoder.conv_subsampling.time_reduction_factor
+            encoded_length = encoded_length // time_reduction_factor
+
         total = tf.shape(features)[0]
         batch = tf.constant(0, dtype=tf.int32)
         maxlen = tf.reduce_max(encoded_length)

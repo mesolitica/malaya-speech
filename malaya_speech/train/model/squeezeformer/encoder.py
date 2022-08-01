@@ -19,8 +19,9 @@ from .multihead_attention import MultiHeadAttention, RelPositionMultiHeadAttenti
 # from .positional_encoding import PositionalEncoding
 from ..conformer.layer import PositionalEncoding
 from ..utils import shape_list
+import logging
 
-logger = tf.get_logger()
+logger = logging.getLogger(__name__)
 
 
 class FFModule(tf.keras.layers.Layer):
@@ -476,12 +477,17 @@ class ConformerEncoder(tf.keras.Model):
             raise NotImplementedError("VGG subsampling is not supported")
         elif subsampling_name == "conv2d":
             subsampling_class = Conv2dSubsampling
+        elif subsampling_name == 'none':
+            subsampling_class = None
         else:
             raise ValueError("subsampling must be either  'conv2d' or 'vgg'")
 
-        self.conv_subsampling = subsampling_class(
-            **subsampling, ds=ds_subsample, name=f"{name}_subsampling",
-        )
+        if subsampling_class:
+            self.conv_subsampling = subsampling_class(
+                **subsampling, ds=ds_subsample, name=f"{name}_subsampling",
+            )
+        else:
+            self.conv_subsampling = None
 
         self.pre_ln = tf.keras.layers.LayerNormalization(name=f"{name}_preln")
 
@@ -548,7 +554,10 @@ class ConformerEncoder(tf.keras.Model):
 
     def call(self, inputs, length, training=False, mask=None, **kwargs):
         # input with shape [B, T, V1, V2]
-        outputs = self.conv_subsampling(inputs, training=training)
+        if self.conv_subsampling:
+            outputs = self.conv_subsampling(inputs, training=training)
+        else:
+            outputs = inputs
         outputs = self.linear(outputs, training=training)
         padding, kernel_size, stride, num_subsample = 1, 3, 2, 2  # TODO: set these in __init__
         for _ in range(num_subsample):

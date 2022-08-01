@@ -1,6 +1,7 @@
-def f0(model: str = 'fastspeech2', quantized=False, **kwargs):
+def mel_to_f0(model: str = 'fastspeech2', quantized=False, **kwargs):
     """
     Load F0 extractor, Mel-to-F0 model.
+    Mel input must generated from `malaya_speech.utils.featurization.universal_mel`
 
     Parameters
     ----------
@@ -20,9 +21,10 @@ def f0(model: str = 'fastspeech2', quantized=False, **kwargs):
     """
 
 
-def energy(model: str = 'fastspeech2', quantized=False, **kwargs):
+def mel_to_energy(model: str = 'fastspeech2', quantized=False, **kwargs):
     """
-    Load energy extractor, Mel-to-F0 model.
+    Load energy extractor, Mel-to-Energy model.
+    Mel input must generated from `malaya_speech.utils.featurization.universal_mel`
 
     Parameters
     ----------
