@@ -32,7 +32,16 @@ Guidelines for responsible deployment of synthetic voice technology, https://doc
   - Sentences between 2 words and 25 words.
   - transcription, https://huggingface.co/datasets/mesolitica/azure-tts-yasmin/resolve/main/postprocessing-edge-tts-parliament.json
 
-3. https://huggingface.co/datasets/mesolitica/azure-tts-osman/resolve/main/news-wavs.tar
+3. https://huggingface.co/datasets/mesolitica/azure-tts-yasmin-wikipedia/resolve/main/yasmin-wiki.tar
+
+  - 24000 sample rate, super clean.
+  - narrator `ms-MY-YasminNeural`.
+  - approximate 224 hours.
+  - Texts from Malay Wikipedia.
+  - Sentences between 2 words and 25 words.
+  - transcription, https://huggingface.co/datasets/mesolitica/azure-tts-yasmin-wikipedia/resolve/main/postprocessing-edge-tts-wiki-yasmin.json
+
+4. https://huggingface.co/datasets/mesolitica/azure-tts-osman/resolve/main/news-wavs.tar
 
   - 24000 sample rate, super clean.
   - narrator `ms-MY-OsmanNeural`.
@@ -41,7 +50,7 @@ Guidelines for responsible deployment of synthetic voice technology, https://doc
   - Sentences between 2 words and 20 words.
   - transcription, https://huggingface.co/datasets/mesolitica/azure-tts-osman/resolve/main/postprocessing-edge-tts-news.json
 
-4. https://huggingface.co/datasets/mesolitica/azure-tts-osman/resolve/main/parliament-wavs.tar
+5. https://huggingface.co/datasets/mesolitica/azure-tts-osman/resolve/main/parliament-wavs.tar
 
   - 24000 sample rate, super clean.
   - narrator `ms-MY-OsmanNeural`.
@@ -50,14 +59,23 @@ Guidelines for responsible deployment of synthetic voice technology, https://doc
   - Sentences between 2 words and 25 words.
   - transcription, https://huggingface.co/datasets/mesolitica/azure-tts-osman/resolve/main/postprocessing-edge-tts-parliament.json
 
-5. https://huggingface.co/datasets/mesolitica/synthetic-azure-tts/resolve/main/yasmin-synthetic.tar
+6. https://huggingface.co/datasets/mesolitica/azure-tts-osman-wikipedia/resolve/main/osman-wiki.tar
+
+  - 24000 sample rate, super clean.
+  - narrator `ms-MY-OsmanNeural`.
+  - approximate 224 hours.
+  - Texts from Malay Wikipedia.
+  - Sentences between 2 words and 20 words.
+  - transcription, https://huggingface.co/datasets/mesolitica/azure-tts-osman-wikipedia/resolve/main/postprocessing-edge-tts-wiki-osman.json
+
+7. https://huggingface.co/datasets/mesolitica/synthetic-azure-tts/resolve/main/yasmin-synthetic.tar
 
   - 24000 sample rate, super clean.
   - narrator `ms-MY-YasminNeural`.
   - Random texts generated using [edge-tts-synthetic-yasmin.ipynb](edge-tts-synthetic-yasmin.ipynb).
   - transcription, [synthetic-data-tts.json](synthetic-data-tts.json).
 
-5. https://huggingface.co/datasets/mesolitica/synthetic-azure-tts/resolve/main/osman-synthetic.tar
+8. https://huggingface.co/datasets/mesolitica/synthetic-azure-tts/resolve/main/osman-synthetic.tar
 
   - 24000 sample rate, super clean.
   - narrator `ms-MY-OsmanNeural`.
