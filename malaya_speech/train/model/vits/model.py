@@ -375,7 +375,7 @@ class DiscriminatorP(tf.keras.layers.Layer):
 
         def f1():
             n_pad = self.period - (t % self.period)
-            x_ = tf.pad(x, [[0, 0], [0, n_pad], [0, 0]], mode='REFLECT')
+            x_ = tf.pad(x, [[0, 0], [0, n_pad], [0, 0]])
             return x_
 
         x = tf.cond(tf.math.not_equal(t % self.period, 0), f1, lambda: x)
@@ -501,6 +501,7 @@ class Model(tf.keras.Model):
                  n_speakers=0,
                  gin_channels=0,
                  use_sdp=True,
+                 prob_predictor=0.1,
                  **kwargs):
         super().__init__()
         self.n_vocab = n_vocab
@@ -540,9 +541,9 @@ class Model(tf.keras.Model):
 
         if use_sdp:
             print('using StochasticDurationPredictor')
-            self.dp = StochasticDurationPredictor(hidden_channels, 192, 3, 0.2, 4, gin_channels=gin_channels)
+            self.dp = StochasticDurationPredictor(hidden_channels, 192, 3, prob_predictor, 4, gin_channels=gin_channels)
         else:
-            self.dp = DurationPredictor(256, 3, 0.1, gin_channels=gin_channels)
+            self.dp = DurationPredictor(256, 3, prob_predictor, gin_channels=gin_channels)
 
         if n_speakers > 1:
             self.emb_g = tf.keras.layers.Embedding(n_speakers, gin_channels)
