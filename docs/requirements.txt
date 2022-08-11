@@ -29,3 +29,4 @@ sphinx-autodoc-typehints
 sphinx-book-theme==0.3.3
 sphinx-copybutton==0.5.0
 sphinx-remove-toctrees
+MarkupSafe==1.1.1
