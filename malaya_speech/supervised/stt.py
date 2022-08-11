@@ -4,6 +4,7 @@ from malaya_speech.utils import (
     generate_session,
     nodes_session,
 )
+from malaya_boilerplate.utils import check_tf2
 from malaya_speech.utils.read import load as load_wav
 from malaya_speech.utils.subword import load as subword_load
 from malaya_speech.utils.tf_featurization import STTFeaturizer
@@ -11,7 +12,6 @@ from malaya_speech.model.transducer import Transducer, TransducerAligner
 from malaya_speech.model.wav2vec import Wav2Vec2_CTC, Wav2Vec2_Aligner
 from malaya_speech.model.huggingface import HuggingFace_CTC, HuggingFace_Aligner
 from malaya_speech.path import TRANSDUCER_VOCABS, TRANSDUCER_MIXED_VOCABS
-from malaya_boilerplate import frozen_graph
 import tensorflow as tf
 import os
 
@@ -199,32 +199,11 @@ def wav2vec2_ctc_load(model, module, quantized=False, stt=True, **kwargs):
     )
 
 
+@check_tf2
 def huggingface_load(model, stt=True, **kwargs):
-    from malaya_boilerplate.utils import check_tf2_huggingface
+    from transformers import TFWav2Vec2ForCTC
 
-    check_tf2_huggingface()
-
-    if 'wav2vec2' in model:
-        from malaya_speech.train.model import hf_wav2vec2
-        from huggingface_hub import hf_hub_download
-
-        config_file = hf_hub_download(repo_id=model, filename='config.json')
-        checkpoint_file = hf_hub_download(repo_id=model, filename='tf_model.h5')
-
-        config = hf_wav2vec2.Wav2Vec2Config.from_json_file(config_file)
-        hf_model = hf_wav2vec2.TFWav2Vec2ForCTC(config)
-
-        device = frozen_graph.get_device(**kwargs)
-
-        with tf.device(device):
-            hf_model(
-                tf.random.normal(shape=(1, 1000)),
-                attention_mask=tf.ones(shape=(1, 1000), dtype=tf.int32)
-            )
-            hf_model.load_weights(checkpoint_file)
-
-    else:
-        raise Exception('Only support `Wav2Vec2` model from HuggingFace.')
+    hf_model = TFWav2Vec2ForCTC.from_pretrained(model)
 
     if stt:
         selected_model = HuggingFace_CTC

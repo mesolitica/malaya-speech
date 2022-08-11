@@ -251,11 +251,12 @@ class TextIDS:
 
         ids = tts_encode(string, TTS_SYMBOLS, add_eos=False)
         text_input = np.array(ids)
-        num_pad = self.pad_to - ((len(text_input) + 2) % self.pad_to)
-        text_input = np.pad(
-            text_input, ((1, 1)), 'constant', constant_values=((1, 2))
-        )
-        text_input = np.pad(
-            text_input, ((0, num_pad)), 'constant', constant_values=0
-        )
+        if self.pad_to is not None:
+            num_pad = self.pad_to - ((len(text_input) + 2) % self.pad_to)
+            text_input = np.pad(
+                text_input, ((1, 1)), 'constant', constant_values=((1, 2))
+            )
+            text_input = np.pad(
+                text_input, ((0, num_pad)), 'constant', constant_values=0
+            )
         return string, text_input

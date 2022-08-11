@@ -14,6 +14,7 @@ except Exception as e:
 class VoiceFixer(voicefixer.VoiceFixer):
     def __init__(self):
         super(VoiceFixer, self).__init__()
+        self.eval()
 
     def predict(self, input, remove_higher_frequency: bool = True):
         """

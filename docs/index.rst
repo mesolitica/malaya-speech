@@ -187,16 +187,6 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
-   :caption: Train ASR
-
-   prepare-sebut-perkataan-tfrecord
-   train-asr-cnn-rnn
-   train-asr-mini-jasper
-   train-asr-quartznet
-   train-asr-small-conformer
-
-.. toctree::
-   :maxdepth: 2
    :caption: Misc
 
    Donation
