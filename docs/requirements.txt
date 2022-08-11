@@ -32,3 +32,4 @@ sphinx-remove-toctrees
 MarkupSafe==1.1.1
 protobuf==3.13.0
 voicefixer==0.0.18
+unidecode
