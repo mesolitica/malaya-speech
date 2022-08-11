@@ -26,7 +26,9 @@ from .speakernet_featurizer import config as speakernet_featurizer_config
 from .squeezeformer import (
     xs_encoder_config as squeezeformer_xs_encoder_config,
     s_encoder_config as squeezeformer_s_encoder_config,
+    sm_encoder_config as squeezeformer_sm_encoder_config,
     m_encoder_config as squeezeformer_m_encoder_config,
+    ml_encoder_config as squeezeformer_ml_encoder_config,
     l_encoder_config as squeezeformer_l_encoder_config,
 )
 from .tacotron2 import config as tacotron2_config

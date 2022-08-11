@@ -25,12 +25,16 @@ def get_vocab_mixed(language):
 
 
 dummy_sentences = ['tangan aku disentuh lembut', 'sebut perkataan angka']
+default_reduction_factor = 4
 time_reduction_factor = {
     'tiny-conformer': 4,
     'small-conformer': 4,
     'conformer': 4,
     'large-conformer': 4,
     'alconformer': 4,
+    'xs-squeezeformer': 4,
+    'sm-squeezeformer': 4,
+    'm-squeezeformer': 4,
 }
 
 
@@ -114,7 +118,7 @@ def transducer_load(model, module, languages, quantized=False, stt=True, **kwarg
         output_nodes=output_nodes,
         featurizer=featurizer,
         vocab=vocab,
-        time_reduction_factor=time_reduction_factor.get(model, 4),
+        time_reduction_factor=time_reduction_factor.get(model, default_reduction_factor),
         sess=generate_session(graph=g, **kwargs),
         model=model,
         name=module,

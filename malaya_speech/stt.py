@@ -84,6 +84,15 @@ _transducer_availability = {
         'CER-LM': 0.03572307,
         'Language': ['singlish'],
     },
+    'xs-squeezeformer': {
+        'Size (MB)': 51.9,
+        'Quantized Size (MB)': 23.4,
+        'WER': 0.2163437,
+        'CER': 0.0844854,
+        'WER-LM': 0.2015538,
+        'CER-LM': 0.0798542,
+        'Language': ['malay'],
+    }
 }
 
 _ctc_availability = {

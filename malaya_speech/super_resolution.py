@@ -1,7 +1,7 @@
 from malaya_speech.supervised import unet
 from herpetologist import check_type
 
-_availability = {
+_availability_srgan = {
     'srgan-128': {
         'Size (MB)': 7.37,
         'Quantized Size (MB)': 2.04,
@@ -19,7 +19,7 @@ _availability = {
 }
 
 
-def available_model():
+def available_srgan():
     """
     List available Super Resolution 4x deep learning models.
     """
@@ -32,7 +32,7 @@ def available_model():
 
 
 @check_type
-def deep_model(model: str = 'srgan-256', quantized: bool = False, **kwargs):
+def srgan(model: str = 'srgan-256', quantized: bool = False, **kwargs):
     """
     Load Super Resolution 4x deep learning model.
 
@@ -54,7 +54,7 @@ def deep_model(model: str = 'srgan-256', quantized: bool = False, **kwargs):
     model = model.lower()
     if model not in _availability:
         raise ValueError(
-            'model not supported, please check supported models from `malaya_speech.super_resolution.available_model()`.'
+            'model not supported, please check supported models from `malaya_speech.super_resolution.available_srgan()`.'
         )
     return unet.load_1d(
         model=model,

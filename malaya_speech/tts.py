@@ -107,24 +107,10 @@ _fastspeech2_availability = {
         'Understand punctuation': True,
         'Is lowercase': False,
     },
-    'yasmin-small': {
-        'Size (MB)': 32.9,
-        'Quantized Size (MB)': 8.5,
-        'Combined loss': 0.7994,
-        'Understand punctuation': True,
-        'Is lowercase': False,
-    },
     'osman': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
         'Combined loss': 0.7341,
-        'Understand punctuation': True,
-        'Is lowercase': False,
-    },
-    'osman-small': {
-        'Size (MB)': 32.9,
-        'Quantized Size (MB)': 8.5,
-        'Combined loss': 0.8182,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
@@ -247,6 +233,15 @@ _vits_availability = {
         'mel loss': 0.3333,
         'kl loss': 1.451,
         'duration loss': 1.531,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+    },
+    'osman': {
+        'Size (MB)': 114,
+        'Quantized Size (MB)': 29.7,
+        'mel loss': 0.37,
+        'kl loss': 1.431,
+        'duration loss': 0.057,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
@@ -655,7 +650,7 @@ def vits(
 
         * ``'yasmin'`` - VITS trained on female Yasmin voice.
         * ``'yasmin-sdp'`` - VITS + Stochastic Duration Predictor trained on female Yasmin voice.
-        * ``'osman-sdp'`` - VITS + Stochastic Duration Predictor trained on male Osman voice.
+        * ``'osman'`` - VITS trained on male Osman voice.
 
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.

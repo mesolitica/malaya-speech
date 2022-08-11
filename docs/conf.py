@@ -57,6 +57,9 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
     'nbsphinx',
+    'sphinx_remove_toctrees',
+    'sphinx_copybutton',
+    'sphinx_autodoc_typehints',
 ]
 numpydoc_show_class_members = False
 autodoc_member_order = 'bysource'
@@ -106,34 +109,32 @@ source_suffix = '.rst'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_material'
-html_logo = 'malaya-only.png'
+html_theme = 'sphinx_book_theme'
+html_logo = 'malaya-speech-nobackground.jpg'
 
 html_show_sourcelink = True
-html_sidebars = {
-    '**': [
-        'logo-text.html',
-        'globaltoc.html',
-        'localtoc.html',
-        'searchbox.html',
-    ]
-}
+# html_sidebars = {}
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
 # html_theme_options = {'style_nav_header_background': '#fdbe00'}
 
+# html_theme_options = {
+#     'repo_url': 'https://github.com/huseinzol05/Malaya-Speech',
+#     'repo_name': 'Malaya-Speech',
+#     'nav_title': 'Malaya-Speech',
+#     'color_primary': 'blue',
+#     'color_accent': 'dark-blue',
+#     'globaltoc_depth': 1,
+#     'globaltoc_collapse': False,
+#     'repo_type': 'github',
+#     'master_doc': False,
+# }
+
 html_theme_options = {
-    'repo_url': 'https://github.com/huseinzol05/Malaya-Speech',
-    'repo_name': 'Malaya-Speech',
-    'nav_title': 'Malaya-Speech',
-    'color_primary': 'orange',
-    'color_accent': 'light-orange',
-    'globaltoc_depth': 1,
-    'globaltoc_collapse': False,
-    'repo_type': 'github',
-    'master_doc': False,
+    'logo_only': True,
+    'show_toc_level': 2,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

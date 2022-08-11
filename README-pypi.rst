@@ -1,4 +1,4 @@
-**Malaya-Speech** is a Speech-Toolkit library for bahasa Malaysia, powered by Deep Learning Tensorflow.
+**Malaya-Speech** is a Speech-Toolkit library for bahasa Malaysia, powered by Tensorflow and PyTorch.
 
 Documentation
 --------------
@@ -18,9 +18,7 @@ GPU version
 
     $ pip install malaya-speech[gpu]
 
-Only **Python 3.6.0 and above** and **Tensorflow 1.15.0 and above** are supported.
-
-All examples tested on Tensorflow version 1.15.4, 1.15.5, 2.4.1, 2.5 and 2.9.
+Only **Python >= 3.6.0**, **Tensorflow >= 1.15.0**, and **PyTorch >= 1.10** are supported.
 
 Development Release
 ---------------------------------

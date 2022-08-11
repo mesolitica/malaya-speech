@@ -14,6 +14,9 @@ try:
 except Exception as e:
     pyworld_exist = False
 
+mel_basis = None
+mel_basis_44k = None
+
 
 class SpeakerNetFeaturizer:
     def __init__(
@@ -490,6 +493,7 @@ def universal_mel(
     fmax=7600,
     return_energy=False,
 ):
+    global mel_basis
     D = librosa.stft(
         signal,
         n_fft=fft_size,
@@ -499,13 +503,53 @@ def universal_mel(
         pad_mode='reflect',
     )
     S, _ = librosa.magphase(D)
-    mel_basis = librosa.filters.mel(
-        sr=sampling_rate,
+    if mel_basis is None:
+        mel_basis = librosa.filters.mel(
+            sr=sampling_rate,
+            n_fft=fft_size,
+            n_mels=num_mels,
+            fmin=fmin,
+            fmax=fmax,
+        )
+    mel = np.log10(np.maximum(np.dot(mel_basis, S), 1e-10)).T
+    mel = (mel - MEL_MEAN) / MEL_STD
+    if return_energy:
+        energy = np.sqrt(np.sum(S ** 2, axis=0))
+        return mel, energy
+    else:
+        return mel
+
+
+def universal_mel_44k(
+    signal,
+    sampling_rate=44100,
+    fft_size=2048,
+    hop_size=441,
+    win_length=None,
+    window='hann',
+    num_mels=128,
+    fmin=80,
+    fmax=22000,
+    return_energy=False,
+):
+    global mel_basis_44k
+    D = librosa.stft(
+        signal,
         n_fft=fft_size,
-        n_mels=num_mels,
-        fmin=fmin,
-        fmax=fmax,
+        hop_length=hop_size,
+        win_length=win_length,
+        window=window,
+        pad_mode='reflect',
     )
+    S, _ = librosa.magphase(D)
+    if mel_basis_44k is None:
+        mel_basis_44k = librosa.filters.mel(
+            sr=sampling_rate,
+            n_fft=fft_size,
+            n_mels=num_mels,
+            fmin=fmin,
+            fmax=fmax,
+        )
     mel = np.log10(np.maximum(np.dot(mel_basis, S), 1e-10)).T
     mel = (mel - MEL_MEAN) / MEL_STD
     if return_energy:

@@ -148,6 +148,8 @@ def melgan(model: str = 'universal-1024', quantized: bool = False, **kwargs):
         * ``'universal'`` - Universal MelGAN trained on multiple speakers.
         * ``'universal-1024'`` - Universal MelGAN with 1024 filters trained on multiple speakers.
         * ``'universal-384'`` - Universal MelGAN with 384 filters trained on multiple speakers.
+        * ``'universal-44k'`` - Universal MelGAN trained on multiple speakers with 44100 sampling rate.
+        * ``'universal-1024-44k'`` - Universal MelGAN with 1024 filters trained on multiple speakers with 44100 sampling rate.
 
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
