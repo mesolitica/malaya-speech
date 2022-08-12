@@ -7,9 +7,11 @@ from malaya_speech.train.model.voicefixer.nvsr import NVSR as BaseNVSR
 
 
 class VoiceFixer(BaseVoiceFixer):
-    def __init__(self, pth, vocoder_pth):
+    def __init__(self, pth, vocoder_pth, model, name):
         super(VoiceFixer, self).__init__(pth, vocoder_pth)
         self.eval()
+        self.__model__ = model
+        self.__name__ = name
 
     def predict(self, input, remove_higher_frequency: bool = True):
         """
@@ -58,9 +60,11 @@ class VoiceFixer(BaseVoiceFixer):
 
 
 class NVSR(BaseNVSR):
-    def __init__(self, pth, vocoder_pth):
+    def __init__(self, pth, vocoder_pth, model, name):
         super(NVSR, self).__init__(pth, vocoder_pth)
         self.eval()
+        self.__model__ = model
+        self.__name__ = name
 
     def predict(self, input):
         """
@@ -69,8 +73,6 @@ class NVSR(BaseNVSR):
         input: np.array
             np.array or malaya_speech.model.frame.Frame,
             must an audio with 44100 sampling rate.
-        remove_higher_frequency: bool, optional (default = True)
-            Remove high frequency before neural upsampling.
 
         Returns
         -------

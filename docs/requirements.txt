@@ -9,12 +9,13 @@ python_speech_features
 soundfile
 tqdm
 protobuf==3.13.0
-voicefixer==0.0.18
 unidecode
+--extra-index-url https://download.pytorch.org/whl/torch_stable.html
+torch==1.12.1
 nbconvert==5.6.1
 nbformat==5.0.7
 nbsphinx==0.8.0
-ipython
+ipython==7.17.0
 pygments==2.7.0
 Sphinx==3.5.4
 sphinx-rtd-theme==0.5.0
@@ -28,8 +29,8 @@ tornado==6.0.4
 docutils==0.16
 Jinja2==2.11.2
 malaya-boilerplate
-sphinx-autodoc-typehints
+sphinx-autodoc-typehints==1.19.2
 sphinx-book-theme==0.3.3
 sphinx-copybutton==0.5.0
-sphinx-remove-toctrees
+sphinx-remove-toctrees==0.0.3
 MarkupSafe==1.1.1

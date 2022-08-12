@@ -47,7 +47,7 @@ def available_tfgan():
     """
     logger.info('Only calculate SDR, ISR, SAR on voice sample. Higher is better.')
 
-    return describe_availability(_availability_unet)
+    return describe_availability(_availability_tfgan)
 
 
 @check_type

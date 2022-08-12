@@ -178,6 +178,24 @@ malaya_speech.model.webrtc.WebRTC
 .. autoclass:: malaya_speech.model.webrtc.WebRTC()
     :members:
 
+malaya_speech.torch_model.super_resolution.VoiceFixer
+------------------------------------------------------
+
+.. autoclass:: malaya_speech.torch_model.super_resolution.VoiceFixer()
+    :members:
+
+malaya_speech.torch_model.super_resolution.NVSR
+------------------------------------------------------
+
+.. autoclass:: malaya_speech.torch_model.super_resolution.NVSR()
+    :members:
+
+malaya_speech.torch_model.synthesis.VITS
+------------------------------------------------------
+
+.. autoclass:: malaya_speech.torch_model.synthesis.VITS()
+    :members:
+
 malaya_speech.pipeline
 -----------------------------------
 

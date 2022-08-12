@@ -17,4 +17,8 @@ def load_tfgan(model):
     files = download_files(repositories[model], s3_file)
 
     files_vocoder = download_files('huseinzol05/TFGAN', s3_file)
-    return model_classes[model](files['model'], files_vocoder['model'])
+    return model_classes[model](
+        files['model'],
+        files_vocoder['model'],
+        model=model,
+        name='super-resolution')
