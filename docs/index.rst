@@ -16,20 +16,9 @@ Contents:
    :maxdepth: 2
    :caption: Getting Started
 
+   installation
    Dataset
-   huggingface-repository
-   load-cache
-   Api
    Contributing
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Optimization
-
-   gpu-environment
-   devices
-   precision-mode
-   quantization
 
 .. toctree::
    :maxdepth: 2
@@ -190,4 +179,5 @@ Contents:
    :maxdepth: 2
    :caption: Misc
 
+   Api
    Donation
