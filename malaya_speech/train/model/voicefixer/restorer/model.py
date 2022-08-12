@@ -3,16 +3,12 @@
 import torch.utils
 from malaya_speech.train.model.voicefixer.tools.mel_scale import MelScale
 import torch.utils.data
-import matplotlib.pyplot as plt
-import librosa.display
 from malaya_speech.train.model.voicefixer.vocoder.base import Vocoder
 from malaya_speech.train.model.voicefixer.tools.pytorch_util import *
 from malaya_speech.train.model.voicefixer.restorer.model_kqq_bn import UNetResComplex_100Mb
 from malaya_speech.train.model.voicefixer.tools.random_ import *
 from malaya_speech.train.model.voicefixer.tools.wav import *
 from malaya_speech.train.model.voicefixer.tools.modules.fDomainHelper import FDomainHelper
-
-from matplotlib import cm
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 EPS = 1e-8
