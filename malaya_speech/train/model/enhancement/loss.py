@@ -1,4 +1,12 @@
 import tensorflow as tf
+import numpy as np
+
+
+def snr_np(y_, y):
+    sqrt_l2_loss = np.sqrt(np.mean((y_ - y) ** 2 + 1e-6, axis=1))
+    sqrn_l2_norm = np.sqrt(np.mean(y ** 2, axis=1))
+    snr = 20 * np.log(sqrn_l2_norm / sqrt_l2_loss + 1e-8) / np.log(10.0)
+    return np.mean(snr)
 
 
 def snr(y_, y):

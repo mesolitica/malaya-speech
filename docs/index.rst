@@ -142,7 +142,7 @@ Contents:
    
    load-noise-reduction
    load-speech-enhancement
-   load-super-resolution
+   load-super-resolution-unet
 
 .. toctree::
    :maxdepth: 2

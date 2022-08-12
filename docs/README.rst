@@ -21,20 +21,14 @@
 Documentation
 --------------
 
-Proper documentation is available at https://malaya-speech.readthedocs.io/
+Stable released documentation is available at https://malaya-speech.readthedocs.io/en/stable/
 
 Installing from the PyPI
 ----------------------------------
 
-CPU version
 ::
 
     $ pip install malaya-speech
-
-GPU version
-::
-
-    $ pip install malaya-speech[gpu]
 
 Only **Python >= 3.6.0**, **Tensorflow >= 1.15.0**, and **PyTorch >= 1.10** are supported.
 
@@ -49,7 +43,7 @@ Install from `master` branch,
 
 We recommend to use **virtualenv** for development. 
 
-Documentation at https://malaya-speech.readthedocs.io/en/latest/
+While development released documentation is available at https://malaya-speech.readthedocs.io/en/latest/
 
 Features
 --------

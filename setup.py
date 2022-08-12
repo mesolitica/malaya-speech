@@ -27,9 +27,6 @@ setuptools.setup(
     install_requires=req,
     extras_require={
         'full': ['pydub', 'pysndfx', 'pyroomacoustics'],
-        'gpu': ['tensorflow-gpu>=1.15'],
-        'cpu': ['tensorflow>=1.15'],
-        '': ['tensorflow>=1.15'],
     },
     license='MIT',
     classifiers=[

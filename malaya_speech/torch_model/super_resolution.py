@@ -2,18 +2,13 @@ import torch.nn as nn
 import torch
 from malaya_speech.model.frame import Frame
 from malaya_speech.utils.torch_utils import to_tensor_cuda, to_numpy, from_log
-
-try:
-    import voicefixer
-except Exception as e:
-    raise ModuleNotFoundError(
-        'voicefixer not installed. Please install it by `pip3 install voicefixer==0.0.18` and try again.'
-    )
+from malaya_speech.train.model.voicefixer.base import VoiceFixer as BaseVoiceFixer
+from malaya_speech.train.model.voicefixer.nvsr import NVSR as BaseNVSR
 
 
-class VoiceFixer(voicefixer.VoiceFixer):
-    def __init__(self):
-        super(VoiceFixer, self).__init__()
+class VoiceFixer(BaseVoiceFixer):
+    def __init__(self, pth, vocoder_pth):
+        super(VoiceFixer, self).__init__(pth, vocoder_pth)
         self.eval()
 
     def predict(self, input, remove_higher_frequency: bool = True):
@@ -60,3 +55,27 @@ class VoiceFixer(voicefixer.VoiceFixer):
 
     def forward(self, input, remove_higher_frequency: bool = True):
         return self.predict(input=input, remove_higher_frequency=remove_higher_frequency)
+
+
+class NVSR(BaseNVSR):
+    def __init__(self, pth, vocoder_pth):
+        super(NVSR, self).__init__(pth, vocoder_pth)
+        self.eval()
+
+    def predict(self, input):
+        """
+        Parameters
+        ----------
+        input: np.array
+            np.array or malaya_speech.model.frame.Frame,
+            must an audio with 44100 sampling rate.
+        remove_higher_frequency: bool, optional (default = True)
+            Remove high frequency before neural upsampling.
+
+        Returns
+        -------
+        result: np.array
+        """
+
+        input = input.array if isinstance(input, Frame) else input
+        return self.forward(input)
