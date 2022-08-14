@@ -1,5 +1,9 @@
 from malaya_speech.supervised import separation
 from herpetologist import check_type
+from malaya_speech.utils import describe_availability
+import logging
+
+logger = logging.getLogger(__name__)
 
 _availability = {
     'fastsep-2': {
@@ -24,9 +28,9 @@ def available_deep_wav():
     """
     List available FastSep models trained on raw 8k wav.
     """
-    from malaya_speech.utils import describe_availability
+    logger.info('Tested on 1k samples')
 
-    return describe_availability(_availability, text='Tested on 1k samples')
+    return describe_availability(_availability)
 
 
 @check_type

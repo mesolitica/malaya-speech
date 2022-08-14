@@ -1,5 +1,6 @@
 from malaya_speech.supervised import vocoder
 from herpetologist import check_type
+from malaya_speech.utils import describe_availability
 
 _melgan_availability = {
     'male': {
@@ -105,7 +106,6 @@ def available_melgan():
     """
     List available MelGAN Mel-to-Speech models.
     """
-    from malaya_speech.utils import describe_availability
 
     return describe_availability(_melgan_availability)
 
@@ -114,7 +114,6 @@ def available_mbmelgan():
     """
     List available Multiband MelGAN Mel-to-Speech models.
     """
-    from malaya_speech.utils import describe_availability
 
     return describe_availability(_mbmelgan_availability)
 
@@ -123,7 +122,6 @@ def available_hifigan():
     """
     List available HiFiGAN Mel-to-Speech models.
     """
-    from malaya_speech.utils import describe_availability
 
     return describe_availability(_hifigan_availability)
 
@@ -244,3 +242,10 @@ def hifigan(model: str = 'universal-768', quantized: bool = False, **kwargs):
         quantized=quantized,
         **kwargs
     )
+
+
+@check_type
+def hifigan_torch(model: str = 'universal-768', **kwargs):
+    """
+    Load HiFiGAN Vocoder PyTorch model.
+    """

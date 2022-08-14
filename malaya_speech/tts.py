@@ -241,70 +241,56 @@ def available_tacotron2():
     """
     List available Tacotron2, Text to Mel models.
     """
-    from malaya_speech.utils import describe_availability
 
-    return describe_availability(
-        _tacotron2_availability,
-        text='`husein`, `haqkiem` and `female-singlish` combined loss from training set',
-    )
+    logger.info('`husein`, `haqkiem` and `female-singlish` combined loss from training set')
+
+    return describe_availability(_tacotron2_availability)
 
 
 def available_fastspeech2():
     """
     List available FastSpeech2, Text to Mel models.
     """
-    from malaya_speech.utils import describe_availability
 
-    return describe_availability(
-        _fastspeech2_availability,
-        text='`husein`, `haqkiem` and `female-singlish` combined loss from training set',
-    )
+    logger.info('`husein`, `haqkiem` and `female-singlish` combined loss from training set')
+
+    return describe_availability(_fastspeech2_availability)
 
 
 def available_fastpitch():
     """
     List available FastPitch, Text to Mel models.
     """
-    from malaya_speech.utils import describe_availability
 
-    return describe_availability(
-        _fastpitch_availability,
-        text='`husein` and `haqkiem` combined loss from training set',
-    )
+    logger.info('`husein` and `haqkiem` combined loss from training set')
+
+    return describe_availability(_fastpitch_availability)
 
 
 def available_glowtts():
     """
     List available GlowTTS, Text to Mel models.
     """
-    from malaya_speech.utils import describe_availability
 
-    return describe_availability(
-        _glowtts_availability,
-        text='`haqkiem` and `female-singlish` combined loss from training set',
-    )
+    logger.info('`haqkiem` and `female-singlish` combined loss from training set')
+
+    return describe_availability(_glowtts_availability)
 
 
 def available_lightspeech():
     """
     List available LightSpeech, Text to Mel models.
     """
-    from malaya_speech.utils import describe_availability
 
-    return describe_availability(
-        _lightspeech_availability,
-    )
+    return describe_availability(_lightspeech_availability)
 
 
 def available_vits():
     """
     List available VITS, End-to-End models.
     """
-    from malaya_speech.utils import describe_availability
 
-    return describe_availability(
-        _vits_availability,
-    )
+    return describe_availability(_vits_availability)
 
 
 def load_text_ids(

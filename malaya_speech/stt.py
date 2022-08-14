@@ -1,5 +1,6 @@
 from malaya_speech.supervised import stt, lm
 from herpetologist import check_type
+from malaya_speech.utils import describe_availability
 import json
 
 _transducer_availability = {
@@ -87,10 +88,19 @@ _transducer_availability = {
     'xs-squeezeformer': {
         'Size (MB)': 51.9,
         'Quantized Size (MB)': 23.4,
-        'WER': 0.2163437,
-        'CER': 0.0844854,
-        'WER-LM': 0.2015538,
-        'CER-LM': 0.0798542,
+        'WER': 0.19809173,
+        'CER': 0.07903460,
+        'WER-LM': 0.19884239,
+        'CER-LM': 0.07812183,
+        'Language': ['malay'],
+    },
+    'sm-squeezeformer': {
+        'Size (MB)': 147,
+        'Quantized Size (MB)': 47.4,
+        'WER': 0.176126847,
+        'CER': 0.0680792,
+        'WER-LM': 0.1687297,
+        'CER-LM': 0.061468,
         'Language': ['malay'],
     }
 }
@@ -254,7 +264,6 @@ def available_ctc():
     """
     List available Encoder-CTC ASR models.
     """
-    from malaya_speech.utils import describe_availability
 
     return describe_availability(_ctc_availability)
 
@@ -263,7 +272,6 @@ def available_language_model():
     """
     List available Language Model for CTC.
     """
-    from malaya_speech.utils import describe_availability
 
     return describe_availability(_language_model_availability)
 
@@ -272,7 +280,6 @@ def available_transducer():
     """
     List available Encoder-Transducer ASR models.
     """
-    from malaya_speech.utils import describe_availability
 
     return describe_availability(_transducer_availability)
 
@@ -281,7 +288,6 @@ def available_huggingface():
     """
     List available HuggingFace Malaya-Speech ASR models.
     """
-    from malaya_speech.utils import describe_availability
 
     return describe_availability(_huggingface_availability)
 

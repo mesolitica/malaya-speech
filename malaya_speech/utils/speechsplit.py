@@ -1,4 +1,5 @@
 import numpy as np
+from malaya_speech.utils.importer import pyworld_exist, pysptk_exist, pw, sptk
 
 A = np.array(
     [1.0, -4.97233633, 9.88972758, -9.83516149, 4.89048558, -0.97271534]
@@ -32,7 +33,9 @@ def speaker_normalization(f0, index_nonzero, mean_f0, std_f0):
 
 
 def get_f0_sptk(wav, lo, hi):
-    from pysptk import sptk
+
+    if not pysptk_exist:
+        raise Exception('pysptk not installed. Please install it by `pip3 install pysptk` and try again.')
 
     f0_rapt = sptk.rapt(
         wav.astype(np.float32) * 32768, sr, 256, min=lo, max=hi, otype=2
@@ -45,8 +48,10 @@ def get_f0_sptk(wav, lo, hi):
     return speaker_normalization(f0_rapt, index_nonzero, mean_f0, std_f0)
 
 
-def get_fo_pyworld(wav):
-    import pyworld as pw
+def get_f0_pyworld(wav):
+
+    if not pyworld_exist:
+        raise Exception('pyworld not installed. Please install it by `pip3 install pyworld` and try again.')
 
     _f0, t = pw.dio(wav, sr, f0_ceil=7600, frame_period=1000 * 256 / sr)
     f0_rapt = pw.stonemask(wav.astype(np.double), _f0, t, sr)

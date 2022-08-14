@@ -1,5 +1,9 @@
 from malaya_speech.supervised import classification
 from herpetologist import check_type
+from malaya_speech.utils import describe_availability
+import logging
+
+logger = logging.getLogger(__name__)
 
 # EER calculation, https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/speaker-embedding/calculate-EER
 # EER tested on VoxCeleb2 test set.
@@ -59,12 +63,9 @@ def available_model():
     """
     List available speaker vector deep models.
     """
-    from malaya_speech.utils import describe_availability
+    logger.info('tested on VoxCeleb2 test set. Lower EER is better.')
 
-    return describe_availability(
-        _availability,
-        text='tested on VoxCeleb2 test set. Lower EER is better.',
-    )
+    return describe_availability(_availability)
 
 
 @check_type

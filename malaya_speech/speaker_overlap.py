@@ -1,5 +1,9 @@
 from malaya_speech.supervised import classification
 from herpetologist import check_type
+from malaya_speech.utils import describe_availability
+import logging
+
+logger = logging.getLogger(__name__)
 
 _availability = {
     'vggvox-v2': {
@@ -19,7 +23,6 @@ def available_model():
     """
     List available speaker overlap deep models.
     """
-    from malaya_speech.utils import describe_availability
 
     return describe_availability(_availability)
 

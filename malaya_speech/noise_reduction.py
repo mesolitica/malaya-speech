@@ -1,8 +1,12 @@
 from malaya_speech.supervised import unet
 from malaya_speech.utils.astype import int_to_float
 from herpetologist import check_type
+from malaya_speech.utils import describe_availability
 import librosa
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 
 # https://github.com/sigsep/sigsep-mus-eval/blob/master/museval/__init__.py#L364
 # Only calculate SDR, ISR, SAR on voice sample
@@ -45,12 +49,10 @@ def available_model():
     """
     List available Noise Reduction deep learning models.
     """
-    from malaya_speech.utils import describe_availability
 
-    return describe_availability(
-        _availability,
-        text='Only calculate SDR, ISR, SAR on voice sample. Higher is better.',
-    )
+    logger.info('Only calculate SDR, ISR, SAR on voice sample. Higher is better.')
+
+    return describe_availability(_availability)
 
 
 @check_type

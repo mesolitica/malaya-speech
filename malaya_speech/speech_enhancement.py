@@ -1,5 +1,9 @@
 from malaya_speech.supervised import unet
 from herpetologist import check_type
+from malaya_speech.utils import describe_availability
+import logging
+
+logger = logging.getLogger(__name__)
 
 # https://github.com/sigsep/sigsep-mus-eval/blob/master/museval/__init__.py#L364
 # Only calculate SDR, ISR, SAR on voice sample
@@ -56,24 +60,18 @@ def available_deep_masking():
     """
     List available Speech Enhancement STFT masking deep learning model.
     """
-    from malaya_speech.utils import describe_availability
+    logger.info('Only calculate SDR, ISR, SAR on voice sample. Higher is better.')
 
-    return describe_availability(
-        _masking_availability,
-        text='Only calculate SDR, ISR, SAR on voice sample. Higher is better.',
-    )
+    return describe_availability(_masking_availability)
 
 
 def available_deep_enhance():
     """
     List available Speech Enhancement UNET Waveform sampling deep learning model.
     """
-    from malaya_speech.utils import describe_availability
+    logger.info('Only calculate SDR, ISR, SAR on voice sample. Higher is better.')
 
-    return describe_availability(
-        _sampling_availability,
-        text='Only calculate SDR, ISR, SAR on voice sample. Higher is better.',
-    )
+    return describe_availability(_sampling_availability)
 
 
 @check_type

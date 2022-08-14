@@ -7,12 +7,7 @@ import decimal
 import math
 from python_speech_features import fbank
 from malaya_speech.utils.constant import MEL_MEAN, MEL_STD, ECAPA_TDNN_WINDOWS
-
-pyworld_exist = True
-try:
-    import pyworld as pw
-except Exception as e:
-    pyworld_exist = False
+from malaya_speech.utils.importer import pyworld_exist, pw
 
 mel_basis = None
 mel_basis_44k = None

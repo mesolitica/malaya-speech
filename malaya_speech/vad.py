@@ -1,5 +1,6 @@
 from malaya_speech.model.webrtc import WebRTC
 from malaya_speech.supervised import classification
+from malaya_speech.utils import describe_availability
 from herpetologist import check_type
 
 _availability = {
@@ -40,7 +41,6 @@ def available_model():
     """
     List available VAD deep models.
     """
-    from malaya_speech.utils import describe_availability
 
     return describe_availability(_availability)
 

@@ -1,5 +1,6 @@
 from herpetologist import check_type
 from malaya_speech.supervised import voice_conversion
+from malaya_speech.utils import describe_availability
 
 _availability = {
     'fastvc-32-vggvox-v2': {
@@ -19,7 +20,6 @@ def available_deep_conversion():
     """
     List available Voice Conversion models.
     """
-    from malaya_speech.utils import describe_availability
 
     return describe_availability(_availability)
 

@@ -1,4 +1,6 @@
 from herpetologist import check_type
+from malaya_speech.model.annotation import Annotation
+from malaya_speech.model.frame import Segment
 
 
 @check_type
@@ -14,8 +16,6 @@ def load(file: str):
     -------
     result : Dict[str, malaya_speech.model.annotation.Annotation]
     """
-    from malaya_speech.model.annotation import Annotation
-    from malaya_speech.model.frame import Segment
 
     try:
         import pandas as pd

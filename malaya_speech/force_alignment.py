@@ -1,5 +1,6 @@
 from malaya_speech.supervised import stt
 from malaya_speech.stt import _ctc_availability, _huggingface_availability
+from malaya_speech.utils import describe_availability
 from herpetologist import check_type
 
 _availability = {
@@ -25,7 +26,6 @@ def available_transducer():
     """
     List available Encoder-Transducer Aligner models.
     """
-    from malaya_speech.utils import describe_availability
 
     return describe_availability(_availability)
 
@@ -34,7 +34,6 @@ def available_ctc():
     """
     List available Encoder-CTC Aligner models.
     """
-    from malaya_speech.utils import describe_availability
 
     return describe_availability(_ctc_availability)
 
@@ -43,7 +42,6 @@ def available_huggingface():
     """
     List available HuggingFace Malaya-Speech Aligner models.
     """
-    from malaya_speech.utils import describe_availability
 
     return describe_availability(_huggingface_availability)
 

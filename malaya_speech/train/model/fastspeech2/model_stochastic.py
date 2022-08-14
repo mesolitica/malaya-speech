@@ -17,6 +17,7 @@
 import tensorflow.compat.v1 as tf
 from ..fastspeech.layer import get_initializer
 from ..fastspeech.model import Model as FastSpeech
+from ..vits.model import StochasticDurationPredictor
 
 
 class FastSpeechVariantPredictor(tf.keras.layers.Layer):
@@ -95,7 +96,7 @@ class FastSpeechVariantPredictor(tf.keras.layers.Layer):
 class Model(FastSpeech):
     """TF Fastspeech module."""
 
-    def __init__(self, config, duration_predictor=None, **kwargs):
+    def __init__(self, config, **kwargs):
         """Init layers for fastspeech."""
         super().__init__(config, **kwargs)
         self.f0_predictor = FastSpeechVariantPredictor(
@@ -104,8 +105,15 @@ class Model(FastSpeech):
         self.energy_predictor = FastSpeechVariantPredictor(
             config, dtype=tf.float32, name='energy_predictor'
         )
-        self.duration_predictor = FastSpeechVariantPredictor(
-            config, dtype=tf.float32, name='duration_predictor'
+
+        self.duration_predictor = StochasticDurationPredictor(
+            config.variant_predictor_filter,
+            config.variant_predictor_filter,
+            kernel_size=3,
+            p_dropout=config.variant_predictor_dropout_rate,
+            n_flows=4,
+            gin_channels=0,
+            name='duration_predictor',
         )
 
         # define f0_embeddings and energy_embeddings
@@ -159,6 +167,7 @@ class Model(FastSpeech):
     ):
         speaker_ids = tf.convert_to_tensor([0], tf.int32)
         attention_mask = tf.math.not_equal(input_ids, 0)
+        x_mask = tf.expand_dims(tf.cast(attention_mask, tf.float32), 2)
         embedding_output = self.embeddings(
             [input_ids, speaker_ids], training=training
         )
@@ -170,8 +179,17 @@ class Model(FastSpeech):
         # energy predictor, here use last_encoder_hidden_states, u can use more hidden_states layers
         # rather than just use last_hidden_states of encoder for energy_predictor.
         duration_outputs = self.duration_predictor(
-            [last_encoder_hidden_states, speaker_ids, attention_mask]
-        )  # [batch_size, length]
+            tf.stop_gradient(last_encoder_hidden_states),
+            x_mask,
+            tf.cast(tf.expand_dims(duration_gts, -1), tf.float32),
+            g=None, training=training
+        )
+        duration_outputs = duration_outputs / tf.reduce_sum(x_mask)
+        duration_outputs = tf.reduce_sum(duration_outputs)
+
+        # duration_outputs = self.duration_predictor(
+        #     [last_encoder_hidden_states, speaker_ids, attention_mask]
+        # )  # [batch_size, length]
 
         f0_outputs = self.f0_predictor(
             [last_encoder_hidden_states, speaker_ids, attention_mask],
@@ -236,10 +254,12 @@ class Model(FastSpeech):
         return outputs
 
     def inference(
-        self, input_ids, speed_ratios, f0_ratios, energy_ratios, **kwargs
+        self, input_ids, speed_ratios, f0_ratios, energy_ratios, noise_scale_w, **kwargs
     ):
         speaker_ids = tf.convert_to_tensor([0], tf.int32)
         attention_mask = tf.math.not_equal(input_ids, 0)
+        x_mask = tf.expand_dims(tf.cast(attention_mask, tf.float32), 2)
+
         embedding_output = self.embeddings(
             [input_ids, speaker_ids], training=False
         )
@@ -248,20 +268,26 @@ class Model(FastSpeech):
         )
         last_encoder_hidden_states = encoder_output[0]
 
-        # expand ratios
-        speed_ratios = tf.expand_dims(speed_ratios, 1)  # [B, 1]
         f0_ratios = tf.expand_dims(f0_ratios, 1)  # [B, 1]
         energy_ratios = tf.expand_dims(energy_ratios, 1)  # [B, 1]
 
         # energy predictor, here use last_encoder_hidden_states, u can use more hidden_states layers
         # rather than just use last_hidden_states of encoder for energy_predictor.
-        duration_outputs = self.duration_predictor(
-            [last_encoder_hidden_states, speaker_ids, attention_mask]
-        )  # [batch_size, length]
-        duration_outputs = tf.nn.relu(tf.math.exp(duration_outputs) - 1.0)
-        duration_outputs = tf.cast(
-            tf.math.round(duration_outputs * speed_ratios), tf.int32
-        )
+        # duration_outputs = self.duration_predictor(
+        #     [last_encoder_hidden_states, speaker_ids, attention_mask]
+        # )  # [batch_size, length]
+        # duration_outputs = tf.nn.relu(tf.math.exp(duration_outputs) - 1.0)
+        # duration_outputs = tf.cast(
+        #     tf.math.round(duration_outputs * speed_ratios), tf.int32
+        # )
+
+        logw = self.duration_predictor(last_encoder_hidden_states,
+                                       x_mask,
+                                       g=None,
+                                       reverse=True,
+                                       noise_scale=noise_scale_w, training=False)
+        w = tf.math.exp(logw) * x_mask
+        duration_outputs = tf.cast(tf.math.ceil(w * speed_ratios)[:, :, 0], tf.int32)
 
         f0_outputs = self.f0_predictor(
             [last_encoder_hidden_states, speaker_ids, attention_mask],

@@ -1,5 +1,9 @@
 from malaya_speech.supervised import classification
+from malaya_speech.utils import describe_availability
 from herpetologist import check_type
+import logging
+
+logger = logging.getLogger(__name__)
 
 _availability = {
     'vggvox-v2': {
@@ -32,12 +36,10 @@ def available_model():
     """
     List available age detection deep models.
     """
-    from malaya_speech.utils import describe_availability
 
-    return describe_availability(
-        _availability,
-        text='last accuracy during training session before early stopping.',
-    )
+    logger.info('last accuracy during training session before early stopping.')
+
+    return describe_availability(_availability)
 
 
 @check_type

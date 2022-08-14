@@ -8,7 +8,7 @@ from malaya_speech.utils.read import resample
 from malaya_speech.utils.speechsplit import (
     quantize_f0_numpy,
     get_f0_sptk,
-    get_fo_pyworld,
+    get_f0_pyworld,
 )
 from malaya_speech.model.abstract import Abstract
 
@@ -118,7 +118,7 @@ class FastSpeechSplit(Abstract):
             lo, hi = self._freqs.get(gender, [50, 250])
             f0 = get_f0_sptk(x, lo, hi)
         else:
-            f0 = get_fo_pyworld(x)
+            f0 = get_f0_pyworld(x)
         f0 = np.expand_dims(f0, -1)
         mel = universal_mel(x)
         v = self._speaker_vector([x_16k])[0]

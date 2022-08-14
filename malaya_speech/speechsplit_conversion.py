@@ -1,5 +1,6 @@
 from herpetologist import check_type
 from malaya_speech.supervised import speechsplit_conversion
+from malaya_speech.utils import describe_availability
 
 _availability = {
     'pysptk': {
@@ -8,8 +9,8 @@ _availability = {
             'Quantized Size (MB)': 59.2,
         },
         'fastspeechsplit-v2-vggvox-v2': {
-            'Size (MB)': 105,
-            'Quantized Size (MB)': 411,
+            'Size (MB)': 411,
+            'Quantized Size (MB)': 105,
         },
     },
     'pyworld': {
@@ -18,8 +19,8 @@ _availability = {
             'Quantized Size (MB)': 59.2,
         },
         'fastspeechsplit-v2-vggvox-v2': {
-            'Size (MB)': 105,
-            'Quantized Size (MB)': 411,
+            'Size (MB)': 411,
+            'Quantized Size (MB)': 105,
         },
     },
 }
@@ -35,11 +36,18 @@ def check_f0_mode(f0_mode='pysptk'):
     return f0_mode
 
 
-def available_deep_conversion(f0_mode='pysptk'):
+def available_deep_conversion(f0_mode: str = 'pysptk'):
     """
     List available Voice Conversion models.
+
+    Parameters
+    ----------
+    f0_mode : str, optional (default='pysptk')
+        F0 conversion supported. Allowed values:
+
+        * ``'pysptk'`` - https://github.com/r9y9/pysptk, sensitive towards gender.
+        * ``'pyworld'`` - https://pypi.org/project/pyworld/
     """
-    from malaya_speech.utils import describe_availability
 
     f0_mode = check_f0_mode(f0_mode=f0_mode)
     return describe_availability(_availability[f0_mode])
@@ -56,13 +64,13 @@ def deep_conversion(
 
     Parameters
     ----------
-    model : str, optional (default='fastvc-32-vggvox-v2')
+    model : str, optional (default='fastspeechsplit-v2-vggvox-v2')
         Model architecture supported. Allowed values:
 
         * ``'fastspeechsplit-vggvox-v2'`` - FastSpeechSplit with VGGVox-v2 Speaker Vector.
         * ``'fastspeechsplit-v2-vggvox-v2'`` - FastSpeechSplit V2 with VGGVox-v2 Speaker Vector.
 
-    f0_mode : str, optional (default='pysptk)
+    f0_mode : str, optional (default='pysptk')
         F0 conversion supported. Allowed values:
 
         * ``'pysptk'`` - https://github.com/r9y9/pysptk, sensitive towards gender.
@@ -83,24 +91,6 @@ def deep_conversion(
         raise ValueError(
             "model not supported, please check supported models from `malaya_speech.speechsplit_conversion.available_deep_conversion(f0_mode = '{f0_mode}')`."
         )
-
-    if f0_mode == 'pysptk':
-        try:
-            from pysptk import sptk
-
-        except BaseException:
-            raise ModuleNotFoundError(
-                'pysptk not installed. Please install it by `pip install pysptk` and try again.'
-            )
-
-    if f0_mode == 'pyworld':
-        try:
-            import pyworld as pw
-
-        except BaseException:
-            raise ModuleNotFoundError(
-                'pyworld not installed. Please install it by `pip install pyworld` and try again.'
-            )
 
     return speechsplit_conversion.load(
         model=model,
