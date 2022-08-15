@@ -163,6 +163,7 @@ class Model(FastSpeech):
         f0_gts,
         energy_gts,
         training=True,
+        detach=True,
         **kwargs,
     ):
         speaker_ids = tf.convert_to_tensor([0], tf.int32)
@@ -178,11 +179,17 @@ class Model(FastSpeech):
 
         # energy predictor, here use last_encoder_hidden_states, u can use more hidden_states layers
         # rather than just use last_hidden_states of encoder for energy_predictor.
+
+        if detach:
+            input_duration = tf.stop_gradient(last_encoder_hidden_states)
+        else:
+            input_duration = last_encoder_hidden_states
         duration_outputs = self.duration_predictor(
-            tf.stop_gradient(last_encoder_hidden_states),
+            input_duration,
             x_mask,
             tf.cast(tf.expand_dims(duration_gts, -1), tf.float32),
-            g=None, training=training
+            g=None,
+            training=training
         )
         duration_outputs = duration_outputs / tf.reduce_sum(x_mask)
         duration_outputs = tf.reduce_sum(duration_outputs)
