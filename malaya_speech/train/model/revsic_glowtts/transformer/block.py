@@ -57,8 +57,7 @@ class Block(tf.keras.Model):
             tf.keras.layers.Dropout(dropout),
             tf.keras.layers.LayerNormalization(axis=-1)])
 
-    def call(self, inputs: tf.Tensor, mask: tf.Tensor) \
-            -> Tuple[tf.Tensor, tf.Tensor]:
+    def call(self, inputs: tf.Tensor, mask: tf.Tensor, training=True):
         """Transform the inputs.
         Args:
             inputs: [tf.float32; [B, T, C]], input tensor.
@@ -68,11 +67,11 @@ class Block(tf.keras.Model):
             attn: [tf.float32; [B, K, T, T]], attention weights.
         """
         # [B, T, C], [B, K, T, T]
-        x, attn = self.attn(inputs, mask)
+        x, attn = self.attn(inputs, mask, training=training)
         # [B, T, C], assume inputs tensor is already masked
-        x = self.norm1(x + inputs) * mask[..., None]
+        x = self.norm1(x + inputs, training=training) * mask[..., None]
         # [B, T, C]
-        y = self.ffn(x) * mask[..., None]
+        y = self.ffn(x, training=training) * mask[..., None]
         # [B, T, C]
-        y = self.norm2(y + x) * mask[..., None]
+        y = self.norm2(y + x, training=training) * mask[..., None]
         return y, attn

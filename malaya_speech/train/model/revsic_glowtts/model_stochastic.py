@@ -32,11 +32,12 @@ from .durator import DurationPredictor
 from .flow import WaveNetFlow
 from .transformer import Transformer
 from ..utils import shape_list
+from ..vits.model import StochasticDurationPredictor
 
 
 class Model(tf.keras.Model):
     """Glow-TTS: A Generative Flow for Text-to-Speech
-        via Monotonic Alignment Search, Kim et al. In NeurIPS 2020. 
+        via Monotonic Alignment Search, Kim et al. In NeurIPS 2020.
     """
     DURATION_MAX = 80
 
@@ -50,13 +51,20 @@ class Model(tf.keras.Model):
         self.factor = config.factor
         self.temperature = config.temperature
         self.length_scale = config.length_scale
+        self.noise_scale_w = config.noise_scale_w
         self.embedding = tf.keras.layers.Embedding(
             config.vocabs, config.channels)
         self.encoder = Transformer(config)
         self.decoder = WaveNetFlow(config)
-        self.durator = DurationPredictor(
-            config.dur_layers, config.channels,
-            config.dur_kernel, config.dur_dropout)
+        self.durator = StochasticDurationPredictor(
+            config.channels,
+            config.channels,
+            kernel_size=3,
+            p_dropout=config.dur_dropout,
+            n_flows=4,
+            gin_channels=0,
+            name='duration_predictor',
+        )
         # mean-only training
         self.proj_mu = tf.keras.layers.Dense(config.neck)
 
@@ -82,7 +90,14 @@ class Model(tf.keras.Model):
         mean = self.proj_mu(hidden)
 
         # [B, S]
-        duration = self.quantize(self.durator(hidden, mask, training=training), mask)
+        x_mask = tf.expand_dims(mask, 2)
+        logw = self.durator(hidden,
+                            x_mask,
+                            g=None,
+                            reverse=True,
+                            noise_scale=self.noise_scale_w,
+                            training=False)
+        duration = self.quantize(logw, x_mask)
         # [B, T / F, S], [B, T / F]
         attn, mask = self.align(duration)
 
@@ -100,7 +115,8 @@ class Model(tf.keras.Model):
         return mel, mellen, attn
 
     def compute_loss(self, text: tf.Tensor, textlen: tf.Tensor,
-                     mel: tf.Tensor, mellen: tf.Tensor, training=True):
+                     mel: tf.Tensor, mellen: tf.Tensor, training=True) \
+            -> Tuple[tf.Tensor, Dict[str, tf.Tensor], tf.Tensor]:
         """Compute loss for glow-tts.
         Args:
             text: [tf.int32; [B, S]], input text.
@@ -148,15 +164,17 @@ class Model(tf.keras.Model):
         nll = tf.reduce_mean(
             nll / tf.cast(mellen * tf.shape(mean)[-1], tf.float32))
 
-        # [B, S]
-        logdur = self.durator(tf.stop_gradient(hidden), mask, training=training)
-        # [B, S]
-        gtdur = tf.math.log(tf.maximum(tf.reduce_sum(attn, axis=1), 1e-5)) * mask
-        # [B]
-        durloss = tf.reduce_sum(tf.square(logdur - gtdur), axis=-1) / \
-            tf.cast(mellen, tf.float32)
-        # []
-        durloss = tf.reduce_mean(durloss)
+        w = tf.reduce_sum(attn, 1)
+        x_mask = tf.expand_dims(mask, 2)
+        duration_outputs = self.durator(
+            tf.stop_gradient(hidden),
+            x_mask,
+            tf.expand_dims(w, -1),
+            g=None,
+            training=training
+        )
+        duration_outputs = duration_outputs / tf.reduce_sum(x_mask)
+        durloss = tf.reduce_sum(duration_outputs)
 
         # []
         loss = nll + durloss
@@ -172,10 +190,9 @@ class Model(tf.keras.Model):
             [tf.int32; [B, T]], duration.
         """
         # [B, T]
-        dur = tf.round(tf.exp(logdur))
-        # [B, T]
-        dur = tf.clip_by_value(dur, 1., Model.DURATION_MAX) * mask * self.length_scale
-        return tf.cast(dur, tf.int32)
+        w = tf.math.exp(logdur) * mask
+        duration_outputs = tf.cast(tf.math.ceil(w * self.length_scale)[:, :, 0], tf.int32)
+        return duration_outputs
 
     def fold(self, inputs: tf.Tensor, lengths: tf.Tensor) \
             -> Tuple[tf.Tensor, tf.Tensor]:

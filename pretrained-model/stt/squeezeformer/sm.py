@@ -20,7 +20,7 @@ import tensorflow as tf
 
 
 subwords = malaya_speech.subword.load('transducer.subword.subwords')
-config = malaya_speech.config.squeezeformer_xs_encoder_config
+config = malaya_speech.config.squeezeformer_sm_encoder_config
 sr = 16000
 maxlen = 14
 minlen_text = 1
@@ -266,7 +266,7 @@ def preprocess_inputs(example):
 
 def get_dataset(
     file,
-    batch_size=20,
+    batch_size=16,
     shuffle_size=20,
     thread_count=24,
     maxlen_feature=1800,
@@ -313,7 +313,7 @@ def get_dataset(
 def model_fn(features, labels, mode, params):
 
     model = squeezeformer.Model(**config)
-    decoder_config = malaya_speech.config.conformer_tiny_decoder_config
+    decoder_config = malaya_speech.config.conformer_base_decoder_config
     transducer_model = transducer.rnn.Model(
         model, vocabulary_size=subwords.vocab_size, **decoder_config
     )
@@ -378,7 +378,7 @@ dev_dataset = get_dataset('bahasa-asr-test.json')
 train.run_training(
     train_fn=train_dataset,
     model_fn=model_fn,
-    model_dir='asr-xs-squeezeformer-transducer',
+    model_dir='asr-sm-squeezeformer-transducer',
     num_gpus=1,
     log_step=1,
     save_checkpoint_step=10000,

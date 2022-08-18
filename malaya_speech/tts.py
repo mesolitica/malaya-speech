@@ -107,7 +107,21 @@ _fastspeech2_availability = {
         'Understand punctuation': True,
         'Is lowercase': False,
     },
+    'yasmin-sdp': {
+        'Size (MB)': 125,
+        'Quantized Size (MB)': 31.7,
+        'Combined loss': 0.7212,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+    },
     'osman': {
+        'Size (MB)': 125,
+        'Quantized Size (MB)': 31.7,
+        'Combined loss': 0.7341,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+    },
+    'osman-sdp': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
         'Combined loss': 0.7341,

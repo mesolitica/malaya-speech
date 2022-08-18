@@ -43,7 +43,7 @@ class DurationPredictor(tf.keras.Model):
         self.blocks.append(
             tf.keras.layers.Conv1D(1, kernel, 1, padding='SAME'))
 
-    def call(self, inputs: tf.Tensor, mask: tf.Tensor) -> tf.Tensor:
+    def call(self, inputs: tf.Tensor, mask: tf.Tensor, training=True):
         """Generate duration sequence.
         Args:
             inputs: [tf.float32; [B, T, C]], input tensor.
@@ -55,7 +55,7 @@ class DurationPredictor(tf.keras.Model):
         x = inputs
         for layer in self.blocks:
             # [B, T, C]
-            x = layer(x) * mask[..., None]
+            x = layer(x, training=training) * mask[..., None]
         # [B, T]
         return tf.squeeze(x, axis=-1)
 

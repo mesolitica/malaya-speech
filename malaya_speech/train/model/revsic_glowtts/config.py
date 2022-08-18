@@ -40,6 +40,7 @@ class Config:
 
         # standard deviation of isotropic gaussian assumption
         self.temperature = 0.333
+        self.noise_scale_w = 1.0
         self.length_scale = 1.0
 
         # model

@@ -102,6 +102,24 @@ _transducer_availability = {
         'WER-LM': 0.1687297,
         'CER-LM': 0.061468,
         'Language': ['malay'],
+    },
+    'm-squeezeformer': {
+        'Size (MB)': 261,
+        'Quantized Size (MB)': 78.5,
+        'WER': 0.16700751,
+        'CER': 0.05972837,
+        'WER-LM': 0.15618489,
+        'CER-LM': 0.05363883,
+        'Language': ['malay'],
+    },
+    'l-squeezeformer': {
+        'Size (MB)': 147,
+        'Quantized Size (MB)': 47.4,
+        'WER': 0.16700751,
+        'CER': 0.05972837,
+        'WER-LM': 0.15618489,
+        'CER-LM': 0.05363883,
+        'Language': ['malay'],
     }
 }
 
@@ -171,6 +189,7 @@ _ctc_availability = {
     },
 }
 
+# https://huggingface.co/mesolitica/wav2vec2-xls-r-300m-mixed
 _huggingface_availability = {
     'mesolitica/wav2vec2-xls-r-300m-mixed': {
         'Size (MB)': 1180,

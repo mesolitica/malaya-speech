@@ -25,7 +25,8 @@ SOFTWARE.
 from typing import Optional, Tuple
 
 import tensorflow as tf
-from malaya_speech.train.model.utils import WeightNormalization
+# from malaya_speech.train.model.utils import WeightNormalization
+from malaya_speech.train.model.melgan.layer import WeightNormalization
 
 
 class WaveNetBlock(tf.keras.Model):
@@ -70,7 +71,7 @@ class WaveNetBlock(tf.keras.Model):
     def call(self,
              inputs: tf.Tensor,
              mask: tf.Tensor,
-             aux: Optional[tf.Tensor] = None) -> Tuple[tf.Tensor, tf.Tensor]:
+             aux: Optional[tf.Tensor] = None):
         """Pass wavenet block.
         Args:
             inputs: [tf.float32; [B, T, C]], input tensor.
