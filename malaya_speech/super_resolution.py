@@ -1,4 +1,7 @@
-from malaya_speech.supervised import unet as load_unet, enhancement as load_enhancement
+from malaya_speech.supervised import (
+    unet as load_unet,
+    enhancement as load_enhancement,
+)
 from malaya_speech.utils import describe_availability
 from herpetologist import check_type
 import logging
@@ -31,6 +34,12 @@ _availability_tfgan = {
     }
 }
 
+_availability_audio_diffusion = {
+    'nuwave2': {
+        'Size (MB)': 20.9,
+    }
+}
+
 
 def available_unet():
     """
@@ -48,6 +57,15 @@ def available_tfgan():
     logger.info('Only calculate SDR, ISR, SAR on voice sample. Higher is better.')
 
     return describe_availability(_availability_tfgan)
+
+
+def available_audio_diffusion():
+    """
+    List available Super Resolution deep learning UNET + TFGAN Vocoder models.
+    """
+    logger.info('Only calculate SDR, ISR, SAR on voice sample. Higher is better.')
+
+    return describe_availability(_availability_audio_diffusion)
 
 
 @check_type
@@ -104,5 +122,28 @@ def tfgan(model: str = 'voicefixer', **kwargs):
         raise ValueError(
             'model not supported, please check supported models from `malaya_speech.super_resolution.available_tfgan()`.'
         )
-
     return load_enhancement.load_tfgan(model=model)
+
+
+def audio_diffusion(model: str = 'nuwave2', **kwargs):
+    """
+    Load audio diffusion based Speech Resolution.
+
+    Parameters
+    ----------
+    model : str, optional (default='nuwave2')
+        Model architecture supported. Allowed values:
+
+        * ``'nuwave2'`` - originally from https://github.com/mindslab-ai/nuwave2.
+
+    Returns
+    -------
+    result : malaya_speech.torch_model.super_resolution.NuWave2
+    """
+
+    model = model.lower()
+    if model not in _availability_audio_diffusion:
+        raise ValueError(
+            'model not supported, please check supported models from `malaya_speech.super_resolution.available_audio_diffusion()`.'
+        )
+    return load_enhancement.load_audio_diffusion(model=model)

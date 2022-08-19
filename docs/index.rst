@@ -133,6 +133,7 @@ Contents:
    load-speech-enhancement
    load-super-resolution-unet
    load-super-resolution-tfgan
+   load-super-resolution-audio-diffusion
 
 .. toctree::
    :maxdepth: 2
