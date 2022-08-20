@@ -67,7 +67,8 @@ class Transformer(tf.keras.Model):
                 config.block_dropout)
             for _ in range(config.block_num)]
 
-    def call(self, inputs: tf.Tensor, mask: tf.Tensor, training=True):
+    def call(self, inputs: tf.Tensor, mask: tf.Tensor) \
+            -> Tuple[tf.Tensor, List[tf.Tensor]]:
         """Transform the inputs.
         Args:
             inputs: [tf.float32; [B, T, C]], input tensor.
@@ -77,13 +78,13 @@ class Transformer(tf.keras.Model):
             attn: [tf.Tensor, [tf.float32; [B, K, T, T]]; N], attentions.
         """
         # [B, T, C]
-        x = self.prenet(inputs, mask, training=training)
+        x = self.prenet(inputs, mask)
         # [B, T, C]
         x = x + self.pe(tf.shape(x)[1])[None]
         attn = []
         for block in self.blocks:
             # [B, T, C], [B, K, T, T]
-            x, align = block(x, mask, training=training)
+            x, align = block(x, mask)
             # N x [B, K, T, T]
             attn.append(align)
         # [B, T, C], N x [B, K, T, T]

@@ -51,7 +51,8 @@ class MultiHeadSelfAttn(tf.keras.Model):
         self.dropout = tf.keras.layers.Dropout(dropout)
         self.proj_out = tf.keras.layers.Dense(channels)
 
-    def call(self, inputs: tf.Tensor, mask: tf.Tensor, training=True):
+    def call(self, inputs: tf.Tensor, mask: tf.Tensor) \
+            -> Tuple[tf.Tensor, tf.Tensor]:
         """Self-attend the inputs.
         Args:
             inputs: [tf.float32; [B, T, C]], input sequence.
@@ -82,7 +83,7 @@ class MultiHeadSelfAttn(tf.keras.Model):
 
         # [B, K, T, T]
         attn = tf.nn.softmax(scores, axis=-1)
-        attn = self.dropout(attn, training=training)
+        attn = self.dropout(attn)
         # [B, K, T, Ck]
         attend = tf.matmul(
             attn,

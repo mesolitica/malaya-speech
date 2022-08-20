@@ -46,7 +46,7 @@ class Prenet(tf.keras.Model):
             kernel_initializer='zeros',
             bias_initializer='zeros')
 
-    def call(self, inputs: tf.Tensor, mask: tf.Tensor, training=True):
+    def call(self, inputs: tf.Tensor, mask: tf.Tensor) -> tf.Tensor:
         """Pass to prenet.
         Args:
             inputs: [tf.float32; [B, T, C]], input tensor.
@@ -58,12 +58,13 @@ class Prenet(tf.keras.Model):
         x = inputs
         for block in self.blocks:
             # [B, T, C]
-            x = block(x, training=training) * mask[..., None]
+            x = block(x) * mask[..., None]
         # [B, T, C]
         x = x + self.residual(inputs)
         return x * mask[..., None]
 
-    def conv_norm_relu(self, channels: int, kernel: int, dropout: float):
+    def conv_norm_relu(self, channels: int, kernel: int, dropout: float) \
+            -> tf.keras.Sequential:
         """Generate sequential operation,
          Convolution - LayerNorm - ReLU - Dropout.
 

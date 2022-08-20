@@ -60,7 +60,8 @@ class Model(tf.keras.Model):
         # mean-only training
         self.proj_mu = tf.keras.layers.Dense(config.neck)
 
-    def call(self, inputs: tf.Tensor, lengths: tf.Tensor, training=False):
+    def call(self, inputs: tf.Tensor, lengths: tf.Tensor) \
+            -> Tuple[tf.Tensor, tf.Tensor]:
         """Generate mel-spectrogram from text inputs.
         Args:
             inputs: [tf.int32; [B, S]], input sequence.
@@ -75,14 +76,14 @@ class Model(tf.keras.Model):
         # [B, S]
         mask = self.mask(lengths, maxlen=seqlen)
         # [B, S, C]
-        embedding = self.embedding(inputs, training=training) * mask[..., None]
+        embedding = self.embedding(inputs) * mask[..., None]
         # [B, S, C]
-        hidden, _ = self.encoder(embedding, mask, training=training)
+        hidden, _ = self.encoder(embedding, mask)
         # [B, S, N]
         mean = self.proj_mu(hidden)
 
         # [B, S]
-        duration = self.quantize(self.durator(hidden, mask, training=training), mask)
+        duration = self.quantize(self.durator(hidden, mask), mask)
         # [B, T / F, S], [B, T / F]
         attn, mask = self.align(duration)
 
@@ -100,7 +101,8 @@ class Model(tf.keras.Model):
         return mel, mellen, attn
 
     def compute_loss(self, text: tf.Tensor, textlen: tf.Tensor,
-                     mel: tf.Tensor, mellen: tf.Tensor, training=True):
+                     mel: tf.Tensor, mellen: tf.Tensor) \
+            -> Tuple[tf.Tensor, Dict[str, tf.Tensor], tf.Tensor]:
         """Compute loss for glow-tts.
         Args:
             text: [tf.int32; [B, S]], input text.
@@ -115,9 +117,9 @@ class Model(tf.keras.Model):
         # [B, S]
         mask = self.mask(textlen, maxlen=tf.shape(text)[1])
         # [B, S, C]
-        embedding = self.embedding(text, training=training) * mask[..., None]
+        embedding = self.embedding(text) * mask[..., None]
         # [B, S, C]
-        hidden, _ = self.encoder(embedding, mask, training=training)
+        hidden, _ = self.encoder(embedding, mask)
         # [B, S, N], constant standard deviation
         mean = self.proj_mu(hidden)
 
@@ -126,7 +128,7 @@ class Model(tf.keras.Model):
         # [B, T']
         melmask = self.mask(mellen, maxlen=tf.shape(mel)[1])
         # [B, T', N], [B]
-        latent, dlogdet = self.decoder(mel, melmask, training=training)
+        latent, dlogdet = self.decoder(mel, melmask)
 
         # [B, T', S]
         attnmask = melmask[..., None] * mask[:, None]
@@ -149,7 +151,7 @@ class Model(tf.keras.Model):
             nll / tf.cast(mellen * tf.shape(mean)[-1], tf.float32))
 
         # [B, S]
-        logdur = self.durator(tf.stop_gradient(hidden), mask, training=training)
+        logdur = self.durator(tf.stop_gradient(hidden), mask)
         # [B, S]
         gtdur = tf.math.log(tf.maximum(tf.reduce_sum(attn, axis=1), 1e-5)) * mask
         # [B]

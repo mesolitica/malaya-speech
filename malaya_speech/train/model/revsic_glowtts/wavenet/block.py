@@ -25,7 +25,6 @@ SOFTWARE.
 from typing import Optional, Tuple
 
 import tensorflow as tf
-# from malaya_speech.train.model.utils import WeightNormalization
 from malaya_speech.train.model.melgan.layer import WeightNormalization
 
 
