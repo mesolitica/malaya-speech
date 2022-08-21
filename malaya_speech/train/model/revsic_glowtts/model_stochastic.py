@@ -51,6 +51,7 @@ class Model(tf.keras.Model):
         self.factor = config.factor
         self.temperature = config.temperature
         self.length_scale = config.length_scale
+        self.noise_scale_w = config.noise_scale_w
         self.embedding = tf.keras.layers.Embedding(
             config.vocabs, config.channels)
         self.encoder = Transformer(config)
@@ -190,10 +191,9 @@ class Model(tf.keras.Model):
             [tf.int32; [B, T]], duration.
         """
         # [B, T]
-        dur = tf.round(tf.exp(logdur))
-        # [B, T]
-        dur = tf.clip_by_value(dur, 1., Model.DURATION_MAX) * mask * self.length_scale
-        return tf.cast(dur, tf.int32)
+        w = tf.math.exp(logdur) * mask
+        duration_outputs = tf.cast(tf.math.ceil(w * self.length_scale)[:, :, 0], tf.int32)
+        return duration_outputs
 
     def fold(self, inputs: tf.Tensor, lengths: tf.Tensor) \
             -> Tuple[tf.Tensor, tf.Tensor]:

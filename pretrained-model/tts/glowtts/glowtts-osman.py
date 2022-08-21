@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
 import tensorflow as tf
@@ -17,14 +17,16 @@ from functools import partial
 import math
 import json
 import re
+import random
 
-with open('mels-osman.json') as fopen:
-    files = json.load(fopen)
+files = glob('/home/ubuntu/speech-bahasa/output-osman/mels/*.npy')
+files.extend(glob('/home/ubuntu/speech-bahasa/output-osman-parliament/mels/*.npy'))
+files.extend(glob('/home/ubuntu/speech-bahasa/output-osman-synthetic/mels/*.npy'))
 
-mel_stat = np.load('../speech-bahasa/osman-stats/stats.npy')
+mel_stat = np.load('/home/ubuntu/speech-bahasa/osman-stats/stats.npy')
 
 reduction_factor = 1
-maxlen = 904
+maxlen = 1400
 minlen = 32
 pad_to = 2
 data_min = 1e-2
@@ -74,54 +76,55 @@ total_steps = 200_000
 
 
 def generate(files):
-    file_cycle = cycle(files)
     while True:
-        f = next(file_cycle).decode()
-        mel = np.load(f)
-        mel_length = len(mel)
-        if mel_length > maxlen or mel_length < minlen:
-            continue
+        random.shuffle(files)
+        for f in files:
+            f = f.decode() if isinstance(f, bytes) else f
+            mel = np.load(f)
+            mel_length = len(mel)
+            if mel_length > maxlen or mel_length < minlen:
+                continue
 
-        mel = norm_mean_std(mel, mel_stat[0], mel_stat[1])
+            mel = norm_mean_std(mel, mel_stat[0], mel_stat[1])
 
-        stop_token_target = np.zeros([len(mel)], dtype=np.float32)
+            stop_token_target = np.zeros([len(mel)], dtype=np.float32)
 
-        text_ids = np.load(f.replace('mels', 'text_ids'), allow_pickle=True)[
-            0
-        ]
-        text_ids = ''.join([c for c in text_ids if c in MALAYA_SPEECH_SYMBOLS])
-        text_ids = re.sub(r'[ ]+', ' ', text_ids).strip()
-        text_input = np.array(
-            [
-                MALAYA_SPEECH_SYMBOLS.index(c)
-                for c in text_ids
+            text_ids = np.load(f.replace('mels', 'text_ids'), allow_pickle=True)[
+                0
             ]
-        )
-        num_pad = pad_to - ((len(text_input) + 2) % pad_to)
-        text_input = np.pad(
-            text_input, ((1, 1)), 'constant', constant_values=((1, 2))
-        )
-        text_input = np.pad(
-            text_input, ((0, num_pad)), 'constant', constant_values=0
-        )
-        num_pad = pad_to - ((len(mel) + 1) % pad_to) + 1
-        pad_value_mel = np.log(data_min)
-        mel = np.pad(
-            mel,
-            ((0, num_pad), (0, 0)),
-            'constant',
-            constant_values=pad_value_mel,
-        )
-        len_mel = [len(mel)]
-        len_text_ids = [len(text_input)]
+            text_ids = ''.join([c for c in text_ids if c in MALAYA_SPEECH_SYMBOLS])
+            text_ids = re.sub(r'[ ]+', ' ', text_ids).strip()
+            text_input = np.array(
+                [
+                    MALAYA_SPEECH_SYMBOLS.index(c)
+                    for c in text_ids
+                ]
+            )
+            num_pad = pad_to - ((len(text_input) + 2) % pad_to)
+            text_input = np.pad(
+                text_input, ((1, 1)), 'constant', constant_values=((1, 2))
+            )
+            text_input = np.pad(
+                text_input, ((0, num_pad)), 'constant', constant_values=0
+            )
+            num_pad = pad_to - ((len(mel) + 1) % pad_to) + 1
+            pad_value_mel = np.log(data_min)
+            mel = np.pad(
+                mel,
+                ((0, num_pad), (0, 0)),
+                'constant',
+                constant_values=pad_value_mel,
+            )
+            len_mel = [len(mel)]
+            len_text_ids = [len(text_input)]
 
-        yield {
-            'mel': mel,
-            'text_ids': text_input,
-            'len_mel': len_mel,
-            'len_text_ids': len_text_ids,
-            'f': [f],
-        }
+            yield {
+                'mel': mel,
+                'text_ids': text_input,
+                'len_mel': len_mel,
+                'len_text_ids': len_text_ids,
+                'f': [f],
+            }
 
 
 def get_dataset(files, batch_size=32, shuffle_size=32, thread_count=24):
@@ -236,8 +239,7 @@ train_hooks = [
     )
 ]
 
-train_dataset = get_dataset(files['train'])
-dev_dataset = get_dataset(files['test'])
+train_dataset = get_dataset(files)
 train.run_training(
     train_fn=train_dataset,
     model_fn=model_fn,
@@ -246,6 +248,6 @@ train.run_training(
     log_step=1,
     save_checkpoint_step=5000,
     max_steps=total_steps,
-    eval_fn=dev_dataset,
+    eval_fn=None,
     train_hooks=train_hooks,
 )
