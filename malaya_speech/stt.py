@@ -113,12 +113,12 @@ _transducer_availability = {
         'Language': ['malay'],
     },
     'l-squeezeformer': {
-        'Size (MB)': 147,
-        'Quantized Size (MB)': 47.4,
-        'WER': 0.16700751,
-        'CER': 0.05972837,
-        'WER-LM': 0.15618489,
-        'CER-LM': 0.05363883,
+        'Size (MB)': 986,
+        'Quantized Size (MB)': 286,
+        'WER': 0.177125574,
+        'CER': 0.06453017,
+        'WER-LM': 0.17081130,
+        'CER-LM': 0.06322319,
         'Language': ['malay'],
     }
 }

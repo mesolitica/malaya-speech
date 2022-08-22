@@ -50,12 +50,12 @@ class Model(tf.keras.Model):
         self.dec = Generator(inter_channels, resblock, resblock_kernel_sizes, resblock_dilation_sizes,
                              upsample_rates, upsample_initial_channel, upsample_kernel_sizes, gin_channels=gin_channels)
 
-    def call(self, y, y_lengths):
+    def call(self, z, y_lengths):
 
         z_slice, ids_slice = commons.rand_slice_segments(z, y_lengths, self.segment_size)
         o = self.dec(z_slice, g=None)
         return o, ids_slice
 
-    def infer(self, z, y_mask):
-        o = self.dec((z * y_mask), g=None)
+    def infer(self, z):
+        o = self.dec(z, g=None)
         return o
