@@ -738,9 +738,12 @@ class Model(tf.keras.Model):
         self.mel_dense = tf.keras.layers.Dense(
             units=config.num_mels, dtype=tf.float32, name='mel_before'
         )
-        self.postnet = TFTacotronPostnet(
-            config=config, dtype=tf.float32, name='postnet'
-        )
+        if config.enable_postnet:
+            self.postnet = TFTacotronPostnet(
+                config=config, dtype=tf.float32, name='postnet'
+            )
+        else:
+            self.postnet = None
 
     def call(self, input_ids, duration_gts, training=True, **kwargs):
         speaker_ids = tf.convert_to_tensor([0], tf.int32)

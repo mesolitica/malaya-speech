@@ -246,10 +246,13 @@ class Model(FastSpeech):
 
         # here u can use sum or concat more than 1 hidden states layers from decoder.
         mels_before = self.mel_dense(last_decoder_hidden_states)
-        mels_after = (
-            self.postnet([mels_before, encoder_masks], training=training)
-            + mels_before
-        )
+        if self.postnet is not None:
+            mels_after = (
+                self.postnet([mels_before, encoder_masks], training=training)
+                + mels_before
+            )
+        else:
+            mels_after = None
 
         outputs = (
             mels_before,
@@ -342,10 +345,14 @@ class Model(FastSpeech):
 
         # here u can use sum or concat more than 1 hidden states layers from decoder.
         mel_before = self.mel_dense(last_decoder_hidden_states)
-        mel_after = (
-            self.postnet([mel_before, encoder_masks], training=True)
-            + mel_before
-        )
+
+        if self.postnet is not None:
+            mel_after = (
+                self.postnet([mel_before, encoder_masks], training=True)
+                + mel_before
+            )
+        else:
+            mel_after = None
 
         outputs = (
             mel_before,

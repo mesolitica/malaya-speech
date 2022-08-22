@@ -85,6 +85,7 @@ class Config(object):
         num_mels=80,
         duration_predictor_dropout_probs=0.1,
         n_conv_postnet=5,
+        enable_postnet=True,
         postnet_conv_filters=512,
         postnet_conv_kernel_sizes=5,
         postnet_dropout_rate=0.1,
@@ -142,6 +143,7 @@ class Config(object):
         self.num_mels = num_mels
 
         # postnet
+        self.enable_postnet = enable_postnet
         self.n_conv_postnet = n_conv_postnet
         self.postnet_conv_filters = postnet_conv_filters
         self.postnet_conv_kernel_sizes = postnet_conv_kernel_sizes
