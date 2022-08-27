@@ -7,6 +7,7 @@ from malaya_speech.utils import (
 from malaya_speech.model.synthesis import (
     Tacotron,
     Fastspeech,
+    FastspeechSDP,
     Fastpitch,
     GlowTTS,
     GlowTTS_MultiSpeaker,
@@ -60,14 +61,22 @@ def tacotron_load(
 def fastspeech_load(
     model, module, normalizer, quantized=False, **kwargs,
 ):
+    sdp = model.split('-')[-1] == 'sdp'
     inputs = ['Placeholder', 'speed_ratios', 'f0_ratios', 'energy_ratios']
     outputs = ['decoder_output', 'post_mel_outputs']
+
+    if sdp:
+        inputs.append('noise_scale_w')
+        model_class = FastspeechSDP
+    else:
+        model_class = Fastspeech
+
     return load(model=model,
                 module=module,
                 inputs=inputs,
                 outputs=outputs,
                 normalizer=normalizer,
-                model_class=Fastspeech,
+                model_class=model_class,
                 quantized=quantized,
                 **kwargs)
 

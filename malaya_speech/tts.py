@@ -100,13 +100,6 @@ _fastspeech2_availability = {
         'Understand punctuation': True,
         'Is lowercase': True,
     },
-    'yasmin-small': {
-        'Size (MB)': 32.9,
-        'Quantized Size (MB)': 8.5,
-        'Combined loss': 0.7994,
-        'Understand punctuation': True,
-        'Is lowercase': False,
-    },
     'osman': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
@@ -114,23 +107,16 @@ _fastspeech2_availability = {
         'Understand punctuation': True,
         'Is lowercase': False,
     },
-    'osman-small': {
-        'Size (MB)': 32.9,
-        'Quantized Size (MB)': 8.5,
-        'Combined loss': 0.8182,
-        'Understand punctuation': True,
-        'Is lowercase': False,
-    },
     'yasmin-sdp': {
-        'Size (MB)': 125,
-        'Quantized Size (MB)': 31.7,
+        'Size (MB)': 128,
+        'Quantized Size (MB)': 33.1,
         'Combined loss': 0.7212,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
     'osman-sdp': {
-        'Size (MB)': 125,
-        'Quantized Size (MB)': 31.7,
+        'Size (MB)': 128,
+        'Quantized Size (MB)': 33.1,
         'Combined loss': 0.7341,
         'Understand punctuation': True,
         'Is lowercase': False,
@@ -257,6 +243,15 @@ _vits_availability = {
     },
 }
 
+_e2e_fastspeech2_availability = {
+    'osman': {
+
+    },
+    'yasmin': {
+
+    },
+}
+
 
 def available_tacotron2():
     """
@@ -304,6 +299,14 @@ def available_lightspeech():
     """
 
     return describe_availability(_lightspeech_availability)
+
+
+def available_vits():
+    """
+    List available VITS, End-to-End models.
+    """
+
+    return describe_availability(_vits_availability)
 
 
 def available_vits():
@@ -665,3 +668,40 @@ def vits(model: str = 'mesolitica/VITS-osman', **kwargs):
         normalizer=text_ids,
         **kwargs,
     )
+
+
+def e2e_fastspeech2(
+    model: str = 'osman',
+    quantized: bool = False,
+    pad_to: int = 8,
+    **kwargs,
+):
+    """
+    Load Fastspeech2 Text-to-Mel TTS model.
+
+    Parameters
+    ----------
+    model : str, optional (default='male')
+        Model architecture supported. Allowed values:
+
+        * ``'yasmin'`` - Fastspeech2 trained on female Yasmin voice.
+        * ``'osman'`` - Fastspeech2 trained on male Osman voice.
+
+    quantized : bool, optional (default=False)
+        if True, will load 8-bit quantized model.
+        Quantized model not necessary faster, totally depends on the machine.
+    pad_to : int, optional (default=8)
+        size of pad character with 0. Increase can stable up prediction on short sentence, we trained on 8.
+
+    Returns
+    -------
+    result : malaya_speech.model.synthesis.Fastspeech class
+    """
+
+    model = model.lower()
+    if model not in _e2e_fastspeech2_availability:
+        raise ValueError(
+            'model not supported, please check supported models from `malaya_speech.tts.available_e2e_fastspeech2()`.'
+        )
+
+    selected_model = _e2e_fastspeech2_availability[model]

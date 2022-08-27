@@ -203,6 +203,72 @@ class Fastspeech(Abstract, TTS):
         return self.predict(input, **kwargs)
 
 
+class FastspeechSDP(Abstract, TTS):
+    def __init__(
+        self, input_nodes, output_nodes, normalizer, stats, sess, model, name
+    ):
+        self._input_nodes = input_nodes
+        self._output_nodes = output_nodes
+        self._normalizer = normalizer
+        self._stats = stats
+        self._sess = sess
+        self.__model__ = model
+        self.__name__ = name
+
+    def predict(
+        self,
+        string,
+        speed_ratio: float = 1.0,
+        f0_ratio: float = 1.0,
+        energy_ratio: float = 1.0,
+        temperature_durator: float = 0.6666,
+        **kwargs,
+    ):
+        """
+        Change string to Mel.
+
+        Parameters
+        ----------
+        string: str
+        speed_ratio: float, optional (default=1.0)
+            Increase this variable will increase time voice generated.
+        f0_ratio: float, optional (default=1.0)
+            Increase this variable will increase frequency, low frequency will generate more deeper voice.
+        energy_ratio: float, optional (default=1.0)
+            Increase this variable will increase loudness.
+        temperature_durator: float, optional (default=0.66666)
+            Durator trying to predict alignment with random.normal() * temperature_durator.
+
+        Returns
+        -------
+        result: Dict[string, decoder-output, mel-output, universal-output]
+        """
+        t, ids = self._normalizer.normalize(string, **kwargs)
+        r = self._execute(
+            inputs=[[ids], speed_ratio, [f0_ratio], [energy_ratio], temperature_durator],
+            input_labels=[
+                'Placeholder',
+                'speed_ratios',
+                'f0_ratios',
+                'energy_ratios',
+                'noise_scale_w',
+            ],
+            output_labels=['decoder_output', 'post_mel_outputs'],
+        )
+        v = r['post_mel_outputs'][0] * self._stats[1] + self._stats[0]
+        v = (v - MEL_MEAN) / MEL_STD
+        return {
+            'string': t,
+            'ids': ids,
+            'decoder-output': r['decoder_output'][0],
+            'mel-output': r['post_mel_outputs'][0],
+            'universal-output': v,
+        }
+
+    def __call__(self, input, **kwargs):
+        return self.predict(input, **kwargs)
+
+
 class FastVC(Abstract):
     def __init__(
         self,
