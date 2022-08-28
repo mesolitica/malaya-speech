@@ -6,6 +6,7 @@ from malaya_speech.utils.text import (
     TextIDS,
 )
 from malaya_speech.supervised import tts
+from malaya_speech.utils import describe_availability
 import numpy as np
 import logging
 from typing import Callable
@@ -227,17 +228,11 @@ _lightspeech_availability = {
 _vits_availability = {
     'mesolitica/VITS-osman': {
         'Size (MB)': 145,
-        'mel loss': 0.37,
-        'kl loss': 1.431,
-        'duration loss': 0.057,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
     'mesolitica/VITS-yasmin': {
         'Size (MB)': 145,
-        'mel loss': 0.3333,
-        'kl loss': 1.451,
-        'duration loss': 1.531,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
@@ -245,10 +240,16 @@ _vits_availability = {
 
 _e2e_fastspeech2_availability = {
     'osman': {
-
+        'Size (MB)': 167,
+        'Quantized Size (MB)': 43.3,
+        'Understand punctuation': True,
+        'Is lowercase': False,
     },
     'yasmin': {
-
+        'Size (MB)': 167,
+        'Quantized Size (MB)': 43.3,
+        'Understand punctuation': True,
+        'Is lowercase': False,
     },
 }
 
@@ -298,7 +299,7 @@ def available_lightspeech():
     List available LightSpeech, Text to Mel models.
     """
 
-    return describe_availability(_lightspeech_availability)
+    return describe_availability(_e2e_fastspeech2_availability)
 
 
 def available_vits():
@@ -309,9 +310,9 @@ def available_vits():
     return describe_availability(_vits_availability)
 
 
-def available_vits():
+def available_e2e_fastspeech2():
     """
-    List available VITS, End-to-End models.
+    List available FastSpeech2, End-to-End models.
     """
 
     return describe_availability(_vits_availability)
@@ -695,7 +696,7 @@ def e2e_fastspeech2(
 
     Returns
     -------
-    result : malaya_speech.model.synthesis.Fastspeech class
+    result : malaya_speech.model.synthesis.E2E_FastSpeech class
     """
 
     model = model.lower()
@@ -705,3 +706,18 @@ def e2e_fastspeech2(
         )
 
     selected_model = _e2e_fastspeech2_availability[model]
+
+    text_ids = load_text_ids(
+        pad_to=pad_to,
+        understand_punct=selected_model['Understand punctuation'],
+        is_lower=selected_model['Is lowercase'],
+        quantized=quantized,
+        **kwargs
+    )
+    return tts.e2e_fastspeech_load(
+        model=model,
+        module='text-to-speech-e2e-fastspeech',
+        normalizer=text_ids,
+        quantized=quantized,
+        **kwargs
+    )

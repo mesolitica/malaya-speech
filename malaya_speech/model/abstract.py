@@ -1,4 +1,6 @@
 from malaya_speech.utils.execute import execute_graph
+from malaya_speech.utils.astype import float_to_int
+from typing import Callable
 
 
 class Abstract:
@@ -14,3 +16,54 @@ class Abstract:
             input_nodes=self._input_nodes,
             output_nodes=self._output_nodes,
         )
+
+
+class TTS:
+    def __init__(self, e2e=False):
+        self.e2e = e2e
+
+    def gradio(self, vocoder: Callable = None, **kwargs):
+        """
+        Text-to-Speech on Gradio interface.
+
+        Parameters
+        ----------
+        vocoder: Callable, optional (default=None)
+            vocoder object that has `predict` method, prefer from malaya_speech itself.
+            Not required if using End-to-End TTS model such as VITS.
+
+        **kwargs: keyword arguments for `predict` and `iface.launch`.
+        """
+        if not self.e2e and vocoder is None:
+            raise ValueError('TTS model is not End-to-End, required vocoder.')
+
+        try:
+            import gradio as gr
+        except BaseException:
+            raise ModuleNotFoundError(
+                'gradio not installed. Please install it by `pip install gradio` and try again.'
+            )
+
+        def pred(string):
+            r = self.predict(string=string, **kwargs)
+
+            if self.e2e:
+                y_ = r['y']
+            else:
+                if 'universal' in str(vocoder):
+                    o = r['universal-output']
+                else:
+                    o = r['mel-output']
+                y_ = vocoder(o)
+            data = float_to_int(y_)
+            return (22050, data)
+
+        if self.e2e:
+            title = 'End-to-End Text-to-Speech'
+        else:
+            title = 'Text-to-Speech + Neural Vocoder'
+        description = 'It will take sometime for the first time, after that, should be really fast.'
+
+        iface = gr.Interface(pred, gr.inputs.Textbox(lines=3, label='Input Text'),
+                             'audio', title=title, description=description)
+        return iface.launch(**kwargs)

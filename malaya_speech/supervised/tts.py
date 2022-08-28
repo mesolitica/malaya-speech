@@ -8,6 +8,7 @@ from malaya_speech.model.synthesis import (
     Tacotron,
     Fastspeech,
     FastspeechSDP,
+    E2E_FastSpeech,
     Fastpitch,
     GlowTTS,
     GlowTTS_MultiSpeaker,
@@ -48,14 +49,16 @@ def tacotron_load(
 ):
     inputs = ['Placeholder', 'Placeholder_1']
     outputs = ['decoder_output', 'post_mel_outputs', 'alignment_histories']
-    return load(model=model,
-                module=module,
-                inputs=inputs,
-                outputs=outputs,
-                normalizer=normalizer,
-                model_class=Tacotron,
-                quantized=quantized,
-                **kwargs)
+    return load(
+        model=model,
+        module=module,
+        inputs=inputs,
+        outputs=outputs,
+        normalizer=normalizer,
+        model_class=Tacotron,
+        quantized=quantized,
+        **kwargs,
+    )
 
 
 def fastspeech_load(
@@ -71,14 +74,16 @@ def fastspeech_load(
     else:
         model_class = Fastspeech
 
-    return load(model=model,
-                module=module,
-                inputs=inputs,
-                outputs=outputs,
-                normalizer=normalizer,
-                model_class=model_class,
-                quantized=quantized,
-                **kwargs)
+    return load(
+        model=model,
+        module=module,
+        inputs=inputs,
+        outputs=outputs,
+        normalizer=normalizer,
+        model_class=model_class,
+        quantized=quantized,
+        **kwargs,
+    )
 
 
 def fastpitch_load(
@@ -86,14 +91,16 @@ def fastpitch_load(
 ):
     inputs = ['Placeholder', 'speed_ratios', 'pitch_ratios', 'pitch_addition']
     outputs = ['decoder_output', 'post_mel_outputs', 'pitch_outputs']
-    return load(model=model,
-                module=module,
-                inputs=inputs,
-                outputs=outputs,
-                normalizer=normalizer,
-                model_class=Fastpitch,
-                quantized=quantized,
-                **kwargs)
+    return load(
+        model=model,
+        module=module,
+        inputs=inputs,
+        outputs=outputs,
+        normalizer=normalizer,
+        model_class=Fastpitch,
+        quantized=quantized,
+        **kwargs,
+    )
 
 
 def glowtts_load(
@@ -179,4 +186,22 @@ def vits_torch_load(model, normalizer, **kwargs):
         config=files['config'],
         model=model,
         name='text-to-speech-vits',
+    )
+
+
+def e2e_fastspeech_load(
+    model, module, normalizer, quantized=False, **kwargs,
+):
+    inputs = ['Placeholder', 'speed_ratios', 'f0_ratios', 'energy_ratios', 'noise_scale_w']
+    outputs = ['y_hat']
+
+    return load(
+        model=model,
+        module=module,
+        inputs=inputs,
+        outputs=outputs,
+        normalizer=normalizer,
+        model_class=E2E_FastSpeech,
+        quantized=quantized,
+        **kwargs,
     )

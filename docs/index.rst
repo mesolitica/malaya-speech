@@ -104,6 +104,7 @@ Contents:
    tts-tacotron2-model
    tts-fastspeech2-model
    more-tts-fastspeech2
+   tts-e2e-fastspeech2
    tts-fastpitch-model
    tts-glowtts-model
    tts-glowtts-multispeaker-model

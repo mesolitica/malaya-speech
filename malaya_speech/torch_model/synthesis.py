@@ -5,14 +5,17 @@ from malaya_speech.torch_model.vits.commons import intersperse
 from malaya_speech.torch_model.vits.model_infer import SynthesizerTrn
 from malaya_speech.utils.text import TTS_SYMBOLS
 from malaya_speech.utils.torch_utils import to_tensor_cuda, to_numpy
+from malaya_speech.model.abstract import Abstract, TTS
 
 
-class VITS(SynthesizerTrn):
+class VITS(SynthesizerTrn, TTS):
     def __init__(self, normalizer, pth, config, model, name, **kwargs):
+
         with open(config) as fopen:
             hps = HParams(**json.load(fopen))
         self.hps = hps
 
+        TTS.__init__(self, e2e=True)
         super(VITS, self).__init__(len(TTS_SYMBOLS),
                                    hps.data.filter_length // 2 + 1,
                                    hps.train.segment_size // hps.data.hop_length,

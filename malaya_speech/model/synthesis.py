@@ -4,54 +4,9 @@ from malaya_speech.utils.padding import (
 )
 from malaya_speech.utils.astype import float_to_int
 from malaya_speech.utils.featurization import universal_mel
-from malaya_speech.model.abstract import Abstract
+from malaya_speech.model.abstract import Abstract, TTS
 from malaya_speech.utils.constant import MEL_MEAN, MEL_STD
 from typing import Callable
-
-
-class TTS:
-    def gradio(self, vocoder: Callable = None, **kwargs):
-        """
-        Text-to-Speech on Gradio interface.
-
-        Parameters
-        ----------
-        vocoder: Callable, optional (default=None)
-            vocoder object that has `predict` method, prefer from malaya_speech itself.
-            Not required if using End-to-End TTS model such as VITS.
-
-        **kwargs: keyword arguments for `predict` and `iface.launch`.
-        """
-        if 'vits' not in self.__name__ and vocoder is None:
-            raise ValueError('required vocoder.')
-
-        try:
-            import gradio as gr
-        except BaseException:
-            raise ModuleNotFoundError(
-                'gradio not installed. Please install it by `pip install gradio` and try again.'
-            )
-
-        def pred(string):
-            r = self.predict(string=string, **kwargs)
-
-            if 'vits' in self.__name__:
-                y_ = r['y']
-            else:
-                if 'universal' in str(vocoder):
-                    o = r['universal-output']
-                else:
-                    o = r['mel-output']
-                y_ = vocoder(o)
-            data = float_to_int(y_)
-            return (22050, data)
-
-        title = 'Text-to-Speech'
-        description = 'It will take sometime for the first time, after that, should be really fast.'
-
-        iface = gr.Interface(pred, gr.inputs.Textbox(lines=3, label='Input Text'),
-                             'audio', title=title, description=description)
-        return iface.launch(**kwargs)
 
 
 class Vocoder(Abstract, TTS):
@@ -95,6 +50,8 @@ class Tacotron(Abstract, TTS):
     def __init__(
         self, input_nodes, output_nodes, normalizer, stats, sess, model, name
     ):
+        TTS.__init__(self)
+
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
         self._normalizer = normalizer
@@ -145,6 +102,8 @@ class Fastspeech(Abstract, TTS):
     def __init__(
         self, input_nodes, output_nodes, normalizer, stats, sess, model, name
     ):
+        TTS.__init__(self)
+
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
         self._normalizer = normalizer
@@ -207,6 +166,8 @@ class FastspeechSDP(Abstract, TTS):
     def __init__(
         self, input_nodes, output_nodes, normalizer, stats, sess, model, name
     ):
+        TTS.__init__(self)
+
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
         self._normalizer = normalizer
@@ -263,6 +224,70 @@ class FastspeechSDP(Abstract, TTS):
             'decoder-output': r['decoder_output'][0],
             'mel-output': r['post_mel_outputs'][0],
             'universal-output': v,
+        }
+
+    def __call__(self, input, **kwargs):
+        return self.predict(input, **kwargs)
+
+
+class E2E_FastSpeech(Abstract, TTS):
+    def __init__(
+        self, input_nodes, output_nodes, normalizer, stats, sess, model, name
+    ):
+        TTS.__init__(self, e2e=True)
+
+        self._input_nodes = input_nodes
+        self._output_nodes = output_nodes
+        self._normalizer = normalizer
+        self._stats = stats
+        self._sess = sess
+        self.__model__ = model
+        self.__name__ = name
+
+    def predict(
+        self,
+        string,
+        speed_ratio: float = 1.0,
+        f0_ratio: float = 1.0,
+        energy_ratio: float = 1.0,
+        temperature_durator: float = 0.6666,
+        **kwargs,
+    ):
+        """
+        Change string to Mel.
+
+        Parameters
+        ----------
+        string: str
+        speed_ratio: float, optional (default=1.0)
+            Increase this variable will increase time voice generated.
+        f0_ratio: float, optional (default=1.0)
+            Increase this variable will increase frequency, low frequency will generate more deeper voice.
+        energy_ratio: float, optional (default=1.0)
+            Increase this variable will increase loudness.
+        temperature_durator: float, optional (default=0.66666)
+            Durator trying to predict alignment with random.normal() * temperature_durator.
+
+        Returns
+        -------
+        result: Dict[string, decoder-output, y]
+        """
+        t, ids = self._normalizer.normalize(string, **kwargs)
+        r = self._execute(
+            inputs=[[ids], speed_ratio, [f0_ratio], [energy_ratio], temperature_durator],
+            input_labels=[
+                'Placeholder',
+                'speed_ratios',
+                'f0_ratios',
+                'energy_ratios',
+                'noise_scale_w',
+            ],
+            output_labels=['y_hat'],
+        )
+        return {
+            'string': t,
+            'ids': ids,
+            'y': r['y_hat'],
         }
 
     def __call__(self, input, **kwargs):
@@ -342,6 +367,7 @@ class Fastpitch(Abstract, TTS):
     def __init__(
         self, input_nodes, output_nodes, normalizer, stats, sess, model, name
     ):
+        TTS.__init__(self)
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
         self._normalizer = normalizer
@@ -405,6 +431,7 @@ class GlowTTS(Abstract, TTS):
     def __init__(
         self, input_nodes, output_nodes, normalizer, stats, sess, model, name, **kwargs
     ):
+        TTS.__init__(self)
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
         self._normalizer = normalizer
@@ -460,10 +487,11 @@ class GlowTTS(Abstract, TTS):
         return self.predict(input, **kwargs)
 
 
-class GlowTTS_MultiSpeaker(Abstract):
+class GlowTTS_MultiSpeaker(Abstract, TTS):
     def __init__(
         self, input_nodes, output_nodes, normalizer, speaker_vector, stats, sess, model, name
     ):
+        TTS.__init__(self)
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
         self._normalizer = normalizer
@@ -564,6 +592,8 @@ class VITS(Abstract, TTS):
     def __init__(
         self, input_nodes, output_nodes, normalizer, sess, model, name
     ):
+        TTS.__init__(self, e2e=True)
+
         self._input_nodes = input_nodes
         self._output_nodes = output_nodes
         self._normalizer = normalizer

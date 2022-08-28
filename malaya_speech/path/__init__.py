@@ -41,4 +41,6 @@ STATS_VOCODER = {
     'husein': STATS_VOCODER_HUSEIN,
     'yasmin': STATS_VOCODER_YASMIN,
     'osman': STATS_VOCODER_OSMAN,
+    'osman-sdp': STATS_VOCODER_OSMAN,
+    'yasmin-sdp': STATS_VOCODER_YASMIN,
 }
