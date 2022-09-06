@@ -46,8 +46,8 @@ Features
 -  **Speech Enhancement**, enhance voice activities using Waveform UNET.
 -  **SpeechSplit Conversion**, detailed speaking style conversion by disentangling speech into content, timbre, rhythm and pitch using PyWorld and PySPTK.
 -  **Speech-to-Text**, End-to-End Speech to Text for Malay, Mixed (Malay, Singlish and Mandarin) and Singlish using RNNT, Wav2Vec2, HuBERT and BEST-RQ CTC.
--  **Super Resolution**, Super Resolution 4x for Waveform.
--  **Text-to-Speech**, Text to Speech for Malay and Singlish using Tacotron2, FastSpeech2, FastPitch, GlowTTS and LightSpeech.
+-  **Super Resolution**, Super Resolution 4x for Waveform using ResNet UNET and Neural Vocoder.
+-  **Text-to-Speech**, Text to Speech for Malay and Singlish using Tacotron2, FastSpeech2, FastPitch, GlowTTS, LightSpeech and VITS.
 -  **Vocoder**, convert Mel to Waveform using MelGAN, Multiband MelGAN and Universal MelGAN Vocoder.
 -  **Voice Activity Detection**, detect voice activities using Finetuned Speaker Vector.
 -  **Voice Conversion**, Many-to-One, One-to-Many, Many-to-Many, and Zero-shot Voice Conversion.
@@ -109,4 +109,16 @@ If you use our software for research, please cite:
 Acknowledgement
 ----------------
 
-Thanks to `KeyReply <https://www.keyreply.com/>`_ for sponsoring private cloud to train Malaya-Speech models, without it, this library will collapse entirely.  
+Thanks to `KeyReply <https://www.keyreply.com/>`_ for private V100s cloud and `Mesolitica <https://mesolitica.com/>`_ for private RTXs cloud to train Malaya-Speech models,
+
+.. raw:: html
+
+    <a href="#readme">
+        <img alt="logo" width="20%" src="https://image4.owler.com/logo/keyreply_owler_20191024_163259_original.png">
+    </a>
+
+.. raw:: html
+
+    <a href="#readme">
+        <img alt="logo" width="20%" src="https://i1.wp.com/mesolitica.com/wp-content/uploads/2019/06/Mesolitica_Logo_Only.png?fit=857%2C532&ssl=1">
+    </a>

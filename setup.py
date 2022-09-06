@@ -17,7 +17,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     version='1.2.7',
     python_requires='>=3.6.*',
-    description='Speech-Toolkit for bahasa Malaysia, powered by Deep Learning Tensorflow.',
+    description='Speech-Toolkit for bahasa Malaysia, powered by Tensorflow and PyTorch.',
     long_description=readme(),
     author='huseinzol05',
     author_email='husein.zol05@gmail.com',

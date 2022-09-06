@@ -175,18 +175,21 @@ class TextIDS:
         self.normalizer = normalizer
         self.sentence_tokenizer = sentence_tokenizer
 
-        normalizer_parameters = list(inspect.signature(self.normalizer.normalize).parameters)
-        self.kwargs = {
-            'normalize_entity': False,
-            'normalize_text': False,
-            'normalize_url': True,
-            'normalize_email': True,
-            'normalize_telephone': True,
-        }
-        if 'check_english_func' in normalizer_parameters:
-            self.kwargs['check_english_func'] = None
+        if self.normalizer is not None:
+            normalizer_parameters = list(inspect.signature(self.normalizer.normalize).parameters)
+            self.kwargs = {
+                'normalize_entity': False,
+                'normalize_text': False,
+                'normalize_url': True,
+                'normalize_email': True,
+                'normalize_telephone': True,
+            }
+            if 'check_english_func' in normalizer_parameters:
+                self.kwargs['check_english_func'] = None
+            else:
+                self.kwargs['check_english'] = False
         else:
-            self.kwargs['check_english'] = False
+            self.kwargs = {}
 
     def normalize(
         self,

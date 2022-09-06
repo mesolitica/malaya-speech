@@ -6,27 +6,22 @@ _melgan_availability = {
     'male': {
         'Size (MB)': 17.3,
         'Quantized Size (MB)': 4.53,
-        'Mel loss': 0.4443,
     },
     'female': {
         'Size (MB)': 17.3,
         'Quantized Size (MB)': 4.53,
-        'Mel loss': 0.4434,
     },
     'husein': {
         'Size (MB)': 17.3,
         'Quantized Size (MB)': 4.53,
-        'Mel loss': 0.4442,
     },
     'haqkiem': {
         'Size (MB)': 17.3,
         'Quantized Size (MB)': 4.53,
-        'Mel loss': 0.4819,
     },
     'yasmin': {
         'Size (MB)': 17.3,
         'Quantized Size (MB)': 4.53,
-        'Mel loss': 0.4867,
     },
     'osman': {
         'Size (MB)': 17.3,
@@ -36,17 +31,14 @@ _melgan_availability = {
     'universal': {
         'Size (MB)': 309,
         'Quantized Size (MB)': 77.5,
-        'Mel loss': 0.4463,
     },
     'universal-1024': {
         'Size (MB)': 78.4,
         'Quantized Size (MB)': 19.9,
-        'Mel loss': 0.4591,
     },
     'universal-384': {
         'Size (MB)': 11.3,
         'Quantized Size (MB)': 3.06,
-        'Mel loss': 0.4445,
     },
 }
 
@@ -54,22 +46,18 @@ _mbmelgan_availability = {
     'female': {
         'Size (MB)': 10.4,
         'Quantized Size (MB)': 2.82,
-        'Mel loss': 0.4356,
     },
     'male': {
         'Size (MB)': 10.4,
         'Quantized Size (MB)': 2.82,
-        'Mel loss': 0.3735,
     },
     'husein': {
         'Size (MB)': 10.4,
         'Quantized Size (MB)': 2.82,
-        'Mel loss': 0.4356,
     },
     'haqkiem': {
         'Size (MB)': 10.4,
         'Quantized Size (MB)': 2.82,
-        'Mel loss': 0.4192,
     },
 }
 
@@ -77,27 +65,22 @@ _hifigan_availability = {
     'male': {
         'Size (MB)': 8.8,
         'Quantized Size (MB)': 2.49,
-        'Mel loss': 0.465,
     },
     'female': {
         'Size (MB)': 8.8,
         'Quantized Size (MB)': 2.49,
-        'Mel loss': 0.5547,
     },
     'universal-1024': {
         'Size (MB)': 170,
         'Quantized Size (MB)': 42.9,
-        'Mel loss': 0.3346,
     },
     'universal-768': {
         'Size (MB)': 72.8,
         'Quantized Size (MB)': 18.5,
-        'Mel loss': 0.3617,
     },
     'universal-512': {
         'Size (MB)': 32.6,
         'Quantized Size (MB)': 8.6,
-        'Mel loss': 0.3253,
     },
 }
 
@@ -146,8 +129,6 @@ def melgan(model: str = 'universal-1024', quantized: bool = False, **kwargs):
         * ``'universal'`` - Universal MelGAN trained on multiple speakers.
         * ``'universal-1024'`` - Universal MelGAN with 1024 filters trained on multiple speakers.
         * ``'universal-384'`` - Universal MelGAN with 384 filters trained on multiple speakers.
-        * ``'universal-44k'`` - Universal MelGAN trained on multiple speakers with 44100 sampling rate.
-        * ``'universal-1024-44k'`` - Universal MelGAN with 1024 filters trained on multiple speakers with 44100 sampling rate.
 
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
@@ -245,7 +226,7 @@ def hifigan(model: str = 'universal-768', quantized: bool = False, **kwargs):
 
 
 @check_type
-def hifigan_torch(model: str = 'universal-768', **kwargs):
+def univnet(model: str = 'universal-32', **kwargs):
     """
-    Load HiFiGAN Vocoder PyTorch model.
+    Load UnivNet PyTorch model from https://github.com/mindslab-ai/univnet.
     """

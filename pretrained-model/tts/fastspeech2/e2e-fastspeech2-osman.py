@@ -165,6 +165,9 @@ def generate(files):
                 text_input, ((0, num_pad)), 'constant', constant_values=0
             )
 
+            if len(text_input) != len(alignment):
+                break
+
             f0 = np.load(f.replace('mels', 'f0s'))
             f0 = norm_mean_std(f0, f0_stat[0], f0_stat[1])
             f0 = average_by_duration(f0, alignment)

@@ -17,49 +17,42 @@ _tacotron2_availability = {
     'male': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
-        'Combined loss': 0.1838,
         'Understand punctuation': True,
         'Is lowercase': True,
     },
     'female': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
-        'Combined loss': 0.1887,
         'Understand punctuation': True,
         'Is lowercase': True,
     },
     'husein': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
-        'Combined loss': 0.1165,
         'Understand punctuation': True,
         'Is lowercase': True,
     },
     'haqkiem': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
-        'Combined loss': 0.1375,
         'Understand punctuation': True,
         'Is lowercase': True,
     },
     'female-singlish': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
-        'Combined loss': 0.0923,
         'Understand punctuation': True,
         'Is lowercase': True,
     },
     'yasmin': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
-        'Combined loss': 0.06874,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
     'osman': {
         'Size (MB)': 104,
         'Quantized Size (MB)': 26.3,
-        'Combined loss': 0.06911,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
@@ -69,56 +62,54 @@ _fastspeech2_availability = {
     'male': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
-        'Combined loss': 1.8,
         'Understand punctuation': True,
         'Is lowercase': True,
     },
     'female': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
-        'Combined loss': 1.932,
         'Understand punctuation': True,
         'Is lowercase': True,
     },
     'husein': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
-        'Combined loss': 0.5832,
         'Understand punctuation': True,
         'Is lowercase': True,
     },
     'haqkiem': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
-        'Combined loss': 0.5663,
         'Understand punctuation': True,
         'Is lowercase': True,
     },
     'female-singlish': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
-        'Combined loss': 0.5112,
         'Understand punctuation': True,
         'Is lowercase': True,
     },
     'osman': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 31.7,
-        'Combined loss': 0.7341,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+    },
+    'yasmin': {
+        'Size (MB)': 125,
+        'Quantized Size (MB)': 31.7,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
     'yasmin-sdp': {
         'Size (MB)': 128,
         'Quantized Size (MB)': 33.1,
-        'Combined loss': 0.7212,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
     'osman-sdp': {
         'Size (MB)': 128,
         'Quantized Size (MB)': 33.1,
-        'Combined loss': 0.7341,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
@@ -128,28 +119,24 @@ _fastpitch_availability = {
     'male': {
         'Size (MB)': 123,
         'Quantized Size (MB)': 31.1,
-        'Combined loss': 1.614,
         'Understand punctuation': True,
         'Is lowercase': True,
     },
     'female': {
         'Size (MB)': 123,
         'Quantized Size (MB)': 31.1,
-        'Combined loss': 1.669,
         'Understand punctuation': True,
         'Is lowercase': True,
     },
     'husein': {
         'Size (MB)': 123,
         'Quantized Size (MB)': 31.1,
-        'Combined loss': 0.52515,
         'Understand punctuation': True,
         'Is lowercase': True,
     },
     'haqkiem': {
         'Size (MB)': 123,
         'Quantized Size (MB)': 31.1,
-        'Combined loss': 0.5186,
         'Understand punctuation': True,
         'Is lowercase': True,
     },
@@ -159,49 +146,42 @@ _glowtts_availability = {
     'male': {
         'Size (MB)': 119,
         'Quantized Size (MB)': 27.6,
-        'Combined loss': -1.429,
         'Understand punctuation': True,
         'Is lowercase': True,
     },
     'female': {
         'Size (MB)': 119,
         'Quantized Size (MB)': 27.6,
-        'Combined loss': -1.464,
         'Understand punctuation': True,
         'Is lowercase': True,
     },
     'haqkiem': {
         'Size (MB)': 119,
         'Quantized Size (MB)': 27.6,
-        'Combined loss': -1.649,
         'Understand punctuation': True,
         'Is lowercase': True,
     },
     'female-singlish': {
         'Size (MB)': 119,
         'Quantized Size (MB)': 27.6,
-        'Combined loss': -1.728,
         'Understand punctuation': True,
         'Is lowercase': True,
     },
     'yasmin': {
         'Size (MB)': 119,
         'Quantized Size (MB)': 27.6,
-        'Combined loss': -1.908,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
     'osman': {
         'Size (MB)': 119,
         'Quantized Size (MB)': 27.6,
-        'Combined loss': -1.908,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
     'multispeaker': {
         'Size (MB)': 404,
         'Quantized Size (MB)': 79.9,
-        'Combined loss': -1.882,
         'Understand punctuation': True,
         'Is lowercase': True,
     }
@@ -212,14 +192,12 @@ _lightspeech_availability = {
     'yasmin': {
         'Size (MB)': 39.9,
         'Quantized Size (MB)': 10.2,
-        'Combined loss': 0.7541,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
     'osman': {
         'Size (MB)': 39.9,
         'Quantized Size (MB)': 10.2,
-        'Combined loss': 0.7541,
         'Understand punctuation': True,
         'Is lowercase': False,
     },
@@ -235,6 +213,16 @@ _vits_availability = {
         'Size (MB)': 145,
         'Understand punctuation': True,
         'Is lowercase': False,
+    },
+    'mesolitica/VITS-female-singlish': {
+        'Size (MB)': 145,
+        'Understand punctuation': True,
+        'Is lowercase': True,
+    },
+    'mesolitica/VITS-haqkiem': {
+        'Size (MB)': 145,
+        'Understand punctuation': True,
+        'Is lowercase': True,
     },
 }
 
@@ -315,7 +303,7 @@ def available_e2e_fastspeech2():
     List available FastSpeech2, End-to-End models.
     """
 
-    return describe_availability(_vits_availability)
+    return describe_availability(_e2e_fastspeech2_availability)
 
 
 def load_text_ids(
@@ -336,8 +324,8 @@ def load_text_ids(
             'malaya not installed. Please install it by `pip install malaya` and try again.'
         )
 
-    if version.parse(malaya.__version__) < version.parse('4.9'):
-        logger.warning('To get better speech synthesis, make sure Malaya version >= 4.9')
+    if version.parse(malaya.__version__) < version.parse('4.9.1'):
+        logger.warning('To get better speech synthesis, make sure Malaya version >= 4.9.1')
 
     normalizer = malaya.normalize.normalizer()
     sentence_tokenizer = malaya.text.function.split_into_sentences
@@ -410,7 +398,7 @@ def tacotron2(
 
 
 def fastspeech2(
-    model: str = 'male',
+    model: str = 'osman',
     quantized: bool = False,
     pad_to: int = 8,
     **kwargs,
@@ -645,6 +633,8 @@ def vits(model: str = 'mesolitica/VITS-osman', **kwargs):
 
         * ``'mesolitica/VITS-osman'`` - VITS trained on male Osman voice.
         * ``'mesolitica/VITS-yasmin'`` - VITS trained on female Yasmin voice.
+        * ``'mesolitica/VITS-female-singlish'`` - VITS trained on female singlish voice.
+        * ``'mesolitica/VITS-haqkiem'`` - VITS trained on haqkiem voice.
 
     Returns
     -------

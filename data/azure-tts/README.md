@@ -21,7 +21,7 @@ Guidelines for responsible deployment of synthetic voice technology, https://doc
   - approximate 99.4 hours.
   - Texts from Malay Wikipedia and News.
   - Sentences between 2 words and 20 words.
-  - transcription, https://huggingface.co/datasets/mesolitica/azure-tts-yasmin/resolve/main/postprocessing-edge-tts-news.json
+  - transcription, https://huggingface.co/datasets/mesolitica/azure-tts-yasmin/resolve/main/postprocessing-edge-tts-news-yasmin.json
 
 2. https://huggingface.co/datasets/mesolitica/azure-tts-yasmin/resolve/main/parliament-wavs.tar
 
@@ -30,7 +30,7 @@ Guidelines for responsible deployment of synthetic voice technology, https://doc
   - approximate 142 hours.
   - Texts from Malaysia Malay Parliament.
   - Sentences between 2 words and 25 words.
-  - transcription, https://huggingface.co/datasets/mesolitica/azure-tts-yasmin/resolve/main/postprocessing-edge-tts-parliament.json
+  - transcription, https://huggingface.co/datasets/mesolitica/azure-tts-yasmin/resolve/main/postprocessing-edge-tts-parliament-yasmin.json
 
 3. https://huggingface.co/datasets/mesolitica/azure-tts-yasmin-wikipedia/resolve/main/yasmin-wiki.tar
 
