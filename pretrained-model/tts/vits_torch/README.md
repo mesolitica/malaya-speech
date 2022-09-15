@@ -23,6 +23,9 @@ cd ../
 
 ```bash
 python3 train.py -c female_singlish.json -m female_singlish
+python3 train.py -c haqkiem.json -m haqkiem
+python3 train.py -c osman.json -m osman
+python3 train.py -c yasmin.json -m yasmin
 ```
 
 ## download

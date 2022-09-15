@@ -41,11 +41,7 @@ def deep_wav(model: str = 'fastsep-4', quantized: bool = False, **kwargs):
     Parameters
     ----------
     model : str, optional (default='fastsep-4')
-        Model architecture supported. Allowed values:
-
-        * ``'fastsep-2'`` - FastSep 2 layers trained on raw 8k wav.
-        * ``'fastsep-4'`` - FastSep 4 layers trained on raw 8k wav.
-        * ``'fastsep-6'`` - FastSep 6 layers trained on raw 8k wav.
+        Check available models at `malaya_speech.multispeaker_separation.available_deep_wav()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.

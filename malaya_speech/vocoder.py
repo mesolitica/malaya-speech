@@ -117,19 +117,7 @@ def melgan(model: str = 'universal-1024', quantized: bool = False, **kwargs):
     Parameters
     ----------
     model : str, optional (default='universal-1024')
-        Model architecture supported. Allowed values:
-
-        * ``'female'`` - MelGAN trained on female voice.
-        * ``'male'`` - MelGAN trained on male voice.
-        * ``'husein'`` - MelGAN trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
-        * ``'haqkiem'`` - MelGAN trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
-        * ``'yasmin'`` - MelGAN trained on female Yasmin voice.
-        * ``'osman'`` - MelGAN trained on male Osman voice.
-        * ``'female-singlish'`` - MelGAN trained on Female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
-        * ``'universal'`` - Universal MelGAN trained on multiple speakers.
-        * ``'universal-1024'`` - Universal MelGAN with 1024 filters trained on multiple speakers.
-        * ``'universal-384'`` - Universal MelGAN with 384 filters trained on multiple speakers.
-
+        Check available models at `malaya_speech.vocoder.available_melgan()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
@@ -160,13 +148,7 @@ def mbmelgan(model: str = 'female', quantized: bool = False, **kwargs):
     Parameters
     ----------
     model : str, optional (default='female')
-        Model architecture supported. Allowed values:
-
-        * ``'female'`` - MBMelGAN trained on female voice.
-        * ``'male'`` - MBMelGAN trained on male voice.
-        * ``'husein'`` - MBMelGAN trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
-        * ``'haqkiem'`` - MBMelGAN trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
-
+        Check available models at `malaya_speech.vocoder.available_mbmelgan()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
@@ -196,14 +178,7 @@ def hifigan(model: str = 'universal-768', quantized: bool = False, **kwargs):
     Parameters
     ----------
     model : str, optional (default='universal-768')
-        Model architecture supported. Allowed values:
-
-        * ``'female'`` - HiFiGAN trained on female voice.
-        * ``'male'`` - HiFiGAN trained on male voice.
-        * ``'universal-1024'`` - Universal HiFiGAN with 1024 filters trained on multiple speakers.
-        * ``'universal-768'`` - Universal HiFiGAN with 768 filters trained on multiple speakers.
-        * ``'universal-512'`` - Universal HiFiGAN with 512 filters trained on multiple speakers.
-
+        Check available models at `malaya_speech.vocoder.available_hifigan()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
@@ -223,10 +198,3 @@ def hifigan(model: str = 'universal-768', quantized: bool = False, **kwargs):
         quantized=quantized,
         **kwargs
     )
-
-
-@check_type
-def univnet(model: str = 'universal-32', **kwargs):
-    """
-    Load UnivNet PyTorch model from https://github.com/mindslab-ai/univnet.
-    """

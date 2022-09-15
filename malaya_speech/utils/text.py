@@ -16,6 +16,7 @@ _numbers = '0123456789'
 _small_letters = 'abcdefghijklmnopqrstuvwxyz'
 _rejected = '\'():;"'
 _punct = ':;,.?'
+_bracket = '()[]'
 
 PRONUNCIATION = {
     'A': 'ae',
@@ -195,6 +196,7 @@ class TextIDS:
         self,
         string: str,
         normalize: bool = True,
+        replace_brackets_with_comma=True,
         assume_newline_fullstop: bool = False,
         true_case_func: Callable = None,
         **kwargs,
@@ -208,6 +210,8 @@ class TextIDS:
         normalize: bool, optional (default=True)
             will normalize the string using malaya.normalize.normalizer.
             will ignore this boolean if self.normalizer passed as None.
+        replace_brackets_with_comma: bool, optional (default=True)
+            will replace [text] / (text) -> , text ,
         assume_newline_fullstop: bool, optional (default=False)
             Assume a string is a multiple sentences, will split using
             `malaya.text.function.split_into_sentences`.
@@ -243,11 +247,16 @@ class TextIDS:
         if true_case_func is not None:
             string = true_case_func(string)
 
-        if not self.understand_punct:
-            string = ''.join([c for c in string if c not in _punct])
-        string = re.sub(r'[ ]+', ' ', string).strip()
         if self.is_lower:
             string = string.lower()
+
+        if replace_brackets_with_comma:
+            string = ''.join([' , ' if c in _bracket else c for c in string if c])
+
+        if not self.understand_punct:
+            string = ''.join([c for c in string if c not in _punct])
+
+        string = re.sub(r'[ ]+', ' ', string).strip()
 
         if string[-1] not in '.,?!':
             string = string + '.'

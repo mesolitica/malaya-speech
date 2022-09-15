@@ -56,12 +56,7 @@ def deep_transducer(
     Parameters
     ----------
     model : str, optional (default='conformer-transducer')
-        Model architecture supported. Allowed values:
-
-        * ``'conformer-transducer'`` - Conformer + RNNT trained on Malay STT dataset.
-        * ``'conformer-transducer-mixed'`` - Conformer + RNNT trained on Mixed STT dataset.
-        * ``'conformer-transducer-singlish'`` - Conformer + RNNT trained on Singlish STT dataset.
-
+        Check available models at `malaya_speech.force_alignment.available_aligner()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
@@ -96,17 +91,7 @@ def deep_ctc(
     Parameters
     ----------
     model : str, optional (default='hubert-conformer')
-        Model architecture supported. Allowed values:
-
-        * ``'hubert-conformer-tiny'`` - Finetuned HuBERT Conformer TINY.
-        * ``'hubert-conformer'`` - Finetuned HuBERT Conformer.
-        * ``'hubert-conformer-large'`` - Finetuned HuBERT Conformer LARGE.
-        * ``'hubert-conformer-large-3mixed'`` - Finetuned HuBERT Conformer LARGE for (Malay + Singlish + Mandarin) languages.
-        * ``'best-rq-conformer-tiny'`` - Finetuned BEST-RQ Conformer TINY.
-        * ``'best-rq-conformer'`` - Finetuned BEST-RQ Conformer.
-        * ``'best-rq-conformer-large'`` - Finetuned BEST-RQ Conformer LARGE.
-
-
+        Check available models at `malaya_speech.stt.available_ctc()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
@@ -139,9 +124,8 @@ def huggingface(model: str = 'mesolitica/wav2vec2-xls-r-300m-mixed'):
     Parameters
     ----------
     model : str, optional (default='mesolitica/wav2vec2-xls-r-300m-mixed')
-        Model architecture supported. Allowed values:
+        Check available models at `malaya_speech.stt.available_huggingface()`.
 
-        * ``'mesolitica/wav2vec2-xls-r-300m-mixed'`` - wav2vec2 XLS-R 300M finetuned on (Malay + Singlish + Mandarin) languages.
     Returns
     -------
     result : malaya_speech.model.huggingface.CTC class

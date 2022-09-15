@@ -33,11 +33,7 @@ def deep_conversion(
     Parameters
     ----------
     model : str, optional (default='fastvc-32-vggvox-v2')
-        Model architecture supported. Allowed values:
-
-        * ``'fastvc-32-vggvox-v2'`` - FastVC bottleneck size 32 with VGGVox-v2 Speaker Vector.
-        * ``'fastvc-64-vggvox-v2'`` - FastVC bottleneck size 64 with VGGVox-v2 Speaker Vector.
-
+        Check available models at `malaya_speech.voice_conversion.available_deep_conversion()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.

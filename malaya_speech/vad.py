@@ -88,15 +88,7 @@ def deep_model(model: str = 'marblenet-factor1', quantized: bool = False, **kwar
     Parameters
     ----------
     model : str, optional (default='vggvox-v2')
-        Model architecture supported. Allowed values:
-
-        * ``'vggvox-v1'`` - finetuned VGGVox V1.
-        * ``'vggvox-v2'`` - finetuned VGGVox V2.
-        * ``'speakernet'`` - finetuned SpeakerNet.
-        * ``'marblenet-factor1'`` - Pretrained MarbleNet * factor 1.
-        * ``'marblenet-factor3'`` - Pretrained MarbleNet * factor 3.
-        * ``'marblenet-factor5'`` - Pretrained MarbleNet * factor 5.
-
+        Check available models at `malaya_speech.vad.available_model()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.

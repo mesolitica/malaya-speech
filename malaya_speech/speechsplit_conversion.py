@@ -65,11 +65,7 @@ def deep_conversion(
     Parameters
     ----------
     model : str, optional (default='fastspeechsplit-v2-vggvox-v2')
-        Model architecture supported. Allowed values:
-
-        * ``'fastspeechsplit-vggvox-v2'`` - FastSpeechSplit with VGGVox-v2 Speaker Vector.
-        * ``'fastspeechsplit-v2-vggvox-v2'`` - FastSpeechSplit V2 with VGGVox-v2 Speaker Vector.
-
+        Check available models at `malaya_speech.speechsplit_conversion.available_deep_conversion(f0_mode = '{f0_mode}')`
     f0_mode : str, optional (default='pysptk')
         F0 conversion supported. Allowed values:
 

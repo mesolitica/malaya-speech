@@ -46,10 +46,7 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     Parameters
     ----------
     model : str, optional (default='vggvox-v2')
-        Model architecture supported. Allowed values:
-
-        * ``'vggvox-v2'`` - finetuned VGGVox V2.
-        * ``'deep-speaker'`` - finetuned Deep Speaker.
+        Check available models at `malaya_speech.language_detection.available_model()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.

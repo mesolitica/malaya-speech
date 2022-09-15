@@ -82,10 +82,7 @@ def deep_masking(model: str = 'resnet-unet', quantized: bool = False, **kwargs):
     Parameters
     ----------
     model : str, optional (default='resnet-unet')
-        Model architecture supported. Allowed values:
-
-        * ``'unet'`` - pretrained UNET.
-        * ``'resnet-unet'`` - pretrained resnet-UNET.
+        Check available models at `malaya_speech.speech_enhancement.available_deep_masking()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
@@ -118,11 +115,7 @@ def deep_enhance(model: str = 'unet', quantized: bool = False, **kwargs):
     Parameters
     ----------
     model : str, optional (default='unet')
-        Model architecture supported. Allowed values:
-
-        * ``'unet'`` - pretrained UNET Speech Enhancement.
-        * ``'resnet-unet'`` - pretrained resnet-UNET Speech Enhancement.
-        * ``'resnext-unet'`` - pretrained resnext-UNET Speech Enhancement.
+        Check available models at `malaya_speech.speech_enhancement.available_deep_enhance()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.

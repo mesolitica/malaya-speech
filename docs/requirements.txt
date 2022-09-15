@@ -12,9 +12,10 @@ protobuf==3.13.0
 unidecode
 --extra-index-url https://download.pytorch.org/whl/torch_stable.html
 torch==1.12.1
-malaya-boilerplate==0.0.22rc0
+malaya-boilerplate>=0.0.23rc1
 torchlibrosa==0.0.7
 matplotlib
+transformers
 nbconvert==5.6.1
 nbformat==5.0.7
 nbsphinx==0.8.0

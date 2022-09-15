@@ -1,4 +1,4 @@
-from malaya_speech.supervised import stt, lm
+from malaya_speech.supervised import stt
 from herpetologist import check_type
 from malaya_speech.utils import describe_availability
 import json
@@ -203,72 +203,6 @@ google_accuracy = {
     }
 }
 
-_language_model_availability = {
-    'bahasa': {
-        'Size (MB)': 17,
-        'LM order': 3,
-        'Description': 'Gathered from malaya-speech ASR bahasa transcript',
-        'Command': [
-            './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
-            './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
-        ],
-    },
-    'bahasa-news': {
-        'Size (MB)': 24,
-        'LM order': 3,
-        'Description': 'Gathered from malaya-speech bahasa ASR transcript + News (Random sample 300k sentences)',
-        'Command': [
-            './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
-            './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
-        ],
-    },
-    'bahasa-combined': {
-        'Size (MB)': 29,
-        'LM order': 3,
-        'Description': 'Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences) + Bahasa Wikipedia (Random sample 150k sentences).',
-        'Command': [
-            './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
-            './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
-        ],
-    },
-    'redape-community': {
-        'Size (MB)': 887.1,
-        'LM order': 4,
-        'Description': 'Mirror for https://github.com/redapesolutions/suara-kami-community',
-        'Command': [
-            './lmplz --text text.txt --arpa out.arpa -o 4 --prune 0 1 1 1',
-            './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
-        ],
-    },
-    'dump-combined': {
-        'Size (MB)': 310,
-        'LM order': 3,
-        'Description': 'Academia + News + IIUM + Parliament + Watpadd + Wikipedia + Common Crawl + training set from https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt',
-        'Command': [
-            './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
-            './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
-        ],
-    },
-    'manglish': {
-        'Size (MB)': 202,
-        'LM order': 3,
-        'Description': 'Manglish News + Manglish Reddit + Manglish forum + training set from https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt.',
-        'Command': [
-            './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
-            './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
-        ],
-    },
-    'bahasa-manglish-combined': {
-        'Size (MB)': 608,
-        'LM order': 3,
-        'Description': 'Combined `dump-combined` and `manglish`.',
-        'Command': [
-            './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
-            './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
-        ],
-    },
-}
-
 
 def available_ctc():
     """
@@ -276,14 +210,6 @@ def available_ctc():
     """
 
     return describe_availability(_ctc_availability)
-
-
-def available_language_model():
-    """
-    List available Language Model for CTC.
-    """
-
-    return describe_availability(_language_model_availability)
 
 
 def available_transducer():
@@ -303,44 +229,6 @@ def available_huggingface():
 
 
 @check_type
-def language_model(
-    model: str = 'dump-combined', **kwargs
-):
-    """
-    Load KenLM language model.
-
-    Parameters
-    ----------
-    model : str, optional (default='dump-combined')
-        Model architecture supported. Allowed values:
-
-        * ``'bahasa'`` - Gathered from malaya-speech ASR bahasa transcript.
-        * ``'bahasa-news'`` - Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences).
-        * ``'bahasa-combined'`` - Gathered from malaya-speech ASR bahasa transcript + Bahasa News (Random sample 300k sentences) + Bahasa Wikipedia (Random sample 150k sentences).
-        * ``'redape-community'`` - Mirror for https://github.com/redapesolutions/suara-kami-community
-        * ``'dump-combined'`` - Academia + News + IIUM + Parliament + Watpadd + Wikipedia + Common Crawl + training set from https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt.
-        * ``'manglish'`` - Manglish News + Manglish Reddit + Manglish forum + training set from https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt.
-        * ``'bahasa-manglish-combined'`` - Combined `dump-combined` and `manglish`.
-
-    Returns
-    -------
-    result : str
-    """
-    model = model.lower()
-    if model not in _language_model_availability:
-        raise ValueError(
-            'model not supported, please check supported models from `malaya_speech.stt.available_language_model()`.'
-        )
-
-    path_model = lm.load(
-        model=model,
-        module='language-model',
-        **kwargs
-    )
-    return path_model
-
-
-@check_type
 def deep_ctc(
     model: str = 'hubert-conformer', quantized: bool = False, **kwargs
 ):
@@ -350,17 +238,7 @@ def deep_ctc(
     Parameters
     ----------
     model : str, optional (default='hubert-conformer')
-        Model architecture supported. Allowed values:
-
-        * ``'hubert-conformer-tiny'`` - Finetuned HuBERT Conformer TINY.
-        * ``'hubert-conformer'`` - Finetuned HuBERT Conformer.
-        * ``'hubert-conformer-large'`` - Finetuned HuBERT Conformer LARGE.
-        * ``'hubert-conformer-large-3mixed'`` - Finetuned HuBERT Conformer LARGE for (Malay + Singlish + Mandarin) languages.
-        * ``'best-rq-conformer-tiny'`` - Finetuned BEST-RQ Conformer TINY.
-        * ``'best-rq-conformer'`` - Finetuned BEST-RQ Conformer.
-        * ``'best-rq-conformer-large'`` - Finetuned BEST-RQ Conformer LARGE.
-
-
+        Check available models at `malaya_speech.stt.available_ctc()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
@@ -394,18 +272,7 @@ def deep_transducer(
     Parameters
     ----------
     model : str, optional (default='conformer')
-        Model architecture supported. Allowed values:
-
-        * ``'tiny-conformer'`` - TINY size Google Conformer.
-        * ``'small-conformer'`` - SMALL size Google Conformer.
-        * ``'conformer'`` - BASE size Google Conformer.
-        * ``'large-conformer'`` - LARGE size Google Conformer.
-        * ``'conformer-stack-2mixed'`` - BASE size Stacked Google Conformer for (Malay + Singlish) languages.
-        * ``'conformer-stack-3mixed'`` - BASE size Stacked Google Conformer for (Malay + Singlish + Mandarin) languages.
-        * ``'small-conformer-singlish'`` - SMALL size Google Conformer for singlish language.
-        * ``'conformer-singlish'`` - BASE size Google Conformer for singlish language.
-        * ``'large-conformer-singlish'`` - LARGE size Google Conformer for singlish language.
-
+        Check available models at `malaya_speech.stt.available_transducer()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
@@ -437,10 +304,7 @@ def huggingface(model: str = 'mesolitica/wav2vec2-xls-r-300m-mixed', **kwargs):
     Parameters
     ----------
     model : str, optional (default='mesolitica/wav2vec2-xls-r-300m-mixed')
-        Model architecture supported. Allowed values:
-
-        * ``'mesolitica/wav2vec2-xls-r-300m-mixed'`` - wav2vec2 XLS-R 300M finetuned on (Malay + Singlish + Mandarin) languages.
-
+        Check available models at `malaya_speech.stt.available_huggingface()`.
     Returns
     -------
     result : malaya_speech.model.huggingface.CTC class

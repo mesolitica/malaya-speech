@@ -76,10 +76,7 @@ def unet(model: str = 'srgan-256', quantized: bool = False, **kwargs):
     Parameters
     ----------
     model : str, optional (default='srgan-256')
-        Model architecture supported. Allowed values:
-
-        * ``'srgan-128'`` - srgan with 128 filter size and 16 residual blocks.
-        * ``'srgan-256'`` - srgan with 256 filter size and 16 residual blocks.
+        Check available models at `malaya_speech.super_resolution.available_unet()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
@@ -108,10 +105,7 @@ def tfgan(model: str = 'voicefixer', **kwargs):
     Parameters
     ----------
     model : str, optional (default='voicefixer')
-        Model architecture supported. Allowed values:
-
-        * ``'voicefixer'`` - originally from https://github.com/haoheliu/voicefixer.
-        * ``'nvsr'`` - originally from https://github.com/haoheliu/ssr_eval/tree/main/examples/NVSR.
+        Check available models at `malaya_speech.super_resolution.available_tfgan()`.
 
     Returns
     -------
@@ -132,9 +126,7 @@ def audio_diffusion(model: str = 'nuwave2', **kwargs):
     Parameters
     ----------
     model : str, optional (default='nuwave2')
-        Model architecture supported. Allowed values:
-
-        * ``'nuwave2'`` - originally from https://github.com/mindslab-ai/nuwave2.
+        Check available models at `malaya_speech.super_resolution.available_audio_diffusion()`.
 
     Returns
     -------

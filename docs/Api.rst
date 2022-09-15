@@ -375,6 +375,12 @@ malaya_speech.language_detection
 .. automodule:: malaya_speech.language_detection
     :members:
 
+malaya_speech.language_model
+-----------------------------------
+
+.. automodule:: malaya_speech.language_model
+    :members:
+
 malaya_speech.multispeaker_separation
 --------------------------------------
 

@@ -31,7 +31,8 @@ Contents:
    :maxdepth: 2
    :caption: Language Model Module
    
-   language-model
+   kenlm
+   gpt2-lm
 
 .. toctree::
    :maxdepth: 2
@@ -39,6 +40,7 @@ Contents:
 
    load-stt-transducer-model
    load-stt-transducer-model-lm
+   load-stt-transducer-model-lm-gpt2
    load-stt-transducer-model-singlish
    load-stt-transducer-model-2mixed
    load-stt-transducer-model-3mixed
@@ -51,6 +53,7 @@ Contents:
    load-stt-ctc-model
    load-stt-ctc-model-ctc-decoders
    load-stt-ctc-model-pyctcdecode
+   load-stt-ctc-model-pyctcdecode-gpt2
    load-stt-ctc-model-3mixed
    stt-ctc-gradio
 

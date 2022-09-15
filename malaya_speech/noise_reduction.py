@@ -62,12 +62,8 @@ def deep_model(model: str = 'resnet-unet', quantized: bool = False, **kwargs):
 
     Parameters
     ----------
-    model : str, optional (default='wavenet')
-        Model architecture supported. Allowed values:
-
-        * ``'unet'`` - pretrained UNET.
-        * ``'resnet-unet'`` - pretrained resnet-UNET.
-        * ``'resnext'`` - pretrained resnext-UNET.
+    model : str, optional (default='resnet-unet')
+        Check available models at `malaya_speech.noise_reduction.available_model()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.

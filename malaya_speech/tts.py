@@ -351,16 +351,7 @@ def tacotron2(
     Parameters
     ----------
     model : str, optional (default='yasmin')
-        Model architecture supported. Allowed values:
-
-        * ``'female'`` - Tacotron2 trained on female voice.
-        * ``'male'`` - Tacotron2 trained on male voice.
-        * ``'husein'`` - Tacotron2 trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
-        * ``'haqkiem'`` - Tacotron2 trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
-        * ``'yasmin'`` - Tacotron2 trained on female Yasmin voice.
-        * ``'osman'`` - Tacotron2 trained on male Osman voice.
-        * ``'female-singlish'`` - Tacotron2 trained on female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
-
+        Check available models at `malaya_speech.tts.available_tacotron2()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
@@ -409,16 +400,7 @@ def fastspeech2(
     Parameters
     ----------
     model : str, optional (default='male')
-        Model architecture supported. Allowed values:
-
-        * ``'female'`` - Fastspeech2 trained on female voice.
-        * ``'male'`` - Fastspeech2 trained on male voice.
-        * ``'husein'`` - Fastspeech2 trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
-        * ``'haqkiem'`` - Fastspeech2 trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
-        * ``'yasmin'`` - Fastspeech2 trained on female Yasmin voice.
-        * ``'osman'`` - Fastspeech2 trained on male Osman voice.
-        * ``'female-singlish'`` - Fastspeech2 trained on female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
-
+        Check available models at `malaya_speech.tts.available_fastspeech2()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
@@ -467,13 +449,7 @@ def fastpitch(
     Parameters
     ----------
     model : str, optional (default='male')
-        Model architecture supported. Allowed values:
-
-        * ``'female'`` - Fastpitch trained on female voice.
-        * ``'male'`` - Fastpitch trained on male voice.
-        * ``'husein'`` - Fastpitch trained on Husein voice, https://www.linkedin.com/in/husein-zolkepli/
-        * ``'haqkiem'`` - Fastpitch trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
-
+        Check available models at `malaya_speech.tts.available_fastpitch()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
@@ -522,16 +498,7 @@ def glowtts(
     Parameters
     ----------
     model : str, optional (default='yasmin')
-        Model architecture supported. Allowed values:
-
-        * ``'female'`` - GlowTTS trained on female voice.
-        * ``'male'`` - GlowTTS trained on male voice.
-        * ``'haqkiem'`` - GlowTTS trained on Haqkiem voice, https://www.linkedin.com/in/haqkiem-daim/
-        * ``'female-singlish'`` - GlowTTS trained on female Singlish voice, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus
-        * ``'yasmin'`` - GlowTTS trained on female Yasmin voice.
-        * ``'osman'`` - GlowTTS trained on male Osman voice.
-        * ``'multispeaker'`` - Multispeaker GlowTTS trained on male, female, husein and haqkiem voices, also able to do voice conversion.
-
+        Check available models at `malaya_speech.tts.available_glowtts()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
@@ -581,11 +548,7 @@ def lightspeech(
     Parameters
     ----------
     model : str, optional (default='male')
-        Model architecture supported. Allowed values:
-
-        * ``'yasmin'`` - LightSpeech trained on female Yasmin voice.
-        * ``'osman'`` - LightSpeech trained on male Osman voice.
-
+        Check available models at `malaya_speech.tts.available_lightspeech()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.
@@ -628,14 +591,8 @@ def vits(model: str = 'mesolitica/VITS-osman', **kwargs):
 
     Parameters
     ----------
-    model : str, optional (default='male')
-        Model architecture supported. Allowed values:
-
-        * ``'mesolitica/VITS-osman'`` - VITS trained on male Osman voice.
-        * ``'mesolitica/VITS-yasmin'`` - VITS trained on female Yasmin voice.
-        * ``'mesolitica/VITS-female-singlish'`` - VITS trained on female singlish voice.
-        * ``'mesolitica/VITS-haqkiem'`` - VITS trained on haqkiem voice.
-
+    model : str, optional (default='mesolitica/VITS-osman')
+        Check available models at `malaya_speech.tts.available_vits()`.
     Returns
     -------
     result : malaya_speech.torch_model.synthesis.VITS class
@@ -673,11 +630,7 @@ def e2e_fastspeech2(
     Parameters
     ----------
     model : str, optional (default='male')
-        Model architecture supported. Allowed values:
-
-        * ``'yasmin'`` - Fastspeech2 trained on female Yasmin voice.
-        * ``'osman'`` - Fastspeech2 trained on male Osman voice.
-
+        Check available models at `malaya_speech.tts.available_e2e_fastspeech2()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.

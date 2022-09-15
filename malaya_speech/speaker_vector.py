@@ -76,15 +76,7 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     Parameters
     ----------
     model : str, optional (default='speakernet')
-        Model architecture supported. Allowed values:
-
-        * ``'vggvox-v1'`` - VGGVox V1, embedding size 1024, exported from https://github.com/linhdvu14/vggvox-speaker-identification
-        * ``'vggvox-v2'`` - VGGVox V2, embedding size 512, exported from https://github.com/WeidiXie/VGG-Speaker-Recognition
-        * ``'deep-speaker'`` - Deep Speaker, embedding size 512, exported from https://github.com/philipperemy/deep-speaker
-        * ``'speakernet'`` - SpeakerNet, embedding size 7205, exported from https://github.com/NVIDIA/NeMo/tree/main/examples/speaker_recognition
-        * ``'conformer-base'`` - Conformer BASE size, embedding size 512.
-        * ``'conformer-tiny'`` - Conformer TINY size, embedding size 512.
-
+        Check available models at `malaya_speech.speaker_vector.available_model()`.
     quantized : bool, optional (default=False)
         if True, will load 8-bit quantized model.
         Quantized model not necessary faster, totally depends on the machine.

@@ -31,3 +31,4 @@ test/config.json
 test/ctc-vocab.json
 test/e2e-tts-dataset.pkl
 ._*
+logits.pkl
