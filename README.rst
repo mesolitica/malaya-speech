@@ -56,7 +56,7 @@ Features
 -  **Force Alignment**, generate a time-aligned transcription of an audio file using RNNT and CTC.
 -  **Gender Detection**, detect genders in speech using Finetuned Speaker Vector.
 -  **Language Detection**, detect hyperlocal languages in speech using Finetuned Speaker Vector.
--  **Language Model**, using KenLM, Masked language model using BERT, ALBERT and RoBERTa, and GPT2 to do ASR decoder scoring.
+-  **Language Model**, using KenLM, Masked language model using BERT and RoBERTa, and GPT2 to do ASR decoder scoring.
 -  **Multispeaker Separation**, Multispeaker separation using FastSep on 8k Wav.
 -  **Noise Reduction**, reduce multilevel noises using STFT UNET.
 -  **Speaker Change**, detect changing speakers using Finetuned Speaker Vector.

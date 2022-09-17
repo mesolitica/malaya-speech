@@ -123,10 +123,10 @@ malaya_speech.model.synthesis.FastspeechSDP
 .. autoclass:: malaya_speech.model.synthesis.FastspeechSDP()
     :members:
 
-malaya_speech.model.synthesis.E2E_Fastspeech
+malaya_speech.model.synthesis.E2E_FastSpeech
 ----------------------------------------------
 
-.. autoclass:: malaya_speech.model.synthesis.E2E_Fastspeech()
+.. autoclass:: malaya_speech.model.synthesis.E2E_FastSpeech()
     :members:
 
 malaya_speech.model.synthesis.FastVC

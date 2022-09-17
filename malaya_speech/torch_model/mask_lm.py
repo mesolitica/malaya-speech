@@ -44,4 +44,5 @@ class LM:
             'last_state': new_state
         }
 
-        return current_score, new_state
+        lm_score = self.alpha * current_score * LOG_BASE_CHANGE_FACTOR + self.beta
+        return lm_score, new_state

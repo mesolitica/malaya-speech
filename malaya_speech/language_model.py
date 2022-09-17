@@ -68,7 +68,7 @@ _gpt2_availability = {
 
 _mlm_availability = {
     'mesolitica/bert-base-standard-bahasa-cased': {
-        'Size (MB)': 310,
+        'Size (MB)': 443,
     },
     'mesolitica/roberta-base-standard-bahasa-cased': {
         'Size (MB)': 310,
@@ -78,7 +78,7 @@ _mlm_availability = {
 
 def available_kenlm():
     """
-    List available Language Model for CTC.
+    List available KenLM Language Model.
     """
 
     return describe_availability(_kenlm_availability)
@@ -157,13 +157,13 @@ def gpt2(model: str = 'mesolitica/gpt2-117m-bahasa-cased', force_check: bool = T
 
 
 @check_type
-def mlm(model: str = 'malay-huggingface/bert-tiny-bahasa-cased', force_check: bool = True, **kwargs):
+def mlm(model: str = 'mesolitica/bert-base-standard-bahasa-cased', force_check: bool = True, **kwargs):
     """
     Load Masked language model.
 
     Parameters
     ----------
-    model: str, optional (default='malay-huggingface/bert-tiny-bahasa-cased')
+    model: str, optional (default='mesolitica/bert-base-standard-bahasa-cased')
         Check available models at `malaya_speech.language_model.available_mlm()`.
     force_check: bool, optional (default=True)
         Force check model one of malaya model.
@@ -187,7 +187,7 @@ def mlm(model: str = 'malay-huggingface/bert-tiny-bahasa-cased', force_check: bo
         )
 
     try:
-        mask_lm = malaya.language_model.mlm(model=model)
+        mask_lm = malaya.language_model.mlm(model=model, force_check=False)
     except BaseException:
         raise ModuleNotFoundError(
             'required malaya >= 4.9.2. Please update malaya version by `pip install malaya -U` and try again.'
