@@ -76,3 +76,6 @@ class VITS(SynthesizerTrn, TTS):
             'alignment': alignment,
             'y': audio,
         }
+
+    def __call__(self, input, **kwargs):
+        return self.predict(input, **kwargs)

@@ -217,6 +217,7 @@ class TextIDS:
             `malaya.text.function.split_into_sentences`.
         true_case_func: Callable, optional (default=None)
             Callable function to do true case, eg, https://malaya.readthedocs.io/en/latest/load-true-case.html
+            Only useful for TTS models that understood uppercase.
 
         Returns
         -------
@@ -256,6 +257,7 @@ class TextIDS:
         if not self.understand_punct:
             string = ''.join([c for c in string if c not in _punct])
 
+        string = re.sub(r'(, )+', ', ', string)
         string = re.sub(r'[ ]+', ' ', string).strip()
 
         if string[-1] not in '.,?!':

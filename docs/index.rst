@@ -110,14 +110,15 @@ Contents:
    tts-tacotron2-model
    tts-fastspeech2-model
    more-tts-fastspeech2
+   fastspeech2-long-text
    tts-e2e-fastspeech2
    tts-fastpitch-model
    tts-glowtts-model
    tts-glowtts-multispeaker-model
    tts-lightspeech-model
    tts-vits
+   vits-long-text
    tts-singlish
-   tts-long-text
    tts-gradio
 
 .. toctree::
