@@ -14,13 +14,13 @@ class GlobalLayerNorm(tf.keras.layers.Layer):
             'cLN_gamma',
             (int(input_shape[-1]), ),
             dtype=tf.float32,
-            initializer=initializer='glorot_uniform',
+            initializer='glorot_uniform',
         )
         self.b = tf.get_variable(
             'cLN_beta',
             (int(input_shape[-1]), ),
             dtype=tf.float32,
-            initializer=initializer='glorot_uniform',
+            initializer='glorot_uniform',
         )
 
     def call(self, inputs):
@@ -41,13 +41,13 @@ class CausalLayerNorm(tf.keras.layers.Layer):
             'cLN_gamma',
             (int(input_shape[-1]), ),
             dtype=tf.float32,
-            initializer=initializer='glorot_uniform',
+            initializer='glorot_uniform',
         )
         self.b = tf.get_variable(
             'cLN_beta',
             (int(input_shape[-1]), ),
             dtype=tf.float32,
-            initializer=initializer='glorot_uniform',
+            initializer='glorot_uniform',
         )
 
     def call(self, inputs):

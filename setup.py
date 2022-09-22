@@ -15,7 +15,7 @@ with open('requirements.txt') as fopen:
 setuptools.setup(
     name=__packagename__,
     packages=setuptools.find_packages(),
-    version='1.3.0',
+    version='1.3.0.2',
     python_requires='>=3.6.*',
     description='Speech-Toolkit for bahasa Malaysia, powered by Tensorflow and PyTorch.',
     long_description=readme(),

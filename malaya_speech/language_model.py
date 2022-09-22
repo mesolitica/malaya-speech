@@ -71,7 +71,7 @@ _mlm_availability = {
         'Size (MB)': 443,
     },
     'mesolitica/roberta-base-standard-bahasa-cased': {
-        'Size (MB)': 310,
+        'Size (MB)': 422,
     },
 }
 
