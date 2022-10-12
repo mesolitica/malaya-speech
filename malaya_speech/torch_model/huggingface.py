@@ -1,4 +1,4 @@
-import tensorflow as tf
+import torch
 import numpy as np
 from itertools import groupby
 from malaya_speech.model.frame import Frame
@@ -15,6 +15,7 @@ from malaya_speech.utils.aligner import (
     merge_words,
 )
 from malaya_speech.model.abstract import Abstract
+from malaya_boilerplate.torch_utils import to_tensor_cuda, to_numpy
 from scipy.special import log_softmax
 from typing import Callable
 
@@ -36,7 +37,7 @@ def batching(audios):
     return normed_input_values.astype(np.float32), attentions
 
 
-class HuggingFace_CTC(Abstract):
+class CTC(Abstract):
     def __init__(self, hf_model, model, name):
         self.hf_model = hf_model
         self.__model__ = model
@@ -103,9 +104,12 @@ class HuggingFace_CTC(Abstract):
             input.array if isinstance(input, Frame) else input
             for input in inputs
         ]
+        cuda = next(self.hf_model.parameters()).is_cuda
         normed_input_values, attentions = batching(inputs)
+        normed_input_values = to_tensor_cuda(torch.tensor(normed_input_values), cuda)
+        attentions = to_tensor_cuda(torch.tensor(attentions), cuda)
         out = self.hf_model(normed_input_values, attention_mask=attentions)
-        return norm_func(out[0].numpy(), axis=-1)
+        return norm_func(to_numpy(out[0]), axis=-1)
 
     def gradio(self, record_mode: bool = True,
                lm_func: Callable = None,
@@ -171,7 +175,7 @@ class HuggingFace_CTC(Abstract):
         return self.predict([input])[0]
 
 
-class HuggingFace_Aligner(Abstract):
+class Aligner(Abstract):
     def __init__(self, hf_model, model, name):
         self.hf_model = hf_model
         self.__model__ = model
@@ -195,9 +199,12 @@ class HuggingFace_Aligner(Abstract):
         """
 
         input = input.array if isinstance(input, Frame) else input
+        cuda = next(self.hf_model.parameters()).is_cuda
         normed_input_values, attentions = batching([input])
+        normed_input_values = to_tensor_cuda(torch.tensor(normed_input_values), cuda)
+        attentions = to_tensor_cuda(torch.tensor(attentions), cuda)
         out = self.hf_model(normed_input_values, attention_mask=attentions)
-        logits = out[0].numpy()
+        logits = to_numpy(out[0])
         o = log_softmax(logits, axis=-1)[0]
         tokens = [HF_CTC_VOCAB_IDX[c] for c in transcription]
         trellis = get_trellis(o, tokens, blank_id=len(HF_CTC_VOCAB))

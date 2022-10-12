@@ -2,6 +2,9 @@ from malaya_speech.supervised import stt
 from herpetologist import check_type
 from malaya_speech.utils import describe_availability
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 _transducer_availability = {
     'tiny-conformer': {
@@ -180,7 +183,6 @@ _ctc_availability = {
     },
 }
 
-# https://huggingface.co/mesolitica/wav2vec2-xls-r-300m-mixed
 _huggingface_availability = {
     'mesolitica/wav2vec2-xls-r-300m-mixed': {
         'Size (MB)': 1180,
@@ -209,6 +211,7 @@ def available_ctc():
     List available Encoder-CTC ASR models.
     """
 
+    logger.info('tested on test set, https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt')
     return describe_availability(_ctc_availability)
 
 
@@ -217,14 +220,16 @@ def available_transducer():
     List available Encoder-Transducer ASR models.
     """
 
+    logger.info('tested on test set, https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt')
     return describe_availability(_transducer_availability)
 
 
 def available_huggingface():
     """
-    List available HuggingFace Malaya-Speech ASR models.
+    List available HuggingFace ASR models.
     """
 
+    logger.info('tested on test set, https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt')
     return describe_availability(_huggingface_availability)
 
 
@@ -299,7 +304,7 @@ def deep_transducer(
 @check_type
 def huggingface(model: str = 'mesolitica/wav2vec2-xls-r-300m-mixed', **kwargs):
     """
-    Load Finetuned models from HuggingFace. Required Tensorflow >= 2.0.
+    Load Finetuned models from HuggingFace.
 
     Parameters
     ----------

@@ -10,7 +10,10 @@ from malaya_speech.utils.subword import load as subword_load
 from malaya_speech.utils.tf_featurization import STTFeaturizer
 from malaya_speech.model.transducer import Transducer, TransducerAligner
 from malaya_speech.model.wav2vec import Wav2Vec2_CTC, Wav2Vec2_Aligner
-from malaya_speech.model.huggingface import HuggingFace_CTC, HuggingFace_Aligner
+from malaya_speech.torch_model.huggingface import (
+    CTC as HuggingFace_CTC,
+    Aligner as HuggingFace_Aligner,
+)
 from malaya_speech.path import TRANSDUCER_VOCABS, TRANSDUCER_MIXED_VOCABS
 import tensorflow as tf
 import os
@@ -199,11 +202,10 @@ def wav2vec2_ctc_load(model, module, quantized=False, stt=True, **kwargs):
     )
 
 
-@check_tf2
 def huggingface_load(model, stt=True, **kwargs):
-    from transformers import TFWav2Vec2ForCTC
+    from transformers import AutoModelForCTC
 
-    hf_model = TFWav2Vec2ForCTC.from_pretrained(model)
+    hf_model = AutoModelForCTC.from_pretrained(model)
 
     if stt:
         selected_model = HuggingFace_CTC

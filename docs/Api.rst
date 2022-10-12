@@ -63,18 +63,6 @@ malaya_speech.model.clustering.HiddenMarkovModelClustering
 .. autoclass:: malaya_speech.model.clustering.HiddenMarkovModelClustering()
     :members:
 
-malaya_speech.model.huggingface.HuggingFace_CTC
----------------------------------------------------
-
-.. autoclass:: malaya_speech.model.huggingface.HuggingFace_CTC()
-    :members:
-
-malaya_speech.model.huggingface.HuggingFace_Aligner
----------------------------------------------------
-
-.. autoclass:: malaya_speech.model.huggingface.HuggingFace_Aligner()
-    :members:
-
 malaya_speech.model.splitter.Split_Wav
 -----------------------------------------
 
@@ -187,6 +175,18 @@ malaya_speech.model.webrtc.WebRTC
 ----------------------------------
 
 .. autoclass:: malaya_speech.model.webrtc.WebRTC()
+    :members:
+
+malaya_speech.torch_model.huggingface.CTC
+---------------------------------------------------
+
+.. autoclass:: malaya_speech.torch_model.huggingface.CTC()
+    :members:
+
+malaya_speech.torch_model.huggingface.Aligner
+---------------------------------------------------
+
+.. autoclass:: malaya_speech.torch_model.huggingface.Aligner()
     :members:
 
 malaya_speech.torch_model.super_resolution.VoiceFixer
