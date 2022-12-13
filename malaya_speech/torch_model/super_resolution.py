@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch
+import numpy as np
 from malaya_speech.model.frame import Frame
 from malaya_speech.utils.torch_utils import to_tensor_cuda, to_numpy, from_log
 from malaya_speech.train.model.voicefixer.base import VoiceFixer as BaseVoiceFixer
@@ -138,3 +139,38 @@ class NuWave2(BaseNuWave2):
 
     def forward(self, input, sr: int, steps: int = 8):
         return self.predict(input=input, sr=sr, steps=steps)
+
+
+class HiFiGAN:
+    def __init__(self, pth, model, name):
+        self._model = torch.jit.load(pth, map_location='cpu')
+        self._model.eval()
+
+        self.__model__ = model
+        self.__name__ = name
+
+    def cuda(*args, **kwargs):
+        return self._model.cuda(*args, **kwargs)
+
+    def predict(self, input, sr: int):
+        """
+        Parameters
+        ----------
+        input: np.array
+            np.array or malaya_speech.model.frame.Frame,
+            prefer 8000, 12000, 16000 or 22050 or 44000 sampling rate.
+        sr: int
+            sampling rate, prefer 8000, 12000, 16000 or 22050 or 44000 sampling rate.
+
+        Returns
+        -------
+        result: np.array with 48k sampling rate
+        """
+        input = input.array if isinstance(input, Frame) else input
+        wav = input.astype(np.float32)
+        cuda = next(self._model.parameters()).is_cuda
+
+        wav = torch.from_numpy(wav)
+        wav = to_tensor_cuda(wav, cuda)
+
+        return to_numpy(self._model(wav, sr))

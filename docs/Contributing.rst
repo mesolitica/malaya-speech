@@ -25,14 +25,27 @@ Fix Bugs
 Look through the `Github issue`_ for bugs. Anything is open to whoever
 wants to implement it.
 
-Implement Features
-------------------
+Tensorflow Implement Features
+------------------------------
 
 Look through the `Github issue`_ or `Malaya-Speech-project`_ for features. Any
 unassigned ``improvement`` issue is open to whoever wants to implement
 it.
 
 We use frozen graph Tensorflow, should able to freeze any Tensorflow (version 1.15 and above) or Keras models.
+
+We use HuggingFace to store finetuned models.
+
+PyTorch Implement Features
+------------------------------
+
+Look through the `Github issue`_ or `Malaya-Speech-project`_ for features. Any
+unassigned ``improvement`` issue is open to whoever wants to implement
+it.
+
+We use default PyTorch pickle model.
+
+We use HuggingFace to store finetuned models.
 
 Dataset
 -------

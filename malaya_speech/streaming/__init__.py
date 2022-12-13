@@ -10,6 +10,17 @@ import wave
 from datetime import datetime
 from malaya_speech.utils.validator import check_pipeline
 from herpetologist import check_type
+import logging
+from typing import List, Callable
+
+logger = logging.getLogger(__name__)
+
+pyaudio_available = False
+try:
+    import pyaudio
+    pyaudio_available = True
+except Exception as e:
+    logger.warning('`pyaudio` is not available, `malaya_speech.streaming.stream` is not able to use.')
 
 
 class Audio:
@@ -24,9 +35,9 @@ class Audio:
         sample_rate: int = 16000,
         blocks_per_second: int = 50,
         channels: int = 1,
+        stream_callback: Callable = None,
+        **kwargs,
     ):
-
-        import pyaudio
 
         self.vad = vad
         self.input_rate = input_rate
@@ -39,17 +50,18 @@ class Audio:
         )
         self.frame_duration_ms = 1000 * self.block_size // self.sample_rate
 
+        self.buffer_queue = queue.Queue()
+        self.device = device
+        self.format = format
+
+        if callback is None:
+            def callback(in_data): return self.buffer_queue.put(in_data)
+
         def proxy_callback(in_data, frame_count, time_info, status):
             if self.chunk is not None:
                 in_data = self.wf.readframes(self.chunk)
             callback(in_data)
             return (None, pyaudio.paContinue)
-
-        if callback is None:
-            def callback(in_data): return self.buffer_queue.put(in_data)
-        self.buffer_queue = queue.Queue()
-        self.device = device
-        self.format = format
 
         self.pa = pyaudio.PyAudio()
         kwargs = {
@@ -58,7 +70,7 @@ class Audio:
             'rate': self.input_rate,
             'input': True,
             'frames_per_buffer': self.block_size_input,
-            'stream_callback': proxy_callback,
+            'stream_callback': proxy_callback if stream_callback is None else stream_callback,
         }
 
         self.chunk = None
@@ -146,7 +158,7 @@ class Audio:
                     ring_buffer.clear()
 
 
-def record(
+def stream(
     vad,
     asr_model=None,
     classification_model=None,
@@ -154,14 +166,16 @@ def record(
     input_rate: int = 16000,
     sample_rate: int = 16000,
     blocks_per_second: int = 50,
+    channels: int = 1,
     padding_ms: int = 300,
     ratio: float = 0.75,
     min_length: float = 0.1,
     filename: str = None,
     spinner: bool = False,
+    **kwargs,
 ):
     """
-    Record an audio using pyaudio library. This record interface required a VAD model.
+    Stream an audio using pyaudio library. This stream interface required a VAD model.
 
     Parameters
     ----------
@@ -180,6 +194,9 @@ def record(
     blocks_per_second: int, optional (default = 50)
         size of frame returned from pyaudio, frame size = sample rate / (blocks_per_second / 2).
         50 is good for WebRTC, 30 or less is good for Malaya Speech VAD.
+    channels: int, optional (default=1)
+        audio hardware channel, `1` usually is microphone, `2` usually is speaker output.
+        Check using `sounddevice.query_devices()`.
     padding_ms: int, optional (default = 300)
         size of queue to store frames, size = padding_ms // (1000 * blocks_per_second // sample_rate)
     ratio: float, optional (default = 0.75)
@@ -190,16 +207,14 @@ def record(
         if None, will auto generate name based on timestamp.
     spinner: bool, optional (default=False)
         if True, will use spinner object from halo library.
-
+    **kwargs: vector argument
+        vector argument pass to pyaudio interface.
 
     Returns
     -------
     result : [filename, samples]
     """
-
-    try:
-        import pyaudio
-    except BaseException:
+    if not pyaudio_available:
         raise ModuleNotFoundError(
             'pyaudio not installed. Please install it by `pip install pyaudio` and try again.'
         )
@@ -219,6 +234,7 @@ def record(
         sample_rate=sample_rate,
         format=pyaudio.paInt16,
         blocks_per_second=blocks_per_second,
+        **kwargs,
     )
     frames = audio.vad_collector(padding_ms=padding_ms, ratio=ratio)
 
@@ -234,7 +250,7 @@ def record(
             text='Listening (ctrl-C to stop recording) ...', spinner='line'
         )
     else:
-        print('Listening (ctrl-C to stop recording) ... \n')
+        logger.info('Listening (ctrl-C to stop recording) ... \n')
 
     results = []
     wav_data = bytearray()
@@ -260,13 +276,13 @@ def record(
                         t = asr_model(wav_data[0])
                         if isinstance(t, dict):
                             t = t['speech-to-text']
-                        print(f'Sample {count} {datetime.now()}: {t}')
+                        logger.info(f'Sample {count} {datetime.now()}: {t}')
                         wav_data.append(t)
                     if classification_model:
                         t = classification_model(wav_data[0])
                         if isinstance(t, dict):
                             t = t['classification']
-                        print(f'Sample {count} {datetime.now()}: {t}')
+                        logger.info(f'Sample {count} {datetime.now()}: {t}')
                         wav_data.append(t)
 
                     results.append(wav_data)
@@ -282,7 +298,7 @@ def record(
         else:
             filename_temp = filename
 
-        print(f'saved audio to {filename_temp}')
+        logger.info(f'saved audio to {filename_temp}')
 
         bytes_array = [r[0] for r in results]
         audio.write_wav(filename_temp, b''.join(bytes_array))

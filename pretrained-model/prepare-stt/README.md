@@ -23,3 +23,5 @@ Prepare ASR dataset for ASR models.
 2. Singlish Test set, audio files, ~271 minutes, [singlish-test.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/singlish-test.tar.gz), transcript, [singlish-test.json](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/singlish-test.json).
 
 3. Mandarin Test set, audio files, ~46 minutes, [mandarin-test.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/mandarin-test.tar.gz), transcript, [mandarin-test.json](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/mandarin-test.json).
+
+4. Processed FLEURS102 `ms_my`, ~133 minutes, [malay-asr-test.json](malay-asr-test.json).

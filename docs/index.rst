@@ -73,10 +73,6 @@ Contents:
    :caption: Extra ASR Module
 
    transcribe-long-audio
-   realtime-asr
-   realtime-asr-mixed
-   realtime-asr-rubberband
-   realtime-alignment
    
 .. toctree::
    :maxdepth: 2
@@ -130,8 +126,17 @@ Contents:
    load-gender
    load-language-detection   
    load-speaker-overlap
-   realtime-classification
    classification-stacking
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Real time Module
+   
+   realtime-asr
+   realtime-asr-mixed
+   realtime-asr-rubberband
+   realtime-alignment
+   realtime-classification
 
 .. toctree::
    :maxdepth: 2

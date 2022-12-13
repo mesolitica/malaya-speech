@@ -6,6 +6,5 @@
 # URL: <https://malaya-speech.readthedocs.io/>
 # For license information, see https://github.com/huseinzol05/malaya-speech/blob/master/LICENSE
 
-
-from . import spectrogram
-from . import waveform
+from . import any_to_one
+from . import zeroshot

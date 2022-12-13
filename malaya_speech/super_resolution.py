@@ -25,18 +25,25 @@ _availability_unet = {
     },
 }
 
-_availability_tfgan = {
+_availability_vocoder = {
     'voicefixer': {
         'Size (MB)': 489.0,
+        'original from': 'https://github.com/haoheliu/voicefixer',
     },
     'nvsr': {
         'Size (MB)': 468.0,
+        'original from': 'https://github.com/haoheliu/ssr_eval/tree/main/examples/NVSR',
+    },
+    'hifigan-bwe': {
+        'size (MB)': 4.3,
+        'original from': 'https://github.com/brentspell/hifi-gan-bwe',
     }
 }
 
-_availability_audio_diffusion = {
+_availability_diffusion = {
     'nuwave2': {
         'Size (MB)': 20.9,
+        'original from': 'https://github.com/mindslab-ai/nuwave2',
     }
 }
 
@@ -50,22 +57,20 @@ def available_unet():
     return describe_availability(_availability_unet)
 
 
-def available_tfgan():
+def available_vocoder():
     """
-    List available Super Resolution deep learning UNET + TFGAN Vocoder models.
+    List available Super Resolution deep learning vocoder models.
     """
-    logger.info('Only calculate SDR, ISR, SAR on voice sample. Higher is better.')
 
     return describe_availability(_availability_tfgan)
 
 
-def available_audio_diffusion():
+def available_diffusion():
     """
-    List available Super Resolution deep learning UNET + TFGAN Vocoder models.
+    List available Super Resolution deep learning diffusion models.
     """
-    logger.info('Only calculate SDR, ISR, SAR on voice sample. Higher is better.')
 
-    return describe_availability(_availability_audio_diffusion)
+    return describe_availability(_availability_diffusion)
 
 
 @check_type
@@ -98,35 +103,41 @@ def unet(model: str = 'srgan-256', quantized: bool = False, **kwargs):
     )
 
 
-def tfgan(model: str = 'voicefixer', **kwargs):
+def vocoder(model: str = 'hifigan-bwe', **kwargs):
     """
-    Load TFGAN based Speech Resolution.
+    Load vocoder based super resolution.
 
     Parameters
     ----------
-    model : str, optional (default='voicefixer')
-        Check available models at `malaya_speech.super_resolution.available_tfgan()`.
+    model : str, optional (default='hifigan-bwe')
+        Check available models at `malaya_speech.super_resolution.available_vocoder()`.
 
     Returns
     -------
-    result : malaya_speech.torch_model.super_resolution.VoiceFixer
+    result : malaya_speech.torch_model.super_resolution.*
     """
     model = model.lower()
-    if model not in _availability_tfgan:
+    if model not in _availability_vocoder:
         raise ValueError(
             'model not supported, please check supported models from `malaya_speech.super_resolution.available_tfgan()`.'
         )
-    return load_enhancement.load_tfgan(model=model)
+
+    loads = {
+        'voicefixer': load_enhancement.load_tfgan,
+        'nvsr': load_enhancement.load_tfgan,
+        'hifigan-bwe': load_enhancement.load_vocoder,
+    }
+    return loads[model](model=model)
 
 
-def audio_diffusion(model: str = 'nuwave2', **kwargs):
+def diffusion(model: str = 'nuwave2', **kwargs):
     """
-    Load audio diffusion based Speech Resolution.
+    Load audio diffusion based super resolution.
 
     Parameters
     ----------
     model : str, optional (default='nuwave2')
-        Check available models at `malaya_speech.super_resolution.available_audio_diffusion()`.
+        Check available models at `malaya_speech.super_resolution.available_diffusion()`.
 
     Returns
     -------
@@ -134,8 +145,8 @@ def audio_diffusion(model: str = 'nuwave2', **kwargs):
     """
 
     model = model.lower()
-    if model not in _availability_audio_diffusion:
+    if model not in _availability_diffusion:
         raise ValueError(
-            'model not supported, please check supported models from `malaya_speech.super_resolution.available_audio_diffusion()`.'
+            'model not supported, please check supported models from `malaya_speech.super_resolution.available_diffusion()`.'
         )
-    return load_enhancement.load_audio_diffusion(model=model)
+    return load_enhancement.load_diffusion(model=model)

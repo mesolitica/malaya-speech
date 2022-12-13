@@ -44,7 +44,7 @@ from . import voice_conversion
 from . import utils
 
 from .pipeline import Pipeline
-from .streaming import record
+from .streaming import stream
 from .utils import (
     aligner,
     arange,
