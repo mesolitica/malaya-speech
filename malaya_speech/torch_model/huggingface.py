@@ -14,6 +14,7 @@ from malaya_speech.utils.aligner import (
     merge_repeats,
     merge_words,
 )
+from malaya_speech.utils.subword import merge_bpe_tokens
 from malaya_speech.model.abstract import Abstract
 from malaya_boilerplate.torch_utils import to_tensor_cuda, to_numpy
 from scipy.special import log_softmax
@@ -252,3 +253,209 @@ class Aligner(Abstract):
         result: Dict[chars_alignment, words_alignment, alignment]
         """
         return self.predict(input, transcription)
+
+
+class Seq2Seq(Abstract):
+    def __init__(self, hf_model, processor, model, name):
+        self.hf_model = hf_model
+        self.processor = processor
+        self.__model__ = model
+        self.__name__ = name
+
+    def generate(self, inputs, skip_special_tokens: bool = True, **kwargs):
+        """
+        Transcribe inputs.
+
+        Returns
+        -------
+        result: List[str]
+
+        Parameters
+        ----------
+        input: List[np.array]
+            List[np.array] or List[malaya_speech.model.frame.Frame].
+        skip_special_tokens: bool, optional (default=True)
+            skip special tokens during decoding.
+        **kwargs: vector arguments pass to huggingface `generate` method.
+            Read more at https://huggingface.co/docs/transformers/main_classes/text_generation
+
+        Returns
+        -------
+        result: List[str]
+        """
+        inputs = [
+            input.array if isinstance(input, Frame) else input
+            for input in inputs
+        ]
+        cuda = next(self.hf_model.parameters()).is_cuda
+        input_features = self.processor(inputs, return_tensors='pt').input_features
+        input_features = to_tensor_cuda(input_features, cuda)
+        outputs = self.hf_model.generate(input_features, **kwargs)
+        return self.processor.tokenizer.batch_decode(outputs, skip_special_tokens=skip_special_tokens)
+
+    def predict_logits(self, inputs, norm_func=softmax, **kwargs):
+        """
+        Predict logits from inputs.
+
+        Parameters
+        ----------
+        input: List[np.array]
+            List[np.array] or List[malaya_speech.model.frame.Frame].
+        norm_func: Callable, optional (default=malaya.utils.activation.softmax)
+
+        Returns
+        -------
+        result: List[np.array]
+        """
+
+        if kwargs.get('num_beams', 0) > 0:
+            raise ValueError('beam decoding is not supported.')
+
+        outputs = self.generate(
+            inputs=inputs,
+            output_attentions=True,
+            output_hidden_states=True,
+            output_scores=True,
+            return_dict_in_generate=True,
+            **kwargs,
+        )
+        stacked = torch.stack(outputs.scores)
+        return to_numpy(stacked)
+
+    def __call__(self, input, **kwargs):
+        """
+        Transcribe input.
+
+        Parameters
+        ----------
+        input: np.array
+            np.array or malaya_speech.model.frame.Frame.
+
+        Returns
+        -------
+        result: str
+        """
+        return self.generate([input], **kwargs)[0]
+
+
+class Seq2SeqAligner(Abstract):
+    def __init__(self, hf_model, processor, model, name):
+        self.hf_model = hf_model
+        self.processor = processor
+        self.tokenizer = self.processor.tokenizer
+        self.__model__ = model
+        self.__name__ = name
+
+        self.AUDIO_SAMPLES_PER_TOKEN = processor.feature_extractor.hop_length * 2
+        self.AUDIO_TIME_PER_TOKEN = AUDIO_SAMPLES_PER_TOKEN / processor.feature_extractor.sampling_rate
+
+    def predict(
+        self,
+        input,
+        transcription: str,
+        lang: str = 'ms',
+        median_filter_size: int = 7,
+    ):
+        """
+        Transcribe input, will return a string.
+        Based on https://github.com/openai/whisper/blob/main/notebooks/Multilingual_ASR.ipynb
+
+        Parameters
+        ----------
+        input: np.array
+            np.array or malaya_speech.model.frame.Frame.
+        transcription: str
+            transcription of input audio.
+        lang: str, optional (default='ms')
+            if you feed singlish speech, it is better to give `en` language.
+        median_filter_size: int, optional (default=7)
+            sliding median size.
+        Returns
+        -------
+        result: Dict[chars_alignment, words_alignment, alignment]
+        """
+
+        try:
+            from dtw import dtw
+            from scipy.signal import medfilt
+        except Exception as e:
+            raise ModuleNotFoundError(
+                'dtw-python not installed. Please install it by `pip install dtw-python` and try again.'
+            )
+
+        input = input.array if isinstance(input, Frame) else input
+        cuda = next(self.hf_model.parameters()).is_cuda
+
+        input_features = processor([input], return_tensors='pt').input_features
+
+        label = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(
+            f'<|startoftranscript|><|{lang}|><|transcribe|><|notimestamps|>{transcription}<|endoftext|>'))
+        labels = self.tokenizer.pad([{'input_ids': label}], return_tensors='pt')
+
+        with torch.no_grad():
+            o = self.hf_model(
+                input_features=input_features,
+                labels=labels['input_ids'],
+                output_attentions=True,
+                return_dict=True,
+            )
+
+        duration = len(input)
+
+        weights = torch.cat(o['cross_attentions'])
+        weights = weights[:, :, :, : duration // self.AUDIO_SAMPLES_PER_TOKEN].cpu()
+        weights = medfilt(weights, (1, 1, 1, median_filter_size))
+        weights = torch.tensor(weights).softmax(dim=-1)
+        w = weights / weights.norm(dim=-2, keepdim=True)
+        matrix = w.mean(axis=(0, 1))
+        alignment = dtw(-matrix.double().numpy())
+
+        xticks = np.arange(0, matrix.shape[1], 1 / AUDIO_TIME_PER_TOKEN)
+        xticklabels = (xticks * AUDIO_TIME_PER_TOKEN).round().astype(np.int32)
+
+        yticklabels = tokenizer.convert_ids_to_tokens(labels['input_ids'][0])
+        yticks = np.arange(len(yticklabels))
+
+        jumps = np.pad(np.diff(alignment.index1s), (1, 0), constant_values=1).astype(bool)
+        jump_times = alignment.index2s[jumps] * self.AUDIO_TIME_PER_TOKEN
+
+        subwords_alignment = []
+        for i in range(len(yticklabels)):
+            d = {
+                'text': yticklabels[i],
+                'start': 0.0 if i == 0 else jump_times[i - 1],
+                'end': jump_times[i]
+            }
+            subwords_alignment.append(d)
+
+        m = merge_bpe_tokens(zip(yticklabels, jump_times), rejected=self.tokenizer.all_special_tokens)
+        words_alignment = []
+        for i in range(len(m)):
+            if i < len(m) - 1:
+                d = {
+                    'text': m[i][0],
+                    'start': m[i][1][0],
+                    'end': m[i + 1][1][0],
+                }
+            else:
+                d = {
+                    'text': m[i][0],
+                    'start': m[i][1][0],
+                    'end': subwords_alignment[-1]['start']
+                }
+
+            words_alignment.append(d)
+
+        alignment_x = alignment.index2s
+        alignment_y = alignment.index1s
+        return {
+            'subwords_alignment': subwords_alignment,
+            'words_alignment': words_alignment,
+            'alignment': matrix,
+            'alignment_x': alignment_x,
+            'alignment_y': alignment_y,
+            'xticks': xticks,
+            'xticklabels': xticklabels,
+            'yticks': yticks,
+            'yticklabels': yticklabels,
+        }

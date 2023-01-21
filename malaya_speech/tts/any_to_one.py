@@ -9,6 +9,7 @@ from malaya_speech.supervised import tts
 from malaya_speech.utils import describe_availability
 import numpy as np
 import logging
+import warnings
 from typing import Callable
 
 logger = logging.getLogger(__name__)
@@ -224,6 +225,26 @@ _vits_availability = {
         'Understand punctuation': True,
         'Is lowercase': True,
     },
+    'mesolitica/VITS-orkid': {
+        'Size (MB)': 145,
+        'Understand punctuation': True,
+        'Is lowercase': True,
+    },
+    'mesolitica/VITS-bunga': {
+        'Size (MB)': 145,
+        'Understand punctuation': True,
+        'Is lowercase': True,
+    },
+    'mesolitica/VITS-jebat': {
+        'Size (MB)': 145,
+        'Understand punctuation': True,
+        'Is lowercase': True,
+    },
+    'mesolitica/VITS-tuah': {
+        'Size (MB)': 145,
+        'Understand punctuation': True,
+        'Is lowercase': True,
+    },
 }
 
 _e2e_fastspeech2_availability = {
@@ -362,6 +383,9 @@ def tacotron2(
     -------
     result : malaya_speech.model.synthesis.Tacotron class
     """
+    warnings.warn(
+        '`malaya.tts.any_to_one.tacotron2` is using Tensorflow, means malaya-speech no longer improved it.', DeprecationWarning)
+
     model = model.lower()
 
     if model not in _tacotron2_availability:
@@ -412,6 +436,9 @@ def fastspeech2(
     result : malaya_speech.model.synthesis.Fastspeech class
     """
 
+    warnings.warn(
+        '`malaya.tts.any_to_one.fastspeech2` is using Tensorflow, means malaya-speech no longer improved it.', DeprecationWarning)
+
     model = model.lower()
 
     if model not in _fastspeech2_availability:
@@ -460,6 +487,8 @@ def fastpitch(
     -------
     result : malaya_speech.model.synthesis.Fastpitch class
     """
+    warnings.warn(
+        '`malaya.tts.any_to_one.fastpitch` is using Tensorflow, means malaya-speech no longer improved it.', DeprecationWarning)
 
     model = model.lower()
 
@@ -510,6 +539,9 @@ def glowtts(
     result : malaya_speech.model.synthesis.GlowTTS class
     """
 
+    warnings.warn(
+        '`malaya.tts.any_to_one.glowtts` is using Tensorflow, means malaya-speech no longer improved it.', DeprecationWarning)
+
     model = model.lower()
 
     if model not in _glowtts_availability:
@@ -559,6 +591,8 @@ def lightspeech(
     -------
     result : malaya_speech.model.synthesis.Fastspeech class
     """
+    warnings.warn(
+        '`malaya.tts.any_to_one.lightspeech` is using Tensorflow, means malaya-speech no longer improved it.', DeprecationWarning)
 
     model = model.lower()
 

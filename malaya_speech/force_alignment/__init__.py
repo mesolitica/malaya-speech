@@ -6,4 +6,6 @@
 # URL: <https://malaya-speech.readthedocs.io/>
 # For license information, see https://github.com/huseinzol05/malaya-speech/blob/master/LICENSE
 
-from . import any_to_one
+from . import ctc
+from . import seq2seq
+from . import transducer

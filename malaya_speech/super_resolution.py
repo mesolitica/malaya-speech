@@ -62,7 +62,7 @@ def available_vocoder():
     List available Super Resolution deep learning vocoder models.
     """
 
-    return describe_availability(_availability_tfgan)
+    return describe_availability(_availability_vocoder)
 
 
 def available_diffusion():

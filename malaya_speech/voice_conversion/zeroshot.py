@@ -2,7 +2,7 @@ from herpetologist import check_type
 from malaya_speech.supervised import voice_conversion
 from malaya_speech.utils import describe_availability
 
-_availability = {
+_availability_fastvc = {
     'fastvc-32-vggvox-v2': {
         'Size (MB)': 190,
         'Quantized Size (MB)': 54.1,
@@ -16,7 +16,7 @@ _availability = {
 }
 
 
-def available_deep_conversion():
+def available_fastvc():
     """
     List available Voice Conversion models.
     """
@@ -24,11 +24,11 @@ def available_deep_conversion():
     return describe_availability(_availability)
 
 
-def deep_conversion(
+def fastvc(
     model: str = 'fastvc-32-vggvox-v2', quantized: bool = False, **kwargs
 ):
     """
-    Load Voice Conversion model.
+    Load Voice Conversion FastVC model.
 
     Parameters
     ----------

@@ -13,7 +13,11 @@ from malaya_speech.model.wav2vec import Wav2Vec2_CTC, Wav2Vec2_Aligner
 from malaya_speech.torch_model.huggingface import (
     CTC as HuggingFace_CTC,
     Aligner as HuggingFace_Aligner,
+    Seq2Seq as HuggingFace_Seq2Seq,
+    Seq2SeqAligner as HuggingFace_Seq2SeqAligner,
 )
+from transformers import AutoModelForCTC, AutoProcessor, AutoModelForSpeechSeq2Seq
+from transformers import WhisperProcessor
 from malaya_speech.path import TRANSDUCER_VOCABS, TRANSDUCER_MIXED_VOCABS
 import tensorflow as tf
 import os
@@ -203,9 +207,8 @@ def wav2vec2_ctc_load(model, module, quantized=False, stt=True, **kwargs):
 
 
 def huggingface_load(model, stt=True, **kwargs):
-    from transformers import AutoModelForCTC
 
-    hf_model = AutoModelForCTC.from_pretrained(model)
+    hf_model = AutoModelForCTC.from_pretrained(model, **kwargs)
 
     if stt:
         selected_model = HuggingFace_CTC
@@ -214,6 +217,27 @@ def huggingface_load(model, stt=True, **kwargs):
 
     return selected_model(
         hf_model=hf_model,
+        model=model,
+        name='speech-to-text-huggingface'
+    )
+
+
+def huggingface_load_seq2seq(model, stt=True, **kwargs):
+
+    hf_model = AutoModelForSpeechSeq2Seq.from_pretrained(model, **kwargs)
+    processor = AutoProcessor.from_pretrained(model, **kwargs)
+
+    if stt:
+        selected_model = HuggingFace_Seq2Seq
+    else:
+        if not isinstance(processor, WhisperProcessor):
+            raise ValueError('seq2seq alignment only support Whisper for now.')
+
+        selected_model = HuggingFace_Seq2SeqAligner
+
+    return selected_model(
+        hf_model=hf_model,
+        processor=processor,
         model=model,
         name='speech-to-text-huggingface'
     )

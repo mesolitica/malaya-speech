@@ -168,3 +168,48 @@ def align_multilanguage(tokenizers, ids, get_index=False):
         return tf.compat.as_text(''.join(subwords_))
 
     len_vocab = [l.vocab_size for l in tokenizers]
+
+
+def merge_bpe_tokens(
+    paired_tokens,
+    rejected=['<s>', '</s>', '<unk>', '<pad>', '<mask>'],
+    prefix_char='Ġ',
+    **kwargs,
+):
+    new_paired_tokens = []
+    paired_tokens = [t for t in paired_tokens if t[0] not in rejected]
+    n_tokens = len(paired_tokens)
+
+    i = 0
+
+    while i < n_tokens:
+
+        current_token, current_weight = paired_tokens[i]
+        if isinstance(current_token, bytes):
+            current_token = current_token.decode()
+        if i > 0 and not current_token.startswith(prefix_char) and current_token not in rejected:
+            previous_token, previous_weight = new_paired_tokens.pop()
+            merged_token = previous_token
+            merged_weight = [previous_weight]
+            while (
+                not current_token.startswith(prefix_char)
+                and current_token not in rejected
+            ):
+                merged_token = merged_token + current_token.replace(prefix_char, '')
+                merged_weight.append(current_weight)
+                i = i + 1
+                if i < n_tokens:
+                    current_token, current_weight = paired_tokens[i]
+                else:
+                    break
+            new_paired_tokens.append((merged_token, merged_weight))
+
+        else:
+            new_paired_tokens.append((current_token, current_weight))
+            i = i + 1
+
+    words = [
+        i[0].replace(prefix_char, '') for i in new_paired_tokens if i[0] not in rejected
+    ]
+    weights = [i[1] for i in new_paired_tokens if i[0] not in rejected]
+    return list(zip(words, weights))
