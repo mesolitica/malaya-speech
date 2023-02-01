@@ -36,8 +36,11 @@ from transformers import (
 import argparse
 
 """
-CUDA_VISIBLE_DEVICES=0 python3 whisper-lightning.py --model='openai/whisper-tiny' --batch=24 --precision=16
-CUDA_VISIBLE_DEVICES=1 python3 whisper-lightning.py --model='openai/whisper-base' --batch=16 --precision=16
+CUDA_VISIBLE_DEVICES=1 python3 whisper-lightning-v2.py --model='openai/whisper-tiny' --batch=24 --precision=16
+CUDA_VISIBLE_DEVICES=0 python3 whisper-lightning-v2.py --model='openai/whisper-small' --batch=4 --precision=16
+CUDA_VISIBLE_DEVICES=1 python3 whisper-lightning-v2.py --model='openai/whisper-base' --batch=16 --precision=16 --checkpoint='openai-whisper-base-16-v2/model-epoch=00-step=15000.ckpt'
+CUDA_VISIBLE_DEVICES=0 python3 whisper-lightning-v2.py --model='openai/whisper-small' --batch=12 --precision=16 --gradient_checkpoint=1
+CUDA_VISIBLE_DEVICES=0 python3 whisper-lightning-v2.py --model='openai/whisper-medium' --batch=4 --precision=16 --gradient_checkpoint=1
 """
 
 parser = argparse.ArgumentParser()
@@ -47,12 +50,18 @@ parser.add_argument('-c', '--checkpoint', help='checkpoint')
 parser.add_argument('-l', '--learning_rate', help='learning rate')
 parser.add_argument('-g', '--gradient_clipping', help='gradient clipping')
 parser.add_argument('-p', '--precision', help='precision')
+parser.add_argument('-a', '--accumulate', help='accumulate')
+parser.add_argument('-gc', '--gradient_checkpoint', help='gradient checkpoint')
+parser.add_argument('-s', '--save', help='save steps')
 args = parser.parse_args()
 model_name = args.model
 batch_size = int(args.batch)
 ckpt_path = args.checkpoint
 learning_rate = float(args.learning_rate or 2e-5)
 precision = int(args.precision or 16)
+accumulate = int(args.accumulate or 1)
+gradient_checkpoint = int(args.gradient_checkpoint or 0) == True
+save_steps = int(args.save or 5000)
 
 
 class MalayaDataset(torch.utils.data.Dataset):
@@ -79,7 +88,7 @@ class MalayaDataset(torch.utils.data.Dataset):
             lang = 'en'
         else:
             lang = 'ms'
-            if random.random() > 0.4:
+            if random.random() > 0.7:
                 splitted = y.split()
                 for word in splitted:
                     if self.d.check(word):
@@ -124,6 +133,7 @@ class Model(LightningModule):
         warmup_steps: int = 1000,
         weight_decay: float = 0.0,
         eval_splits=None,
+        gradient_checkpoint=False,
         **kwargs,
     ):
         super().__init__()
@@ -131,6 +141,8 @@ class Model(LightningModule):
         self.save_hyperparameters()
         self.config = AutoConfig.from_pretrained(model_name_or_path)
         self.model = AutoModelForSpeechSeq2Seq.from_pretrained(model_name_or_path, config=self.config)
+        if gradient_checkpoint:
+            self.model.gradient_checkpointing_enable()
 
     def forward(self, **inputs):
         return self.model(**inputs)
@@ -143,8 +155,8 @@ class Model(LightningModule):
 
     def validation_step(self, batch, batch_idx):
         loss = self.training_step(batch=batch, batch_idx=batch_idx)
-
-        return {"loss": loss}
+        self.log('val_loss', loss)
+        return loss
 
     def configure_optimizers(self):
         """Prepare optimizer and schedule (linear warmup and decay)"""
@@ -191,26 +203,25 @@ if __name__ == '__main__':
 
         return batch
 
-    train_dataset = MalayaDataset('mixed-stt-train.json', tokenizer)
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
-                                               num_workers=3, collate_fn=batch)
+    train_dataset = MalayaDataset('mixed-stt-train-v2.json', tokenizer)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, collate_fn=batch)
 
     val_dataset = MalayaDataset('/home/husein/ssd1/speech-bahasa/malay-asr-test.json', tokenizer)
     val_loader = torch.utils.data.DataLoader(train_dataset, batch_size=12, collate_fn=batch)
 
-    model_directory = f"{model_name.replace('/', '-')}-{precision}"
+    model_directory = f"{model_name.replace('/', '-')}-{precision}-v2"
 
     model = Model(
-        model_name_or_path=model_name
+        model_name_or_path=model_name, gradient_checkpoint=gradient_checkpoint,
     )
 
     lr_monitor = LearningRateMonitor(logging_interval='step')
     checkpoint_callback = ModelCheckpoint(
-        save_top_k=5,
+        save_top_k=3,
         monitor='step',
         mode='max',
         dirpath=model_directory,
-        every_n_train_steps=500,
+        every_n_train_steps=save_steps,
         filename='model-{epoch:02d}-{step}',
     )
     num_gpus = torch.cuda.device_count()
@@ -220,6 +231,7 @@ if __name__ == '__main__':
         devices=num_gpus,
         limit_val_batches=100,
         precision=precision,
+        accumulate_grad_batches=accumulate,
         callbacks=[checkpoint_callback, lr_monitor],
     )
 

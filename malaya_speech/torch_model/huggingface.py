@@ -19,6 +19,17 @@ from malaya_speech.model.abstract import Abstract
 from malaya_boilerplate.torch_utils import to_tensor_cuda, to_numpy
 from scipy.special import log_softmax
 from typing import Callable
+import logging
+
+logger = logging.getLogger(__name__)
+
+whisper_available = False
+try:
+    import whisper
+    whisper_available = True
+except Exception as e:
+    logger.warning(
+        '`openai-whisper` is not available, native whisper processor is not available, will use huggingface processor instead.')
 
 
 def batching(audios):
@@ -256,11 +267,24 @@ class Aligner(Abstract):
 
 
 class Seq2Seq(Abstract):
-    def __init__(self, hf_model, processor, model, name):
+    def __init__(self, hf_model, processor, model, name, use_whisper_processor=False, **kwargs):
         self.hf_model = hf_model
         self.processor = processor
         self.__model__ = model
         self.__name__ = name
+
+        if use_whisper_processor:
+            if 'whisper' not in model.lower():
+                logger.warning(
+                    '`use_whisper_processor` only available for whisper model, will fallback to huggingface processor')
+                use_whisper_processor = False
+
+            if not whisper_available:
+                logger.warning(
+                    'openai-whisper not installed. Please install it by `pip install openai-whisper` and try again. Will fallback to huggingface processor')
+                use_whisper_processor = False
+
+        self.use_whisper_processor = use_whisper_processor
 
     def generate(self, inputs, skip_special_tokens: bool = True, **kwargs):
         """
@@ -288,7 +312,21 @@ class Seq2Seq(Abstract):
             for input in inputs
         ]
         cuda = next(self.hf_model.parameters()).is_cuda
-        input_features = self.processor(inputs, return_tensors='pt').input_features
+
+        if self.use_whisper_processor:
+
+            mels = []
+            for k in range(len(inputs)):
+                audio = whisper.pad_or_trim(inputs[k].astype(np.float32))
+                mel = whisper.log_mel_spectrogram(audio)
+                mels.append({'input_features': mel})
+
+            batch = self.processor.feature_extractor.pad(mels, return_tensors="pt")
+            input_features = batch.input_features
+
+        else:
+            input_features = self.processor(inputs, return_tensors='pt', sampling_rate=16000).input_features
+
         input_features = to_tensor_cuda(input_features, cuda)
         outputs = self.hf_model.generate(input_features, **kwargs)
         return self.processor.tokenizer.batch_decode(outputs, skip_special_tokens=skip_special_tokens)
@@ -339,7 +377,7 @@ class Seq2Seq(Abstract):
 
 
 class Seq2SeqAligner(Abstract):
-    def __init__(self, hf_model, processor, model, name):
+    def __init__(self, hf_model, processor, model, name, **kwargs):
         self.hf_model = hf_model
         self.processor = processor
         self.tokenizer = self.processor.tokenizer
@@ -386,7 +424,8 @@ class Seq2SeqAligner(Abstract):
         input = input.array if isinstance(input, Frame) else input
         cuda = next(self.hf_model.parameters()).is_cuda
 
-        input_features = processor([input], return_tensors='pt').input_features
+        input_features = self.processor([input], return_tensors='pt').input_features
+        input_features = to_tensor_cuda(input_features, cuda)
 
         label = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(
             f'<|startoftranscript|><|{lang}|><|transcribe|><|notimestamps|>{transcription}<|endoftext|>'))
@@ -459,3 +498,42 @@ class Seq2SeqAligner(Abstract):
             'yticks': yticks,
             'yticklabels': yticklabels,
         }
+
+
+class XVector(Abstract):
+    def __init__(self, hf_model, processor, model, name):
+        self.hf_model = hf_model
+        self.processor = processor
+        self.__model__ = model
+        self.__name__ = name
+
+    def vectorize(self, inputs):
+        """
+        Vectorize inputs.
+
+        Parameters
+        ----------
+        inputs: List[np.array]
+            List[np.array] or List[malaya_speech.model.frame.Frame].
+
+        Returns
+        -------
+        result: np.array
+            returned [B, D].
+        """
+        inputs = [
+            input.array if isinstance(input, Frame) else input
+            for input in inputs
+        ]
+        cuda = next(self.hf_model.parameters()).is_cuda
+
+        inputs = self.processor(inputs, return_tensors='pt', sampling_rate=16000, padding=True)
+        for k in inputs.keys():
+            inputs[k] = to_tensor_cuda(inputs[k], cuda)
+
+        embeddings = self.hf_model(**inputs).embeddings
+        embeddings = torch.nn.functional.normalize(embeddings, dim=-1)
+        return to_numpy(embeddings)
+
+    def __call__(self, inputs):
+        return self.vectorize(inputs)

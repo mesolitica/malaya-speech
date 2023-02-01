@@ -189,6 +189,24 @@ malaya_speech.torch_model.huggingface.Aligner
 .. autoclass:: malaya_speech.torch_model.huggingface.Aligner()
     :members:
 
+malaya_speech.torch_model.huggingface.Seq2Seq
+---------------------------------------------------
+
+.. autoclass:: malaya_speech.torch_model.huggingface.Seq2Seq()
+    :members:
+
+malaya_speech.torch_model.huggingface.Seq2SeqAligner
+-----------------------------------------------------
+
+.. autoclass:: malaya_speech.torch_model.huggingface.Seq2SeqAligner()
+    :members:
+
+malaya_speech.torch_model.huggingface.XVector
+---------------------------------------------------
+
+.. autoclass:: malaya_speech.torch_model.huggingface.XVector()
+    :members:
+
 malaya_speech.torch_model.super_resolution.VoiceFixer
 ------------------------------------------------------
 
@@ -345,10 +363,16 @@ malaya_speech.age_detection
 .. automodule:: malaya_speech.age_detection
     :members:
 
-malaya_speech.diarization
------------------------------------
+malaya_speech.diarization.clustering
+--------------------------------------
 
-.. automodule:: malaya_speech.diarization
+.. automodule:: malaya_speech.diarization.clustering
+    :members:
+
+malaya_speech.diarization.e2e
+--------------------------------------
+
+.. automodule:: malaya_speech.diarization.e2e
     :members:
 
 malaya_speech.emotion
@@ -357,10 +381,22 @@ malaya_speech.emotion
 .. automodule:: malaya_speech.emotion
     :members:
 
-malaya_speech.force_alignment
+malaya_speech.force_alignment.ctc
 -----------------------------------
 
-.. automodule:: malaya_speech.force_alignment
+.. automodule:: malaya_speech.force_alignment.ctc
+    :members:
+
+malaya_speech.force_alignment.seq2seq
+---------------------------------------
+
+.. automodule:: malaya_speech.force_alignment.seq2seq
+    :members:
+
+malaya_speech.force_alignment.transducer
+-----------------------------------------
+
+.. automodule:: malaya_speech.force_alignment.transducer
     :members:
 
 malaya_speech.gender
@@ -435,10 +471,22 @@ malaya_speech.model.stack.Stack
 .. autoclass:: malaya_speech.stack.Stack()
     :members:
 
-malaya_speech.stt
+malaya_speech.stt.ctc
 -----------------------------------
 
-.. automodule:: malaya_speech.stt
+.. automodule:: malaya_speech.stt.ctc
+    :members:
+
+malaya_speech.stt.seq2seq
+-----------------------------------
+
+.. automodule:: malaya_speech.stt.seq2seq
+    :members:
+
+malaya_speech.stt.transducer
+-----------------------------------
+
+.. automodule:: malaya_speech.stt.transducer
     :members:
 
 malaya_speech.super_resolution

@@ -20,7 +20,8 @@ import warnings
 MALAYA_USE_HUGGINGFACE = os.environ.get('MALAYA_USE_HUGGINGFACE', 'true').lower() == 'true'
 
 if not MALAYA_USE_HUGGINGFACE:
-    warnings.warn('os environment `MALAYA_USE_HUGGINGFACE=false` is deprecated', DeprecationWarning)
+    warnings.warn(
+        'os environment `MALAYA_USE_HUGGINGFACE=false` is deprecated, BackBlaze backend no longer maintain after 1.4.0', DeprecationWarning)
 
 
 def print_cache(location=None):
@@ -58,6 +59,7 @@ from . import generator
 from . import griffin_lim
 from . import group
 from . import metrics
+from . import nemo_featurization
 from . import outlier
 from . import padding
 from . import read
@@ -67,4 +69,5 @@ from . import text
 from . import subword
 from . import text
 from . import tf_featurization
+from . import torch_featurization
 from . import validator

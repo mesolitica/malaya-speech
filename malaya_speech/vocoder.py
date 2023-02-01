@@ -1,6 +1,7 @@
 from malaya_speech.supervised import vocoder
 from herpetologist import check_type
 from malaya_speech.utils import describe_availability
+import warnings
 
 _melgan_availability = {
     'male': {
@@ -89,6 +90,8 @@ def available_melgan():
     """
     List available MelGAN Mel-to-Speech models.
     """
+    warnings.warn(
+        '`malaya_speech.vocoder.available_melgan` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
 
     return describe_availability(_melgan_availability)
 
@@ -97,6 +100,8 @@ def available_mbmelgan():
     """
     List available Multiband MelGAN Mel-to-Speech models.
     """
+    warnings.warn(
+        '`malaya_speech.vocoder.available_mbmelgan` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
 
     return describe_availability(_mbmelgan_availability)
 
@@ -105,6 +110,8 @@ def available_hifigan():
     """
     List available HiFiGAN Mel-to-Speech models.
     """
+    warnings.warn(
+        '`malaya_speech.vocoder.available_hifigan` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
 
     return describe_availability(_hifigan_availability)
 
@@ -126,6 +133,10 @@ def melgan(model: str = 'universal-1024', quantized: bool = False, **kwargs):
     -------
     result : malaya_speech.model.synthesis.Vocoder class
     """
+
+    warnings.warn(
+        '`malaya_speech.vocoder.melgan` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+
     model = model.lower()
     if model not in _melgan_availability:
         raise ValueError(
@@ -157,6 +168,10 @@ def mbmelgan(model: str = 'female', quantized: bool = False, **kwargs):
     -------
     result : malaya_speech.model.synthesis.Vocoder class
     """
+
+    warnings.warn(
+        '`malaya_speech.vocoder.mbmelgan` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+
     model = model.lower()
     if model not in _mbmelgan_availability:
         raise ValueError(
@@ -187,6 +202,10 @@ def hifigan(model: str = 'universal-768', quantized: bool = False, **kwargs):
     -------
     result : malaya_speech.model.synthesis.Vocoder class
     """
+
+    warnings.warn(
+        '`malaya_speech.vocoder.hifigan` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+
     model = model.lower()
     if model not in _hifigan_availability:
         raise ValueError(

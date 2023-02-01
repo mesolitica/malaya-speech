@@ -45,7 +45,6 @@ Contents:
    load-stt-transducer-model-lm-mlm
    load-stt-transducer-model-singlish
    load-stt-transducer-model-2mixed
-   load-stt-transducer-model-3mixed
    stt-transducer-gradio
 
 .. toctree::
@@ -57,16 +56,16 @@ Contents:
    load-stt-ctc-model-pyctcdecode
    load-stt-ctc-model-pyctcdecode-gpt2
    load-stt-ctc-model-pyctcdecode-mlm
-   load-stt-ctc-model-3mixed
-   stt-ctc-gradio
+   stt-ctc-huggingface
+   stt-ctc-huggingface-ctc-decoders
+   stt-ctc-huggingface-pyctcdecode
 
 .. toctree::
    :maxdepth: 2
-   :caption: ASR HuggingFace Module
+   :caption: ASR Seq2Seq Module
 
-   stt-huggingface
-   stt-huggingface-ctc-decoders
-   stt-huggingface-pyctcdecode
+   stt-seq2seq-whisper
+   stt-seq2seq-huggingface
 
 .. toctree::
    :maxdepth: 2
@@ -181,13 +180,14 @@ Contents:
    :caption: Speaker Vector Module
 
    load-speaker-vector
-   pca-speaker
+   load-speaker-vector-huggingface
 
 .. toctree::
    :maxdepth: 2
    :caption: Extra Module
 
    load-load-rttm
+   pca-speaker
 
 .. toctree::
    :maxdepth: 2

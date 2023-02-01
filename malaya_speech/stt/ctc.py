@@ -8,64 +8,34 @@ _transformer_availability = {
     'hubert-conformer-tiny': {
         'Size (MB)': 36.6,
         'Quantized Size (MB)': 10.3,
-        'WER': 0.49570058359782315,
-        'CER': 0.1601760228347541,
-        'WER-LM': 0.4545267649665263,
-        'CER-LM': 0.13999296317727367,
+        'malay-malaya': {
+            'WER': 0.238714008166,
+            'CER': 0.060899814,
+            'WER-LM': 0.14147911604,
+            'CER-LM': 0.04507517237,
+        },
         'Language': ['malay'],
     },
     'hubert-conformer': {
         'Size (MB)': 115,
         'Quantized Size (MB)': 31.1,
-        'WER': 0.33424915929720345,
-        'CER': 0.10940574508444094,
-        'WER-LM': 0.2710959758526313,
-        'CER-LM': 0.09629870129384599,
+        'malay-malaya': {
+            'WER': 0.2387140081,
+            'CER': 0.06089981404,
+            'WER-LM': 0.141479116045,
+            'CER-LM': 0.0450751723784,
+        },
         'Language': ['malay'],
     },
     'hubert-conformer-large': {
         'Size (MB)': 392,
         'Quantized Size (MB)': 100,
-        'WER': 0.280827378386855,
-        'CER': 0.09381837812108383,
-        'WER-LM': 0.21454115630164386,
-        'CER-LM': 0.08175489454799346,
-        'Language': ['malay'],
-    },
-    'hubert-conformer-large-3mixed': {
-        'Size (MB)': 392,
-        'Quantized Size (MB)': 100,
-        'WER': 0.2411256,
-        'CER': 0.0787939,
-        'WER-LM': 0.13276059,
-        'CER-LM': 0.05748197,
-        'Language': ['malay', 'singlish', 'mandarin'],
-    },
-    'best-rq-conformer-tiny': {
-        'Size (MB)': 36.6,
-        'Quantized Size (MB)': 10.3,
-        'WER': 0.45708914980273974,
-        'CER': 0.14645204643073154,
-        'WER-LM': 0.421318523759614,
-        'CER-LM': 0.1348827661179319,
-        'Language': ['malay'],
-    },
-    'best-rq-conformer': {
-        'Size (MB)': 115,
-        'Quantized Size (MB)': 31.1,
-        'WER': 0.3426014218184749,
-        'CER': 0.11466136321470137,
-        'WER-LM': 0.3286451554446768,
-        'CER-LM': 0.11916163197851183,
-        'Language': ['malay'],
-    },
-    'best-rq-conformer-large': {
-        'Size (MB)': 392,
-        'Quantized Size (MB)': 100,
-        'WER': 0.2959243343164291,
-        'CER': 0.1014638043480158,
-        'WER-LM': 0.35880928946887464,
-        'CER-LM': 0.12895209151263204,
+        'malay-malaya': {
+            'WER': 0.2203140421,
+            'CER': 0.0549270416,
+            'WER-LM': 0.1280064575,
+            'CER-LM': 0.03853289571,
+        },
         'Language': ['malay'],
     },
 }
@@ -73,36 +43,96 @@ _transformer_availability = {
 _huggingface_availability = {
     'mesolitica/wav2vec2-xls-r-300m-mixed': {
         'Size (MB)': 1180,
-        'WER': 0.1322198,
-        'CER': 0.0481054,
-        'WER-LM': 0.0988016,
-        'CER-LM': 0.0411965,
-        'Language': ['malay', 'singlish', 'mandarin'],
+        'malay-malaya': {
+            'WER': 0.194655128,
+            'CER': 0.04775798,
+            'WER-LM': 0.12849904267,
+            'CER-LM': 0.0357602212,
+        },
+        'malay-fleur102': {
+            'WER': 0.2373861259,
+            'CER': 0.0705547800,
+            'WER-LM': 0.17169389543,
+            'CER-LM': 0.0591631316,
+        },
+        'singlish': {
+            'WER': 0.127588595,
+            'CER': 0.0494924979,
+            'WER-LM': 0.096820291,
+            'CER-LM': 0.042727603,
+        },
+        'Language': ['malay', 'singlish'],
     },
-    'mesolitica/wav2vec2-xls-r-1b-01-ms': {
-        'Size (MB)': 230,
-        'WER': 0.1322198,
-        'CER': 0.0481054,
-        'WER-LM': 0.0988016,
-        'CER-LM': 0.0411965,
-        'Language': ['malay'],
-    }
-    'mesolitica/wav2vec2-xls-r-1b-0123-ms': {
-        'Size (MB)': 387,
-        'WER': 0.1322198,
-        'CER': 0.0481054,
-        'WER-LM': 0.0988016,
-        'CER-LM': 0.0411965,
+    'mesolitica/wav2vec2-xls-r-300m-mixed-v2': {
+        'Size (MB)': 1180,
+        'malay-malaya': {
+            'WER': 0.154782923,
+            'CER': 0.035164031,
+            'WER-LM': 0.09177104918,
+            'CER-LM': 0.0253532288,
+        },
+        'malay-fleur102': {
+            'WER': 0.2013994374,
+            'CER': 0.0518170369,
+            'WER-LM': 0.14364611216,
+            'CER-LM': 0.0416905231,
+        },
+        'singlish': {
+            'WER': 0.2258822139,
+            'CER': 0.082982312,
+            'WER-LM': 0.17862153528,
+            'CER-LM': 0.0718263800,
+        },
+        'Language': ['malay', 'singlish'],
+    },
+    'mesolitica/wav2vec2-xls-r-300m-12layers-ms': {
+        'Size (MB)': 657,
+        'malay-malaya': {
+            'WER': 0.1494983789,
+            'CER': 0.0342059992,
+            'WER-LM': 0.08810564526,
+            'CER-LM': 0.02455549021,
+        },
+        'malay-fleur102': {
+            'WER': 0.217107489,
+            'CER': 0.0546614199,
+            'WER-LM': 0.1481601917,
+            'CER-LM': 0.04311461708,
+        },
         'Language': ['malay'],
     },
-    'mesolitica/wav2vec2-xls-r-1b-012345-ms': {
-        'Size (MB)': 544,
-        'WER': 0.1322198,
-        'CER': 0.0481054,
-        'WER-LM': 0.0988016,
-        'CER-LM': 0.0411965,
+    'mesolitica/wav2vec2-xls-r-300m-6layers-ms': {
+        'Size (MB)': 339,
+        'malay-malaya': {
+            'WER': 0.1494983789,
+            'CER': 0.0342059992,
+            'WER-LM': 0.08810564526,
+            'CER-LM': 0.02455549021,
+        },
+        'malay-fleur102': {
+            'WER': 0.217107489,
+            'CER': 0.0546614199,
+            'WER-LM': 0.1481601917,
+            'CER-LM': 0.04311461708,
+        },
         'Language': ['malay'],
-    }
+    },
+    'mesolitica/wav2vec2-xls-r-300m-3layers-ms': {
+        'Size (MB)': 195,
+        'malay-malaya': {
+            'WER': 0.1494983789,
+            'CER': 0.0342059992,
+            'WER-LM': 0.08810564526,
+            'CER-LM': 0.02455549021,
+        },
+        'malay-fleur102': {
+            'WER': 0.217107489,
+            'CER': 0.0546614199,
+            'WER-LM': 0.1481601917,
+            'CER-LM': 0.04311461708,
+        },
+        'Language': ['malay'],
+    },
 }
 
 
@@ -112,7 +142,8 @@ def available_transformer():
     """
 
     warnings.warn(
-        '`malaya.stt.ctc.available_transformer` is deprecated, use `malaya.stt.ctc.available_huggingface` instead', DeprecationWarning)
+        '`malaya.stt.ctc.available_transformer` is deprecated, use `malaya.stt.ctc.available_huggingface` instead',
+        DeprecationWarning)
     _describe()
     return describe_availability(_transformer_availability)
 
@@ -178,10 +209,13 @@ def huggingface(
     ----------
     model : str, optional (default='mesolitica/wav2vec2-xls-r-300m-mixed')
         Check available models at `malaya_speech.stt.ctc.available_huggingface()`.
+    force_check: bool, optional (default=True)
+        Force check model one of malaya model.
+        Set to False if you have your own huggingface model.
 
     Returns
     -------
-    result : malaya_speech.model.huggingface.CTC class
+    result : malaya_speech.torch_model.huggingface.CTC class
     """
     model = model.lower()
     if model not in _huggingface_availability and force_check:

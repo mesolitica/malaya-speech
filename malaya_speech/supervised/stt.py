@@ -5,6 +5,7 @@ from malaya_speech.utils import (
     nodes_session,
 )
 from malaya_boilerplate.utils import check_tf2
+from malaya_boilerplate.huggingface import download_files
 from malaya_speech.utils.read import load as load_wav
 from malaya_speech.utils.subword import load as subword_load
 from malaya_speech.utils.tf_featurization import STTFeaturizer
@@ -20,6 +21,7 @@ from transformers import AutoModelForCTC, AutoProcessor, AutoModelForSpeechSeq2S
 from transformers import WhisperProcessor
 from malaya_speech.path import TRANSDUCER_VOCABS, TRANSDUCER_MIXED_VOCABS
 import tensorflow as tf
+import torch
 import os
 
 
@@ -239,5 +241,28 @@ def huggingface_load_seq2seq(model, stt=True, **kwargs):
         hf_model=hf_model,
         processor=processor,
         model=model,
-        name='speech-to-text-huggingface'
+        name='speech-to-text-huggingface',
+        **kwargs,
     )
+
+
+def whisper(model, **kwargs):
+
+    s3_file = {
+        'model': 'model.pt',
+    }
+    path = download_files(model, s3_file, **kwargs)
+    checkpoint = torch.load(path['model'], map_location='cpu')
+
+    try:
+        from whisper.model import Whisper, ModelDimensions
+    except:
+        raise ModuleNotFoundError(
+            'openai-whisper not installed. Please install it by `pip install openai-whisper` and try again.'
+        )
+
+    dims = ModelDimensions(**checkpoint['dims'])
+    model = Whisper(dims)
+    model.load_state_dict(checkpoint['model_state_dict'])
+
+    return model

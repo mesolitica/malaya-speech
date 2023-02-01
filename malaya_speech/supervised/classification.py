@@ -16,6 +16,11 @@ from malaya_speech.utils import featurization
 from malaya_speech.config import (
     speakernet_featurizer_config as speakernet_config,
 )
+from transformers import (
+    AutoFeatureExtractor,
+    AutoModelForAudioXVector,
+)
+from malaya_speech.torch_model.huggingface import XVector
 
 transformer_models = ['conformer-tiny', 'conformer-base', 'vit-tiny', 'vit-base']
 
@@ -74,4 +79,16 @@ def load(model, module, extra, label, quantized=False, **kwargs):
         extra=extra,
         label=label,
         name=module,
+    )
+
+
+def huggingface_xvector(model, **kwargs):
+    hf_model = AutoModelForAudioXVector.from_pretrained(model, **kwargs)
+    processor = AutoFeatureExtractor.from_pretrained(model, **kwargs)
+
+    return XVector(
+        hf_model=hf_model,
+        processor=processor,
+        model=model,
+        name='speaker-vector-huggingface',
     )

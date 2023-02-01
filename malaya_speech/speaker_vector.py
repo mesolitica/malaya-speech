@@ -1,7 +1,8 @@
 from malaya_speech.supervised import classification
-from herpetologist import check_type
 from malaya_speech.utils import describe_availability
+from herpetologist import check_type
 import logging
+import warnings
 
 logger = logging.getLogger(__name__)
 
@@ -58,14 +59,83 @@ trillsson_accuracy = {
     }
 }
 
+nemo_accuracy = {
+    'ecapa-tdnn': {
+        'Size (MB)': 20.3,
+        'Embedding Size': 512,
+        'EER': 0.08687,
+    },
+    'speakernet': {
+        'Size (MB)': 20.3,
+        'Embedding Size': 512,
+        'EER': 0.08687,
+    },
+    'titanet_large': {
+        'Size (MB)': 20.3,
+        'Embedding Size': 512,
+        'EER': 0.08687,
+    }
+}
+
+_huggingface_availability = {
+    'microsoft/wavlm-base-sv': {
+        'Size (MB)': 405,
+        'Embedding Size': 512,
+        'EER': 0.076128169,
+    },
+    'microsoft/wavlm-base-plus-sv': {
+        'Size (MB)': 405,
+        'Embedding Size': 512,
+        'EER': 0.0631559379,
+    },
+    'microsoft/unispeech-sat-large-sv': {
+        'Size (MB)': 1290,
+        'Embedding Size': 512,
+        'EER': 0.2032767553,
+    },
+    'microsoft/unispeech-sat-base-sv': {
+        'Size (MB)': 404,
+        'Embedding Size': 512,
+        'EER': 0.0782815656,
+    },
+    'microsoft/unispeech-sat-base-plus-sv': {
+        'Size (MB)': 404,
+        'Embedding Size': 512,
+        'EER': 0.0761281698,
+    },
+}
+
+
+def _describe():
+    logger.info('tested on VoxCeleb2 test set. Lower EER is better.')
+    logger.info('download the test set at https://github.com/huseinzol05/malaya-speech/tree/master/data/voxceleb')
+
 
 def available_model():
     """
     List available speaker vector deep models.
     """
-    logger.info('tested on VoxCeleb2 test set. Lower EER is better.')
 
+    _describe()
     return describe_availability(_availability)
+
+
+def available_nemo():
+    """
+    List available Nvidia Nemo Speaker vector models.
+    """
+
+    _describe()
+    return describe_availability(nemo_accuracy)
+
+
+def available_huggingface():
+    """
+    List available HuggingFace Speaker vector models.
+    """
+
+    _describe()
+    return describe_availability(_huggingface_availability)
 
 
 @check_type
@@ -98,5 +168,33 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
         extra={},
         label=None,
         quantized=quantized,
+        **kwargs
+    )
+
+
+@check_type
+def huggingface(
+    model: str = 'microsoft/wavlm-base-plus-sv',
+    force_check: bool = True,
+    **kwargs,
+):
+    """
+    Load Finetuned models from HuggingFace.
+
+    Parameters
+    ----------
+    model : str, optional (default='microsoft/wavlm-base-plus-sv')
+        Check available models at `malaya_speech.speaker_vector.available_huggingface()`.
+    force_check: bool, optional (default=True)
+        Force check model one of malaya model.
+        Set to False if you have your own huggingface model.
+
+    Returns
+    -------
+    result : malaya_speech.torch_model.huggingface.XVector class
+    """
+
+    return classification.huggingface_xvector(
+        model=model,
         **kwargs
     )

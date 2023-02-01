@@ -196,7 +196,7 @@ class TextIDS:
         self,
         string: str,
         normalize: bool = True,
-        replace_brackets_with_comma=True,
+        replace_brackets_with_comma: bool = True,
         assume_newline_fullstop: bool = False,
         true_case_func: Callable = None,
         **kwargs,

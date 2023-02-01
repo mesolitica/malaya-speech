@@ -74,11 +74,15 @@ def huggingface(
     ----------
     model : str, optional (default='mesolitica/wav2vec2-xls-r-300m-mixed')
         Check available models at `malaya_speech.force_alignment.ctc.available_huggingface()`.
+    force_check: bool, optional (default=True)
+        Force check model one of malaya model.
+        Set to False if you have your own huggingface model.
 
     Returns
     -------
-    result : malaya_speech.model.huggingface.CTC class
+    result : malaya_speech.model.huggingface.Aligner class
     """
+
     model = model.lower()
     if model not in _huggingface_availability:
         raise ValueError(

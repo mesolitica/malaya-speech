@@ -17,3 +17,9 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
 3. Convert m4a to wav, [m4a-to-wav.ipynb](m4a-to-wav.ipynb).
 
 This only took a few minutes if increased size of workers up to 50. Will took almost 100GB of storage.
+
+## download
+
+1. Voxceleb2 test set WAV format, https://f000.backblazeb2.com/file/malay-dataset/voxceleb/voxceleb2-test-wav.tar
+2. Voxceleb2 test set pair set, https://f000.backblazeb2.com/file/malay-dataset/voxceleb/voxceleb2-test-labels.pkl
+3. Voxceleb test set M4A format, https://f000.backblazeb2.com/file/malay-dataset/voxceleb/vox2_test_aac.zip

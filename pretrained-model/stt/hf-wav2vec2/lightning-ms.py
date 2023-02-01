@@ -37,6 +37,13 @@ from audiomentations import Compose, AddGaussianNoise, TimeStretch, PitchShift, 
 from audiomentations.augmentations.room_simulator import RoomSimulator
 import argparse
 
+"""
+CUDA_VISIBLE_DEVICES=1 python3 wav2vec2-lightning-ms.py \
+--model='300m-12-layers' --batch=12 --precision=32 --learning_rate=5e-5
+CUDA_VISIBLE_DEVICES=0 python3 wav2vec2-lightning-ms.py --model='1b-01' --batch=16 --precision=16 --learning_rate=1e-4 --checkpoint='1b-01-ms-16/model-epoch=00-step=80000.ckpt'
+CUDA_VISIBLE_DEVICES=1 python3 wav2vec2-lightning-ms.py --model='1b-0123' --batch=16 --precision=32 --learning_rate=1e-4 --checkpoint='1b-0123-ms-32/model-epoch=02-step=289000.ckpt'
+"""
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-m', '--model', help='model name')
 parser.add_argument('-b', '--batch', help='batch size')
@@ -44,6 +51,7 @@ parser.add_argument('-c', '--checkpoint', help='checkpoint')
 parser.add_argument('-l', '--learning_rate', help='learning rate')
 parser.add_argument('-g', '--gradient_clipping', help='gradient clipping')
 parser.add_argument('-p', '--precision', help='precision')
+parser.add_argument('-gc', '--gradient_checkpoint', help='gradient checkpoint')
 args = parser.parse_args()
 model_name = args.model
 batch_size = int(args.batch)
@@ -51,6 +59,7 @@ ckpt_path = args.checkpoint
 learning_rate = float(args.learning_rate or 2e-5)
 gradient_clipping = float(args.gradient_clipping or 1.0)
 precision = int(args.precision or 16)
+gradient_checkpoint = int(args.gradient_checkpoint or 0) == True
 
 
 def check_nan(a):
@@ -138,9 +147,10 @@ class Model(LightningModule):
         tokenizer,
         learning_rate: float = 2e-5,
         adam_epsilon: float = 1e-8,
-        warmup_steps: int = 1000,
-        weight_decay: float = 0.0,
+        warmup_steps: int = 2000,
+        weight_decay: float = 0.005,
         eval_splits=None,
+        gradient_checkpoint=False,
         **kwargs,
     ):
         super().__init__()
@@ -153,7 +163,7 @@ class Model(LightningModule):
                 "attention_dropout": 0.0,
                 "hidden_dropout": 0.0,
                 "final_dropout": 0.0,
-                "mask_time_prob": 0.0,
+                "mask_time_prob": 0.05,
                 "mask_time_length": 10,
                 "mask_feature_prob": 0.0,
                 "mask_feature_length": 10,
@@ -170,6 +180,8 @@ class Model(LightningModule):
         self.model.config.ctc_zero_infinity = True
 
         self.model.freeze_feature_encoder()
+        if gradient_checkpoint:
+            self.model.gradient_checkpointing_enable()
 
     def forward(self, **inputs):
         return self.model(**inputs)
@@ -261,16 +273,16 @@ if __name__ == '__main__':
     val_loader = torch.utils.data.DataLoader(train_dataset, batch_size=12, num_workers=2, collate_fn=batch)
 
     model = Model(
-        model_name_or_path=model_name, tokenizer=tokenizer, learning_rate=learning_rate,
+        model_name_or_path=model_name, tokenizer=tokenizer, learning_rate=learning_rate, gradient_checkpoint=gradient_checkpoint,
     )
 
     lr_monitor = LearningRateMonitor(logging_interval='step')
     checkpoint_callback = ModelCheckpoint(
-        save_top_k=5,
+        save_top_k=3,
         monitor='step',
         mode='max',
         dirpath=model_directory,
-        every_n_train_steps=1000,
+        every_n_train_steps=5000,
         filename='model-{epoch:02d}-{step}',
     )
     num_gpus = torch.cuda.device_count()
@@ -295,7 +307,3 @@ if __name__ == '__main__':
         val_dataloaders=val_loader,
         ckpt_path=ckpt_path,
     )
-
-"""
-CUDA_VISIBLE_DEVICES=0 python3 wav2vec2-lightning-ms.py --model='1b-01' --batch=16 --precision=16 --learning_rate=1e-4 --checkpoint='1b-01-ms-16/model-epoch=00-step=80000.ckpt'
-"""

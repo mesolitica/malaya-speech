@@ -33,3 +33,5 @@ test/e2e-tts-dataset.pkl
 ._*
 logits.pkl
 *.pth
+voxceleb2-test-*
+flagged

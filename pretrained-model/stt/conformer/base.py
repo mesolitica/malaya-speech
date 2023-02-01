@@ -1,6 +1,5 @@
 import pyroomacoustics as pra
 import numpy as np
-from pydub import AudioSegment
 from sklearn.utils import shuffle
 from glob import glob
 import random
@@ -12,18 +11,21 @@ import malaya_speech.train.model.conformer as conformer
 import malaya_speech.augmentation.spectrogram as mask_augmentation
 import malaya_speech.augmentation.waveform as augmentation
 import malaya_speech
+from datasets import Audio
 import tensorflow as tf
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 
-subwords = malaya_speech.subword.load('transducer.subword')
+subwords = malaya_speech.subword.load('transducer.subword.subwords')
 config = malaya_speech.config.conformer_base_encoder_config
 sr = 16000
 maxlen = 18
 minlen_text = 1
 prob_aug = 0.9
+
+audio = Audio(sampling_rate=sr)
 
 parameters = {
     'optimizer_params': {'beta1': 0.9, 'beta2': 0.98, 'epsilon': 10e-9},
@@ -216,11 +218,7 @@ def generate(file):
         audios, cleaned_texts = shuffle(audios, cleaned_texts)
         for i in range(len(audios)):
             try:
-                if audios[i].endswith('.mp3'):
-                    # print('found mp3', audios[i])
-                    wav_data, _ = mp3_to_wav(audios[i])
-                else:
-                    wav_data, _ = malaya_speech.load(audios[i], sr=sr)
+                wav_data = audio.decode_example(audio.encode_example(audios[i]))['array']
 
                 if (len(wav_data) / sr) > maxlen:
                     # print(f'skipped audio too long {audios[i]}')

@@ -8,110 +8,126 @@ _transformer_availability = {
     'tiny-conformer': {
         'Size (MB)': 24.4,
         'Quantized Size (MB)': 9.14,
-        'WER': 0.25205879818082805,
-        'CER': 0.11939432658062442,
-        'WER-LM': 0.24466923675904093,
-        'CER-LM': 0.12099917108722165,
+        'malay-malaya': {
+            'WER': 0.2128108,
+            'CER': 0.08136871,
+            'WER-LM': 0.1996828,
+            'CER-LM': 0.0770037,
+        },
+        'malay-fleur102': {
+            'WER': 0.2682816,
+            'CER': 0.13052725,
+            'WER-LM': 0.2579103662,
+            'CER-LM': 0.1282339751,
+        },
         'Language': ['malay'],
     },
     'small-conformer': {
         'Size (MB)': 49.2,
         'Quantized Size (MB)': 18.1,
-        'WER': 0.2216678092407059,
-        'CER': 0.10721028207884116,
-        'WER-LM': 0.215915398935267,
-        'CER-LM': 0.10903240184809346,
+        'malay-malaya': {
+            'WER': 0.19853302,
+            'CER': 0.07449528,
+            'WER-LM': 0.18536073,
+            'CER-LM': 0.07114307,
+        },
+        'malay-fleur102': {
+            'WER': 0.23412149,
+            'CER': 0.1138314813,
+            'WER-LM': 0.2214152004,
+            'CER-LM': 0.107780986,
+        },
         'Language': ['malay'],
     },
     'conformer': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 37.1,
-        'WER': 0.1854134610718644,
-        'CER': 0.08612027714394176,
-        'WER-LM': 0.18542071537532542,
-        'CER-LM': 0.09424689146824226,
+        'malay-malaya': {
+            'WER': 0.16340855635999124,
+            'CER': 0.058972052118,
+            'WER-LM': 0.15618217133,
+            'CER-LM': 0.057189785465,
+        },
+        'malay-fleur102': {
+            'WER': 0.20090442596,
+            'CER': 0.096169010,
+            'WER-LM': 0.1839720400,
+            'CER-LM': 0.0881132802,
+        },
         'Language': ['malay'],
     },
     'large-conformer': {
         'Size (MB)': 404,
         'Quantized Size (MB)': 107,
-        'WER': 0.16068731055857535,
-        'CER': 0.07225488182147317,
-        'WER-LM': 0.15852097352196282,
-        'CER-LM': 0.07445114519781025,
+        'malay-malaya': {
+            'WER': 0.1566839,
+            'CER': 0.0619715,
+            'WER-LM': 0.1486221,
+            'CER-LM': 0.0590102,
+        },
+        'malay-fleur102': {
+            'WER': 0.1711028238,
+            'CER': 0.0779535590,
+            'WER-LM': 0.16109801581,
+            'CER-LM': 0.0721904249,
+        },
         'Language': ['malay'],
     },
     'conformer-stack-2mixed': {
         'Size (MB)': 130,
         'Quantized Size (MB)': 38.5,
-        'WER': 0.1036084,
-        'CER': 0.050069,
-        'WER-LM': 0.1029111,
-        'CER-LM': 0.0502013,
+        'malay-malaya': {
+            'WER': 0.1889883954,
+            'CER': 0.0726845531,
+            'WER-LM': 0.18594507707,
+            'CER-LM': 0.0751404434,
+        },
+        'malay-fleur102': {
+            'WER': 0.244836948,
+            'CER': 0.117409327,
+            'WER-LM': 0.222422157,
+            'CER-LM': 0.108059007,
+        },
+        'singlish': {
+            'WER': 0.08535878149,
+            'CER': 0.0452357273822,
+            'WER-LM': 0.085162938350,
+            'CER-LM': 0.044870668858,
+        },
         'Language': ['malay', 'singlish'],
-    },
-    'conformer-stack-3mixed': {
-        'Size (MB)': 130,
-        'Quantized Size (MB)': 38.5,
-        'WER': 0.2347684,
-        'CER': 0.133944,
-        'WER-LM': 0.229241,
-        'CER-LM': 0.1307018,
-        'Language': ['malay', 'singlish', 'mandarin'],
     },
     'small-conformer-singlish': {
         'Size (MB)': 49.2,
         'Quantized Size (MB)': 18.1,
-        'WER': 0.0878310,
-        'CER': 0.0456859,
-        'WER-LM': 0.08733263,
-        'CER-LM': 0.04531657,
+        'singlish': {
+            'WER': 0.0878310,
+            'CER': 0.0456859,
+            'WER-LM': 0.08733263,
+            'CER-LM': 0.04531657,
+        },
         'Language': ['singlish'],
     },
     'conformer-singlish': {
         'Size (MB)': 125,
         'Quantized Size (MB)': 37.1,
-        'WER': 0.07779246,
-        'CER': 0.0403616,
-        'WER-LM': 0.07718602,
-        'CER-LM': 0.03986952,
+        'singlish': {
+            'WER': 0.07779246,
+            'CER': 0.0403616,
+            'WER-LM': 0.07718602,
+            'CER-LM': 0.03986952,
+        },
         'Language': ['singlish'],
     },
     'large-conformer-singlish': {
         'Size (MB)': 404,
         'Quantized Size (MB)': 107,
-        'WER': 0.07014733,
-        'CER': 0.03587201,
-        'WER-LM': 0.06981206,
-        'CER-LM': 0.03572307,
+        'singlish': {
+            'WER': 0.07014733,
+            'CER': 0.03587201,
+            'WER-LM': 0.06981206,
+            'CER-LM': 0.03572307,
+        },
         'Language': ['singlish'],
-    },
-    'xs-squeezeformer': {
-        'Size (MB)': 51.9,
-        'Quantized Size (MB)': 23.4,
-        'WER': 0.24361950288615478,
-        'CER': 0.1101217363425894,
-        'WER-LM': 0.23732601782189705,
-        'CER-LM': 0.11326849769270286,
-        'Language': ['malay'],
-    },
-    'sm-squeezeformer': {
-        'Size (MB)': 147,
-        'Quantized Size (MB)': 47.4,
-        'WER': 0.1995528388961415,
-        'CER': 0.09630517271889948,
-        'WER-LM': 0.1942312047785515,
-        'CER-LM': 0.09945312677604806,
-        'Language': ['malay'],
-    },
-    'm-squeezeformer': {
-        'Size (MB)': 261,
-        'Quantized Size (MB)': 78.5,
-        'WER': 0.19985013387051873,
-        'CER': 0.09779469719228841,
-        'WER-LM': 0.19800923596045886,
-        'CER-LM': 0.10461433715575515,
-        'Language': ['malay'],
     },
 }
 
@@ -147,11 +163,8 @@ def transformer(
     result : malaya_speech.model.transducer.Transducer class
     """
 
-    warnings.warn(
-        '`malaya.stt.transducer.transformer` is using Tensorflow, means malaya-speech no longer improved it.', DeprecationWarning)
-
     model = model.lower()
-    if model not in _transducer_availability:
+    if model not in _transformer_availability:
         raise ValueError(
             'model not supported, please check supported models from `malaya_speech.stt.transducer.available_transformer()`.'
         )
@@ -159,7 +172,7 @@ def transformer(
     return stt.transducer_load(
         model=model,
         module='speech-to-text-transducer',
-        languages=_transducer_availability[model]['Language'],
+        languages=_transformer_availability[model]['Language'],
         quantized=quantized,
         **kwargs
     )

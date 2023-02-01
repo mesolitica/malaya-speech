@@ -179,7 +179,7 @@ def vits_torch_load(model, normalizer, **kwargs):
         'model': 'model.pth',
         'config': 'config.json'
     }
-    files = download_files(model, s3_file)
+    files = download_files(model, s3_file, **kwargs)
     return VITS_Torch(
         normalizer=normalizer,
         pth=files['model'],

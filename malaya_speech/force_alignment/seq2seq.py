@@ -26,11 +26,15 @@ def huggingface(
     ----------
     model : str, optional (default='mesolitica/finetune-whisper-base-ms-singlish')
         Check available models at `malaya_speech.force_alignment.seq2seq.available_huggingface()`.
+    force_check: bool, optional (default=True)
+        Force check model one of malaya model.
+        Set to False if you have your own huggingface model.
 
     Returns
     -------
     result : malaya_speech.model.huggingface.Seq2SeqAligner class
     """
+
     model = model.lower()
     if model not in _huggingface_availability:
         raise ValueError(

@@ -18,10 +18,10 @@ Prepare ASR dataset for ASR models.
 
 ## Download
 
-1. Malay Test set, audio files, ~53 minutes, [malay-test.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/malay-test.tar.gz), transcript, [malay-test.json](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/malay-test.json).
+1. Malay Test set, audio files, ~53 minutes, [malay-test.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/malay-test.tar.gz), transcript, [postprocess-malaya-malay-test-set.json](postprocess-malaya-malay-test-set.json).
 
 2. Singlish Test set, audio files, ~271 minutes, [singlish-test.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/singlish-test.tar.gz), transcript, [singlish-test.json](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/singlish-test.json).
 
 3. Mandarin Test set, audio files, ~46 minutes, [mandarin-test.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/mandarin-test.tar.gz), transcript, [mandarin-test.json](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/mandarin-test.json).
 
-4. Processed FLEURS102 `ms_my`, ~133 minutes, [malay-asr-test.json](malay-asr-test.json).
+4. Processed FLEURS102 `ms_my`, ~133 minutes, [malay-fleur102.tar.gz](https://huggingface.co/datasets/mesolitica/mixed-stt/resolve/main/malay-fleur102.tar.gz), transcript, [malay-asr-test.json](malay-asr-test.json).
