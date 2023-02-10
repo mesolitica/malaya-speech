@@ -35,3 +35,17 @@ logits.pkl
 *.pth
 voxceleb2-test-*
 flagged
+*.pt
+malay-stats.json
+lightning_logs
+conformer-base-32
+conformer-base-v2-32
+conformer-tiny-32
+emformer-base-32
+conformer-base.py
+conformer-large.py
+conformer-tiny.py
+emformer-base.py
+export-conformer-base-torchaudio.ipynb
+export-conformer-tiny-torchaudio.ipynb
+export-emformer-base-torchaudio.ipynb

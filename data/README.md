@@ -25,6 +25,10 @@ Gather Youtube urls for indonesian, english and low quality english audiobooks o
 
 Semisupervised Malay TTS dataset from Azure TTS cloud.
 
+### [GCP-TTS](https://github.com/huseinzol05/malaya-speech/tree/master/data/gcp-tts)
+
+Semisupervised Malay TTS dataset from GCP TTS cloud.
+
 ### [Emotion](https://github.com/huseinzol05/malaya-speech/tree/master/data/emotion)
 
 Speech emotion dataset used by Malaya-Speech for speech emotion detection.

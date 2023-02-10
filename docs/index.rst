@@ -17,8 +17,16 @@ Contents:
    :caption: Getting Started
 
    installation
+   mock-tensorflow
    Dataset
    Contributing
+
+.. toctree::
+   :maxdepth: 2
+   :caption: GPU Environment
+
+   gpu-environment-tensorflow
+   gpu-environment-pytorch
 
 .. toctree::
    :maxdepth: 2
@@ -45,6 +53,7 @@ Contents:
    load-stt-transducer-model-lm-mlm
    load-stt-transducer-model-singlish
    load-stt-transducer-model-2mixed
+   load-stt-transducer-model-pt
    stt-transducer-gradio
 
 .. toctree::
@@ -129,7 +138,7 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
-   :caption: Real time Module
+   :caption: PyAudio streaming Module
    
    realtime-asr
    realtime-asr-mixed
@@ -158,6 +167,14 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+   :caption: Speaker Vector Module
+
+   load-speaker-vector
+   load-speaker-vector-nemo
+   load-speaker-vector-huggingface
+
+.. toctree::
+   :maxdepth: 2
    :caption: Speaker Diarization Module
 
    load-speaker-change
@@ -174,13 +191,6 @@ Contents:
    :caption: Multispeaker Module
 
    multispeaker-separation-wav
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Speaker Vector Module
-
-   load-speaker-vector
-   load-speaker-vector-huggingface
 
 .. toctree::
    :maxdepth: 2

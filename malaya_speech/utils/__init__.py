@@ -50,6 +50,7 @@ def load_graph(frozen_graph_filename, **kwargs):
 from . import arange
 from . import aligner
 from . import astype
+from . import bpe
 from . import char
 from . import combine
 from . import constant

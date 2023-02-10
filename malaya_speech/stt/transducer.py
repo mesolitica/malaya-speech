@@ -131,14 +131,62 @@ _transformer_availability = {
     },
 }
 
+_pt_transformer_availability = {
+    'mesolitica/conformer-tiny': {
+        'Size (MB)': 38.5,
+        'malay-malaya': {
+            'WER': 0.17341180814,
+            'CER': 0.059574850240,
+        },
+        'malay-fleur102': {
+            'WER': 0.19524478979,
+            'CER': 0.0830808938,
+        },
+        'Language': ['malay'],
+    },
+    'mesolitica/conformer-base': {
+        'Size (MB)': 121,
+        'malay-malaya': {
+            'WER': 0.128512605,
+            'CER': 0.03869581926,
+        },
+        'malay-fleur102': {
+            'WER': 0.13513349107,
+            'CER': 0.05020140937,
+        },
+        'Language': ['malay'],
+    },
+    'mesolitica/conformer-large': {
+        'Size (MB)': 121,
+        'malay-malaya': {
+            'WER': 0.1375828607,
+            'CER': 0.04320797311,
+        },
+        'malay-fleur102': {
+            'WER': 0.1430281008,
+            'CER': 0.05527847917,
+        },
+        'Language': ['malay'],
+    },
+}
+
 
 def available_transformer():
     """
-    List available Encoder-Transducer ASR models.
+    List available Encoder-Transducer ASR models using Tensorflow.
     """
 
     _describe()
     return describe_availability(_transformer_availability)
+
+
+def available_pt_transformer():
+    """
+    List available Encoder-Transducer ASR models using Pytorch.
+    """
+
+    _describe()
+    return describe_availability(_pt_transformer_availability)
 
 
 @check_type
@@ -148,7 +196,7 @@ def transformer(
     **kwargs,
 ):
     """
-    Load Encoder-Transducer ASR model.
+    Load Encoder-Transducer ASR model using Tensorflow.
 
     Parameters
     ----------
@@ -176,3 +224,29 @@ def transformer(
         quantized=quantized,
         **kwargs
     )
+
+
+def pt_transformer(
+    model: str = 'mesolitica/conformer-base',
+    **kwargs,
+):
+    """
+    Load Encoder-Transducer ASR model using Pytorch.
+
+    Parameters
+    ----------
+    model : str, optional (default='mesolitica/conformer-base')
+        Check available models at `malaya_speech.stt.transducer.available_torch_transformer()`.
+
+    Returns
+    -------
+    result : malaya_speech.torch_model.torchaudio.Conformer class
+    """
+
+    model = model.lower()
+    if model not in _pt_transformer_availability:
+        raise ValueError(
+            'model not supported, please check supported models from `malaya_speech.stt.transducer.available_torch_transformer()`.'
+        )
+
+    return stt.torchaudio(model=model, **kwargs,)

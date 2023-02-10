@@ -110,6 +110,7 @@ Malaya-Speech also released pretrained models, simply check at `malaya-speech/pr
 -  **VITS**, Conditional Variational Autoencoder with Adversarial Learning for End-to-End Text-to-Speech, https://arxiv.org/abs/2106.06103
 -  **Squeezeformer**, An Efficient Transformer for Automatic Speech Recognition, https://arxiv.org/abs/2206.00888
 -  **Whisper**, Robust Speech Recognition via Large-Scale Weak Supervision, https://cdn.openai.com/papers/whisper.pdf
+-  **Emformer**, Efficient Memory Transformer Based Acoustic Model For Low Latency Streaming Speech Recognition, https://arxiv.org/abs/2010.10759
 
 References
 -----------

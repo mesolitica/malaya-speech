@@ -24,6 +24,7 @@ import re
 
 import six
 import tensorflow.compat.v2 as tf
+from tensorflow.compat.v2.io.gfile import GFile
 
 
 def _re_compile(pattern):
@@ -522,7 +523,7 @@ def write_lines_to_file(cls_name, filename, lines, metadata_dict):
         _METADATA_PREFIX,
         json.dumps(metadata_dict, sort_keys=True),
     )
-    with tf.io.gfile.GFile(filename, 'wb') as f:
+    with GFile(filename, 'wb') as f:
         for line in [header_line, metadata_line]:
             f.write(tf.compat.as_bytes(line))
             f.write(tf.compat.as_bytes('\n'))
@@ -533,7 +534,7 @@ def write_lines_to_file(cls_name, filename, lines, metadata_dict):
 
 def read_lines_from_file(cls_name, filename):
     """Read lines from file, parsing out header and metadata."""
-    with tf.io.gfile.GFile(filename, 'rb') as f:
+    with GFile(filename, 'rb') as f:
         lines = [tf.compat.as_text(line)[:-1] for line in f]
     header_line = '%s%s' % (_HEADER_PREFIX, cls_name)
     if lines[0] != header_line:

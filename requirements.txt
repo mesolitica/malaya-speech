@@ -9,6 +9,6 @@ unidecode
 tqdm
 tornado
 scipy>=1.5.4
-malaya-boilerplate>=0.0.23
+malaya-boilerplate>=0.0.24rc1
 transformers
 torchlibrosa==0.0.7

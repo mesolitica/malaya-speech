@@ -1,3 +1,4 @@
+from malaya_boilerplate.huggingface import download_files
 from malaya_speech.utils import (
     check_file,
     load_graph,
@@ -21,6 +22,7 @@ from transformers import (
     AutoModelForAudioXVector,
 )
 from malaya_speech.torch_model.huggingface import XVector
+from malaya_speech.torch_model.nemo import Model as Nemo
 
 transformer_models = ['conformer-tiny', 'conformer-base', 'vit-tiny', 'vit-base']
 
@@ -91,4 +93,18 @@ def huggingface_xvector(model, **kwargs):
         processor=processor,
         model=model,
         name='speaker-vector-huggingface',
+    )
+
+
+def nemo(model, **kwargs):
+    s3_file = {
+        'config': 'model_config.yaml',
+        'model': 'model_weights.ckpt',
+    }
+    path = download_files(model, s3_file, **kwargs)
+    return Nemo(
+        config=path['config'],
+        pth=path['model'],
+        model=model,
+        name='speaker-vector-nemo',
     )

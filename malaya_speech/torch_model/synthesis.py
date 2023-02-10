@@ -1,6 +1,6 @@
 import torch
 import json
-from malaya_boilerplate.train.config import HParams
+from malaya_boilerplate.hparams import HParams
 from malaya_speech.torch_model.vits.commons import intersperse
 from malaya_speech.torch_model.vits.model_infer import SynthesizerTrn
 from malaya_speech.utils.text import TTS_SYMBOLS
@@ -21,7 +21,7 @@ class VITS(SynthesizerTrn, TTS):
                                    hps.train.segment_size // hps.data.hop_length,
                                    **hps.model)
         self.eval()
-        self.load_state_dict(torch.load(pth))
+        self.load_state_dict(torch.load(pth, map_location='cpu'))
 
         self._normalizer = normalizer
         self.__model__ = model
@@ -77,5 +77,5 @@ class VITS(SynthesizerTrn, TTS):
             'y': audio,
         }
 
-    def __call__(self, input, **kwargs):
+    def forward(self, input, **kwargs):
         return self.predict(input, **kwargs)

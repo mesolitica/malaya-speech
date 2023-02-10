@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 LOG_BASE_CHANGE_FACTOR = 1.0 / math.log10(math.e)
 
 
-class LM:
+class LM(torch.nn.Module):
     def __init__(
         self,
         model,
@@ -19,6 +19,7 @@ class LM:
         order: int = 1,
         **kwargs,
     ):
+        super().__init__()
         tokenizer.add_special_tokens({'additional_special_tokens': ['<|pad|>']})
         tokenizer.pad_token = '<|pad|>'
         model.resize_token_embeddings(len(tokenizer))
@@ -27,9 +28,6 @@ class LM:
         self.alpha = alpha
         self.beta = beta
         self.order = order
-
-    def cuda(self):
-        return self.model.cuda()
 
     def score_partial_token(self, partial_token: str):
         return 0.0

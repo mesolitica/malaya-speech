@@ -28,12 +28,6 @@ _availability = {
         'Embedding Size': 512,
         'EER': 0.0446,
     },
-    'speakernet': {
-        'Size (MB)': 35,
-        'Quantized Size (MB)': 8.88,
-        'Embedding Size': 7205,
-        'EER': 0.3000285,
-    },
     'conformer-base': {
         'Size (MB)': 99.4,
         'Quantized Size (MB)': 27.2,
@@ -48,6 +42,13 @@ _availability = {
     },
 }
 
+_pt_availability = {
+    'dvector': {
+        'Size (MB)': 5.45,
+        'EER': 0.3804599,
+        'original from': 'https://github.com/yistLin/dvector',
+    },
+}
 trillsson_accuracy = {
     'trillsson-1': {
         'url': 'https://tfhub.dev/google/nonsemantic-speech-benchmark/trillsson1/1',
@@ -59,21 +60,24 @@ trillsson_accuracy = {
     }
 }
 
-nemo_accuracy = {
-    'ecapa-tdnn': {
-        'Size (MB)': 20.3,
-        'Embedding Size': 512,
-        'EER': 0.08687,
+_nemo_availability = {
+    'huseinzol05/nemo-ecapa-tdnn': {
+        'Size (MB)': 96.8,
+        'Embedding Size': 192,
+        'EER': 0.0249200000000007,
+        'original from': 'https://catalog.ngc.nvidia.com/orgs/nvidia/teams/nemo/models/ecapa_tdnn',
     },
-    'speakernet': {
-        'Size (MB)': 20.3,
-        'Embedding Size': 512,
-        'EER': 0.08687,
+    'huseinzol05/nemo-speakernet': {
+        'Size (MB)': 23.6,
+        'Embedding Size': 192,
+        'EER': 0.0427898305,
+        'original from': 'https://catalog.ngc.nvidia.com/orgs/nvidia/teams/nemo/models/speakerverification_speakernet',
     },
-    'titanet_large': {
-        'Size (MB)': 20.3,
-        'Embedding Size': 512,
-        'EER': 0.08687,
+    'huseinzol05/nemo-titanet_large': {
+        'Size (MB)': 101.6,
+        'Embedding Size': 192,
+        'EER': 0.02277999999996,
+        'original from': 'https://catalog.ngc.nvidia.com/orgs/nvidia/teams/nemo/models/titanet_large',
     }
 }
 
@@ -81,12 +85,12 @@ _huggingface_availability = {
     'microsoft/wavlm-base-sv': {
         'Size (MB)': 405,
         'Embedding Size': 512,
-        'EER': 0.076128169,
+        'EER': 0.07827375115,
     },
     'microsoft/wavlm-base-plus-sv': {
         'Size (MB)': 405,
         'Embedding Size': 512,
-        'EER': 0.0631559379,
+        'EER': 0.06688427572,
     },
     'microsoft/unispeech-sat-large-sv': {
         'Size (MB)': 1290,
@@ -113,7 +117,7 @@ def _describe():
 
 def available_model():
     """
-    List available speaker vector deep models.
+    List available speaker vector deep models using Tensorflow.
     """
 
     _describe()
@@ -126,7 +130,7 @@ def available_nemo():
     """
 
     _describe()
-    return describe_availability(nemo_accuracy)
+    return describe_availability(_nemo_availability)
 
 
 def available_huggingface():
@@ -173,6 +177,34 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
 
 
 @check_type
+def nemo(
+    model: str = 'huseinzol05/nemo-ecapa-tdnn',
+    **kwargs,
+):
+    """
+    Load Nemo Speaker verification model.
+
+    Parameters
+    ----------
+    model : str, optional (default='huseinzol05/nemo-ecapa-tdnn')
+        Check available models at `malaya_speech.speaker_vector.available_nemo()`.
+
+    Returns
+    -------
+    result : malaya_speech.torch_model.nemo.Model class
+    """
+    if model not in _nemo_availability:
+        raise ValueError(
+            'model not supported, please check supported models from `malaya_speech.speaker_vector.available_nemo()`.'
+        )
+
+    return classification.nemo(
+        model=model,
+        **kwargs
+    )
+
+
+@check_type
 def huggingface(
     model: str = 'microsoft/wavlm-base-plus-sv',
     force_check: bool = True,
@@ -193,6 +225,11 @@ def huggingface(
     -------
     result : malaya_speech.torch_model.huggingface.XVector class
     """
+
+    if model not in _huggingface_availability and force_check:
+        raise ValueError(
+            'model not supported, please check supported models from `malaya_speech.speaker_vector.available_huggingface()`.'
+        )
 
     return classification.huggingface_xvector(
         model=model,

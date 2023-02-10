@@ -1,6 +1,8 @@
 from herpetologist import check_type
 from malaya_speech.supervised import voice_conversion
 from malaya_speech.utils import describe_availability
+import logging
+import warnings
 
 _availability_fastvc = {
     'fastvc-32-vggvox-v2': {
@@ -20,6 +22,8 @@ def available_fastvc():
     """
     List available Voice Conversion models.
     """
+    warnings.warn(
+        '`malaya_speech.voice_conversion.available_fastvc` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
 
     return describe_availability(_availability)
 
@@ -42,6 +46,10 @@ def fastvc(
     -------
     result : malaya_speech.model.synthesis.FastVC class
     """
+
+    warnings.warn(
+        '`malaya_speech.voice_conversion.fastvc` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+
     model = model.lower()
     if model not in _availability:
         raise ValueError(

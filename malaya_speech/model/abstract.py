@@ -17,12 +17,27 @@ class Abstract:
             output_nodes=self._output_nodes,
         )
 
-    def cuda(self, **kwargs):
+    def _torch_method(self, method, **kwargs):
+
+        if hasattr(self, 'model'):
+            if hasattr(self.model, method):
+                try:
+                    return getattr(self.model, method)(**kwargs)
+                except:
+                    raise ValueError('this model is not a PyTorch model.')
+
         if hasattr(self, 'hf_model'):
-            try:
-                return self.hf_model.cuda(**kwargs)
-            except:
-                raise ValueError('this model is not a PyTorch model.')
+            if hasattr(self.hf_model, method):
+                try:
+                    return getattr(self.hf_model, method)(**kwargs)
+                except:
+                    raise ValueError('this model is not a PyTorch model.')
+
+    def cuda(self, **kwargs):
+        return self._torch_method('cuda')
+
+    def eval(self, **kwargs):
+        return self._torch_method('eval')
 
 
 class TTS:

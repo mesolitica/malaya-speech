@@ -49,8 +49,9 @@ def batching(audios):
     return normed_input_values.astype(np.float32), attentions
 
 
-class CTC(Abstract):
+class CTC(torch.nn.Module):
     def __init__(self, hf_model, model, name):
+        super().__init__()
         self.hf_model = hf_model
         self.__model__ = model
         self.__name__ = name
@@ -187,8 +188,9 @@ class CTC(Abstract):
         return self.predict([input])[0]
 
 
-class Aligner(Abstract):
+class Aligner(torch.nn.Module):
     def __init__(self, hf_model, model, name):
+        super().__init__()
         self.hf_model = hf_model
         self.__model__ = model
         self.__name__ = name
@@ -266,8 +268,9 @@ class Aligner(Abstract):
         return self.predict(input, transcription)
 
 
-class Seq2Seq(Abstract):
+class Seq2Seq(torch.nn.Module):
     def __init__(self, hf_model, processor, model, name, use_whisper_processor=False, **kwargs):
+        super().__init__()
         self.hf_model = hf_model
         self.processor = processor
         self.__model__ = model
@@ -376,8 +379,10 @@ class Seq2Seq(Abstract):
         return self.generate([input], **kwargs)[0]
 
 
-class Seq2SeqAligner(Abstract):
+class Seq2SeqAligner(torch.nn.Module):
     def __init__(self, hf_model, processor, model, name, **kwargs):
+        super().__init__()
+
         self.hf_model = hf_model
         self.processor = processor
         self.tokenizer = self.processor.tokenizer
@@ -500,8 +505,10 @@ class Seq2SeqAligner(Abstract):
         }
 
 
-class XVector(Abstract):
+class XVector(torch.nn.Module):
     def __init__(self, hf_model, processor, model, name):
+        super().__init__()
+
         self.hf_model = hf_model
         self.processor = processor
         self.__model__ = model
@@ -535,5 +542,5 @@ class XVector(Abstract):
         embeddings = torch.nn.functional.normalize(embeddings, dim=-1)
         return to_numpy(embeddings)
 
-    def __call__(self, inputs):
+    def forward(self, inputs):
         return self.vectorize(inputs)

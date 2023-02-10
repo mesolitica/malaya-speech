@@ -207,6 +207,12 @@ malaya_speech.torch_model.huggingface.XVector
 .. autoclass:: malaya_speech.torch_model.huggingface.XVector()
     :members:
 
+malaya_speech.torch_model.nemo.Model
+---------------------------------------------------
+
+.. autoclass:: malaya_speech.torch_model.nemo.Model()
+    :members:
+
 malaya_speech.torch_model.super_resolution.VoiceFixer
 ------------------------------------------------------
 
@@ -225,6 +231,12 @@ malaya_speech.torch_model.synthesis.VITS
 .. autoclass:: malaya_speech.torch_model.synthesis.VITS()
     :members:
 
+malaya_speech.torch_model.torchaudio.Conformer
+---------------------------------------------------
+
+.. autoclass:: malaya_speech.torch_model.torchaudio.Conformer()
+    :members:
+    
 malaya_speech.pipeline
 -----------------------------------
 
@@ -273,10 +285,16 @@ malaya_speech.pipeline.zip
 .. autoclass:: malaya_speech.pipeline.zip()
     :members:
 
-malaya_speech.streaming
------------------------------------
+malaya_speech.streaming.pyaudio_vad
+-------------------------------------
 
-.. automodule:: malaya_speech.streaming
+.. automodule:: malaya_speech.streaming.pyaudio_vad
+    :members:
+
+malaya_speech.streaming.torchaudio
+-------------------------------------
+
+.. automodule:: malaya_speech.streaming.torchaudio
     :members:
 
 malaya_speech.utils.aligner
@@ -289,6 +307,12 @@ malaya_speech.utils.astype
 --------------------------
 
 .. automodule:: malaya_speech.utils.astype
+    :members:
+
+malaya_speech.utils.bpe
+--------------------------
+
+.. automodule:: malaya_speech.utils.bpe
     :members:
 
 malaya_speech.utils.char
@@ -355,6 +379,12 @@ malaya_speech.utils.tf_featurization
 -------------------------------------
 
 .. automodule:: malaya_speech.utils.tf_featurization
+    :members:
+
+malaya_speech.utils.torch_featurization
+-----------------------------------------
+
+.. automodule:: malaya_speech.utils.torch_featurization
     :members:
 
 malaya_speech.age_detection

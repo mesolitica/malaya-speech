@@ -25,6 +25,7 @@ import torch.nn as nn
 from packaging import version
 from abc import ABC, abstractmethod
 from typing import Optional, Union
+from malaya_speech.nemo.tdnn_attention import make_seq_mask_like
 import logging
 
 logger = logging.getLogger(__name__)
@@ -115,7 +116,7 @@ class AudioPreprocessor(ABC):
         pass
 
 
-class AudioToMelSpectrogramPreprocessor(AudioPreprocessor):
+class AudioToMelSpectrogramPreprocessor(AudioPreprocessor, torch.nn.Module):
     """Featurizer module that converts wavs to mel spectrograms.
         Args:
             sample_rate (int): Sample rate of the input audio data.

@@ -21,7 +21,7 @@ from __future__ import unicode_literals
 
 import collections
 
-from absl import logging
+import logging
 import six
 import tensorflow.compat.v2 as tf
 from malaya_speech.utils import text_encoder
@@ -312,10 +312,7 @@ class SubwordTextEncoder(text_encoder.TextEncoder):
         def _binary_search(min_token_count, max_token_count):
             """Binary search min_token_count to build SubwordTextEncoder vocab."""
             candidate_min = (min_token_count + max_token_count) // 2
-            logging.info(
-                'SubwordTextEncoder build: trying min_token_count %d',
-                candidate_min,
-            )
+            logging.info(f'SubwordTextEncoder build: trying min_token_count {candidate_min}')
             encoder = cls._build_from_token_counts(
                 token_counts=token_counts,
                 min_token_count=candidate_min,

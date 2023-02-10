@@ -623,6 +623,7 @@ class TransducerAligner(Abstract):
     def predict(self, input, transcription: str, sample_rate: int = 16000):
         """
         Transcribe input, will return a string.
+
         Parameters
         ----------
         input: np.array
@@ -631,6 +632,7 @@ class TransducerAligner(Abstract):
             transcription of input audio
         sample_rate: int, optional (default=16000)
             sample rate for `input`.
+
         Returns
         -------
         result: Dict[words_alignment, subwords_alignment, subwords, alignment]

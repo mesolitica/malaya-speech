@@ -8,8 +8,8 @@
 
 from malaya_boilerplate.utils import get_home
 
-version = '1.3'
-bump_version = '1.3.0.2'
+version = '1.4'
+bump_version = '1.4.0'
 __version__ = bump_version
 
 package = 'malaya-speech'
@@ -44,7 +44,7 @@ from . import voice_conversion
 from . import utils
 
 from .pipeline import Pipeline
-from .streaming import stream
+from . import streaming
 from .utils import (
     aligner,
     arange,

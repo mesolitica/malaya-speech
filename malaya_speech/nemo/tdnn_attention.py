@@ -12,47 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from typing import List
+from typing import List, Optional
 
 import torch
 from numpy import inf
 from torch import nn as nn
 from torch.nn import functional as F
 
-
-def get_same_padding(kernel_size, stride, dilation) -> int:
-    if stride > 1 and dilation > 1:
-        raise ValueError("Only stride OR dilation may be greater than 1")
-    return (dilation * (kernel_size - 1)) // 2
-
-
-def init_weights(m, mode: Optional[str] = 'xavier_uniform'):
-    if isinstance(m, MaskedConv1d):
-        init_weights(m.conv, mode)
-    if isinstance(m, (nn.Conv1d, nn.Linear)):
-        if mode is not None:
-            if mode == 'xavier_uniform':
-                nn.init.xavier_uniform_(m.weight, gain=1.0)
-            elif mode == 'xavier_normal':
-                nn.init.xavier_normal_(m.weight, gain=1.0)
-            elif mode == 'kaiming_uniform':
-                nn.init.kaiming_uniform_(m.weight, nonlinearity="relu")
-            elif mode == 'kaiming_normal':
-                nn.init.kaiming_normal_(m.weight, nonlinearity="relu")
-            elif mode == 'tds_uniform':
-                tds_uniform_(m.weight)
-            elif mode == 'tds_normal':
-                tds_normal_(m.weight)
-            else:
-                raise ValueError("Unknown Initialization mode: {0}".format(mode))
-    elif isinstance(m, nn.BatchNorm1d):
-        if m.track_running_stats:
-            m.running_mean.zero_()
-            m.running_var.fill_(1)
-            m.num_batches_tracked.zero_()
-        if m.affine:
-            nn.init.ones_(m.weight)
-            nn.init.zeros_(m.bias)
+from malaya_speech.nemo.jasper import get_same_padding, init_weights
 
 
 class StatsPoolLayer(nn.Module):

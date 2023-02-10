@@ -3,9 +3,9 @@ import torch
 import numpy as np
 from malaya_speech.model.frame import Frame
 from malaya_speech.utils.torch_utils import to_tensor_cuda, to_numpy, from_log
-from malaya_speech.train.model.voicefixer.base import VoiceFixer as BaseVoiceFixer
-from malaya_speech.train.model.voicefixer.nvsr import NVSR as BaseNVSR
-from malaya_speech.train.model.nuwave2_torch.inference import NuWave2 as BaseNuWave2
+from malaya_speech.torch_model.voicefixer.base import VoiceFixer as BaseVoiceFixer
+from malaya_speech.torch_model.voicefixer.nvsr import NVSR as BaseNVSR
+from malaya_speech.torch_model.nuwave2_torch.inference import NuWave2 as BaseNuWave2
 from scipy.signal import resample_poly
 
 
@@ -13,6 +13,7 @@ class VoiceFixer(BaseVoiceFixer):
     def __init__(self, pth, vocoder_pth, model, name):
         super(VoiceFixer, self).__init__(pth, vocoder_pth)
         self.eval()
+
         self.__model__ = model
         self.__name__ = name
 
@@ -66,6 +67,7 @@ class NVSR(BaseNVSR):
     def __init__(self, pth, vocoder_pth, model, name):
         super(NVSR, self).__init__(pth, vocoder_pth)
         self.eval()
+
         self.__model__ = model
         self.__name__ = name
 
@@ -89,10 +91,10 @@ class NVSR(BaseNVSR):
 class NuWave2(BaseNuWave2):
     def __init__(self, pth, model, name):
         super(NuWave2, self).__init__()
-        self.eval()
 
         ckpt = torch.load(pth, map_location='cpu')
         self.load_state_dict(ckpt)
+        self.eval()
 
         self.__model__ = model
         self.__name__ = name
@@ -141,16 +143,15 @@ class NuWave2(BaseNuWave2):
         return self.predict(input=input, sr=sr, steps=steps)
 
 
-class HiFiGAN:
+class HiFiGAN(torch.nn.Module):
     def __init__(self, pth, model, name):
+        super().__init__()
+
         self._model = torch.jit.load(pth, map_location='cpu')
         self._model.eval()
 
         self.__model__ = model
         self.__name__ = name
-
-    def cuda(*args, **kwargs):
-        return self._model.cuda(*args, **kwargs)
 
     def predict(self, input, sr: int):
         """
@@ -174,3 +175,6 @@ class HiFiGAN:
         wav = to_tensor_cuda(wav, cuda)
 
         return to_numpy(self._model(wav, sr))
+
+    def forward(self, input, sr: int):
+        return self.predict(input=input, sr=sr)

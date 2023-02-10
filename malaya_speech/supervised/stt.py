@@ -17,6 +17,7 @@ from malaya_speech.torch_model.huggingface import (
     Seq2Seq as HuggingFace_Seq2Seq,
     Seq2SeqAligner as HuggingFace_Seq2SeqAligner,
 )
+from malaya_speech.torch_model.torchaudio import Conformer
 from transformers import AutoModelForCTC, AutoProcessor, AutoModelForSpeechSeq2Seq
 from transformers import WhisperProcessor
 from malaya_speech.path import TRANSDUCER_VOCABS, TRANSDUCER_MIXED_VOCABS
@@ -266,3 +267,19 @@ def whisper(model, **kwargs):
     model.load_state_dict(checkpoint['model_state_dict'])
 
     return model
+
+
+def torchaudio(model, **kwargs):
+    s3_file = {
+        'model': 'model.pt',
+        'sp_model': 'malay-stt.model',
+        'stats_file': 'malay-stats.json',
+    }
+    path = download_files(model, s3_file, **kwargs)
+    return Conformer(
+        pth=path['model'],
+        sp_model=path['sp_model'],
+        stats_file=path['stats_file'],
+        model=model,
+        name='speech-to-text-torchaudio',
+    )
