@@ -56,7 +56,7 @@ def to_byte(array):
     return array
 
 
-def float_to_int(array, type=np.int16):
+def float_to_int(array, type=np.int16, divide_max_abs=True):
     """
     Change np.array float32 / float64 into np.int16
 
@@ -80,7 +80,10 @@ def float_to_int(array, type=np.int16):
             array[:] = 0
             array = type(array * np.iinfo(type).max)
         else:
-            array = type(array / np.max(np.abs(array)) * np.iinfo(type).max)
+            if divide_max_abs:
+                array = type(array / np.max(np.abs(array)) * np.iinfo(type).max)
+            else:
+                array = type(array * np.iinfo(type).max)
     return array
 
 

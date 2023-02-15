@@ -147,16 +147,16 @@ _pt_transformer_availability = {
     'mesolitica/conformer-base': {
         'Size (MB)': 121,
         'malay-malaya': {
-            'WER': 0.128512605,
-            'CER': 0.03869581926,
+            'WER': 0.122076123261,
+            'CER': 0.03879606324,
         },
         'malay-fleur102': {
-            'WER': 0.13513349107,
-            'CER': 0.05020140937,
+            'WER': 0.1326737206665,
+            'CER': 0.050329148570,
         },
         'Language': ['malay'],
     },
-    'mesolitica/conformer-large': {
+    'mesolitica/conformer-medium': {
         'Size (MB)': 121,
         'malay-malaya': {
             'WER': 0.1375828607,
@@ -165,6 +165,18 @@ _pt_transformer_availability = {
         'malay-fleur102': {
             'WER': 0.1430281008,
             'CER': 0.05527847917,
+        },
+        'Language': ['malay'],
+    },
+    'mesolitica/emformer-base': {
+        'Size (MB)': 162,
+        'malay-malaya': {
+            'WER': 0.18048993533,
+            'CER': 0.064647787727,
+        },
+        'malay-fleur102': {
+            'WER': 0.19121038729,
+            'CER': 0.08266033385,
         },
         'Language': ['malay'],
     },

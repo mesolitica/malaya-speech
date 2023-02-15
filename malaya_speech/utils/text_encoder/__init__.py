@@ -62,7 +62,6 @@ class TextEncoderConfig(object):
         self.name = name
 
 
-@six.add_metaclass(abc.ABCMeta)
 class TextEncoder(object):
     """Abstract base class for converting between text and integers.
 
@@ -185,7 +184,7 @@ class ByteTextEncoder(TextEncoder):
         i = 0
         while i < len(tmp_decoded):
             el = tmp_decoded[i]
-            if isinstance(el, six.string_types):
+            if isinstance(el, str):
                 strs.append(el)
                 i += 1
             else:

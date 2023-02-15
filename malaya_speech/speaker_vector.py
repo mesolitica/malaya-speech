@@ -191,14 +191,14 @@ def nemo(
 
     Returns
     -------
-    result : malaya_speech.torch_model.nemo.Model class
+    result : malaya_speech.torch_model.nemo.SpeakerVector class
     """
     if model not in _nemo_availability:
         raise ValueError(
             'model not supported, please check supported models from `malaya_speech.speaker_vector.available_nemo()`.'
         )
 
-    return classification.nemo(
+    return classification.nemo_speaker_vector(
         model=model,
         **kwargs
     )

@@ -49,3 +49,5 @@ emformer-base.py
 export-conformer-base-torchaudio.ipynb
 export-conformer-tiny-torchaudio.ipynb
 export-emformer-base-torchaudio.ipynb
+conformer-medium-32
+conformer-medium.py

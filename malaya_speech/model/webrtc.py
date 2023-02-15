@@ -1,5 +1,5 @@
 import numpy as np
-from malaya_speech.utils.astype import to_byte, to_ndarray
+from malaya_speech.utils.astype import to_byte, to_ndarray, float_to_int
 from malaya_speech.model.frame import Frame
 
 

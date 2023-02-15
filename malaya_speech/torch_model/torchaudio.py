@@ -43,6 +43,8 @@ class Conformer(torch.nn.Module):
         self.__model__ = model
         self.__name__ = name
 
+        self.rnnt_streaming = 'emformer' in model
+
     def forward(self, inputs, beam_width: int = 20):
         """
         Transcribe inputs using beam decoder.

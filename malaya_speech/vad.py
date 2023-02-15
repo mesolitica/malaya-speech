@@ -2,38 +2,54 @@ from malaya_speech.model.webrtc import WebRTC
 from malaya_speech.supervised import classification
 from malaya_speech.utils import describe_availability
 from herpetologist import check_type
+import warnings
 
+# https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/vad/evaluate
 _availability = {
-    'vggvox-v1': {
-        'Size (MB)': 70.8,
-        'Quantized Size (MB)': 17.7,
-        'Accuracy': 0.80984375,
-    },
     'vggvox-v2': {
         'Size (MB)': 31.1,
         'Quantized Size (MB)': 7.92,
-        'Accuracy': 0.8196875,
-    },
-    'speakernet': {
-        'Size (MB)': 20.3,
-        'Quantized Size (MB)': 5.18,
-        'Accuracy': 0.7340625,
+        'macro precision': 0.65847,
+        'macro recall': 0.82243,
+        'macro f1-score': 0.67149,
     },
     'marblenet-factor1': {
         'Size (MB)': 0.526,
         'Quantized Size (MB)': 0.232,
-        'Accuracy': 0.8491875,
+        'macro precision': 0.64789,
+        'macro recall': 0.64168,
+        'macro f1-score': 0.64467,
     },
     'marblenet-factor3': {
         'Size (MB)': 3.21,
         'Quantized Size (MB)': 0.934,
-        'Accuracy': 0.83855625,
+        'macro precision': 0.57310,
+        'macro recall': 0.61392,
+        'macro f1-score': 0.58050,
     },
     'marblenet-factor5': {
         'Size (MB)': 8.38,
         'Quantized Size (MB)': 2.21,
-        'Accuracy': 0.843540625,
+        'macro precision': 0.54572,
+        'macro recall': 0.58929,
+        'macro f1-score': 0.53424,
     }
+}
+
+_nemo_availability = {
+    'huseinzol05/nemo-vad-marblenet': {
+        'Size (MB)': 0.481,
+        'macro precision': 0.60044,
+        'macro recall': 0.72819,
+        'macro f1-score': 0.49225,
+    }
+}
+
+silero_vad = {
+    'original from': 'https://github.com/snakers4/silero-vad',
+    'macro precision': 0.60044,
+    'macro recall': 0.72819,
+    'macro f1-score': 0.49225,
 }
 
 
@@ -45,6 +61,14 @@ def available_model():
     return describe_availability(_availability)
 
 
+def available_nemo():
+    """
+    List available Nvidia Nemo VAD models.
+    """
+
+    return describe_availability(_nemo_availability)
+
+
 @check_type
 def webrtc(
     aggressiveness: int = 3,
@@ -52,7 +76,15 @@ def webrtc(
     minimum_amplitude: int = 100,
 ):
     """
-    Load WebRTC VAD model.
+    Load WebRTC VAD model. 
+    WebRTC prefer 30ms frame, https://github.com/wiseman/py-webrtcvad#how-to-use-it
+
+    {
+        'macro precision': 0.47163,
+        'macro recall': 0.46148,
+        'macro f1-score': 0.46461,
+    }
+    https://github.com/huseinzol05/malaya-speech/blob/master/pretrained-model/vad/evaluate/webrtc.ipynb
 
     Parameters
     ----------
@@ -84,6 +116,7 @@ def webrtc(
 def deep_model(model: str = 'marblenet-factor1', quantized: bool = False, **kwargs):
     """
     Load VAD model.
+    Prefer 50 ms or bigger frame.
 
     Parameters
     ----------
@@ -97,6 +130,11 @@ def deep_model(model: str = 'marblenet-factor1', quantized: bool = False, **kwar
     -------
     result : malaya_speech.supervised.classification.load function
     """
+
+    warnings.warn(
+        '`malaya_speech.vad.deep_model` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
+
     model = model.lower()
     if model not in _availability:
         raise ValueError(
@@ -118,5 +156,35 @@ def deep_model(model: str = 'marblenet-factor1', quantized: bool = False, **kwar
         extra=settings[model],
         label=[False, True],
         quantized=quantized,
+        **kwargs
+    )
+
+
+@check_type
+def nemo(
+    model: str = 'huseinzol05/nemo-vad-marblenet',
+    **kwargs,
+):
+    """
+    Load Nemo VAD model. 
+    Nemo VAD prefer 63 ms frame, https://github.com/NVIDIA/NeMo/blob/02cf155b020964992a974e030b9e318426761e33/nemo/collections/asr/data/feature_to_label_dataset.py#L43
+
+    Parameters
+    ----------
+    model : str, optional (default='huseinzol05/vad-marblenet')
+        Check available models at `malaya_speech.vad.available_nemo()`.
+
+    Returns
+    -------
+    result : malaya_speech.torch_model.nemo.Classification class
+    """
+    if model not in _nemo_availability:
+        raise ValueError(
+            'model not supported, please check supported models from `malaya_speech.vad.available_nemo()`.'
+        )
+
+    return classification.nemo_classification(
+        model=model,
+        label=[False, True],
         **kwargs
     )

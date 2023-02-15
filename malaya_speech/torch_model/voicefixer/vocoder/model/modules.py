@@ -753,7 +753,7 @@ class Conv(nn.Module):
 
     def forward(self, tensor):
         out = self.conv(tensor)
-        if self.causal and self.padding is not 0:
+        if self.causal and self.padding != 0:
             out = out[:, :, : -self.padding]
         return out
 

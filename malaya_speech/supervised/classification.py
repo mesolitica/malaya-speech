@@ -22,7 +22,10 @@ from transformers import (
     AutoModelForAudioXVector,
 )
 from malaya_speech.torch_model.huggingface import XVector
-from malaya_speech.torch_model.nemo import Model as Nemo
+from malaya_speech.torch_model.nemo import (
+    SpeakerVector as NemoSpeakerVector,
+    Classification as NemoClassification,
+)
 
 transformer_models = ['conformer-tiny', 'conformer-base', 'vit-tiny', 'vit-base']
 
@@ -96,15 +99,30 @@ def huggingface_xvector(model, **kwargs):
     )
 
 
-def nemo(model, **kwargs):
+def nemo_speaker_vector(model, **kwargs):
     s3_file = {
         'config': 'model_config.yaml',
         'model': 'model_weights.ckpt',
     }
     path = download_files(model, s3_file, **kwargs)
-    return Nemo(
+    return NemoSpeakerVector(
         config=path['config'],
         pth=path['model'],
         model=model,
         name='speaker-vector-nemo',
+    )
+
+
+def nemo_classification(model, label, **kwargs):
+    s3_file = {
+        'config': 'model_config.yaml',
+        'model': 'model_weights.ckpt',
+    }
+    path = download_files(model, s3_file, **kwargs)
+    return NemoClassification(
+        config=path['config'],
+        pth=path['model'],
+        label=label,
+        model=model,
+        name='classification-nemo',
     )

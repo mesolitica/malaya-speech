@@ -19,14 +19,14 @@ minimum_torchaudio_version = version.parse('0.13.1')
 
 try:
     import torchaudio
-    from torchaudio.io import StreamReader
     from torchaudio.models import emformer_rnnt_model, Hypothesis, RNNTBeamSearch
     from torchaudio.models import Conformer, RNNT
     from torchaudio.models.rnnt import _Joiner, _Predictor, _TimeReduction, _Transcriber
 
     torchaudio_version = version.parse(torchaudio.__version__.split('+cu')[0])
     torchaudio_available = True
-except ModuleNotFoundError:
+except Exception as e:
+    logger.warning(f'torchaudio exception: {e}')
     logger.warning('`torchaudio` is not available, `malaya_speech.utils.torch_featurization` is not able to use.')
 
     torchaudio = None
@@ -34,6 +34,13 @@ except ModuleNotFoundError:
     Hypothesis = None
     RNNTBeamSearch = None
 
+try:
+    from torchaudio.io import StreamReader
+except Exception as e:
+    logger.warning(f'torchaudio.io.StreamReader exception: {e}')
+    logger.warning(
+        '`torchaudio.io.StreamReader` is not available, `malaya_speech.streaming.torchaudio.stream` is not able to use.')
+    StreamReader = None
 
 DECIBEL = 2 * 20 * math.log10(torch.iinfo(torch.int16).max)
 GAIN = pow(10, 0.05 * DECIBEL)
@@ -111,7 +118,7 @@ def conformer_rnnt_model(
     lstm_layer_norm_epsilon: int,
     lstm_dropout: int,
     joiner_activation: str,
-) -> RNNT:
+):
     r"""
     Builds Conformer-based recurrent neural network transducer (RNN-T) model.
     Args:
@@ -197,7 +204,7 @@ def validate_torchaudio():
         )
 
 
-def conformer_rnnt_base() -> RNNT:
+def conformer_rnnt_base():
 
     validate_torchaudio()
 
@@ -222,7 +229,7 @@ def conformer_rnnt_base() -> RNNT:
     )
 
 
-def conformer_rnnt_tiny() -> RNNT:
+def conformer_rnnt_tiny():
 
     validate_torchaudio()
 
