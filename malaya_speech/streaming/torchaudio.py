@@ -6,7 +6,7 @@ from datetime import datetime
 from malaya_speech.utils.validator import check_pipeline
 from malaya_speech.utils.torch_featurization import StreamReader, torchaudio_available
 from malaya_speech.torch_model.torchaudio import Conformer
-from malaya_speech.streaming import stream
+from malaya_speech.streaming import stream as base_stream
 from functools import partial
 import torch
 import logging
@@ -78,7 +78,9 @@ class Audio:
             option=option,
             buffer_size=buffer_size,
             sample_rate=sample_rate,
+            segment_length=segment_length,
         )
+        self.segment_length = segment_length
 
     def destroy(self):
         pass
@@ -94,7 +96,10 @@ class Audio:
         triggered = False
 
         for i, (chunk,) in enumerate(self.stream_iterator, start=1):
-            frame = chunk[:, 0]
+            frame = chunk[:, 0].numpy()
+            if len(frame) != self.segment_length:
+                continue
+
             if self.vad_model:
                 try:
                     is_speech = self.vad_model(frame)

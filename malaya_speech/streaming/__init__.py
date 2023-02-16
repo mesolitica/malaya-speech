@@ -68,7 +68,7 @@ def stream(
                     data_dict['asr_model'] = t_
                     logger.info(f'Sample asr_model {count} {now}: {t_}')
 
-                    t += t_ + ' '
+                    t += str(t_) + ' '
 
                 if classification_model:
                     t_ = classification_model(wav_data)

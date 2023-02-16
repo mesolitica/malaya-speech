@@ -42,13 +42,7 @@ _availability = {
     },
 }
 
-_pt_availability = {
-    'dvector': {
-        'Size (MB)': 5.45,
-        'EER': 0.3804599,
-        'original from': 'https://github.com/yistLin/dvector',
-    },
-}
+
 trillsson_accuracy = {
     'trillsson-1': {
         'url': 'https://tfhub.dev/google/nonsemantic-speech-benchmark/trillsson1/1',
@@ -58,6 +52,13 @@ trillsson_accuracy = {
         'url': 'https://tfhub.dev/google/nonsemantic-speech-benchmark/trillsson2/1',
         'EER': 0.3898799,
     }
+}
+
+dvector_accuracy = {
+    'original from': 'https://github.com/yistLin/dvector',
+    'Size (MB)': 5.45,
+    'Embedding Size': 256,
+    'EER': 0.1356490598298,
 }
 
 _nemo_availability = {

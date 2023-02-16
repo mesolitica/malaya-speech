@@ -157,28 +157,56 @@ _pt_transformer_availability = {
         'Language': ['malay'],
     },
     'mesolitica/conformer-medium': {
-        'Size (MB)': 121,
+        'Size (MB)': 243,
         'malay-malaya': {
-            'WER': 0.1375828607,
-            'CER': 0.04320797311,
+            'WER': 0.11723275992,
+            'CER': 0.03398158434893,
         },
         'malay-fleur102': {
-            'WER': 0.1430281008,
-            'CER': 0.05527847917,
+            'WER': 0.12977366262,
+            'CER': 0.048497925111,
         },
         'Language': ['malay'],
     },
     'mesolitica/emformer-base': {
         'Size (MB)': 162,
         'malay-malaya': {
-            'WER': 0.18048993533,
-            'CER': 0.064647787727,
+            'WER': 0.175762423786,
+            'CER': 0.06233919000537,
         },
         'malay-fleur102': {
-            'WER': 0.19121038729,
-            'CER': 0.08266033385,
+            'WER': 0.18303839134,
+            'CER': 0.0773853362,
         },
         'Language': ['malay'],
+    },
+    'mesolitica/conformer-singlish': {
+        'Size (MB)': 121,
+        'singlish': {
+            'WER': 0.08535878149,
+            'CER': 0.0452357273822,
+            'WER-LM': 0.085162938350,
+            'CER-LM': 0.044870668858,
+        },
+        'Language': ['singlish'],
+    },
+    'mesolitica/conformer-medium-mixed': {
+        'Size (MB)': 243,
+        'malay-malaya': {
+            'WER': 0.122076123261,
+            'CER': 0.03879606324,
+        },
+        'malay-fleur102': {
+            'WER': 0.1326737206665,
+            'CER': 0.050329148570,
+        },
+        'singlish': {
+            'WER': 0.08535878149,
+            'CER': 0.0452357273822,
+            'WER-LM': 0.085162938350,
+            'CER-LM': 0.044870668858,
+        },
+        'Language': ['malay', 'singlish'],
     },
 }
 

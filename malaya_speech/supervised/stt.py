@@ -221,7 +221,7 @@ def huggingface_load(model, stt=True, **kwargs):
     return selected_model(
         hf_model=hf_model,
         model=model,
-        name='speech-to-text-huggingface'
+        name='speech-to-text'
     )
 
 
@@ -242,7 +242,7 @@ def huggingface_load_seq2seq(model, stt=True, **kwargs):
         hf_model=hf_model,
         processor=processor,
         model=model,
-        name='speech-to-text-huggingface',
+        name='speech-to-text',
         **kwargs,
     )
 
@@ -281,5 +281,5 @@ def torchaudio(model, **kwargs):
         sp_model=path['sp_model'],
         stats_file=path['stats_file'],
         model=model,
-        name='speech-to-text-torchaudio',
+        name='speech-to-text',
     )

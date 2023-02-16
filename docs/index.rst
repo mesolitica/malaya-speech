@@ -75,12 +75,6 @@ Contents:
 
    stt-seq2seq-whisper
    stt-seq2seq-huggingface
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Extra ASR Module
-
-   transcribe-long-audio
    
 .. toctree::
    :maxdepth: 2
@@ -138,16 +132,6 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
-   :caption: PyAudio streaming Module
-   
-   realtime-asr
-   realtime-asr-mixed
-   realtime-asr-rubberband
-   realtime-alignment
-   realtime-classification
-
-.. toctree::
-   :maxdepth: 2
    :caption: Enhancement Module
    
    load-noise-reduction
@@ -161,7 +145,6 @@ Contents:
    :caption: Voice Activity Module
 
    load-vad
-   realtime-vad
    split-utterances
    remove-silent-vad
 
@@ -185,6 +168,25 @@ Contents:
    load-diarization-speaker-change
    load-diarization-timestamp
    load-diarization-using-features
+
+.. toctree::
+   :maxdepth: 2
+   :caption: PyAudio streaming Module
+   
+   realtime-vad
+   realtime-asr
+   realtime-asr-without-vad
+   realtime-alignment
+   realtime-classification
+
+.. toctree::
+   :maxdepth: 2
+   :caption: TorchAudio streaming Module
+   
+   long-audio-vad-torchaudio
+   long-audio-asr-torchaudio
+   rnnt-streaming-torchaudio
+   long-audio-classification-torchaudio
 
 .. toctree::
    :maxdepth: 2
