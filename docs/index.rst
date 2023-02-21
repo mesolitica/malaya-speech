@@ -126,6 +126,7 @@ Contents:
    load-age-detection
    load-emotion
    load-gender
+   load-is-clean
    load-language-detection   
    load-speaker-overlap
    classification-stacking
@@ -168,6 +169,7 @@ Contents:
    load-diarization-speaker-change
    load-diarization-timestamp
    load-diarization-using-features
+   combine-longer-speaker-diarization
 
 .. toctree::
    :maxdepth: 2
@@ -187,6 +189,7 @@ Contents:
    long-audio-asr-torchaudio
    rnnt-streaming-torchaudio
    long-audio-classification-torchaudio
+   youtube-asr-diarization-torchaudio
 
 .. toctree::
    :maxdepth: 2

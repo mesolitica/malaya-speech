@@ -25,6 +25,7 @@ from . import diarization
 from . import emotion
 from . import force_alignment
 from . import gender
+from . import is_clean
 from . import language_detection
 from . import language_model
 from . import multispeaker_separation

@@ -393,16 +393,10 @@ malaya_speech.age_detection
 .. automodule:: malaya_speech.age_detection
     :members:
 
-malaya_speech.diarization.clustering
+malaya_speech.diarization
 --------------------------------------
 
-.. automodule:: malaya_speech.diarization.clustering
-    :members:
-
-malaya_speech.diarization.e2e
---------------------------------------
-
-.. automodule:: malaya_speech.diarization.e2e
+.. automodule:: malaya_speech.diarization
     :members:
 
 malaya_speech.emotion
@@ -434,6 +428,13 @@ malaya_speech.gender
 
 .. automodule:: malaya_speech.gender
     :members:
+
+malaya_speech.is_clean
+-----------------------------------
+
+.. automodule:: malaya_speech.is_clean
+    :members:
+
 
 malaya_speech.language_detection
 -----------------------------------

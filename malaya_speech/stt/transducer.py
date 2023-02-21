@@ -159,12 +159,12 @@ _pt_transformer_availability = {
     'mesolitica/conformer-medium': {
         'Size (MB)': 243,
         'malay-malaya': {
-            'WER': 0.11723275992,
-            'CER': 0.03398158434893,
+            'WER': 0.1054817492564,
+            'CER': 0.0313518992842,
         },
         'malay-fleur102': {
-            'WER': 0.12977366262,
-            'CER': 0.048497925111,
+            'WER': 0.1172708897486,
+            'CER': 0.04310504880,
         },
         'Language': ['malay'],
     },
@@ -183,10 +183,8 @@ _pt_transformer_availability = {
     'mesolitica/conformer-singlish': {
         'Size (MB)': 121,
         'singlish': {
-            'WER': 0.08535878149,
-            'CER': 0.0452357273822,
-            'WER-LM': 0.085162938350,
-            'CER-LM': 0.044870668858,
+            'WER': 0.06517537334361,
+            'CER': 0.03265430876,
         },
         'Language': ['singlish'],
     },
@@ -203,8 +201,6 @@ _pt_transformer_availability = {
         'singlish': {
             'WER': 0.08535878149,
             'CER': 0.0452357273822,
-            'WER-LM': 0.085162938350,
-            'CER-LM': 0.044870668858,
         },
         'Language': ['malay', 'singlish'],
     },
@@ -286,7 +282,7 @@ def pt_transformer(
     model = model.lower()
     if model not in _pt_transformer_availability:
         raise ValueError(
-            'model not supported, please check supported models from `malaya_speech.stt.transducer.available_torch_transformer()`.'
+            'model not supported, please check supported models from `malaya_speech.stt.transducer.available_pt_transformer()`.'
         )
 
     return stt.torchaudio(model=model, **kwargs,)

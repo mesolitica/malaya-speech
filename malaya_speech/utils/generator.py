@@ -27,6 +27,9 @@ def frames(
     result: List[malaya_speech.model.frame.Frame]
     """
 
+    if isinstance(audio, Frame):
+        audio = audio.array
+
     n = int(sample_rate * (frame_duration_ms / 1000.0))
     offset = 0
     timestamp = 0.0
@@ -46,7 +49,10 @@ def frames(
 
 
 def mel_sampling(
-    audio, frame_duration_ms=1200, overlap_ms=200, sample_rate=16000
+    audio,
+    frame_duration_ms=1200,
+    overlap_ms=200,
+    sample_rate=16000,
 ):
     """
     Generates audio frames from audio. This is for melspectrogram generative model.

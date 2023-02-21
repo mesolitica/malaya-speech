@@ -55,6 +55,7 @@ Features
 -  **Emotion Detection**, detect emotions in speech using Finetuned Speaker Vector.
 -  **Force Alignment**, generate a time-aligned transcription of an audio file using RNNT, Wav2Vec2 CTC and Whisper Seq2Seq.
 -  **Gender Detection**, detect genders in speech using Finetuned Speaker Vector.
+-  **Clean speech Detection**, detect clean speech using Finetuned Speaker Vector.
 -  **Language Detection**, detect hyperlocal languages in speech using Finetuned Speaker Vector.
 -  **Language Model**, using KenLM, Masked language model using BERT and RoBERTa, and GPT2 to do ASR decoder scoring.
 -  **Multispeaker Separation**, Multispeaker separation using FastSep on 8k Wav.
@@ -71,6 +72,7 @@ Features
 -  **Voice Activity Detection**, detect voice activities using Finetuned Speaker Vector.
 -  **Voice Conversion**, Many-to-One and Zero-shot Voice Conversion.
 -  **Hybrid 8-bit Quantization**, provide hybrid 8-bit quantization for all models to reduce inference time up to 2x and model size up to 4x.
+-  **Real time interface**, provide PyAudio and TorchAudio streaming interface to do real time inference.
 
 Pretrained Models
 ------------------

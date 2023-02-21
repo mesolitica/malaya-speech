@@ -74,6 +74,9 @@ def visualize_vad(
 
     """
 
+    if isinstance(signal, Frame):
+        signal = signal.array
+
     try:
         import seaborn as sns
         import matplotlib.pyplot as plt

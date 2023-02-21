@@ -1,4 +1,5 @@
 from malaya_speech.utils.validator import check_pipeline
+from malaya_speech.model.frame import Frame
 from scipy.io.wavfile import write
 from datetime import datetime
 import numpy as np
@@ -10,6 +11,7 @@ logger = logging.getLogger(__name__)
 def stream(
     audio_class,
     vad_model=None,
+    postfilter_model=None,
     asr_model=None,
     classification_model=None,
     sample_rate: int = 16000,
@@ -18,13 +20,17 @@ def stream(
     ratio: float = 0.75,
     min_length: float = 0.1,
     max_length: float = 10.0,
+    streaming_max_length: float = None,
     filename: str = None,
     realtime_print: bool = True,
+    return_as_frame: bool = False,
     **kwargs,
 ):
 
     if vad_model:
         check_pipeline(vad_model, 'vad', 'vad')
+    if postfilter_model:
+        check_pipeline(postfilter_model, 'postfilter', 'postfilter_model')
     if asr_model:
         check_pipeline(asr_model, 'speech-to-text', 'asr_model')
     if classification_model:
@@ -43,6 +49,7 @@ def stream(
     results = []
     wav_data = np.array([], dtype=np.float32)
     length = 0
+    total_length = 0
     count = 0
 
     try:
@@ -50,6 +57,7 @@ def stream(
 
             if frame is not None:
                 length += frame.shape[0] / sample_rate
+                total_length += frame.shape[0] / sample_rate
                 wav_data = np.concatenate([wav_data, frame])
 
             if frame is None and length >= min_length or length >= max_length:
@@ -60,33 +68,46 @@ def stream(
                 }
                 t = ''
 
-                if asr_model:
-                    t_ = asr_model(wav_data)
+                cont = True
+
+                if postfilter_model:
+                    t_ = postfilter_model(wav_data)
                     if isinstance(t_, dict):
-                        t_ = t_['speech-to-text']
+                        t_ = t_['postfilter']
+                    cont = t_
 
-                    data_dict['asr_model'] = t_
-                    logger.info(f'Sample asr_model {count} {now}: {t_}')
+                if cont:
+                    if asr_model:
+                        t_ = asr_model(wav_data)
+                        if isinstance(t_, dict):
+                            t_ = t_['speech-to-text']
 
-                    t += str(t_) + ' '
+                        data_dict['asr_model'] = t_
+                        logger.info(f'Sample asr_model {count} {now}: {t_}')
 
-                if classification_model:
-                    t_ = classification_model(wav_data)
-                    if isinstance(t_, dict):
-                        t_ = t_['classification']
+                        t += str(t_) + ' '
 
-                    data_dict['classification_model'] = t_
-                    logger.info(f'Sample classification_model {count} {now}: {t_}')
+                    if classification_model:
+                        t_ = classification_model(wav_data)
+                        if isinstance(t_, dict):
+                            t_ = t_['classification']
 
-                    t += f'({t_})' + ' '
+                        data_dict['classification_model'] = t_
+                        logger.info(f'Sample classification_model {count} {now}: {t_}')
 
-                if realtime_print and len(t):
-                    print(t, end='', flush=True)
+                        t += f'({t_})' + ' '
 
-                results.append(data_dict)
+                    if realtime_print and len(t):
+                        print(t, end='', flush=True)
+
+                    results.append(data_dict)
+
                 wav_data = np.array([], dtype=np.float32)
                 length = 0
                 count += 1
+
+            if streaming_max_length is not None and total_length >= streaming_max_length:
+                break
 
     except KeyboardInterrupt:
 
@@ -98,6 +119,16 @@ def stream(
         raise e
 
     audio.destroy()
+
+    if return_as_frame:
+        total_duration = 0
+        for i in range(len(results)):
+            wav_data = results[i]['wav_data']
+            duration = len(wav_data) / sample_rate
+            frame = Frame(wav_data, total_duration, duration)
+            results[i]['wav_data'] = frame
+
+            total_duration += duration
     return results
 
 

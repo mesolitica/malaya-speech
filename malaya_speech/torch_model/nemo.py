@@ -1,16 +1,14 @@
 import torch
 import yaml
 import numpy as np
-import importlib
 from malaya_speech.utils.padding import sequence_1d
 from malaya_speech.model.frame import Frame
 from malaya_speech.utils import nemo_featurization
 from malaya_speech.utils.nemo_featurization import (
     AudioToMelSpectrogramPreprocessor,
-    AudioToMFCCPreprocessor,
 )
 from malaya_speech.nemo import conv_asr
-from malaya_speech.nemo.conv_asr import ConvASREncoder, ECAPAEncoder, SpeakerDecoder
+from malaya_speech.nemo.conv_asr import SpeakerDecoder
 from malaya_speech.utils.activation import softmax
 from malaya_boilerplate.torch_utils import to_tensor_cuda, to_numpy
 
@@ -97,7 +95,8 @@ class Classification(torch.nn.Module):
                 raise ValueError('invalid yaml')
 
         preprocessor = d['preprocessor'].copy()
-        preprocessor_target = (preprocessor.pop('_target_', None) or preprocessor.pop('cls', None)).split('.')[-1]
+        preprocessor_target = (preprocessor.pop('_target_', None)
+                               or preprocessor.pop('cls', None)).split('.')[-1]
         if 'params' in preprocessor:
             preprocessor = preprocessor['params']
 
@@ -144,7 +143,7 @@ class Classification(torch.nn.Module):
         o_encoder = self.encoder(*o_processor)
         try:
             r = self.decoder(*o_encoder)
-        except:
+        except BaseException:
             r = self.decoder(o_encoder[0])
         return r
 
@@ -162,7 +161,10 @@ class Classification(torch.nn.Module):
         result: np.array
             returned [B, D].
         """
-        r = to_numpy(self.forward(inputs=inputs))
+        o = self.forward(inputs=inputs)
+        if isinstance(o, tuple):
+            o = o[0]
+        r = to_numpy(o)
         return softmax(r, axis=-1)
 
     def predict(self, inputs):
@@ -179,7 +181,10 @@ class Classification(torch.nn.Module):
         result: List[str]
             returned [B].
         """
-        r = to_numpy(self.forward(inputs=inputs))
+        o = self.forward(inputs=inputs)
+        if isinstance(o, tuple):
+            o = o[0]
+        r = to_numpy(o)
         probs = np.argmax(r, axis=1)
         return [self.labels[p] for p in probs]
 
