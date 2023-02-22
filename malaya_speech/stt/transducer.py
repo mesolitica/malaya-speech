@@ -180,7 +180,7 @@ _pt_transformer_availability = {
         },
         'Language': ['malay'],
     },
-    'mesolitica/conformer-singlish': {
+    'mesolitica/conformer-base-singlish': {
         'Size (MB)': 121,
         'singlish': {
             'WER': 0.06517537334361,

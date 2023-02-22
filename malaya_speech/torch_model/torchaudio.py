@@ -17,6 +17,7 @@ model_mapping = {
     'mesolitica/conformer-tiny': conformer_rnnt_tiny,
     'mesolitica/conformer-medium': conformer_rnnt_medium,
     'mesolitica/conformer-medium-mixed': conformer_rnnt_medium,
+    'mesolitica/conformer-base-singlish': conformer_rnnt_base,
     'mesolitica/emformer-base': emformer_rnnt_base,
 }
 
