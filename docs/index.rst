@@ -54,7 +54,6 @@ Contents:
    load-stt-transducer-model-singlish
    load-stt-transducer-model-2mixed
    load-stt-transducer-model-pt
-   stt-transducer-gradio
 
 .. toctree::
    :maxdepth: 2

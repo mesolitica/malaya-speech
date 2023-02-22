@@ -73,6 +73,7 @@ def stream(
                 if postfilter_model:
                     t_ = postfilter_model(wav_data)
                     if isinstance(t_, dict):
+                        logger.debug(t_)
                         t_ = t_['postfilter']
                     cont = t_
 
@@ -80,6 +81,7 @@ def stream(
                     if asr_model:
                         t_ = asr_model(wav_data)
                         if isinstance(t_, dict):
+                            logger.debug(t_)
                             t_ = t_['speech-to-text']
 
                         data_dict['asr_model'] = t_
@@ -90,6 +92,7 @@ def stream(
                     if classification_model:
                         t_ = classification_model(wav_data)
                         if isinstance(t_, dict):
+                            logger.debug(t_)
                             t_ = t_['classification']
 
                         data_dict['classification_model'] = t_

@@ -191,16 +191,16 @@ _pt_transformer_availability = {
     'mesolitica/conformer-medium-mixed': {
         'Size (MB)': 243,
         'malay-malaya': {
-            'WER': 0.122076123261,
-            'CER': 0.03879606324,
+            'WER': 0.14058954147,
+            'CER': 0.046393445754,
         },
         'malay-fleur102': {
-            'WER': 0.1326737206665,
-            'CER': 0.050329148570,
+            'WER': 0.13203976461,
+            'CER': 0.04651291409,
         },
         'singlish': {
-            'WER': 0.08535878149,
-            'CER': 0.0452357273822,
+            'WER': 0.119015547755,
+            'CER': 0.05799834212849,
         },
         'Language': ['malay', 'singlish'],
     },

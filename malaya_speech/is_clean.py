@@ -7,17 +7,11 @@ logger = logging.getLogger(__name__)
 _nemo_availability = {
     'huseinzol05/nemo-is-clean-speakernet': {
         'original from': 'https://catalog.ngc.nvidia.com/orgs/nvidia/teams/nemo/models/vad_marblenet',
-        'Size (MB)': 0.481,
-        'macro precision': 0.60044,
-        'macro recall': 0.72819,
-        'macro f1-score': 0.49225,
+        'Size (MB)': 16.2,
     },
     'huseinzol05/nemo-is-clean-titanet_large': {
         'original from': 'https://catalog.ngc.nvidia.com/orgs/nvidia/teams/nemo/models/vad_multilingual_marblenet',
-        'Size (MB)': 0.481,
-        'macro precision': 0.47633,
-        'macro recall': 0.49895,
-        'macro f1-score': 0.46915,
+        'Size (MB)': 88.8,
     },
 }
 
