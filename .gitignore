@@ -68,5 +68,7 @@ titan_model.ckpt
 titanl_model_config.yaml
 lightning-speakernet-is-clean.py
 lightning-titanetl-is-clean.py
-medium-mixed.ipynb
-process-youtube.ipynb
+random-embedding-*.pkl
+hifigan-config.json
+mediumvc-32
+conformer-large.py

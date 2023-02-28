@@ -158,7 +158,13 @@ def clustering(
     result : List[Tuple[Frame, label]]
     """
 
-    if not hasattr(model, 'fit_predict') and not hasattr(model, 'apply') and not hasattr(model, 'predict'):
+    if not hasattr(
+            model,
+            'fit_predict') and not hasattr(
+            model,
+            'apply') and not hasattr(
+                model,
+            'predict'):
         raise ValueError('model must have `fit_predict` or `apply` or `predict` method.')
 
     speakers, activities, mapping = _group_vad(
@@ -193,6 +199,7 @@ def combine(
     speaker_vector,
     similarity_threshold: float = 0.8,
     agg_function: Callable = np.mean,
+    sortby_pagerank: bool = True,
 ):
     """
     Combined multiple diarization results into single diarization results using PageRank.
@@ -208,18 +215,14 @@ def combine(
         if current voice activity sample similar at least 0.8, we assumed it is from the existing speakers.
     agg_function: Callable, optional (default=np.mean)
         aggregate function to aggregate when we have multiple samples for the same speaker.
+    sortby_pagerank: bool, optional (default=True)
+        sort speaker names using pagerank score.
+        This required malaya to be installed.
 
     Returns
     -------
     result : List[Tuple[Frame, label]]
     """
-
-    try:
-        from malaya.graph.pagerank import pagerank
-    except BaseException:
-        raise ModuleNotFoundError(
-            'malaya not installed. Please install it by `pip install malaya` and try again.'
-        )
 
     try:
         import networkx as nx
@@ -254,19 +257,31 @@ def combine(
     list_speakers = list(speakers.keys())
     similar = (cosine_similarity(embeddings) + 1) / 2
     similar[np.diag_indices(len(similar))] = 0.0
-    scores = pagerank(similar)
-    ranked = sorted(
-        [
-            (scores[i], s, i)
-            for i, s in enumerate(list_speakers)
-        ],
-        reverse=False,
-    )
+
+    if sortby_pagerank:
+        try:
+            from malaya.graph.pagerank import pagerank
+        except BaseException:
+            raise ModuleNotFoundError(
+                'malaya not installed. Please install it by `pip install malaya` and try again.'
+            )
+
+        scores = pagerank(similar)
+        ranked = sorted(
+            [
+                (scores[i], s, i)
+                for i, s in enumerate(list_speakers)
+            ],
+            reverse=False,
+        )
+        sorted_speakers = [r[1] for r in ranked]
+    else:
+        sorted_speakers = sorted(list_speakers)
 
     G = nx.DiGraph()
     G.add_nodes_from(list_speakers)
 
-    for score, speaker, i in ranked:
+    for speaker in sorted_speakers:
         embeddings = list(speakers.values())
         list_speakers = list(speakers.keys())
         similar = (cosine_similarity(embeddings) + 1) / 2

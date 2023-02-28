@@ -85,13 +85,21 @@ _hifigan_availability = {
     },
 }
 
+_pt_hifigan_availability = {
+    'huseinzol05/jik876-UNIVERSAL_V1': {
+        'original from': 'https://github.com/jik876/hifi-gan',
+        'Size (MB)': 55.8
+    }
+}
+
 
 def available_melgan():
     """
     List available MelGAN Mel-to-Speech models.
     """
     warnings.warn(
-        '`malaya_speech.vocoder.available_melgan` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+        '`malaya_speech.vocoder.available_melgan` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     return describe_availability(_melgan_availability)
 
@@ -101,7 +109,8 @@ def available_mbmelgan():
     List available Multiband MelGAN Mel-to-Speech models.
     """
     warnings.warn(
-        '`malaya_speech.vocoder.available_mbmelgan` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+        '`malaya_speech.vocoder.available_mbmelgan` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     return describe_availability(_mbmelgan_availability)
 
@@ -111,9 +120,17 @@ def available_hifigan():
     List available HiFiGAN Mel-to-Speech models.
     """
     warnings.warn(
-        '`malaya_speech.vocoder.available_hifigan` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+        '`malaya_speech.vocoder.available_hifigan` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     return describe_availability(_hifigan_availability)
+
+
+def available_pt_hifigan():
+    """
+    List available PyTorch HiFiGAN Mel-to-Speech models.
+    """
+    return describe_availability(_pt_hifigan_availability)
 
 
 @check_type
@@ -135,7 +152,8 @@ def melgan(model: str = 'universal-1024', quantized: bool = False, **kwargs):
     """
 
     warnings.warn(
-        '`malaya_speech.vocoder.melgan` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+        '`malaya_speech.vocoder.melgan` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     model = model.lower()
     if model not in _melgan_availability:
@@ -170,7 +188,8 @@ def mbmelgan(model: str = 'female', quantized: bool = False, **kwargs):
     """
 
     warnings.warn(
-        '`malaya_speech.vocoder.mbmelgan` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+        '`malaya_speech.vocoder.mbmelgan` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     model = model.lower()
     if model not in _mbmelgan_availability:
@@ -204,7 +223,8 @@ def hifigan(model: str = 'universal-768', quantized: bool = False, **kwargs):
     """
 
     warnings.warn(
-        '`malaya_speech.vocoder.hifigan` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+        '`malaya_speech.vocoder.hifigan` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     model = model.lower()
     if model not in _hifigan_availability:
@@ -216,4 +236,23 @@ def hifigan(model: str = 'universal-768', quantized: bool = False, **kwargs):
         module='vocoder-hifigan',
         quantized=quantized,
         **kwargs
+    )
+
+
+def pt_hifigan(model: str = 'huseinzol05/jik876-UNIVERSAL_V1', **kwargs):
+    """
+    Load PyTorch HiFiGAN Vocoder model, originally from https://github.com/jik876/hifi-gan.
+
+    Parameters
+    ----------
+    model : str, optional (default='huseinzol05/jik876-UNIVERSAL_V1')
+
+    Returns
+    -------
+    result : malaya_speech.torch_model.synthesis.Vocoder class
+    """
+
+    return vocoder.load_pt_hifigan(
+        model=model,
+        **kwargs,
     )

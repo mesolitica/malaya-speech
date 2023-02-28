@@ -464,16 +464,6 @@ class SynthesizerTrn(nn.Module):
         self.n_speakers = n_speakers
         self.gin_channels = gin_channels
 
-        self.use_sdp = use_sdp
-
-        self.enc_p = TextEncoder(n_vocab,
-                                 inter_channels,
-                                 hidden_channels,
-                                 filter_channels,
-                                 n_heads,
-                                 n_layers,
-                                 kernel_size,
-                                 p_dropout)
         self.dec = Generator(
             inter_channels,
             resblock,
@@ -488,53 +478,6 @@ class SynthesizerTrn(nn.Module):
         self.flow = ResidualCouplingBlock(
             inter_channels, hidden_channels, 5, 1, 4, gin_channels=gin_channels)
 
-        if use_sdp:
-            self.dp = StochasticDurationPredictor(
-                hidden_channels, 192, 3, 0.5, 4, gin_channels=gin_channels)
-        else:
-            self.dp = DurationPredictor(hidden_channels, 256, 3, 0.5, gin_channels=gin_channels)
-
-        if n_speakers > 1:
-            self.emb_g = nn.Embedding(n_speakers, gin_channels)
-
-    def infer(
-            self,
-            x,
-            x_lengths,
-            sid=None,
-            noise_scale=1,
-            length_scale=1,
-            noise_scale_w=1.,
-            max_len=None):
-        x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
-        if self.n_speakers > 0:
-            g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
-        else:
-            g = None
-
-        if self.use_sdp:
-            logw = self.dp(x, x_mask, g=g, reverse=True, noise_scale=noise_scale_w)
-        else:
-            logw = self.dp(x, x_mask, g=g)
-        w = torch.exp(logw) * x_mask * length_scale
-        w_ceil = torch.ceil(w)
-        y_lengths = torch.clamp_min(torch.sum(w_ceil, [1, 2]), 1).long()
-        y_mask = torch.unsqueeze(commons.sequence_mask(y_lengths, None), 1).to(x_mask.dtype)
-        attn_mask = torch.unsqueeze(x_mask, 2) * torch.unsqueeze(y_mask, -1)
-        attn = commons.generate_path(w_ceil, attn_mask)
-
-        m_p = torch.matmul(
-            attn.squeeze(1), m_p.transpose(
-                1, 2)).transpose(
-            1, 2)  # [b, t', t], [b, t, d] -> [b, d, t']
-        logs_p = torch.matmul(attn.squeeze(1), logs_p.transpose(1, 2)).transpose(
-            1, 2)  # [b, t', t], [b, t, d] -> [b, d, t']
-
-        z_p = m_p + torch.randn_like(m_p) * torch.exp(logs_p) * noise_scale
-        z = self.flow(z_p, y_mask, g=g, reverse=True)
-        o = self.dec((z * y_mask)[:, :, :max_len], g=g)
-        return o, attn, y_mask, (z, z_p, m_p, logs_p)
-
     def voice_conversion(self, y, y_lengths, sid_src, sid_tgt):
         assert self.n_speakers > 0, 'n_speakers have to be larger than 0.'
         g_src = self.emb_g(sid_src).unsqueeze(-1)
@@ -544,3 +487,12 @@ class SynthesizerTrn(nn.Module):
         z_hat = self.flow(z_p, y_mask, g=g_tgt, reverse=True)
         o_hat = self.dec(z_hat * y_mask, g=g_tgt)
         return o_hat, y_mask, (z, z_p, z_hat)
+
+    def forward(self, y, y_lengths, spk_emb, sid=None):
+        g = spk_emb
+        z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g)
+        z_p = self.flow(z, y_mask, g=g)
+        z_slice, ids_slice = commons.rand_slice_segments(z, y_lengths, self.segment_size)
+        o = self.dec(z_slice, g=g)
+
+        return o, ids_slice, y_mask, (z, z_p, m_q, logs_q)

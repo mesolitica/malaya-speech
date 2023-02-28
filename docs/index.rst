@@ -79,7 +79,7 @@ Contents:
    :maxdepth: 2
    :caption: Force Alignment Module
 
-   force-alignment
+   force-alignment-transducer
    force-alignment-ctc
    force-alignment-huggingface
    put-comma-force-alignment

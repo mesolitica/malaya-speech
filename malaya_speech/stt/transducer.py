@@ -2,7 +2,6 @@ from malaya_speech.supervised import stt
 from herpetologist import check_type
 from malaya_speech.utils import describe_availability
 from malaya_speech.stt import _describe
-import warnings
 
 _transformer_availability = {
     'tiny-conformer': {
@@ -191,16 +190,16 @@ _pt_transformer_availability = {
     'mesolitica/conformer-medium-mixed': {
         'Size (MB)': 243,
         'malay-malaya': {
-            'WER': 0.14058954147,
-            'CER': 0.046393445754,
+            'WER': 0.111166517935,
+            'CER': 0.03410958328,
         },
         'malay-fleur102': {
-            'WER': 0.13203976461,
-            'CER': 0.04651291409,
+            'WER': 0.108354748,
+            'CER': 0.037785722,
         },
         'singlish': {
-            'WER': 0.119015547755,
-            'CER': 0.05799834212849,
+            'WER': 0.091969755225,
+            'CER': 0.044627194623,
         },
         'Language': ['malay', 'singlish'],
     },

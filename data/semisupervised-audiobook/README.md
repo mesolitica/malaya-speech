@@ -16,8 +16,9 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
   - 44100 sample rate, super clean.
   - narrator Danny Abdullah.
   - approximate 19.63 hours.
-  - WER 8%.
   - VAD = 2, https://f000.backblazeb2.com/file/malaya-speech-model/data/dari-pasentran-ke-istana-short.gz
+  - Semisupervised using PyTorch Conformer Medium, [semisupervised-pasentran-turki.json](semisupervised-pasentran-turki.json), notebook [semisupervised-pasentran-turki.ipynb](semisupervised-pasentran-turki.ipynb).
+  - Put commas and apply true case, [true-case-pasentran-turki.json](https://huggingface.co/datasets/mesolitica/put-comma-true-case-audiobook/raw/main/true-case-pasentran-turki.json) notebook [put-comma-true-case-pasentran-turki.ipynb](put-comma-true-case-pasentran-turki.ipynb)
 
 2. https://f000.backblazeb2.com/file/malaya-speech-model/data/turki.gz
 
@@ -25,8 +26,9 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
   - 44100 sample rate, super clean.
   - narrator Danny Abdullah.
   - approximate 7.73 hours.
-  - WER 8%.
   - VAD = 2, https://f000.backblazeb2.com/file/malaya-speech-model/data/turki-short.gz
+  - Semisupervised using PyTorch Conformer Medium, [semisupervised-pasentran-turki.json](semisupervised-pasentran-turki.json), notebook [semisupervised-pasentran-turki.ipynb](semisupervised-pasentran-turki.ipynb).
+  - Put commas and apply true case, [true-case-pasentran-turki.json](https://huggingface.co/datasets/mesolitica/put-comma-true-case-audiobook/raw/main/true-case-pasentran-turki.json) notebook [put-comma-true-case-pasentran-turki.ipynb](put-comma-true-case-pasentran-turki.ipynb)
 
 3. https://f000.backblazeb2.com/file/malaya-speech-model/data/salina.gz
 
@@ -34,8 +36,9 @@ Copyright Disclaimer under section 107 of the Copyright Act of 1976, allowance i
   - 44100 sample rate, super clean.
   - narrator T Elida Bustaman.
   - approximate 24.66 hours.
-  - WER 8%.
   - VAD = 2, https://f000.backblazeb2.com/file/malaya-speech-model/data/salina-short.gz
+  - Semisupervised using PyTorch Conformer Medium, [semisupervised-salina.json](semisupervised-salina.json), notebook [semisupervised-salina.ipynb](semisupervised-salina.ipynb).
+  - Put commas and apply true case, [true-case-salina.json](https://huggingface.co/datasets/mesolitica/put-comma-true-case-audiobook/raw/main/true-case-salina.json) notebook [put-comma-true-case-salina.ipynb](put-comma-true-case-salina.ipynb)
 
 4. Text only, https://f000.backblazeb2.com/file/malaya-speech-model/data/text-audiobook.tar.gz
 

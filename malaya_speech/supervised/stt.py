@@ -4,7 +4,6 @@ from malaya_speech.utils import (
     generate_session,
     nodes_session,
 )
-from malaya_boilerplate.utils import check_tf2
 from malaya_boilerplate.huggingface import download_files
 from malaya_speech.utils.read import load as load_wav
 from malaya_speech.utils.subword import load as subword_load
@@ -257,7 +256,7 @@ def whisper(model, **kwargs):
 
     try:
         from whisper.model import Whisper, ModelDimensions
-    except:
+    except BaseException:
         raise ModuleNotFoundError(
             'openai-whisper not installed. Please install it by `pip install openai-whisper` and try again.'
         )

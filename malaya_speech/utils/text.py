@@ -199,6 +199,7 @@ class TextIDS:
         replace_brackets_with_comma: bool = True,
         assume_newline_fullstop: bool = False,
         true_case_func: Callable = None,
+        add_fullstop: bool = True,
         **kwargs,
     ):
         """
@@ -260,7 +261,7 @@ class TextIDS:
         string = re.sub(r'(, )+', ', ', string)
         string = re.sub(r'[ ]+', ' ', string).strip()
 
-        if string[-1] not in '.,?!':
+        if add_fullstop and string[-1] not in '.,?!':
             string = string + '.'
 
         ids = tts_encode(string, TTS_SYMBOLS, add_eos=False)

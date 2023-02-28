@@ -254,7 +254,7 @@ Read random sentences from Bahasa Wikipedia.
 
 ### [youtube](https://github.com/huseinzol05/malaya-speech/tree/master/data/youtube)
 
-Gathered Jeorogan, malay, malaysian, the thirsty sisters, richroll podcasts.
+Semisupervised transcription and Unsupervised Speaker Diarization on 5k malay speakers youtube videos.
 
 ## Contribution
 

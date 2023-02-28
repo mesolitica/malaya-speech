@@ -1,11 +1,15 @@
 import torch
 import json
 from malaya_boilerplate.hparams import HParams
+from malaya_speech.model.frame import Frame
 from malaya_speech.torch_model.vits.commons import intersperse
 from malaya_speech.torch_model.vits.model_infer import SynthesizerTrn
+from malaya_speech.torch_model.hifivoice.models import Generator
+from malaya_speech.torch_model.hifivoice.env import AttrDict
+from malaya_speech.torch_model.hifivoice.meldataset import mel_spectrogram
 from malaya_speech.utils.text import TTS_SYMBOLS
 from malaya_speech.utils.torch_utils import to_tensor_cuda, to_numpy
-from malaya_speech.model.abstract import Abstract, TTS
+from malaya_speech.model.abstract import TTS
 
 
 class VITS(SynthesizerTrn, TTS):
@@ -16,10 +20,12 @@ class VITS(SynthesizerTrn, TTS):
         self.hps = hps
 
         TTS.__init__(self, e2e=True)
-        super(VITS, self).__init__(len(TTS_SYMBOLS),
-                                   hps.data.filter_length // 2 + 1,
-                                   hps.train.segment_size // hps.data.hop_length,
-                                   **hps.model)
+        super(VITS, self).__init__(
+            len(TTS_SYMBOLS),
+            hps.data.filter_length // 2 + 1,
+            hps.train.segment_size // hps.data.hop_length,
+            **hps.model,
+        )
         self.eval()
         self.load_state_dict(torch.load(pth, map_location='cpu'))
 
@@ -79,3 +85,70 @@ class VITS(SynthesizerTrn, TTS):
 
     def forward(self, input, **kwargs):
         return self.predict(input, **kwargs)
+
+
+class Vocoder(Generator):
+    def __init__(self, pth, config, model, name, remove_weight_norm=False, **kwargs):
+        with open(config) as fopen:
+            json_config = json.load(fopen)
+
+        self.h = AttrDict(json_config)
+
+        super(Vocoder, self).__init__(self.h)
+
+        self.state_dict_g = torch.load(pth, map_location='cpu')
+        self.load_state_dict(self.state_dict_g['generator'])
+
+        self.eval()
+        if remove_weight_norm:
+            self.remove_weight_norm()
+
+        self.__model__ = model
+        self.__name__ = name
+
+    def get_mel(self, x):
+
+        cuda = next(self.parameters()).is_cuda
+        wav = torch.FloatTensor(x)
+        wav = to_tensor_cuda(wav, cuda)
+
+        return mel_spectrogram(
+            wav.unsqueeze(0),
+            self.h.n_fft,
+            self.h.num_mels,
+            self.h.sampling_rate,
+            self.h.hop_size,
+            self.h.win_size,
+            self.h.fmin,
+            self.h.fmax,
+        )
+
+    def predict(self, inputs):
+        """
+        Change Mel to Waveform.
+
+        Parameters
+        ----------
+        inputs: List[np.array]
+            List[np.array] or List[malaya_speech.model.frame.Frame].
+        Returns
+        -------
+        result: List
+        """
+        cuda = next(self.parameters()).is_cuda
+
+        inputs = [
+            input.array if isinstance(input, Frame) else input
+            for input in inputs
+        ]
+
+        results = []
+        with torch.no_grad():
+            for input in inputs:
+                x = torch.FloatTensor(input)
+                x = to_tensor_cuda(x, cuda)
+                y_g_hat = self.forward(x)
+                audio = y_g_hat.squeeze()
+                results.append(to_numpy(audio))
+
+        return results
