@@ -1,6 +1,5 @@
 import torch
 import json
-from malaya_boilerplate.hparams import HParams
 from malaya_speech.model.frame import Frame
 from malaya_speech.torch_model.vits.commons import intersperse
 from malaya_speech.torch_model.vits.model_infer import SynthesizerTrn
@@ -10,6 +9,11 @@ from malaya_speech.torch_model.hifivoice.meldataset import mel_spectrogram
 from malaya_speech.utils.text import TTS_SYMBOLS
 from malaya_speech.utils.torch_utils import to_tensor_cuda, to_numpy
 from malaya_speech.model.abstract import TTS
+
+try:
+    from malaya_boilerplate.hparams import HParams
+except BaseException:
+    from malaya_boilerplate.train.config import HParams
 
 
 class VITS(SynthesizerTrn, TTS):
@@ -36,8 +40,8 @@ class VITS(SynthesizerTrn, TTS):
     def predict(
         self,
         string,
-        temperature: float = 0.6666,
-        temperature_durator: float = 0.6666,
+        temperature: float = 0.0,
+        temperature_durator: float = 0.0,
         length_ratio: float = 1.0,
         **kwargs,
     ):
@@ -47,12 +51,14 @@ class VITS(SynthesizerTrn, TTS):
         Parameters
         ----------
         string: str
-        temperature: float, optional (default=0.6666)
+        temperature: float, optional (default=0.0)
             Decoder model trying to decode with encoder(text) + random.normal() * temperature.
-        temperature_durator: float, optional (default=0.6666)
+            Manipulate this variable will change speaking style.
+        temperature_durator: float, optional (default=0.0)
             Durator trying to predict alignment with random.normal() * temperature_durator.
+            Manipulate this variable will change speaking style.
         length_ratio: float, optional (default=1.0)
-            Increase this variable will increase time voice generated.
+            Manipulate this variable will change length frames generated.
 
         Returns
         -------

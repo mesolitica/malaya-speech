@@ -31,6 +31,7 @@ python3 train.py -c ms-MY-Wavenet-A.json -m ms-MY-Wavenet-A
 python3 train.py -c ms-MY-Wavenet-B.json -m ms-MY-Wavenet-B
 python3 train.py -c ms-MY-Wavenet-C.json -m ms-MY-Wavenet-C
 CUDA_VISIBLE_DEVICES=1 python3 train.py -c ms-MY-Wavenet-D.json -m ms-MY-Wavenet-D
+CUDA_VISIBLE_DEVICES=1 python3 train.py -c ms-female.json -m female
 ```
 
 ## download

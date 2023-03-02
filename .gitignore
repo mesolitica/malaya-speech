@@ -72,3 +72,11 @@ random-embedding-*.pkl
 hifigan-config.json
 mediumvc-32
 conformer-large.py
+malay_vits/config/*
+malay_vits/logs/*
+malay_vits/*.json
+malay_vits/*.ipynb
+conformer-large-mixed-32
+female.ipynb
+male.ipynb
+test.wav

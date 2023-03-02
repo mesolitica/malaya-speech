@@ -223,7 +223,7 @@ _vits_availability = {
     'mesolitica/VITS-haqkiem': {
         'Size (MB)': 145,
         'Understand punctuation': True,
-        'Is lowercase': False,
+        'Is lowercase': True,
     },
     'mesolitica/VITS-orkid': {
         'Size (MB)': 145,
@@ -241,6 +241,16 @@ _vits_availability = {
         'Is lowercase': False,
     },
     'mesolitica/VITS-tuah': {
+        'Size (MB)': 145,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+    },
+    'mesolitica/VITS-male': {
+        'Size (MB)': 145,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+    },
+    'mesolitica/VITS-female': {
         'Size (MB)': 145,
         'Understand punctuation': True,
         'Is lowercase': False,
@@ -268,7 +278,8 @@ def available_tacotron2():
     List available Tacotron2, Text to Mel models.
     """
     warnings.warn(
-        '`malaya_speech.tts.tacotron2` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+        '`malaya_speech.tts.tacotron2` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     return describe_availability(_tacotron2_availability)
 
@@ -278,7 +289,8 @@ def available_fastspeech2():
     List available FastSpeech2, Text to Mel models.
     """
     warnings.warn(
-        '`malaya_speech.tts.fastspeech2` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+        '`malaya_speech.tts.fastspeech2` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     return describe_availability(_fastspeech2_availability)
 
@@ -288,7 +300,8 @@ def available_fastpitch():
     List available FastPitch, Text to Mel models.
     """
     warnings.warn(
-        '`malaya_speech.tts.fastpitch` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+        '`malaya_speech.tts.fastpitch` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     return describe_availability(_fastpitch_availability)
 
@@ -298,7 +311,8 @@ def available_glowtts():
     List available GlowTTS, Text to Mel models.
     """
     warnings.warn(
-        '`malaya_speech.tts.glowtts` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+        '`malaya_speech.tts.glowtts` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     return describe_availability(_glowtts_availability)
 
@@ -308,7 +322,8 @@ def available_lightspeech():
     List available LightSpeech, Text to Mel models.
     """
     warnings.warn(
-        '`malaya_speech.tts.lightspeech` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+        '`malaya_speech.tts.lightspeech` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     return describe_availability(_e2e_fastspeech2_availability)
 
@@ -318,7 +333,8 @@ def available_e2e_fastspeech2():
     List available FastSpeech2, End-to-End models.
     """
     warnings.warn(
-        '`malaya_speech.tts.e2e_fastspeech2` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+        '`malaya_speech.tts.e2e_fastspeech2` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     return describe_availability(_e2e_fastspeech2_availability)
 
@@ -388,7 +404,8 @@ def tacotron2(
     result : malaya_speech.model.synthesis.Tacotron class
     """
     warnings.warn(
-        '`malaya_speech.tts.tacotron2` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+        '`malaya_speech.tts.tacotron2` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     model = model.lower()
 
@@ -441,7 +458,8 @@ def fastspeech2(
     """
 
     warnings.warn(
-        '`malaya_speech.tts.fastspeech2` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+        '`malaya_speech.tts.fastspeech2` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     model = model.lower()
 
@@ -492,7 +510,8 @@ def fastpitch(
     result : malaya_speech.model.synthesis.Fastpitch class
     """
     warnings.warn(
-        '`malaya_speech.tts.fastpitch` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+        '`malaya_speech.tts.fastpitch` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     model = model.lower()
 
@@ -544,7 +563,8 @@ def glowtts(
     """
 
     warnings.warn(
-        '`malaya_speech.tts.glowtts` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+        '`malaya_speech.tts.glowtts` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     model = model.lower()
 
@@ -596,7 +616,8 @@ def lightspeech(
     result : malaya_speech.model.synthesis.Fastspeech class
     """
     warnings.warn(
-        '`malaya_speech.tts.lightspeech` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+        '`malaya_speech.tts.lightspeech` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     model = model.lower()
 
@@ -647,7 +668,8 @@ def e2e_fastspeech2(
     result : malaya_speech.model.synthesis.E2E_FastSpeech class
     """
     warnings.warn(
-        '`malaya_speech.tts.e2e_fastspeech2` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0', DeprecationWarning)
+        '`malaya_speech.tts.e2e_fastspeech2` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     model = model.lower()
     if model not in _e2e_fastspeech2_availability:

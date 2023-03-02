@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 def stream(
     audio_class,
     vad_model=None,
+    postprocessing_model=None,
     postfilter_model=None,
     asr_model=None,
     classification_model=None,
@@ -29,6 +30,8 @@ def stream(
 
     if vad_model:
         check_pipeline(vad_model, 'vad', 'vad')
+    if postprocessing_model:
+        check_pipeline(postprocessing_model, 'postprocessing', 'postprocessing_model')
     if postfilter_model:
         check_pipeline(postfilter_model, 'postfilter', 'postfilter_model')
     if asr_model:
@@ -67,6 +70,15 @@ def stream(
                     'timestamp': now,
                 }
                 t = ''
+
+                if postprocessing_model:
+                    wav_data_ = postprocessing_model(wav_data)
+                    if isinstance(wav_data_, dict):
+                        logger.debug(wav_data_)
+                        wav_data_ = wav_data_['postprocessing']
+
+                    wav_data = wav_data_
+                    data_dict['wav_data'] = wav_data
 
                 cont = True
 
