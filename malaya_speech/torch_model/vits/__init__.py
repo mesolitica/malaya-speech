@@ -21,3 +21,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
+SID = {
+    'mesolitica/VITS-multispeaker-clean': {
+        0: 'yasmin',
+        1: 'osman',
+        2: 'orkid',
+        3: 'bunga',
+        4: 'tuah',
+        5: 'jebat',
+        6: 'haqkiem',
+        7: 'male',
+        8: 'female',
+    }
+}

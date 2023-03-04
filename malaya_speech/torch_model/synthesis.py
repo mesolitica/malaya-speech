@@ -3,6 +3,7 @@ import json
 from malaya_speech.model.frame import Frame
 from malaya_speech.torch_model.vits.commons import intersperse
 from malaya_speech.torch_model.vits.model_infer import SynthesizerTrn
+from malaya_speech.torch_model.vits import SID
 from malaya_speech.torch_model.hifivoice.models import Generator
 from malaya_speech.torch_model.hifivoice.env import AttrDict
 from malaya_speech.torch_model.hifivoice.meldataset import mel_spectrogram
@@ -28,6 +29,7 @@ class VITS(SynthesizerTrn, TTS):
             len(TTS_SYMBOLS),
             hps.data.filter_length // 2 + 1,
             hps.train.segment_size // hps.data.hop_length,
+            n_speakers=hps.data.n_speakers,
             **hps.model,
         )
         self.eval()
@@ -37,12 +39,22 @@ class VITS(SynthesizerTrn, TTS):
         self.__model__ = model
         self.__name__ = name
 
+    def list_sid(self):
+        """
+        List available speakers for multispeaker model.
+        """
+        if self.n_speakers < 1:
+            raise ValueError('this model is not multispeaker.')
+
+        return SID.get(self.__model__, {})
+
     def predict(
         self,
         string,
         temperature: float = 0.0,
         temperature_durator: float = 0.0,
         length_ratio: float = 1.0,
+        sid: int = None,
         **kwargs,
     ):
         """
@@ -59,11 +71,17 @@ class VITS(SynthesizerTrn, TTS):
             Manipulate this variable will change speaking style.
         length_ratio: float, optional (default=1.0)
             Manipulate this variable will change length frames generated.
+        sid: int, optional (default=None)
+            speaker id, only available for multispeaker models.
+            will throw an error if sid is None for multispeaker models.
 
         Returns
         -------
         result: Dict[string, ids, alignment, y]
         """
+        if self.n_speakers > 0 and sid is None:
+            raise ValueError('`sid` cannot be None for multispeaker model.')
+
         cuda = next(self.parameters()).is_cuda
         t, ids = self._normalizer.normalize(string, **kwargs)
         if self.hps.data.add_blank:
@@ -73,12 +91,16 @@ class VITS(SynthesizerTrn, TTS):
         ids = ids.unsqueeze(0)
         ids = to_tensor_cuda(ids, cuda)
         ids_lengths = to_tensor_cuda(ids_lengths, cuda)
+        if sid is not None:
+            sid = torch.tensor([sid])
+            sid = to_tensor_cuda(sid, cuda)
         audio = self.infer(
             ids,
             ids_lengths,
             noise_scale=temperature,
             noise_scale_w=temperature_durator,
             length_scale=length_ratio,
+            sid=sid,
         )
         alignment = to_numpy(audio[1])[0, 0]
         audio = to_numpy(audio[0])[0, 0]

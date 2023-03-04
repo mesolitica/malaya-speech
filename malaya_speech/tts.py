@@ -209,51 +209,67 @@ _vits_availability = {
         'Size (MB)': 145,
         'Understand punctuation': True,
         'Is lowercase': False,
+        'num speakers': 1,
     },
     'mesolitica/VITS-yasmin': {
         'Size (MB)': 145,
         'Understand punctuation': True,
         'Is lowercase': False,
+        'num speakers': 1,
     },
     'mesolitica/VITS-female-singlish': {
         'Size (MB)': 145,
         'Understand punctuation': True,
         'Is lowercase': True,
+        'num speakers': 1,
     },
     'mesolitica/VITS-haqkiem': {
         'Size (MB)': 145,
         'Understand punctuation': True,
         'Is lowercase': True,
+        'num speakers': 1,
     },
     'mesolitica/VITS-orkid': {
         'Size (MB)': 145,
         'Understand punctuation': True,
         'Is lowercase': False,
+        'num speakers': 1,
     },
     'mesolitica/VITS-bunga': {
         'Size (MB)': 145,
         'Understand punctuation': True,
         'Is lowercase': False,
+        'num speakers': 1,
     },
     'mesolitica/VITS-jebat': {
         'Size (MB)': 145,
         'Understand punctuation': True,
         'Is lowercase': False,
+        'num speakers': 1,
     },
     'mesolitica/VITS-tuah': {
         'Size (MB)': 145,
         'Understand punctuation': True,
         'Is lowercase': False,
+        'num speakers': 1,
     },
     'mesolitica/VITS-male': {
         'Size (MB)': 145,
         'Understand punctuation': True,
         'Is lowercase': False,
+        'num speakers': 1,
     },
     'mesolitica/VITS-female': {
         'Size (MB)': 145,
         'Understand punctuation': True,
         'Is lowercase': False,
+        'num speakers': 1,
+    },
+    'mesolitica/VITS-multispeaker-clean': {
+        'Size (MB)': 159,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+        'num speakers': 9,
     },
 }
 

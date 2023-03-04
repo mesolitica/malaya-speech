@@ -114,6 +114,7 @@ Contents:
    tts-glowtts-multispeaker-model
    tts-lightspeech-model
    tts-vits
+   tts-vits-multispeaker
    vits-long-text
    tts-singlish
    tts-gradio

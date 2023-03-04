@@ -6,6 +6,7 @@ import math
 import torch
 from torch import nn, optim
 from torch.nn import functional as F
+from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from accelerate import Accelerator
 from accelerate.utils import LoggerType
@@ -113,6 +114,7 @@ def run(hps):
 
 
 def train_and_evaluate(epoch, hps, nets, optims, schedulers, loaders, logger):
+    writer = SummaryWriter(log_dir=hps.model_dir)
     net_g, net_d = nets
     optim_g, optim_d = optims
     scheduler_g, scheduler_d = schedulers
@@ -185,6 +187,25 @@ def train_and_evaluate(epoch, hps, nets, optims, schedulers, loaders, logger):
                 epoch,
                 100. * batch_idx / len(train_loader)))
             logger.info([x.item() for x in losses] + [global_step, lr])
+
+            scalar_dict = {
+                "loss/g/total": loss_gen_all,
+                "loss/d/total": loss_disc_all,
+                "learning_rate": lr,
+                "grad_norm_d": grad_norm_d,
+                "grad_norm_g": grad_norm_g}
+            scalar_dict.update({"loss/g/fm": loss_fm, "loss/g/mel": loss_mel,
+                                "loss/g/dur": loss_dur, "loss/g/kl": loss_kl})
+
+            scalar_dict.update({"loss/g/{}".format(i): v for i, v in enumerate(losses_gen)})
+            scalar_dict.update({"loss/d_r/{}".format(i): v for i, v in enumerate(losses_disc_r)})
+            scalar_dict.update({"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)})
+            image_dict = {}
+            utils.summarize(
+                writer=writer,
+                global_step=global_step,
+                images=image_dict,
+                scalars=scalar_dict)
 
         if global_step % hps.train.eval_interval == 0:
             utils.save_checkpoint(

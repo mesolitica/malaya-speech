@@ -83,10 +83,14 @@ class TextAudioLoader(torch.utils.data.Dataset):
         audio_norm = audio / self.max_wav_value
         audio_norm = audio_norm.unsqueeze(0)
         spec_filename = filename.replace(".wav", ".spec.pt")
-        spec = spectrogram_torch(audio_norm, self.filter_length,
-                                 self.sampling_rate, self.hop_length, self.win_length,
-                                 center=False)
-        spec = torch.squeeze(spec, 0)
+        if os.path.exists(spec_filename):
+            spec = torch.load(spec_filename)
+        else:
+            spec = spectrogram_torch(audio_norm, self.filter_length,
+                                     self.sampling_rate, self.hop_length, self.win_length,
+                                     center=False)
+            spec = torch.squeeze(spec, 0)
+            torch.save(spec, spec_filename)
         return spec, audio_norm
 
     def get_text(self, text):
@@ -217,10 +221,15 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
                 sampling_rate, self.sampling_rate))
         audio_norm = audio / self.max_wav_value
         audio_norm = audio_norm.unsqueeze(0)
-        spec = spectrogram_torch(audio_norm, self.filter_length,
-                                 self.sampling_rate, self.hop_length, self.win_length,
-                                 center=False)
-        spec = torch.squeeze(spec, 0)
+        spec_filename = filename.replace(".wav", ".spec.pt")
+        if os.path.exists(spec_filename):
+            spec = torch.load(spec_filename)
+        else:
+            spec = spectrogram_torch(audio_norm, self.filter_length,
+                                     self.sampling_rate, self.hop_length, self.win_length,
+                                     center=False)
+            spec = torch.squeeze(spec, 0)
+            torch.save(spec, spec_filename)
         return spec, audio_norm
 
     def get_text(self, text):
