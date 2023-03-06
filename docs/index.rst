@@ -82,7 +82,8 @@ Contents:
    force-alignment-transducer
    force-alignment-transducer-pt
    force-alignment-ctc
-   force-alignment-huggingface
+   force-alignment-ctc-huggingface
+   force-alignment-seq2seq-huggingface
    put-comma-force-alignment
 
 .. toctree::

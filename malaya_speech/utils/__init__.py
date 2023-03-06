@@ -21,7 +21,8 @@ MALAYA_USE_HUGGINGFACE = os.environ.get('MALAYA_USE_HUGGINGFACE', 'true').lower(
 
 if not MALAYA_USE_HUGGINGFACE:
     warnings.warn(
-        'os environment `MALAYA_USE_HUGGINGFACE=false` is deprecated, BackBlaze backend no longer maintain after 1.4.0', DeprecationWarning)
+        'os environment `MALAYA_USE_HUGGINGFACE=false` is deprecated, BackBlaze backend no longer maintain after 1.4.0',
+        DeprecationWarning)
 
 
 def print_cache(location=None):
@@ -50,7 +51,6 @@ def load_graph(frozen_graph_filename, **kwargs):
 from . import arange
 from . import aligner
 from . import astype
-from . import bpe
 from . import char
 from . import combine
 from . import constant

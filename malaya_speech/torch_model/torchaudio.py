@@ -1,8 +1,7 @@
 import torch
 import numpy as np
 from malaya_speech.model.frame import Frame
-from malaya_speech.utils.bpe import (
-    load_sentencepiece,
+from malaya_speech.utils.subword import (
     SentencePieceTokenProcessor,
     merge_sentencepiece_tokens,
 )

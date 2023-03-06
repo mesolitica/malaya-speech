@@ -328,11 +328,13 @@ class Seq2Seq(torch.nn.Module):
             input_features = batch.input_features
 
         else:
-            input_features = self.processor(inputs, return_tensors='pt', sampling_rate=16000).input_features
+            input_features = self.processor(
+                inputs, return_tensors='pt', sampling_rate=16000).input_features
 
         input_features = to_tensor_cuda(input_features, cuda)
         outputs = self.hf_model.generate(input_features, **kwargs)
-        return self.processor.tokenizer.batch_decode(outputs, skip_special_tokens=skip_special_tokens)
+        return self.processor.tokenizer.batch_decode(
+            outputs, skip_special_tokens=skip_special_tokens)
 
     def predict_logits(self, inputs, norm_func=softmax, **kwargs):
         """
@@ -390,7 +392,7 @@ class Seq2SeqAligner(torch.nn.Module):
         self.__name__ = name
 
         self.AUDIO_SAMPLES_PER_TOKEN = processor.feature_extractor.hop_length * 2
-        self.AUDIO_TIME_PER_TOKEN = AUDIO_SAMPLES_PER_TOKEN / processor.feature_extractor.sampling_rate
+        self.AUDIO_TIME_PER_TOKEN = self.AUDIO_SAMPLES_PER_TOKEN / processor.feature_extractor.sampling_rate
 
     def predict(
         self,
@@ -454,10 +456,10 @@ class Seq2SeqAligner(torch.nn.Module):
         matrix = w.mean(axis=(0, 1))
         alignment = dtw(-matrix.double().numpy())
 
-        xticks = np.arange(0, matrix.shape[1], 1 / AUDIO_TIME_PER_TOKEN)
-        xticklabels = (xticks * AUDIO_TIME_PER_TOKEN).round().astype(np.int32)
+        xticks = np.arange(0, matrix.shape[1], 1 / self.AUDIO_TIME_PER_TOKEN)
+        xticklabels = (xticks * self.AUDIO_TIME_PER_TOKEN).round().astype(np.int32)
 
-        yticklabels = tokenizer.convert_ids_to_tokens(labels['input_ids'][0])
+        yticklabels = self.tokenizer.convert_ids_to_tokens(labels['input_ids'][0])
         yticks = np.arange(len(yticklabels))
 
         jumps = np.pad(np.diff(alignment.index1s), (1, 0), constant_values=1).astype(bool)
@@ -472,30 +474,28 @@ class Seq2SeqAligner(torch.nn.Module):
             }
             subwords_alignment.append(d)
 
-        m = merge_bpe_tokens(zip(yticklabels, jump_times), rejected=self.tokenizer.all_special_tokens)
+        merged_bpes = merge_bpe_tokens(
+            zip(yticklabels, subwords_alignment), rejected=self.tokenizer.all_special_tokens)
         words_alignment = []
-        for i in range(len(m)):
-            if i < len(m) - 1:
-                d = {
-                    'text': m[i][0],
-                    'start': m[i][1][0],
-                    'end': m[i + 1][1][0],
-                }
+        for m in merged_bpes:
+            if isinstance(m[1], list):
+                start = m[1][0]['start']
+                end = m[1][-1]['end']
             else:
-                d = {
-                    'text': m[i][0],
-                    'start': m[i][1][0],
-                    'end': subwords_alignment[-1]['start']
-                }
-
-            words_alignment.append(d)
+                start = m[1]['start']
+                end = m[1]['end']
+            words_alignment.append({
+                'text': m[0],
+                'start': start,
+                'end': end,
+            })
 
         alignment_x = alignment.index2s
         alignment_y = alignment.index1s
         return {
             'subwords_alignment': subwords_alignment,
             'words_alignment': words_alignment,
-            'alignment': matrix,
+            'alignment': to_numpy(matrix),
             'alignment_x': alignment_x,
             'alignment_y': alignment_y,
             'xticks': xticks,
