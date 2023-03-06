@@ -155,8 +155,12 @@ def train_and_evaluate(epoch, hps, nets, optims, schedulers, loaders, logger):
             hps.data.mel_fmax
         )
 
-        y = commons.slice_segments(y, ids_slice *
-                                   hps.data.hop_length, hps.train.segment_size)  # slice
+        try:
+            y = commons.slice_segments(y, ids_slice *
+                                       hps.data.hop_length, hps.train.segment_size)  # slice
+        except BaseException as e:
+            print(e)
+            continue
 
         # Discriminator
         y_d_hat_r, y_d_hat_g, _, _ = net_d(y, y_hat.detach())

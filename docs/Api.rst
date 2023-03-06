@@ -236,7 +236,13 @@ malaya_speech.torch_model.torchaudio.Conformer
 
 .. autoclass:: malaya_speech.torch_model.torchaudio.Conformer()
     :members:
-    
+
+malaya_speech.torch_model.torchaudio.ForceAlignment
+-----------------------------------------------------
+
+.. autoclass:: malaya_speech.torch_model.torchaudio.ForceAlignment()
+    :members:
+
 malaya_speech.pipeline
 -----------------------------------
 

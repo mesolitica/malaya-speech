@@ -271,7 +271,7 @@ def pt_transformer(
     Parameters
     ----------
     model : str, optional (default='mesolitica/conformer-base')
-        Check available models at `malaya_speech.stt.transducer.available_torch_transformer()`.
+        Check available models at `malaya_speech.stt.transducer.available_pt_transformer()`.
 
     Returns
     -------

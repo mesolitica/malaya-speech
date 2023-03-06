@@ -80,6 +80,7 @@ Contents:
    :caption: Force Alignment Module
 
    force-alignment-transducer
+   force-alignment-transducer-pt
    force-alignment-ctc
    force-alignment-huggingface
    put-comma-force-alignment

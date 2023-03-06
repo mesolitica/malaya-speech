@@ -1,4 +1,5 @@
 from malaya_speech.supervised import stt
+from malaya_speech.stt.transducer import available_pt_transformer, _pt_transformer_availability
 from malaya_speech.utils import describe_availability
 from herpetologist import check_type
 import warnings
@@ -53,7 +54,8 @@ def transformer(
     """
 
     warnings.warn(
-        '`malaya.force_alignment.transducer.transformer` is using Tensorflow, means malaya-speech no longer improved it.', DeprecationWarning)
+        '`malaya.force_alignment.transducer.transformer` is using Tensorflow, means malaya-speech no longer improved it.',
+        DeprecationWarning)
 
     model = model.lower()
     if model not in _transformer_availability:
@@ -69,3 +71,28 @@ def transformer(
         stt=False,
         **kwargs
     )
+
+
+def pt_transformer(
+    model: str = 'mesolitica/conformer-base',
+    **kwargs,
+):
+    """
+    Load Encoder-Transducer ASR model using Pytorch.
+
+    Parameters
+    ----------
+    model : str, optional (default='mesolitica/conformer-base')
+        Check available models at `malaya_speech.force_alignment.transducer.available_pt_transformer()`.
+
+    Returns
+    -------
+    result : malaya_speech.torch_model.torchaudio.ForceAlignment class
+    """
+
+    if model not in _pt_transformer_availability:
+        raise ValueError(
+            'model not supported, please check supported models from `malaya_speech.stt.transducer.available_pt_transformer()`.'
+        )
+
+    return stt.torchaudio(model=model, stt=False, **kwargs)
