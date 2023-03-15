@@ -85,4 +85,3 @@ multispeaker-noisy.ipynb
 augmentation-switchboard*
 multispeaker-clean-v2.ipynb
 conformer-large-multigpu.py
-prepare-vad-clean-podcast.ipynb
