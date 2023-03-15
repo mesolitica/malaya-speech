@@ -21,6 +21,7 @@ _availability = {
         'SDR': 9.17312,
         'ISR': 13.92435,
         'SAR': 13.20592,
+        'sample rate': 44100,
     },
     'resnet-unet': {
         'Size (MB)': 96.4,
@@ -31,6 +32,7 @@ _availability = {
         'SDR': 9.45413,
         'ISR': 13.9639,
         'SAR': 13.60276,
+        'sample rate': 44100,
     },
     'resnext-unet': {
         'Size (MB)': 75.4,
@@ -41,6 +43,7 @@ _availability = {
         'SDR': 8.992832,
         'ISR': 13.49194,
         'SAR': 13.13210,
+        'sample rate': 44100,
     },
 }
 

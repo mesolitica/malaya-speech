@@ -18,6 +18,7 @@ _masking_availability = {
         'SDR': 12.12805,
         'ISR': 14.67067,
         'SAR': 15.019682,
+        'sample rate': 44100,
     },
     'resnet-unet': {
         'Size (MB)': 91.4,
@@ -28,6 +29,7 @@ _masking_availability = {
         'SDR': 12.349259,
         'ISR': 14.85418,
         'SAR': 15.21751,
+        'sample rate': 44100,
     },
 }
 
@@ -38,6 +40,7 @@ _sampling_availability = {
         'SDR': 9.877178,
         'ISR': 15.916217,
         'SAR': 13.709130,
+        'sample rate': 22050,
     },
     'resnet-unet': {
         'Size (MB)': 36.4,
@@ -45,6 +48,7 @@ _sampling_availability = {
         'SDR': 9.43617,
         'ISR': 16.86103,
         'SAR': 12.32157,
+        'sample rate': 22050,
     },
     'resnext-unet': {
         'Size (MB)': 36.1,
@@ -52,6 +56,7 @@ _sampling_availability = {
         'SDR': 9.685578,
         'ISR': 16.42137,
         'SAR': 12.45115,
+        'sample rate': 22050,
     },
 }
 

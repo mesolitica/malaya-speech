@@ -25,6 +25,7 @@ def stream(
     filename: str = None,
     realtime_print: bool = True,
     return_as_frame: bool = False,
+    use_tqdm: bool = False,
     **kwargs,
 ):
 
@@ -54,6 +55,14 @@ def stream(
     length = 0
     total_length = 0
     count = 0
+
+    if use_tqdm:
+        try:
+            from tqdm import tqdm
+
+            frames = tqdm(frames)
+        except Exception as e:
+            raise ValueError('tqdm is not available, please install it and try again.')
 
     try:
         for frame in frames:
