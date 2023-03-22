@@ -18,7 +18,6 @@ from malaya_speech.torch_model.huggingface import (
 )
 from malaya_speech.torch_model.torchaudio import Conformer, ForceAlignment
 from transformers import AutoModelForCTC, AutoProcessor, AutoModelForSpeechSeq2Seq
-from transformers import WhisperProcessor
 from malaya_speech.path import TRANSDUCER_VOCABS, TRANSDUCER_MIXED_VOCABS
 import tensorflow as tf
 import torch
@@ -232,8 +231,6 @@ def huggingface_load_seq2seq(model, stt=True, **kwargs):
     if stt:
         selected_model = HuggingFace_Seq2Seq
     else:
-        if not isinstance(processor, WhisperProcessor):
-            raise ValueError('seq2seq alignment only support Whisper for now.')
 
         selected_model = HuggingFace_Seq2SeqAligner
 

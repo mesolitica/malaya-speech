@@ -12,6 +12,7 @@ from malaya_speech.utils.torch_featurization import (
     conformer_rnnt_base,
     conformer_rnnt_tiny,
     conformer_rnnt_medium,
+    conformer_rnnt_large,
     emformer_rnnt_base,
 )
 from malaya_boilerplate.torch_utils import to_tensor_cuda, to_numpy
@@ -23,6 +24,8 @@ model_mapping = {
     'mesolitica/conformer-medium-mixed': conformer_rnnt_medium,
     'mesolitica/conformer-base-singlish': conformer_rnnt_base,
     'mesolitica/emformer-base': emformer_rnnt_base,
+    'mesolitica/conformer-medium-mixed-augmented': conformer_rnnt_medium,
+    'mesolitica/conformer-large-mixed-augmented': conformer_rnnt_large,
 }
 
 

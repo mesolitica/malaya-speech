@@ -27,7 +27,8 @@ try:
     torchaudio_available = True
 except Exception as e:
     logger.warning(f'torchaudio exception: {e}')
-    logger.warning('`torchaudio` is not available, `malaya_speech.utils.torch_featurization` is not able to use.')
+    logger.warning(
+        '`torchaudio` is not available, `malaya_speech.utils.torch_featurization` is not able to use.')
 
     torchaudio = None
     StreamReader = None
@@ -82,7 +83,8 @@ class _ConformerEncoder(torch.nn.Module):
         self.output_linear = torch.nn.Linear(conformer_input_dim, output_dim)
         self.layer_norm = torch.nn.LayerNorm(output_dim)
 
-    def forward(self, input: torch.Tensor, lengths: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, input: torch.Tensor,
+                lengths: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         time_reduction_out, time_reduction_lengths = self.time_reduction(input, lengths)
         input_linear_out = self.input_linear(time_reduction_out)
         x, lengths = self.conformer(input_linear_out, time_reduction_lengths)
@@ -180,9 +182,8 @@ def post_process_hypos(
         sp_model.eos_id(),
         sp_model.pad_id(),
     ]
-    filtered_hypo_tokens = [
-        [token_index for token_index in h[tokens_idx][1:] if token_index not in post_process_remove_list] for h in hypos
-    ]
+    filtered_hypo_tokens = [[token_index for token_index in h[tokens_idx]
+                             [1:] if token_index not in post_process_remove_list] for h in hypos]
     hypos_str = [sp_model.decode(s) for s in filtered_hypo_tokens]
     hypos_ids = [h[tokens_idx][1:] for h in hypos]
     hypos_score = [[math.exp(h[score_idx])] for h in hypos]
@@ -264,6 +265,31 @@ def conformer_rnnt_medium():
         time_reduction_stride=4,
         conformer_input_dim=384,
         conformer_ffn_dim=1536,
+        conformer_num_layers=16,
+        conformer_num_heads=4,
+        conformer_depthwise_conv_kernel_size=31,
+        conformer_dropout=0.1,
+        num_symbols=1024,
+        symbol_embedding_dim=256,
+        num_lstm_layers=2,
+        lstm_hidden_dim=512,
+        lstm_layer_norm=True,
+        lstm_layer_norm_epsilon=1e-5,
+        lstm_dropout=0.3,
+        joiner_activation="tanh",
+    )
+
+
+def conformer_rnnt_large():
+
+    validate_torchaudio()
+
+    return conformer_rnnt_model(
+        input_dim=80,
+        encoding_dim=1024,
+        time_reduction_stride=4,
+        conformer_input_dim=512,
+        conformer_ffn_dim=2048,
         conformer_num_layers=16,
         conformer_num_heads=4,
         conformer_depthwise_conv_kernel_size=31,

@@ -50,6 +50,7 @@ class Model:
         cout=1,
         num_layers=6,
         num_initial_filters=16,
+        resnet_stride=(5, 5),
         output_mask_logit=False,
         logging=False,
         dropout=0.5,
@@ -78,12 +79,12 @@ class Model:
             res = conv2d_factory(
                 filter_size, (1, 1), strides=(1, 1), use_bias=False
             )(input_tensor)
-            conv1 = conv2d_factory(filter_size, (5, 5), strides=(1, 1))(
+            conv1 = conv2d_factory(filter_size, resnet_stride, strides=(1, 1))(
                 input_tensor
             )
             batch1 = BatchNormalization(axis=-1)(conv1, training=training)
             rel1 = conv_activation_layer(batch1)
-            conv2 = conv2d_factory(filter_size, (5, 5), strides=(1, 1))(rel1)
+            conv2 = conv2d_factory(filter_size, resnet_stride, strides=(1, 1))(rel1)
             batch2 = BatchNormalization(axis=-1)(conv2, training=training)
             resconnection = Add()([res, batch2])
             rel2 = conv_activation_layer(resconnection)
@@ -100,7 +101,7 @@ class Model:
                 enc_outputs.append(current_layer)
             else:
                 current_layer = conv2d_factory(
-                    num_initial_filters * (2 ** i), (5, 5)
+                    num_initial_filters * (2 ** i), resnet_stride
                 )(current_layer)
 
             if logging:

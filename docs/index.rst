@@ -54,6 +54,7 @@ Contents:
    load-stt-transducer-model-singlish
    load-stt-transducer-model-2mixed
    load-stt-transducer-model-pt
+   load-stt-transducer-model-pt-multilanguage
 
 .. toctree::
    :maxdepth: 2

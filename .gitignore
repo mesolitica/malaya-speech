@@ -85,3 +85,5 @@ multispeaker-noisy.ipynb
 augmentation-switchboard*
 multispeaker-clean-v2.ipynb
 conformer-large-multigpu.py
+test-mixed1.wav
+test-mixed2.wav
