@@ -87,3 +87,9 @@ multispeaker-clean-v2.ipynb
 conformer-large-multigpu.py
 test-mixed1.wav
 test-mixed2.wav
+conformer-medium-noisy-32
+resnet-unet
+resnet-unet-v2
+large-mixed-noisy.ipynb
+large-noisy.py
+resnet-unet.py

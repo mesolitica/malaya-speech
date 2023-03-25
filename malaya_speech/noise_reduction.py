@@ -22,6 +22,7 @@ _availability = {
         'ISR': 13.92435,
         'SAR': 13.20592,
         'sample rate': 44100,
+        'instrument': ['voice', 'noise'],
     },
     'resnet-unet': {
         'Size (MB)': 96.4,
@@ -33,6 +34,7 @@ _availability = {
         'ISR': 13.9639,
         'SAR': 13.60276,
         'sample rate': 44100,
+        'instrument': ['voice', 'noise'],
     },
     'resnext-unet': {
         'Size (MB)': 75.4,
@@ -44,6 +46,19 @@ _availability = {
         'ISR': 13.49194,
         'SAR': 13.13210,
         'sample rate': 44100,
+        'instrument': ['voice', 'noise'],
+    },
+    'resnet-unet-v2': {
+        'Size (MB)': 96.4,
+        'Quantized Size (MB)': 24.6,
+        'SUM MAE': 0.82535,
+        'MAE_SPEAKER': 0.43885,
+        'MAE_NOISE': 0.38649,
+        'SDR': 9.45413,
+        'ISR': 13.9639,
+        'SAR': 13.60276,
+        'sample rate': 44100,
+        'instrument': ['voice'],
     },
 }
 
