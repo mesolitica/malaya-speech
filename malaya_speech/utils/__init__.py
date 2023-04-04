@@ -59,6 +59,7 @@ from . import featurization
 from . import generator
 from . import griffin_lim
 from . import group
+from . import io
 from . import metrics
 from . import nemo_featurization
 from . import outlier

@@ -14,7 +14,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 if StreamReader is None:
-    logger.warning(f'`torchaudio.io.StreamReader` is not available, `{__name__}` is not able to use.')
+    logger.warning(
+        f'`torchaudio.io.StreamReader` is not available, `{__name__}` is not able to use.')
 
 
 class ContextCacher:
@@ -49,7 +50,8 @@ def _base_stream(
 ):
 
     if StreamReader is None:
-        raise ValueError('`torchaudio.io.StreamReader is not available, please make sure your ffmpeg installed properly.')
+        raise ValueError(
+            '`torchaudio.io.StreamReader is not available, please make sure your ffmpeg installed properly.')
 
     streamer = StreamReader(src=src, format=format, option=option, buffer_size=buffer_size)
     streamer.add_basic_audio_stream(frames_per_chunk=segment_length, sample_rate=sample_rate)
@@ -112,6 +114,7 @@ class Audio:
                 is_speech = True
 
             logger.debug(is_speech)
+            frame = (frame, i * self.segment_length)
 
             if not triggered:
                 ring_buffer.append((frame, is_speech))
@@ -297,7 +300,8 @@ def stream_rnnt(
 
                 segment = cacher(audio)
                 features, length = asr_model.feature_extractor(segment)
-                hypos, state = asr_model.decoder.infer(features, length, beam_width, state=state, hypothesis=hypothesis)
+                hypos, state = asr_model.decoder.infer(
+                    features, length, beam_width, state=state, hypothesis=hypothesis)
                 hypothesis = hypos[0]
                 transcript = asr_model.tokenizer(hypothesis[0], lstrip=False)
 

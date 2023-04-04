@@ -2,12 +2,10 @@
 
 import collections
 import queue
-import os
 import numpy as np
 import logging
-from datetime import datetime
-from typing import List, Callable
-from malaya_speech.utils.astype import float_to_int
+from scipy import signal
+from typing import Callable
 from malaya_speech.streaming import stream as base_stream
 
 logger = logging.getLogger(__name__)
@@ -39,6 +37,7 @@ class Audio:
         self.sample_rate = sample_rate
         self.channels = channels
         self.block_size_input = segment_length
+        self.segment_length = segment_length
 
         self.buffer_queue = queue.Queue()
         self.device = device
@@ -110,7 +109,7 @@ class Audio:
         ring_buffer = collections.deque(maxlen=num_padding_frames)
         triggered = False
 
-        for frame in frames:
+        for i, frame in enumerate(frames):
             if len(frame) < 640:
                 return
 
@@ -128,6 +127,7 @@ class Audio:
                 is_speech = True
 
             logger.debug(is_speech)
+            frame = (frame, i * self.segment_length)
 
             if not triggered:
                 ring_buffer.append((frame, is_speech))

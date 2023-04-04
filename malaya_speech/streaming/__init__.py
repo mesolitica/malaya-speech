@@ -51,6 +51,7 @@ def stream(
     frames = audio.vad_collector(num_padding_frames=num_padding_frames, ratio=ratio)
 
     results = []
+    indices = []
     wav_data = np.array([], dtype=np.float32)
     length = 0
     total_length = 0
@@ -64,69 +65,79 @@ def stream(
         except Exception as e:
             raise ValueError('tqdm is not available, please install it and try again.')
 
+    def pred():
+
+        nonlocal wav_data, indices
+
+        now = indices[0] / sample_rate
+        data_dict = {
+            'wav_data': wav_data,
+            'start': now,
+        }
+        t = ''
+
+        if postprocessing_model:
+            wav_data_ = postprocessing_model(wav_data)
+            if isinstance(wav_data_, dict):
+                logger.debug(wav_data_)
+                wav_data_ = wav_data_['postprocessing']
+
+            wav_data = wav_data_
+            data_dict['wav_data'] = wav_data
+
+        cont = True
+
+        if postfilter_model:
+            t_ = postfilter_model(wav_data)
+            if isinstance(t_, dict):
+                logger.debug(t_)
+                t_ = t_['postfilter']
+            cont = t_
+
+        if cont:
+            if asr_model:
+                t_ = asr_model(wav_data)
+                if isinstance(t_, dict):
+                    logger.debug(t_)
+                    t_ = t_['speech-to-text']
+
+                data_dict['asr_model'] = t_
+                logger.info(f'Sample asr_model {count} {now}: {t_}')
+
+                t += str(t_) + ' '
+
+            if classification_model:
+                t_ = classification_model(wav_data)
+                if isinstance(t_, dict):
+                    logger.debug(t_)
+                    t_ = t_['classification']
+
+                data_dict['classification_model'] = t_
+                logger.info(f'Sample classification_model {count} {now}: {t_}')
+
+                t += f'({t_})' + ' '
+
+            if realtime_print and len(t):
+                print(t, end='', flush=True)
+
+            data_dict['end'] = now + (len(data_dict['wav_data']) / sample_rate)
+            results.append(data_dict)
+
     try:
         for frame in frames:
 
             if frame is not None:
+                frame, index = frame
                 length += frame.shape[0] / sample_rate
                 total_length += frame.shape[0] / sample_rate
                 wav_data = np.concatenate([wav_data, frame])
+                indices.append(index)
 
             if frame is None and length >= min_length or length >= max_length:
-                now = datetime.now()
-                data_dict = {
-                    'wav_data': wav_data,
-                    'timestamp': now,
-                }
-                t = ''
 
-                if postprocessing_model:
-                    wav_data_ = postprocessing_model(wav_data)
-                    if isinstance(wav_data_, dict):
-                        logger.debug(wav_data_)
-                        wav_data_ = wav_data_['postprocessing']
-
-                    wav_data = wav_data_
-                    data_dict['wav_data'] = wav_data
-
-                cont = True
-
-                if postfilter_model:
-                    t_ = postfilter_model(wav_data)
-                    if isinstance(t_, dict):
-                        logger.debug(t_)
-                        t_ = t_['postfilter']
-                    cont = t_
-
-                if cont:
-                    if asr_model:
-                        t_ = asr_model(wav_data)
-                        if isinstance(t_, dict):
-                            logger.debug(t_)
-                            t_ = t_['speech-to-text']
-
-                        data_dict['asr_model'] = t_
-                        logger.info(f'Sample asr_model {count} {now}: {t_}')
-
-                        t += str(t_) + ' '
-
-                    if classification_model:
-                        t_ = classification_model(wav_data)
-                        if isinstance(t_, dict):
-                            logger.debug(t_)
-                            t_ = t_['classification']
-
-                        data_dict['classification_model'] = t_
-                        logger.info(f'Sample classification_model {count} {now}: {t_}')
-
-                        t += f'({t_})' + ' '
-
-                    if realtime_print and len(t):
-                        print(t, end='', flush=True)
-
-                    results.append(data_dict)
-
+                pred()
                 wav_data = np.array([], dtype=np.float32)
+                indices = []
                 length = 0
                 count += 1
 
@@ -134,25 +145,28 @@ def stream(
                 break
 
     except KeyboardInterrupt:
-
-        if filename is not None:
-            logger.info(f'saved audio to {filename}')
-            write(filename, np.concatenate([r[0] for r in results]))
+        pass
 
     except Exception as e:
         raise e
 
+    if length > 0:
+        pred()
+        count += 1
+
+    if filename is not None:
+        logger.info(f'saved audio to {filename}')
+        write(filename, np.concatenate([r[0] for r in results]))
+
     audio.destroy()
 
     if return_as_frame:
-        total_duration = 0
         for i in range(len(results)):
             wav_data = results[i]['wav_data']
             duration = len(wav_data) / sample_rate
-            frame = Frame(wav_data, total_duration, duration)
+            frame = Frame(wav_data, results[i]['start'], duration)
             results[i]['wav_data'] = frame
 
-            total_duration += duration
     return results
 
 

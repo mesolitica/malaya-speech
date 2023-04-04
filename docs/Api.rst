@@ -357,6 +357,12 @@ malaya_speech.utils.group
 .. automodule:: malaya_speech.utils.group
     :members:
 
+malaya_speech.utils.io
+--------------------------
+
+.. automodule:: malaya_speech.utils.io
+    :members:
+
 malaya_speech.utils.padding
 ---------------------------
 

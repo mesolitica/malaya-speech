@@ -93,3 +93,6 @@ resnet-unet-v2
 large-mixed-noisy.ipynb
 large-noisy.py
 resnet-unet.py
+semisupervised-transducer.json
+semisupervised-transducer-v2.json
+data/*/*-Copy*.ipynb

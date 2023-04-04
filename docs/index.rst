@@ -181,7 +181,6 @@ Contents:
    realtime-vad
    realtime-asr
    realtime-asr-without-vad
-   realtime-alignment
    realtime-classification
 
 .. toctree::
@@ -193,6 +192,7 @@ Contents:
    rnnt-streaming-torchaudio
    long-audio-classification-torchaudio
    youtube-asr-diarization-torchaudio
+   youtube-asr-diarization-torchaudio-srt
 
 .. toctree::
    :maxdepth: 2
