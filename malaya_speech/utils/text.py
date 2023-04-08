@@ -115,6 +115,7 @@ class TextIDS_AZURE:
         self,
         string: str,
         assume_newline_fullstop: bool = False,
+        accept_unicode: bool = True,
         **kwargs
     ):
         """
@@ -126,12 +127,17 @@ class TextIDS_AZURE:
         assume_newline_fullstop: bool, optional (default=False)
             Assume a string is a multiple sentences, will split using
             `malaya.text.function.split_into_sentences`.
+        accept_unicode: bool, optional (default=True)
+            if True, will process unicode characters.
+            if False, will remove unicode characters.
 
         Returns
         -------
         result : (string: str, text_input: np.array)
         """
-        string = convert_to_ascii(string)
+        if not accept_unicode:
+            string = convert_to_ascii(string)
+
         if assume_newline_fullstop and self.sentence_tokenizer is not None:
             string = string.replace('\n', '. ')
             string = self.sentence_tokenizer(string, minimum_length=0)
@@ -189,6 +195,16 @@ class TextIDS:
                 self.kwargs['check_english_func'] = None
             else:
                 self.kwargs['check_english'] = False
+            if 'normalize_cardinal' in normalizer_parameters:
+                self.kwargs['normalize_cardinal'] = True
+            if 'normalize_ordinal' in normalizer_parameters:
+                self.kwargs['normalize_ordinal'] = True
+            if 'normalize_number' in normalizer_parameters:
+                self.kwargs['normalize_number'] = True
+            if 'normalize_time' in normalizer_parameters:
+                self.kwargs['normalize_time'] = True
+            if 'normalize_emoji' in normalizer_parameters:
+                self.kwargs['normalize_emoji'] = True
         else:
             self.kwargs = {}
 
@@ -200,6 +216,7 @@ class TextIDS:
         assume_newline_fullstop: bool = False,
         true_case_func: Callable = None,
         add_fullstop: bool = True,
+        accept_unicode: bool = True,
         **kwargs,
     ):
         """
@@ -219,13 +236,17 @@ class TextIDS:
         true_case_func: Callable, optional (default=None)
             Callable function to do true case, eg, https://malaya.readthedocs.io/en/latest/load-true-case.html
             Only useful for TTS models that understood uppercase.
+        accept_unicode: bool, optional (default=True)
+            if True, will process unicode characters.
+            if False, will remove unicode characters.
 
         Returns
         -------
         result : (string: str, text_input: np.array)
         """
 
-        string = convert_to_ascii(string)
+        if not accept_unicode:
+            string = convert_to_ascii(string)
         if assume_newline_fullstop and self.sentence_tokenizer is not None:
             string = string.replace('\n', '. ')
             string = self.sentence_tokenizer(string, minimum_length=0)
