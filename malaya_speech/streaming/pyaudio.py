@@ -146,8 +146,6 @@ class Audio:
                 )
                 if num_unvoiced > ratio * ring_buffer.maxlen:
                     triggered = False
-                    for f, s in ring_buffer:
-                        yield f
                     yield None
                     ring_buffer.clear()
 

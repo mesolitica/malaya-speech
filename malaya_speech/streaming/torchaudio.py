@@ -71,6 +71,7 @@ class Audio:
         buffer_size: int = 4096,
         sample_rate: int = 16000,
         segment_length: int = 2560,
+        mode_utterence: bool = True,
         **kwargs,
     ):
         self.vad_model = vad_model
@@ -83,6 +84,7 @@ class Audio:
             segment_length=segment_length,
         )
         self.segment_length = segment_length
+        self.mode_utterence = mode_utterence
 
     def destroy(self):
         pass
@@ -97,7 +99,7 @@ class Audio:
         ring_buffer = collections.deque(maxlen=num_padding_frames)
         triggered = False
 
-        for i, (chunk,) in enumerate(self.stream_iterator, start=1):
+        for i, (chunk,) in enumerate(self.stream_iterator):
             frame = chunk[:, 0].numpy()
             if len(frame) != self.segment_length:
                 continue
@@ -116,14 +118,27 @@ class Audio:
             logger.debug(is_speech)
             frame = (frame, i * self.segment_length)
 
-            if not triggered:
-                ring_buffer.append((frame, is_speech))
-                num_voiced = len([f for f, speech in ring_buffer if speech])
-                if num_voiced > ratio * ring_buffer.maxlen:
-                    triggered = True
-                    for f, s in ring_buffer:
-                        yield f
-                    ring_buffer.clear()
+            if self.mode_utterence:
+
+                if not triggered:
+                    ring_buffer.append((frame, is_speech))
+                    num_voiced = len([f for f, speech in ring_buffer if speech])
+                    if num_voiced > ratio * ring_buffer.maxlen:
+                        triggered = True
+                        for f, s in ring_buffer:
+                            yield f
+                        ring_buffer.clear()
+
+                else:
+                    yield frame
+                    ring_buffer.append((frame, is_speech))
+                    num_unvoiced = len(
+                        [f for f, speech in ring_buffer if not speech]
+                    )
+                    if num_unvoiced > ratio * ring_buffer.maxlen:
+                        triggered = False
+                        yield None
+                        ring_buffer.clear()
 
             else:
                 yield frame
@@ -132,9 +147,6 @@ class Audio:
                     [f for f, speech in ring_buffer if not speech]
                 )
                 if num_unvoiced > ratio * ring_buffer.maxlen:
-                    triggered = False
-                    for f, s in ring_buffer:
-                        yield f
                     yield None
                     ring_buffer.clear()
 

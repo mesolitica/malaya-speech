@@ -122,7 +122,7 @@ def stream(
             if realtime_print and len(t):
                 print(t, end='', flush=True)
 
-            data_dict['end'] = now + (len(data_dict['wav_data']) / sample_rate)
+            data_dict['end'] = (indices[-1] + segment_length) / sample_rate
 
             if callback_pred is not None:
                 callback_pred(data_dict)
