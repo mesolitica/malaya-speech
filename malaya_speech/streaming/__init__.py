@@ -2,6 +2,7 @@ from malaya_speech.utils.validator import check_pipeline
 from malaya_speech.model.frame import Frame
 from scipy.io.wavfile import write
 from datetime import datetime
+from typing import Callable
 import numpy as np
 import logging
 
@@ -26,6 +27,7 @@ def stream(
     realtime_print: bool = True,
     return_as_frame: bool = False,
     use_tqdm: bool = False,
+    callback_pred: Callable = None,
     **kwargs,
 ):
 
@@ -121,7 +123,12 @@ def stream(
                 print(t, end='', flush=True)
 
             data_dict['end'] = now + (len(data_dict['wav_data']) / sample_rate)
-            results.append(data_dict)
+
+            if callback_pred is not None:
+                callback_pred(data_dict)
+
+            else:
+                results.append(data_dict)
 
     try:
         for frame in frames:
@@ -133,7 +140,7 @@ def stream(
                 wav_data = np.concatenate([wav_data, frame])
                 indices.append(index)
 
-            if frame is None and length >= min_length or length >= max_length:
+            if frame is None and (length >= min_length or length >= max_length):
 
                 pred()
                 wav_data = np.array([], dtype=np.float32)
