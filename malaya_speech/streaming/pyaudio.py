@@ -29,6 +29,7 @@ class Audio:
         segment_length: int = 320,
         channels: int = 1,
         stream_callback: Callable = None,
+        hard_utterence: bool = True,
         **kwargs,
     ):
 
@@ -38,6 +39,7 @@ class Audio:
         self.channels = channels
         self.block_size_input = segment_length
         self.segment_length = segment_length
+        self.hard_utterence = hard_utterence
 
         self.buffer_queue = queue.Queue()
         self.device = device
@@ -129,17 +131,22 @@ class Audio:
             logger.debug(is_speech)
             frame = (frame, i * self.segment_length)
 
+            if not self.hard_utterence:
+                yield frame
+
             if not triggered:
                 ring_buffer.append((frame, is_speech))
                 num_voiced = len([f for f, speech in ring_buffer if speech])
                 if num_voiced > ratio * ring_buffer.maxlen:
                     triggered = True
-                    for f, s in ring_buffer:
-                        yield f
+                    if self.hard_utterence:
+                        for f, s in ring_buffer:
+                            yield f
                     ring_buffer.clear()
 
             else:
-                yield frame
+                if self.hard_utterence:
+                    yield frame
                 ring_buffer.append((frame, is_speech))
                 num_unvoiced = len(
                     [f for f, speech in ring_buffer if not speech]

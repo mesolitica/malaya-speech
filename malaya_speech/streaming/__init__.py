@@ -148,7 +148,7 @@ def stream(
                 length = 0
                 count += 1
 
-            if streaming_max_length is not None and total_length >= streaming_max_length:
+            if frame is None and streaming_max_length is not None and total_length >= streaming_max_length:
                 break
 
     except KeyboardInterrupt:

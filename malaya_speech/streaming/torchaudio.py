@@ -72,6 +72,7 @@ class Audio:
         sample_rate: int = 16000,
         segment_length: int = 2560,
         mode_utterence: bool = True,
+        hard_utterence: bool = True,
         **kwargs,
     ):
         self.vad_model = vad_model
@@ -85,6 +86,7 @@ class Audio:
         )
         self.segment_length = segment_length
         self.mode_utterence = mode_utterence
+        self.hard_utterence = hard_utterence
 
     def destroy(self):
         pass
@@ -120,17 +122,23 @@ class Audio:
 
             if self.mode_utterence:
 
+                if not self.hard_utterence:
+                    yield frame
+
                 if not triggered:
                     ring_buffer.append((frame, is_speech))
                     num_voiced = len([f for f, speech in ring_buffer if speech])
                     if num_voiced > ratio * ring_buffer.maxlen:
                         triggered = True
-                        for f, s in ring_buffer:
-                            yield f
+                        if self.hard_utterence:
+                            for f, s in ring_buffer:
+                                yield f
+
                         ring_buffer.clear()
 
                 else:
-                    yield frame
+                    if self.hard_utterence:
+                        yield frame
                     ring_buffer.append((frame, is_speech))
                     num_unvoiced = len(
                         [f for f, speech in ring_buffer if not speech]
