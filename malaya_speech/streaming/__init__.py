@@ -23,6 +23,7 @@ def stream(
     min_length: float = 0.1,
     max_length: float = 10.0,
     streaming_max_length: float = None,
+    starting_timestamp: float = None,
     filename: str = None,
     realtime_print: bool = True,
     return_as_frame: bool = False,
@@ -137,10 +138,14 @@ def stream(
                 frame, index = frame
                 length += frame.shape[0] / sample_rate
                 total_length += frame.shape[0] / sample_rate
+
+                if starting_timestamp is not None and total_length < starting_timestamp:
+                    continue
+
                 wav_data = np.concatenate([wav_data, frame])
                 indices.append(index)
 
-            if frame is None and (length >= min_length or length >= max_length):
+            if frame is None and len(indices) and (length >= min_length or length >= max_length):
 
                 pred()
                 wav_data = np.array([], dtype=np.float32)
@@ -148,8 +153,13 @@ def stream(
                 length = 0
                 count += 1
 
-            if frame is None and streaming_max_length is not None and total_length >= streaming_max_length:
-                break
+            if frame is None and streaming_max_length is not None:
+                if starting_timestamp is not None:
+                    maxlen = streaming_max_length + starting_timestamp
+                else:
+                    maxlen = streaming_max_length
+                if total_length >= maxlen:
+                    break
 
     except KeyboardInterrupt:
         pass
