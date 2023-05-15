@@ -1,7 +1,6 @@
 from sklearn.metrics.pairwise import cosine_similarity
 from malaya_speech.utils.dist import l2_normalize, compute_log_dist_matrix
 import numpy as np
-from herpetologist import check_type
 from typing import Callable
 import copy
 import logging
@@ -28,6 +27,22 @@ def _group_vad(vad_results, speaker_vector, norm_function=None, log_distance_met
         activities = compute_log_dist_matrix(activities, log_distance_metric)
 
     return speakers, activities, mapping
+
+
+def streaming_kmeans(vector, kmean):
+    """
+    Speaker diarization using streaming Kmeans.
+
+    Parameters
+    ----------
+    vector: np.array
+        np.array or malaya_speech.model.frame.Frame.
+
+    Returns
+    -------
+    result : str
+    """
+    return kmean.streaming(vector)
 
 
 def streaming_speaker_similarity(
