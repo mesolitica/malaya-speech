@@ -60,6 +60,13 @@ silero_vad = {
     'macro f1-score': 0.49225,
 }
 
+webrtc_vad = {
+    'notebook link': 'https://github.com/huseinzol05/malaya-speech/blob/master/pretrained-model/vad/evaluate/webrtc.ipynb',
+    'macro precision': 0.47163,
+    'macro recall': 0.46148,
+    'macro f1-score': 0.46461,
+}
+
 
 def available_model():
     """
@@ -84,15 +91,8 @@ def webrtc(
     minimum_amplitude: int = 100,
 ):
     """
-    Load WebRTC VAD model. 
+    Load WebRTC VAD model.
     WebRTC prefer 30ms frame, https://github.com/wiseman/py-webrtcvad#how-to-use-it
-
-    {
-        'macro precision': 0.47163,
-        'macro recall': 0.46148,
-        'macro f1-score': 0.46461,
-    }
-    https://github.com/huseinzol05/malaya-speech/blob/master/pretrained-model/vad/evaluate/webrtc.ipynb
 
     Parameters
     ----------
@@ -174,7 +174,7 @@ def nemo(
     **kwargs,
 ):
     """
-    Load Nemo VAD model. 
+    Load Nemo VAD model.
     Nemo VAD prefer 63 ms frame, https://github.com/NVIDIA/NeMo/blob/02cf155b020964992a974e030b9e318426761e33/nemo/collections/asr/data/feature_to_label_dataset.py#L43
 
     Parameters

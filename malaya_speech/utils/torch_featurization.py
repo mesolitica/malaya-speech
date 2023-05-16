@@ -121,8 +121,9 @@ def conformer_rnnt_model(
     lstm_dropout: int,
     joiner_activation: str,
 ):
-    r"""
+    """
     Builds Conformer-based recurrent neural network transducer (RNN-T) model.
+
     Args:
         input_dim (int): dimension of input sequence frames passed to transcription network.
         encoding_dim (int): dimension of transcription- and prediction-network-generated encodings
@@ -143,9 +144,10 @@ def conformer_rnnt_model(
         lstm_dropout (float): LSTM dropout probability.
         joiner_activation (str): activation function to use in the joiner.
             Must be one of ("relu", "tanh"). (Default: "relu")
-        Returns:
-            RNNT:
-                Conformer RNN-T model.
+
+    Returns:
+        RNNT:
+            Conformer RNN-T model.
     """
     encoder = _ConformerEncoder(
         input_dim=input_dim,

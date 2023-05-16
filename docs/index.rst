@@ -169,6 +169,7 @@ Contents:
    load-diarization-clustering
    load-diarization-clustering-agglomerative
    load-diarization-clustering-hmm
+   unsupervised-streaming-clustering
    load-diarization-speaker-change
    load-diarization-timestamp
    load-diarization-using-features

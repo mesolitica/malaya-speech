@@ -63,6 +63,24 @@ malaya_speech.model.clustering.HiddenMarkovModelClustering
 .. autoclass:: malaya_speech.model.clustering.HiddenMarkovModelClustering()
     :members:
 
+malaya_speech.model.clustering.StreamingKMeansMaxCluster
+------------------------------------------------------------
+
+.. autoclass:: malaya_speech.model.clustering.StreamingKMeansMaxCluster()
+    :members:
+
+malaya_speech.model.clustering.StreamingKMeans
+------------------------------------------------------------
+
+.. autoclass:: malaya_speech.model.clustering.StreamingKMeans()
+    :members:
+
+malaya_speech.model.clustering.StreamingSpeakerSimilarity
+------------------------------------------------------------
+
+.. autoclass:: malaya_speech.model.clustering.StreamingSpeakerSimilarity()
+    :members:
+
 malaya_speech.model.splitter.Split_Wav
 -----------------------------------------
 
@@ -207,12 +225,18 @@ malaya_speech.torch_model.huggingface.XVector
 .. autoclass:: malaya_speech.torch_model.huggingface.XVector()
     :members:
 
-malaya_speech.torch_model.nemo.Model
+malaya_speech.torch_model.nemo.SpeakerVector
 ---------------------------------------------------
 
-.. autoclass:: malaya_speech.torch_model.nemo.Model()
+.. autoclass:: malaya_speech.torch_model.nemo.SpeakerVector()
     :members:
 
+malaya_speech.torch_model.nemo.Classification
+---------------------------------------------------
+
+.. autoclass:: malaya_speech.torch_model.nemo.Classification()
+    :members:
+    
 malaya_speech.torch_model.super_resolution.VoiceFixer
 ------------------------------------------------------
 
@@ -291,10 +315,10 @@ malaya_speech.pipeline.zip
 .. autoclass:: malaya_speech.pipeline.zip()
     :members:
 
-malaya_speech.streaming.pyaudio_vad
+malaya_speech.streaming.pyaudio
 -------------------------------------
 
-.. automodule:: malaya_speech.streaming.pyaudio_vad
+.. automodule:: malaya_speech.streaming.pyaudio
     :members:
 
 malaya_speech.streaming.torchaudio
@@ -313,12 +337,6 @@ malaya_speech.utils.astype
 --------------------------
 
 .. automodule:: malaya_speech.utils.astype
-    :members:
-
-malaya_speech.utils.bpe
---------------------------
-
-.. automodule:: malaya_speech.utils.bpe
     :members:
 
 malaya_speech.utils.char

@@ -29,65 +29,35 @@ def _group_vad(vad_results, speaker_vector, norm_function=None, log_distance_met
     return speakers, activities, mapping
 
 
-def streaming_kmeans(vector, kmean):
-    """
-    Speaker diarization using streaming Kmeans.
-
-    Parameters
-    ----------
-    vector: np.array
-        np.array or malaya_speech.model.frame.Frame.
-
-    Returns
-    -------
-    result : str
-    """
-    return kmean.streaming(vector)
-
-
-def streaming_speaker_similarity(
+def streaming(
     vector,
-    speakers: dict,
-    similarity_threshold: float = 0.8,
-    agg_function: Callable = np.mean,
+    streaming_model: Callable,
+    add_speaker_prefix: bool = True
 ):
     """
-    Speaker diarization using L2-Norm similarity streaming mode.
+    Streaming speaker diarization.
 
     Parameters
     ----------
     vector: np.array
         np.array or malaya_speech.model.frame.Frame.
-    speakers: dict
-        empty dictionary, it will update overtime using pass by reference.
-    similarity_threshold: float, optional (default=0.8)
-        if current voice activity sample similar at least 0.8, we assumed it is from the same speaker.
+    streaming_model: Callable
+        must have `streaming` method.
+    add_speaker_prefix: bool, optional (default=True)
+        if True, will add 'speaker ' as prefix.
 
     Returns
     -------
     result : str
     """
+    if not hasattr(streaming_model, 'streaming'):
+        raise ValueError('`streaming_model` does not have `streaming` method.')
 
-    embedding = list(speakers.values())
-
-    if len(speakers):
-        a = np.array(embedding)
-        s = ((cosine_similarity([vector], a) + 1) / 2)[0]
-        where = np.where(s >= similarity_threshold)[0]
-        if len(where):
-            argsort = (np.argsort(s)[::-1]).tolist()
-            argsort = [a for a in argsort if a in where]
-            speaker = f'speaker {argsort[0]}'
-            speakers[speaker] = agg_function([vector, speakers[speaker]], axis=0)
-        else:
-            speaker = f'speaker {len(embedding)}'
-            speakers[speaker] = vector
-
+    r = streaming_model.streaming(vector)
+    if add_speaker_prefix:
+        return f'speaker {r}'
     else:
-        speaker = f'speaker {len(embedding)}'
-        speakers[speaker] = vector
-
-    return speaker
+        return r
 
 
 def speaker_similarity(

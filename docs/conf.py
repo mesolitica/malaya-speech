@@ -27,7 +27,7 @@ class Mock(MagicMock):
 SOURCE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__name__)))
 sys.path.insert(0, SOURCE_DIR)
 
-MOCK_MODULES = ['librosa', 'librosa.display', 'soundfile']
+MOCK_MODULES = ['librosa', 'librosa.display', 'soundfile', 'librosa.filters']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- Project information -----------------------------------------------------
