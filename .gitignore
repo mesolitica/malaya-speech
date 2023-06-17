@@ -96,3 +96,17 @@ resnet-unet.py
 semisupervised-transducer.json
 semisupervised-transducer-v2.json
 data/*/*-Copy*.ipynb
+conformer-base-v2-noisy-32
+base-noisy.py
+base.py
+gather-semisupervised-asr.ipynb
+malay-asr-train-shuffled-combined-semi.json
+data/youtube/done
+.hypothesis
+siti-norhaliza-vocals
+siti-nurhaliza
+siti-nurhaliza-done
+creep-vocal.wav
+onlymp3*
+Toodia Podcast EP #3： ＂Macam mana nak manage MASA dan WORK LIFE BALANCE ？＂ (Part 2) [_FXlFtCIFYk].mp3
+data/semisupervised-whisper-stt/dataset-*.json
