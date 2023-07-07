@@ -215,6 +215,7 @@ class TextIDS:
         replace_brackets_with_comma: bool = True,
         assume_newline_fullstop: bool = False,
         true_case_func: Callable = None,
+        trim_end_comma: bool = False,
         add_fullstop: bool = True,
         accept_unicode: bool = True,
         **kwargs,
@@ -253,7 +254,7 @@ class TextIDS:
             string = '. '.join(string)
 
         string = re.sub(r'[ ]+', ' ', string).strip()
-        if string[-1] in '-,':
+        if trim_end_comma and string[-1] in '-,':
             string = string[:-1]
         if add_fullstop and string[-1] not in '.,?!':
             string = string + '.'

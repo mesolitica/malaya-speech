@@ -18,10 +18,41 @@ Prepare ASR dataset for ASR models.
 
 ## Download
 
-1. Malay Test set, audio files, ~53 minutes, [malay-test.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/malay-test.tar.gz), transcript, [postprocess-malaya-malay-test-set.json](postprocess-malaya-malay-test-set.json).
+1. Malay Test set,
 
-2. Singlish Test set, audio files, ~271 minutes, [singlish-test.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/singlish-test.tar.gz), transcript, [singlish-test.json](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/singlish-test.json).
+- ~53 minutes.
+- audio files, https://huggingface.co/datasets/mesolitica/stt-dataset/resolve/main/malay-test.tar.gz
+- transcription, [postprocess-malaya-malay-test-set.json](postprocess-malaya-malay-test-set.json)
 
-3. Mandarin Test set, audio files, ~46 minutes, [mandarin-test.tar.gz](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/mandarin-test.tar.gz), transcript, [mandarin-test.json](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/mandarin-test.json).
+2. Singlish Test set,
 
-4. Processed FLEURS102 `ms_my`, ~133 minutes, [malay-fleur102.tar.gz](https://huggingface.co/datasets/mesolitica/mixed-stt/resolve/main/malay-fleur102.tar.gz), transcript, [malay-asr-test.json](malay-asr-test.json).
+- ~271 minutes.
+- audio files, https://huggingface.co/datasets/mesolitica/stt-dataset/resolve/main/singlish-test.tar.gz
+- transcription, [postprocess-malaya-malay-test-set.json](postprocess-malaya-malay-test-set.json)
+
+3. Mandarin Test set,
+
+- ~46 minutes.
+- audio files, https://huggingface.co/datasets/mesolitica/stt-dataset/resolve/main/mandarin-test.tar.gz
+- transcription, [mandarin-test.json](https://f000.backblazeb2.com/file/malaya-speech-model/asr-dataset/mandarin-test.json)
+
+4. Processed FLEURS102 `ms_my`,
+
+- ~133 minutes.
+- audio files, https://huggingface.co/datasets/mesolitica/stt-dataset/resolve/main/malay-fleur102.tar.gz
+- transcription, [malay-asr-test.json](malay-asr-test.json).
+
+5. Malay train dataset,
+
+- notebook, [prepare-malay-stt-train.ipynb](prepare-malay-stt-train.ipynb)
+- transcription, https://huggingface.co/datasets/mesolitica/stt-dataset/resolve/main/malay-asr-train.json
+
+6. Malay train dataset + Semisupervised Large Conformer,
+
+- notebook, [gather-semisupervised-asr.ipynb](gather-semisupervised-asr.ipynb).
+- transcription, https://huggingface.co/datasets/mesolitica/stt-dataset/resolve/main/malay-asr-train-shuffled-combined-semi.json
+
+7. Mixed train dataset,
+
+- notebook, [prepare-stt-mixed-v2.ipynb](prepare-stt-mixed-v2.ipynb).
+- transcription, https://huggingface.co/datasets/mesolitica/stt-dataset/resolve/main/mixed-stt-train-v2.json

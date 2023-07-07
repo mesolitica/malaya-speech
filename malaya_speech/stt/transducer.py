@@ -203,7 +203,7 @@ _pt_transformer_availability = {
         },
         'Language': ['malay', 'singlish'],
     },
-    'mesolitica/conformer-medium-mixed-augmented': {
+    'mesolitica/conformer-medium-malay-whisper': {
         'Size (MB)': 243,
         'malay-malaya': {
             'WER': 0.1015719878,
@@ -217,9 +217,13 @@ _pt_transformer_availability = {
             'WER': 0.086342166,
             'CER': 0.0413572066,
         },
-        'Language': ['malay', 'singlish'],
+        'mixed': {
+            'WER': 0.103593636,
+            'CER': 0.036611048,
+        },
+        'Language': ['malay', 'singlish', 'mixed'],
     },
-    'mesolitica/conformer-large-mixed-augmented': {
+    'mesolitica/conformer-large-malay-whisper': {
         'Size (MB)': 413,
         'malay-malaya': {
             'WER': 0.0919852874,
@@ -233,7 +237,11 @@ _pt_transformer_availability = {
             'WER': 0.08727157,
             'CER': 0.04318735972
         },
-        'Language': ['malay', 'singlish'],
+        'mixed': {
+            'WER': 0.103593636,
+            'CER': 0.036611048,
+        },
+        'Language': ['malay', 'singlish', 'mixed'],
     },
 }
 

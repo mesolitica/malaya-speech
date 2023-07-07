@@ -80,18 +80,13 @@ conformer-large-mixed-32
 female.ipynb
 male.ipynb
 test.wav
-multispeaker-clean.ipynb
-multispeaker-noisy.ipynb
 augmentation-switchboard*
-multispeaker-clean-v2.ipynb
 conformer-large-multigpu.py
 test-mixed1.wav
 test-mixed2.wav
 conformer-medium-noisy-32
 resnet-unet
 resnet-unet-v2
-large-mixed-noisy.ipynb
-large-noisy.py
 resnet-unet.py
 semisupervised-transducer.json
 semisupervised-transducer-v2.json
@@ -99,7 +94,6 @@ data/*/*-Copy*.ipynb
 conformer-base-v2-noisy-32
 base-noisy.py
 base.py
-gather-semisupervised-asr.ipynb
 malay-asr-train-shuffled-combined-semi.json
 data/youtube/done
 .hypothesis

@@ -16,7 +16,7 @@
 
 =========
 
-**Malaya-Speech** is a Speech-Toolkit library for bahasa Malaysia, powered by Tensorflow and PyTorch.
+**Malaya-Speech** is a Speech-Toolkit library for Malaysian language, powered by Tensorflow and PyTorch.
 
 Documentation
 --------------

@@ -271,6 +271,12 @@ _vits_availability = {
         'Is lowercase': False,
         'num speakers': 9,
     },
+    'mesolitica/VITS-multispeaker-noisy': {
+        'Size (MB)': 159,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+        'num speakers': 3,
+    },
 }
 
 _e2e_fastspeech2_availability = {

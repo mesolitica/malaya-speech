@@ -118,6 +118,7 @@ Contents:
    tts-lightspeech-model
    tts-vits
    tts-vits-multispeaker
+   tts-vits-multispeaker-noisy
    vits-long-text
    tts-singlish
    tts-gradio

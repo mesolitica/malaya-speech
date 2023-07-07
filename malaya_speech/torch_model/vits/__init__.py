@@ -33,5 +33,10 @@ SID = {
         6: 'haqkiem',
         7: 'male',
         8: 'female',
+    },
+    'mesolitica/VITS-multispeaker-noisy': {
+        0: 'teme',
+        1: 'bukan-kerana-aku',
+        2: 'harry-potter',
     }
 }
