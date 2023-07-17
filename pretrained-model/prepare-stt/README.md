@@ -52,7 +52,14 @@ Prepare ASR dataset for ASR models.
 - notebook, [gather-semisupervised-asr.ipynb](gather-semisupervised-asr.ipynb).
 - transcription, https://huggingface.co/datasets/mesolitica/stt-dataset/resolve/main/malay-asr-train-shuffled-combined-semi.json
 
-7. Mixed train dataset,
+7. Augmented Mixed train dataset,
 
 - notebook, [prepare-stt-mixed-v2.ipynb](prepare-stt-mixed-v2.ipynb).
 - transcription, https://huggingface.co/datasets/mesolitica/stt-dataset/resolve/main/mixed-stt-train-v2.json
+
+8. Semisupervised Whisper Large V2 Test set,
+
+1. ~96 minutes.
+2. audio files, https://huggingface.co/datasets/mesolitica/stt-dataset/resolve/main/whisper-mixed-test-set.tar.gz
+3. transcription, https://huggingface.co/datasets/mesolitica/stt-dataset/resolve/main/postfilter-test-set.json
+4. Notebooks, https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-whisper-stt

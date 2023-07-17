@@ -26,6 +26,8 @@ model_mapping = {
     'mesolitica/emformer-base': emformer_rnnt_base,
     'mesolitica/conformer-medium-mixed-augmented': conformer_rnnt_medium,
     'mesolitica/conformer-large-mixed-augmented': conformer_rnnt_large,
+    'mesolitica/conformer-medium-malay-whisper': conformer_rnnt_medium,
+    'mesolitica/conformer-large-malay-whisper': conformer_rnnt_large,
 }
 
 

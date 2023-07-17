@@ -206,42 +206,34 @@ _pt_transformer_availability = {
     'mesolitica/conformer-medium-malay-whisper': {
         'Size (MB)': 243,
         'malay-malaya': {
-            'WER': 0.1015719878,
-            'CER': 0.03263609230
+            'WER': 0.092561502,
+            'CER': 0.0245421736,
         },
         'malay-fleur102': {
-            'WER': 0.1103884742,
-            'CER': 0.0385676182,
+            'WER': 0.097128574,
+            'CER': 0.03392603,
         },
-        'singlish': {
-            'WER': 0.086342166,
-            'CER': 0.0413572066,
+        'whisper-mixed': {
+            'WER': 0.1705298134,
+            'CER': 0.10580679153,
         },
-        'mixed': {
-            'WER': 0.103593636,
-            'CER': 0.036611048,
-        },
-        'Language': ['malay', 'singlish', 'mixed'],
+        'Language': ['malay', 'mixed'],
     },
     'mesolitica/conformer-large-malay-whisper': {
         'Size (MB)': 413,
         'malay-malaya': {
-            'WER': 0.0919852874,
-            'CER': 0.026612152,
+            'WER': 0.10028492039,
+            'CER': 0.0310868406,
         },
         'malay-fleur102': {
-            'WER': 0.103593636,
-            'CER': 0.036611048,
+            'WER': 0.09544850396,
+            'CER': 0.03258454692,
         },
-        'singlish': {
-            'WER': 0.08727157,
-            'CER': 0.04318735972
+        'whisper-mixed': {
+            'WER': 0.20429079189,
+            'CER': 0.12111372327,
         },
-        'mixed': {
-            'WER': 0.103593636,
-            'CER': 0.036611048,
-        },
-        'Language': ['malay', 'singlish', 'mixed'],
+        'Language': ['malay', 'mixed'],
     },
 }
 
