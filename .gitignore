@@ -104,3 +104,7 @@ creep-vocal.wav
 onlymp3*
 Toodia Podcast EP #3： ＂Macam mana nak manage MASA dan WORK LIFE BALANCE ？＂ (Part 2) [_FXlFtCIFYk].mp3
 data/semisupervised-whisper-stt/dataset-*.json
+data/semisupervised-whisper-stt/filtered-youtube.json
+data/semisupervised-whisper-stt/ms.jsonl
+data/semisupervised-whisper-stt/en.jsonl
+conformer-medium-v2-whisper-32
