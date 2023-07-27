@@ -131,6 +131,7 @@ Contents:
    load-emotion
    load-gender
    load-is-clean
+   load-speaker-count
    load-language-detection   
    load-speaker-overlap
    classification-stacking

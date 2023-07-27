@@ -307,6 +307,31 @@ def conformer_rnnt_large():
     )
 
 
+def conformer_rnnt_xlarge():
+
+    validate_torchaudio()
+
+    return conformer_rnnt_model(
+        input_dim=80,
+        encoding_dim=1024,
+        time_reduction_stride=4,
+        conformer_input_dim=512,
+        conformer_ffn_dim=3072,
+        conformer_num_layers=24,
+        conformer_num_heads=8,
+        conformer_depthwise_conv_kernel_size=31,
+        conformer_dropout=0.1,
+        num_symbols=1024,
+        symbol_embedding_dim=256,
+        num_lstm_layers=2,
+        lstm_hidden_dim=512,
+        lstm_layer_norm=True,
+        lstm_layer_norm_epsilon=1e-5,
+        lstm_dropout=0.3,
+        joiner_activation="tanh",
+    )
+
+
 def emformer_rnnt_base(num_symbols: int = 1024):
 
     validate_torchaudio()

@@ -31,6 +31,7 @@ from . import language_model
 from . import multispeaker_separation
 from . import noise_reduction
 from . import speaker_change
+from . import speaker_count
 from . import speaker_overlap
 from . import speaker_vector
 from . import speech_enhancement

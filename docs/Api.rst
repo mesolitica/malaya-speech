@@ -496,6 +496,12 @@ malaya_speech.speaker_change
 .. automodule:: malaya_speech.speaker_change
     :members:
 
+malaya_speech.speaker_count
+-----------------------------------
+
+.. automodule:: malaya_speech.speaker_count
+    :members:
+
 malaya_speech.speaker_overlap
 -----------------------------------
 
