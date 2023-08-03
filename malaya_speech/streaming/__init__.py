@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 def stream(
-    audio_class,
+    audio_class=None,
     vad_model=None,
     postprocessing_model=None,
     postfilter_model=None,
@@ -29,6 +29,7 @@ def stream(
     return_as_frame: bool = False,
     use_tqdm: bool = False,
     callback_pred: Callable = None,
+    frames=None,
     **kwargs,
 ):
 
@@ -45,13 +46,18 @@ def stream(
             classification_model, 'classification', 'classification_model'
         )
 
-    audio = audio_class(
-        vad_model=vad_model,
-        sample_rate=sample_rate,
-        segment_length=segment_length,
-        **kwargs,
-    )
-    frames = audio.vad_collector(num_padding_frames=num_padding_frames, ratio=ratio)
+    if audio_class is not None:
+        audio = audio_class(
+            vad_model=vad_model,
+            sample_rate=sample_rate,
+            segment_length=segment_length,
+            **kwargs,
+        )
+        frames = audio.vad_collector(num_padding_frames=num_padding_frames, ratio=ratio)
+    else:
+        if frames is None:
+            raise ValueError(
+                'if `audio_class` parameter is None, `frames` parameter cannot be None')
 
     results = []
     indices = []
@@ -175,7 +181,8 @@ def stream(
         logger.info(f'saved audio to {filename}')
         write(filename, np.concatenate([r[0] for r in results]))
 
-    audio.destroy()
+    if audio_class is not None:
+        audio.destroy()
 
     if return_as_frame:
         for i in range(len(results)):
@@ -188,4 +195,5 @@ def stream(
 
 
 from . import pyaudio
+from . import socket
 from . import torchaudio

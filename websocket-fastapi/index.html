@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>RecordRTC</title>
+
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <script src="https://www.WebRTC-Experiment.com/RecordRTC.js"></script>
+</head>
+
+<body>
+
+  <div>
+    <button id="start-recording" disabled>Start Recording</button>
+    <button id="stop-recording" disabled>Stop Recording</button>
+    <br><br>Text:
+    <div id="text"></div>
+  </div>
+
+  <script type="text/javascript">
+    global_blob = null;
+    global_files = null;
+    var ws = new WebSocket("ws://localhost:8000/ws");
+    ws.onopen = function (e) {
+      startRecording.disabled = false;
+      console.log('opened');
+    };
+    ws.onmessage = function (event) {
+      document.getElementById('text').innerHTML += event.data + ' ';
+    };
+    function sendMessage(event) {
+    }
+
+    async function asyncSend(blob) {
+      arr = await blob.arrayBuffer();
+      base64String = btoa(String.fromCharCode.apply(null, new Uint8Array(arr)));
+      ws.send(base64String);
+    }
+
+    const startRecording = document.getElementById('start-recording');
+    const stopRecording = document.getElementById('stop-recording');
+    let recordAudio;
+
+    startRecording.onclick = function () {
+      startRecording.disabled = true;
+
+      // https://recordrtc.org/
+      navigator.getUserMedia({
+        audio: true
+      }, function (stream) {
+
+        recordAudio = RecordRTC(stream, {
+          type: 'audio',
+          mimeType: 'audio/webm',
+          sampleRate: 44100,
+          desiredSampRate: 16000,
+
+          recorderType: StereoAudioRecorder,
+          numberOfAudioChannels: 1,
+          timeSlice: 200,
+          ondataavailable: function (blob) {
+            asyncSend(blob);
+            console.log(blob);
+            global_blob = blob;
+          }
+        });
+
+        recordAudio.startRecording();
+        stopRecording.disabled = false;
+      }, function (error) {
+        console.error(JSON.stringify(error));
+      });
+    };
+
+    stopRecording.onclick = function () {
+      startRecording.disabled = false;
+      stopRecording.disabled = true;
+      recordAudio.stopRecording(function () {
+        recordAudio.getDataURL(function (audioDataURL) {
+          var files = {
+            audio: {
+              type: recordAudio.getBlob().type || 'audio/wav',
+              dataURL: audioDataURL
+            }
+          };
+          console.log(files);
+          global_files = files;
+
+        });
+      });
+    };
+  </script>
+
+</body>
+
+</html>
