@@ -34,7 +34,7 @@ pipeline_asr = (
     p_asr.map(lambda x: model.beam_decoder([x])[0], name='speech-to-text')
 )
 
-audio = socket.Audio(vad_model=p_vad)
+
 sample_rate = 16000
 min_length = 0.1
 
@@ -42,6 +42,7 @@ min_length = 0.1
 class ConnectionManager:
     def __init__(self):
         self.active_connections: list[WebSocket] = []
+        self.audio = {}
         self.queue = {}
         self.wav_data = {}
         self.length = {}
@@ -49,6 +50,7 @@ class ConnectionManager:
     async def connect(self, websocket: WebSocket, client_id):
         await websocket.accept()
         self.active_connections.append(websocket)
+        self.audio[client_id] = socket.Audio(vad_model=p_vad)
         self.queue[client_id] = np.array([], dtype=np.float32)
         self.wav_data[client_id] = np.array([], dtype=np.float32)
         self.length[client_id] = 0
@@ -57,6 +59,7 @@ class ConnectionManager:
         self.active_connections.remove(websocket)
         self.queue.pop(client_id, None)
         self.wav_data.pop(client_id, None)
+        self.audio.pop(client_id, None)
 
     async def send_personal_message(self, message: str, websocket: WebSocket):
         await websocket.send_text(message)
@@ -67,7 +70,7 @@ manager = ConnectionManager()
 
 @app.get('/')
 async def get():
-    with open('index.html') as fopen:
+    with open('./app/index.html') as fopen:
         html = fopen.read()
     return HTMLResponse(html)
 
@@ -86,7 +89,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: int):
             array = np.frombuffer(base64.b64decode(data), dtype=np.int16)[24:]
 
             array = array.astype(np.float32, order='C') / 32768.0
-            frames = list(audio.vad_collector(array))
+            frames = list(manager.audio[client_id].vad_collector(array))
 
             text = ''
             for frame in frames:

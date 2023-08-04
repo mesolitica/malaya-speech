@@ -11,5 +11,5 @@ pip3 install -r requirements.txt
 2. Run FastAPI,
 
 ```bash
-uvicorn app:app --reload
+uvicorn app.main:app --reload
 ```

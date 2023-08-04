@@ -23,8 +23,11 @@
     global_blob = null;
     global_files = null;
     var client_id = Date.now()
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const protocol = isLocalhost ? 'ws://' : 'wss://';
+    const domain = window.location.host;
     document.querySelector("#ws-id").textContent = client_id;
-    var ws = new WebSocket(`ws://localhost:8000/ws/${client_id}`);
+    const ws = new WebSocket(`${protocol}${domain}/ws/${client_id}`);
     ws.onopen = function (e) {
       startRecording.disabled = false;
       console.log('opened');
