@@ -12,6 +12,7 @@
 <body>
 
   <div>
+    <h2>Your ID: <span id="ws-id"></span></h2>
     <button id="start-recording" disabled>Start Recording</button>
     <button id="stop-recording" disabled>Stop Recording</button>
     <br><br>Text:
@@ -21,7 +22,9 @@
   <script type="text/javascript">
     global_blob = null;
     global_files = null;
-    var ws = new WebSocket("ws://localhost:8000/ws");
+    var client_id = Date.now()
+    document.querySelector("#ws-id").textContent = client_id;
+    var ws = new WebSocket(`ws://localhost:8000/ws/${client_id}`);
     ws.onopen = function (e) {
       startRecording.disabled = false;
       console.log('opened');
@@ -58,7 +61,7 @@
 
           recorderType: StereoAudioRecorder,
           numberOfAudioChannels: 1,
-          timeSlice: 200,
+          timeSlice: 50,
           ondataavailable: function (blob) {
             asyncSend(blob);
             console.log(blob);

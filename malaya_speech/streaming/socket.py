@@ -11,9 +11,9 @@ class Audio:
     def __init__(
         self,
         vad_model=None,
-        segment_length: int = 320,
+        segment_length: int = 480,
         num_padding_frames: int = 20,
-        ratio=0.75,
+        ratio: float = 0.75,
         mode_utterence: bool = True,
         hard_utterence: bool = True,
         **kwargs,
@@ -39,10 +39,13 @@ class Audio:
         """
         self.queue = np.concatenate([self.queue, array])
         chunks = []
-        while len(self.queue):
+        while True:
             t_ = self.queue[: self.segment_length]
-            self.queue = self.queue[self.segment_length:]
-            chunks.append(t_)
+            if len(t_) == self.segment_length:
+                self.queue = self.queue[self.segment_length:]
+                chunks.append(t_)
+            else:
+                break
 
         for chunk in chunks:
             frame = chunk

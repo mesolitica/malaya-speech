@@ -4,7 +4,7 @@ import os
 SOURCE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__name__)))
 sys.path.insert(0, SOURCE_DIR)
 
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 import base64
 import numpy as np
@@ -35,6 +35,34 @@ pipeline_asr = (
 )
 
 audio = socket.Audio(vad_model=p_vad)
+sample_rate = 16000
+min_length = 0.1
+
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: list[WebSocket] = []
+        self.queue = {}
+        self.wav_data = {}
+        self.length = {}
+
+    async def connect(self, websocket: WebSocket, client_id):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+        self.queue[client_id] = np.array([], dtype=np.float32)
+        self.wav_data[client_id] = np.array([], dtype=np.float32)
+        self.length[client_id] = 0
+
+    def disconnect(self, websocket: WebSocket, client_id):
+        self.active_connections.remove(websocket)
+        self.queue.pop(client_id, None)
+        self.wav_data.pop(client_id, None)
+
+    async def send_personal_message(self, message: str, websocket: WebSocket):
+        await websocket.send_text(message)
+
+
+manager = ConnectionManager()
 
 
 @app.get('/')
@@ -44,29 +72,38 @@ async def get():
     return HTMLResponse(html)
 
 
-@app.websocket('/ws')
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        data = await websocket.receive_text()
-        """
-        RIFF\x1e\xd1\x00\x00WAVEfmt
-        RecordRTC send minimum 1508 frame size, WebRTC VAD accept 320, so we have to slice.
-        """
-        array = np.frombuffer(base64.b64decode(data), dtype=np.int16)[25:]
-        array = array.astype(np.float32, order='C') / 32768.0
-        frames = list(audio.vad_collector(array))
-        try:
-            r = stream(
-                vad_model=p_vad,
-                asr_model=p_asr,
-                frames=frames,
-                realtime_print=False,
-            )
-        except BaseException:
-            r = []
-        print(r)
+@app.websocket("/ws/{client_id}")
+async def websocket_endpoint(websocket: WebSocket, client_id: int):
 
-        if len(r) and len(r[0]['asr_model']):
-            sf.write('writing_file_output.wav', r[0]['wav_data'], 16000)
-            await websocket.send_text(r[0]['asr_model'])
+    await manager.connect(websocket, client_id=client_id)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            """
+            RIFF\x1e\xd1\x00\x00WAVEfmt
+            RecordRTC send minimum 1508 frame size, WebRTC VAD accept 320, so we have to slice.
+            """
+            array = np.frombuffer(base64.b64decode(data), dtype=np.int16)[24:]
+
+            array = array.astype(np.float32, order='C') / 32768.0
+            frames = list(audio.vad_collector(array))
+
+            text = ''
+            for frame in frames:
+                if frame is not None:
+                    frame, index = frame
+                    manager.wav_data[client_id] = np.concatenate(
+                        [manager.wav_data[client_id], frame])
+                    manager.length[client_id] += frame.shape[0] / sample_rate
+                if frame is None and manager.length[client_id] >= min_length:
+                    wav_data = np.concatenate(
+                        [np.zeros(shape=(int(0.05 * sample_rate),)), manager.wav_data[client_id]])
+                    t_ = p_asr(wav_data)
+                    text = t_['speech-to-text']
+                    manager.wav_data[client_id] = np.array([], dtype=np.float32)
+                    manager.length[client_id] = 0
+
+            if len(text):
+                await manager.send_personal_message(text, websocket)
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, client_id=client_id)
