@@ -36,7 +36,7 @@ pipeline_asr = (
 
 
 sample_rate = 16000
-min_length = 0.1
+min_length = 0.2
 
 
 class ConnectionManager:

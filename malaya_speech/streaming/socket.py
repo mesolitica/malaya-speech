@@ -13,7 +13,7 @@ class Audio:
         vad_model=None,
         segment_length: int = 480,
         num_padding_frames: int = 20,
-        ratio: float = 0.75,
+        ratio: float = 0.25,
         mode_utterence: bool = True,
         hard_utterence: bool = True,
         **kwargs,
