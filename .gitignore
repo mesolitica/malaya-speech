@@ -108,3 +108,6 @@ data/semisupervised-whisper-stt/filtered-youtube.json
 data/semisupervised-whisper-stt/ms.jsonl
 data/semisupervised-whisper-stt/en.jsonl
 conformer-medium-v2-whisper-32
+speakernet-speaker-count-v2-bf16-mixed
+titanetl-speaker-count-v2-bf16-mixed
+conformer-xlarge-mixed-32

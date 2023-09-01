@@ -1,5 +1,6 @@
 import numpy as np
 import soundfile as sf
+import os
 from scipy.io.wavfile import read
 from scipy import interpolate
 from herpetologist import check_type
@@ -48,7 +49,7 @@ def read_audio(data, old_samplerate, sample_rate=22050):
 @check_type
 def load(file: str, sr=16000, scale: bool = True):
     """
-    Read sound file, any format supported by soundfile.read
+    Read sound file, any format supported by `soundfile.read` and `torchaudio.load`
 
     Parameters
     ----------
@@ -62,7 +63,15 @@ def load(file: str, sr=16000, scale: bool = True):
     -------
     result: (y, sr)
     """
-    data, old_samplerate = sf.read(file)
+    if file.endswith('.mp3'):
+        try:
+            import torchaudio
+        except BaseException:
+            raise ModuleNotFoundError('`torchaudio` is not available to read mp3 file.')
+        data, old_samplerate = torchaudio.load(file)
+        data = data.numpy().T
+    else:
+        data, old_samplerate = sf.read(file)
     y, sr = read_audio(data, old_samplerate, sr)
     if scale:
         y = y / (np.max(np.abs(y)) + 1e-9)
