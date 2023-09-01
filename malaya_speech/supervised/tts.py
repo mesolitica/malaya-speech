@@ -14,7 +14,10 @@ from malaya_speech.model.synthesis import (
     GlowTTS_MultiSpeaker,
     VITS,
 )
-from malaya_speech.torch_model.synthesis import VITS as VITS_Torch
+from malaya_speech.torch_model.synthesis import (
+    VITS as VITS_Torch,
+    VITS_V2 as VITS_V2_Torch,
+)
 from malaya_boilerplate.huggingface import download_files
 from malaya_speech import speaker_vector
 from malaya_speech.path import STATS_VOCODER
@@ -174,13 +177,17 @@ def vits_load(
     )
 
 
-def vits_torch_load(model, normalizer, **kwargs):
+def vits_torch_load(model, normalizer, v2=False, **kwargs):
     s3_file = {
         'model': 'model.pth',
         'config': 'config.json'
     }
     files = download_files(model, s3_file, **kwargs)
-    return VITS_Torch(
+    if v2:
+        model = VITS_V2_Torch
+    else:
+        model = VITS_Torch
+    return model(
         normalizer=normalizer,
         pth=files['model'],
         config=files['config'],

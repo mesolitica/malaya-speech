@@ -4,6 +4,8 @@ from malaya_speech.model.frame import Frame
 from malaya_speech.torch_model.vits.commons import intersperse
 from malaya_speech.torch_model.vits.model_infer import SynthesizerTrn
 from malaya_speech.torch_model.vits import SID
+from malaya_speech.torch_model.vits_v2.model_infer import SynthesizerTrn as SynthesizerTrn_v2
+from malaya_speech.torch_model.vits_v2 import SID as SID_v2
 from malaya_speech.torch_model.hifivoice.models import Generator
 from malaya_speech.torch_model.hifivoice.env import AttrDict
 from malaya_speech.torch_model.hifivoice.meldataset import mel_spectrogram
@@ -17,23 +19,14 @@ except BaseException:
     from malaya_boilerplate.train.config import HParams
 
 
-class VITS(SynthesizerTrn, TTS):
-    def __init__(self, normalizer, pth, config, model, name, **kwargs):
+class BaseVITS(TTS):
+    def __init__(self, normalizer, config, model, name, **kwargs):
+
+        TTS.__init__(self, e2e=True)
 
         with open(config) as fopen:
             hps = HParams(**json.load(fopen))
         self.hps = hps
-
-        TTS.__init__(self, e2e=True)
-        super(VITS, self).__init__(
-            len(TTS_SYMBOLS),
-            hps.data.filter_length // 2 + 1,
-            hps.train.segment_size // hps.data.hop_length,
-            n_speakers=hps.data.n_speakers,
-            **hps.model,
-        )
-        self.eval()
-        self.load_state_dict(torch.load(pth, map_location='cpu'))
 
         self._normalizer = normalizer
         self.__model__ = model
@@ -46,7 +39,7 @@ class VITS(SynthesizerTrn, TTS):
         if self.n_speakers < 1:
             raise ValueError('this model is not multispeaker.')
 
-        return SID.get(self.__model__, {})
+        return self.sid.get(self.__model__, {})
 
     def predict(
         self,
@@ -115,6 +108,52 @@ class VITS(SynthesizerTrn, TTS):
         return self.predict(input, **kwargs)
 
 
+class VITS(SynthesizerTrn, BaseVITS):
+    def __init__(self, normalizer, pth, config, model, name, **kwargs):
+
+        BaseVITS.__init__(
+            self,
+            normalizer=normalizer,
+            config=config,
+            model=model,
+            name=name,
+        )
+        SynthesizerTrn.__init__(
+            self,
+            len(TTS_SYMBOLS),
+            self.hps.data.filter_length // 2 + 1,
+            self.hps.train.segment_size // self.hps.data.hop_length,
+            n_speakers=self.hps.data.n_speakers,
+            **self.hps.model,
+        )
+        self.eval()
+        self.load_state_dict(torch.load(pth, map_location='cpu'))
+        self.sid = SID
+
+
+class VITS_V2(SynthesizerTrn_v2, BaseVITS):
+    def __init__(self, normalizer, pth, config, model, name, **kwargs):
+
+        BaseVITS.__init__(
+            self,
+            normalizer=normalizer,
+            config=config,
+            model=model,
+            name=name,
+        )
+        SynthesizerTrn_v2.__init__(
+            self,
+            len(TTS_SYMBOLS),
+            self.hps.data.n_mel_channels,
+            self.hps.train.segment_size // self.hps.data.hop_length,
+            n_speakers=self.hps.data.n_speakers,
+            **self.hps.model,
+        )
+        self.eval()
+        self.load_state_dict(torch.load(pth, map_location='cpu'))
+        self.sid = SID_v2
+
+
 class Vocoder(Generator):
     def __init__(self, pth, config, model, name, remove_weight_norm=False, **kwargs):
         with open(config) as fopen:
@@ -122,7 +161,7 @@ class Vocoder(Generator):
 
         self.h = AttrDict(json_config)
 
-        super(Vocoder, self).__init__(self.h)
+        Generator.__init__(self, self.h)
 
         self.state_dict_g = torch.load(pth, map_location='cpu')
         self.load_state_dict(self.state_dict_g['generator'])

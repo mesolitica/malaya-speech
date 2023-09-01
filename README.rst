@@ -60,8 +60,9 @@ Features
 -  **Language Model**, using KenLM, Masked language model using BERT and RoBERTa, and GPT2 to do ASR decoder scoring.
 -  **Multispeaker Separation**, Multispeaker separation using FastSep on 8k Wav.
 -  **Noise Reduction**, reduce multilevel noises using STFT UNET.
--  **Speaker Change**, detect changing speakers using Finetuned Speaker Vector.
--  **Speaker overlap**, detect overlap speakers using Finetuned Speaker Vector.
+-  **Speaker Change Detection**, detect changing speakers using Finetuned Speaker Vector.
+-  **Speaker Count Detection**, detect number of speakers using Finetuned Speaker Vector.
+-  **Speaker overlap Detection**, detect overlap speakers using Finetuned Speaker Vector.
 -  **Speaker Vector**, calculate similarity between speakers using Pretrained Speaker Vector.
 -  **Speech Enhancement**, enhance voice activities using Waveform UNET.
 -  **SpeechSplit Conversion**, detailed speaking style conversion by disentangling speech into content, timbre, rhythm and pitch using PyWorld and PySPTK.
@@ -71,7 +72,6 @@ Features
 -  **Vocoder**, convert Mel to Waveform using MelGAN, Multiband MelGAN and Universal MelGAN Vocoder.
 -  **Voice Activity Detection**, detect voice activities using Finetuned Speaker Vector.
 -  **Voice Conversion**, Many-to-One and Zero-shot Voice Conversion.
--  **Hybrid 8-bit Quantization**, provide hybrid 8-bit quantization for all models to reduce inference time up to 2x and model size up to 4x.
 -  **Real time interface**, provide PyAudio and TorchAudio streaming interface to do real time inference.
 
 Pretrained Models

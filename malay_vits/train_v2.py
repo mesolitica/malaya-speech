@@ -12,15 +12,16 @@ from torch.cuda.amp import autocast, GradScaler
 
 import commons
 import utils
-from data_utils import (
+from data_utils_v2 import (
     TextAudioLoader,
     TextAudioCollate,
     DistributedBucketSampler,
     TTS_SYMBOLS,
 )
-from models import (
+from models_v2 import (
     SynthesizerTrn,
     MultiPeriodDiscriminator,
+    DurationDiscriminator,
 )
 from losses import (
     generator_loss,
@@ -66,10 +67,21 @@ def run(hps):
                              batch_size=hps.train.batch_size, pin_memory=True,
                              drop_last=False, collate_fn=collate_fn)
 
+    mas_noise_scale_initial = 0.01
+    noise_scale_delta = 2e-6
+    net_dur_disc = DurationDiscriminator(
+        hps.model.hidden_channels,
+        hps.model.hidden_channels,
+        3,
+        0.1,
+        gin_channels=hps.model.gin_channels if hps.data.n_speakers != 0 else 0,
+    ).cuda()
     net_g = SynthesizerTrn(
         len(TTS_SYMBOLS),
-        hps.data.filter_length // 2 + 1,
+        hps.data.n_mel_channels,
         hps.train.segment_size // hps.data.hop_length,
+        mas_noise_scale_initial=mas_noise_scale_initial,
+        noise_scale_delta=noise_scale_delta,
         **hps.model).cuda()
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda()
     optim_g = torch.optim.AdamW(
@@ -82,12 +94,20 @@ def run(hps):
         hps.train.learning_rate,
         betas=hps.train.betas,
         eps=hps.train.eps)
+    optim_dur_disc = torch.optim.AdamW(
+        net_dur_disc.parameters(),
+        hps.train.learning_rate,
+        betas=hps.train.betas,
+        eps=hps.train.eps)
 
     try:
         _, _, _, epoch_str = utils.load_checkpoint(
             utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"), net_g, optim_g)
         _, _, _, epoch_str = utils.load_checkpoint(
             utils.latest_checkpoint_path(hps.model_dir, "D_*.pth"), net_d, optim_d)
+        _, _, _, epoch_str = utils.load_checkpoint(
+            utils.latest_checkpoint_path(
+                hps.model_dir, "DUR_*.pth"), net_dur_disc, optim_dur_disc)
         global_step = (epoch_str - 1) * len(train_loader)
     except BaseException:
         epoch_str = 1
@@ -97,25 +117,31 @@ def run(hps):
         optim_g, gamma=hps.train.lr_decay, last_epoch=epoch_str-2)
     scheduler_d = torch.optim.lr_scheduler.ExponentialLR(
         optim_d, gamma=hps.train.lr_decay, last_epoch=epoch_str-2)
+    scheduler_dur_disc = torch.optim.lr_scheduler.ExponentialLR(
+        optim_dur_disc, gamma=hps.train.lr_decay, last_epoch=epoch_str-2)
 
     scaler = GradScaler(enabled=hps.train.fp16_run)
 
     for epoch in range(epoch_str, hps.train.epochs + 1):
         train_and_evaluate(
-            epoch, hps, [
-                net_g, net_d], [
-                optim_g, optim_d], [
-                scheduler_g, scheduler_d], scaler, [
-                    train_loader, eval_loader], logger, [
-                        writer, writer_eval])
+            epoch, hps,
+            [net_g, net_d, net_dur_disc],
+            [optim_g, optim_d, optim_dur_disc],
+            [scheduler_g, scheduler_d, scheduler_dur_disc],
+            scaler,
+            [train_loader, eval_loader],
+            logger,
+            [writer, writer_eval]
+        )
         scheduler_g.step()
         scheduler_d.step()
+        scheduler_dur_disc.step()
 
 
 def train_and_evaluate(epoch, hps, nets, optims, schedulers, scaler, loaders, logger, writers):
-    net_g, net_d = nets
-    optim_g, optim_d = optims
-    scheduler_g, scheduler_d = schedulers
+    net_g, net_d, net_dur_disc = nets
+    optim_g, optim_d, optim_dur_disc = optims
+    scheduler_g, scheduler_d, scheduler_dur_disc = schedulers
     train_loader, eval_loader = loaders
     if writers is not None:
         writer, writer_eval = writers
@@ -125,22 +151,20 @@ def train_and_evaluate(epoch, hps, nets, optims, schedulers, scaler, loaders, lo
 
     net_g.train()
     net_d.train()
+    net_dur_disc.train()
     for batch_idx, (x, x_lengths, spec, spec_lengths, y, y_lengths) in enumerate(train_loader):
+        current_mas_noise_scale = net_g.mas_noise_scale_initial - \
+            net_g.noise_scale_delta * global_step
+        net_g.current_mas_noise_scale = max(current_mas_noise_scale, 0.0)
         x, x_lengths = x.cuda(non_blocking=True), x_lengths.cuda(non_blocking=True)
         spec, spec_lengths = spec.cuda(non_blocking=True), spec_lengths.cuda(non_blocking=True)
         y, y_lengths = y.cuda(non_blocking=True), y_lengths.cuda(non_blocking=True)
 
         with autocast(dtype=torch.bfloat16, enabled=hps.train.fp16_run):
             y_hat, l_length, attn, ids_slice, x_mask, z_mask,\
-                (z, z_p, m_p, logs_p, m_q, logs_q) = net_g(x, x_lengths, spec, spec_lengths)
+                (z, z_p, m_p, logs_p, m_q, logs_q), (hidden_x, logw, logw_) = net_g(x, x_lengths, spec, spec_lengths)
 
-            mel = spec_to_mel_torch(
-                spec,
-                hps.data.filter_length,
-                hps.data.n_mel_channels,
-                hps.data.sampling_rate,
-                hps.data.mel_fmin,
-                hps.data.mel_fmax)
+            mel = spec
             y_mel = commons.slice_segments(
                 mel, ids_slice, hps.train.segment_size // hps.data.hop_length)
             y_hat_mel = mel_spectrogram_torch(
@@ -162,6 +186,20 @@ def train_and_evaluate(epoch, hps, nets, optims, schedulers, scaler, loaders, lo
             with autocast(enabled=False):
                 loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(y_d_hat_r, y_d_hat_g)
                 loss_disc_all = loss_disc
+
+            y_dur_hat_r, y_dur_hat_g = net_dur_disc(
+                hidden_x.detach(), x_mask.detach(), logw.detach(), logw_.detach())
+            with autocast(enabled=False):
+                loss_dur_disc, losses_dur_disc_r, losses_dur_disc_g = discriminator_loss(
+                    y_dur_hat_r, y_dur_hat_g)
+                loss_dur_disc_all = loss_dur_disc
+
+        optim_dur_disc.zero_grad()
+        scaler.scale(loss_dur_disc_all).backward()
+        scaler.unscale_(optim_dur_disc)
+        grad_norm_dur_disc = commons.clip_grad_value_(net_dur_disc.parameters(), None)
+        scaler.step(optim_dur_disc)
+
         optim_d.zero_grad()
         scaler.scale(loss_disc_all).backward()
         scaler.unscale_(optim_d)
@@ -171,6 +209,7 @@ def train_and_evaluate(epoch, hps, nets, optims, schedulers, scaler, loaders, lo
         with autocast(dtype=torch.bfloat16, enabled=hps.train.fp16_run):
             # Generator
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
+            y_dur_hat_r, y_dur_hat_g = net_dur_disc(hidden_x, x_mask, logw, logw_)
             with autocast(enabled=False):
                 loss_dur = torch.sum(l_length.float())
                 loss_mel = F.l1_loss(y_mel, y_hat_mel) * hps.train.c_mel
@@ -179,6 +218,8 @@ def train_and_evaluate(epoch, hps, nets, optims, schedulers, scaler, loaders, lo
                 loss_fm = feature_loss(fmap_r, fmap_g)
                 loss_gen, losses_gen = generator_loss(y_d_hat_g)
                 loss_gen_all = loss_gen + loss_fm + loss_mel + loss_dur + loss_kl
+                loss_dur_gen, losses_dur_gen = generator_loss(y_dur_hat_g)
+                loss_gen_all += loss_dur_gen
         optim_g.zero_grad()
         scaler.scale(loss_gen_all).backward()
         scaler.unscale_(optim_g)
@@ -188,7 +229,7 @@ def train_and_evaluate(epoch, hps, nets, optims, schedulers, scaler, loaders, lo
 
         if global_step % hps.train.log_interval == 0:
             lr = optim_g.param_groups[0]['lr']
-            losses = [loss_disc, loss_gen, loss_fm, loss_mel, loss_dur, loss_kl]
+            losses = [loss_disc, loss_gen, loss_fm, loss_mel, loss_dur, loss_kl, loss_dur_gen]
             logger.info('Train Epoch: {} [{:.0f}%]'.format(
                 epoch,
                 100. * batch_idx / len(train_loader)))
@@ -200,6 +241,8 @@ def train_and_evaluate(epoch, hps, nets, optims, schedulers, scaler, loaders, lo
                 "learning_rate": lr,
                 "grad_norm_d": grad_norm_d,
                 "grad_norm_g": grad_norm_g}
+            scalar_dict.update({"loss/dur_disc/total": loss_dur_disc_all,
+                               "grad_norm_dur_disc": grad_norm_dur_disc})
             scalar_dict.update({"loss/g/fm": loss_fm, "loss/g/mel": loss_mel,
                                 "loss/g/dur": loss_dur, "loss/g/kl": loss_kl})
 
@@ -219,6 +262,13 @@ def train_and_evaluate(epoch, hps, nets, optims, schedulers, scaler, loaders, lo
                                   os.path.join(hps.model_dir, "G_{}.pth".format(global_step)))
             utils.save_checkpoint(net_d, optim_d, hps.train.learning_rate, epoch,
                                   os.path.join(hps.model_dir, "D_{}.pth".format(global_step)))
+            utils.save_checkpoint(
+                net_dur_disc,
+                optim_dur_disc,
+                hps.train.learning_rate,
+                epoch,
+                os.path.join(hps.model_dir, "DUR_{}.pth".format(global_step))
+            )
         global_step += 1
 
     logger.info('====> Epoch: {}'.format(epoch))
@@ -228,6 +278,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
     generator.eval()
     with torch.no_grad():
         for batch_idx, (x, x_lengths, spec, spec_lengths, y, y_lengths) in enumerate(eval_loader):
+
             x, x_lengths = x.cuda(0), x_lengths.cuda(0)
             spec, spec_lengths = spec.cuda(0), spec_lengths.cuda(0)
             y, y_lengths = y.cuda(0), y_lengths.cuda(0)
@@ -243,13 +294,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
         y_hat, attn, mask, *_ = generator.infer(x, x_lengths, max_len=1000)
         y_hat_lengths = mask.sum([1, 2]).long() * hps.data.hop_length
 
-        mel = spec_to_mel_torch(
-            spec,
-            hps.data.filter_length,
-            hps.data.n_mel_channels,
-            hps.data.sampling_rate,
-            hps.data.mel_fmin,
-            hps.data.mel_fmax)
+        mel = spec
         y_hat_mel = mel_spectrogram_torch(
             y_hat.squeeze(1).float(),
             hps.data.filter_length,

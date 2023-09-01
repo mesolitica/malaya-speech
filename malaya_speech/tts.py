@@ -265,6 +265,18 @@ _vits_availability = {
         'Is lowercase': False,
         'num speakers': 1,
     },
+    'mesolitica/VITS-husein': {
+        'Size (MB)': 145,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+        'num speakers': 1,
+    },
+    'mesolitica/VITS-jordan': {
+        'Size (MB)': 145,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+        'num speakers': 1,
+    },
     'mesolitica/VITS-multispeaker-clean': {
         'Size (MB)': 159,
         'Understand punctuation': True,
@@ -276,6 +288,15 @@ _vits_availability = {
         'Understand punctuation': True,
         'Is lowercase': False,
         'num speakers': 3,
+    },
+}
+
+_vits_v2_availability = {
+    'mesolitica/VITS-V2-husein': {
+        'Size (MB)': 145,
+        'Understand punctuation': True,
+        'Is lowercase': False,
+        'num speakers': 1,
     },
 }
 
@@ -367,6 +388,14 @@ def available_vits():
     """
 
     return describe_availability(_vits_availability)
+
+
+def available_vits_v2():
+    """
+    List available VITS V2, End-to-End models.
+    """
+
+    return describe_availability(_vits_v2_availability)
 
 
 def load_text_ids(
@@ -746,5 +775,39 @@ def vits(model: str = 'mesolitica/VITS-osman', **kwargs):
     return tts.vits_torch_load(
         model=model,
         normalizer=text_ids,
+        **kwargs,
+    )
+
+
+def vits_v2(model: str = 'mesolitica/VITS-V2-husein', **kwargs):
+    """
+    Load VITS V2 End-to-End TTS model.
+
+    Parameters
+    ----------
+    model : str, optional (default='mesolitica/VITS-V2-husein')
+        Check available models at `malaya_speech.tts.available_vits()`.
+    Returns
+    -------
+    result : malaya_speech.torch_model.synthesis.VITS class
+    """
+
+    if model not in _vits_v2_availability:
+        raise ValueError(
+            'model not supported, please check supported models from `malaya_speech.tts.available_vits_v2()`.'
+        )
+
+    selected_model = _vits_v2_availability[model]
+
+    text_ids = load_text_ids(
+        pad_to=None,
+        understand_punct=selected_model['Understand punctuation'],
+        is_lower=selected_model['Is lowercase'],
+        **kwargs
+    )
+    return tts.vits_torch_load(
+        model=model,
+        normalizer=text_ids,
+        v2=True,
         **kwargs,
     )
