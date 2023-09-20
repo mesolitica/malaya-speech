@@ -1,5 +1,4 @@
 from malaya_speech.supervised import vocoder
-from herpetologist import check_type
 from malaya_speech.utils import describe_availability
 import warnings
 
@@ -133,7 +132,6 @@ def available_pt_hifigan():
     return describe_availability(_pt_hifigan_availability)
 
 
-@check_type
 def melgan(model: str = 'universal-1024', quantized: bool = False, **kwargs):
     """
     Load MelGAN Vocoder model.
@@ -169,7 +167,6 @@ def melgan(model: str = 'universal-1024', quantized: bool = False, **kwargs):
     )
 
 
-@check_type
 def mbmelgan(model: str = 'female', quantized: bool = False, **kwargs):
     """
     Load Multiband MelGAN Vocoder model.
@@ -204,7 +201,6 @@ def mbmelgan(model: str = 'female', quantized: bool = False, **kwargs):
     )
 
 
-@check_type
 def hifigan(model: str = 'universal-768', quantized: bool = False, **kwargs):
     """
     Load HiFiGAN Vocoder model.

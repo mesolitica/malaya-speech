@@ -32,7 +32,7 @@ Installing from the PyPI
 
 It will automatically install all dependencies except for Tensorflow and PyTorch. So you can choose your own Tensorflow CPU / GPU version and PyTorch CPU / GPU version.
 
-Only **Python >= 3.6.0**, **Tensorflow >= 1.15.0**, and **PyTorch >= 1.10** are supported.
+Only **Python >= 3.6.0**, **Tensorflow >= 1.15.0**, and **PyTorch >= 1.13** are supported.
 
 Development Release
 ---------------------------------

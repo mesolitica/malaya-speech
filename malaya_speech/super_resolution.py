@@ -3,7 +3,6 @@ from malaya_speech.supervised import (
     enhancement as load_enhancement,
 )
 from malaya_speech.utils import describe_availability
-from herpetologist import check_type
 import logging
 
 logger = logging.getLogger(__name__)
@@ -73,7 +72,6 @@ def available_diffusion():
     return describe_availability(_availability_diffusion)
 
 
-@check_type
 def unet(model: str = 'srgan-256', quantized: bool = False, **kwargs):
     """
     Load Super Resolution 4x deep learning UNET model.

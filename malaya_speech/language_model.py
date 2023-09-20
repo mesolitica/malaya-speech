@@ -1,64 +1,50 @@
 from malaya_speech.utils import describe_availability
 from malaya_speech.supervised import lm
 from malaya_speech.torch_model.mask_lm import LM as Mask_LM
-from herpetologist import check_type
 
-_kenlm_availability = {
-    'bahasa-news': {
-        'Size (MB)': 107,
-        'LM order': 3,
-        'Description': 'local news.',
-        'Command': [
-            './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
-            './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
-        ],
-    },
-    'bahasa-wiki': {
-        'Size (MB)': 70.5,
-        'LM order': 3,
-        'Description': 'MS wikipedia.',
-        'Command': [
-            './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
-            './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
-        ],
-    },
-    'redape-community': {
-        'Size (MB)': 887.1,
-        'LM order': 4,
-        'Description': 'Mirror for https://github.com/redapesolutions/suara-kami-community',
-        'Command': [
-            './lmplz --text text.txt --arpa out.arpa -o 4 --prune 0 1 1 1',
-            './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
-        ],
-    },
-    'dump-combined': {
-        'Size (MB)': 310,
-        'LM order': 3,
-        'Description': 'Academia + News + IIUM + Parliament + Watpadd + Wikipedia + Common Crawl + training set from https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt',
-        'Command': [
-            './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
-            './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
-        ],
-    },
-    'manglish': {
-        'Size (MB)': 202,
-        'LM order': 3,
-        'Description': 'Manglish News + Manglish Reddit + Manglish forum + training set from https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt.',
-        'Command': [
-            './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
-            './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
-        ],
-    },
-    'bahasa-manglish-combined': {
-        'Size (MB)': 608,
-        'LM order': 3,
-        'Description': 'Combined `dump-combined` and `manglish`.',
-        'Command': [
-            './lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
-            './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
-        ],
-    },
-}
+_kenlm_availability = {'bahasa-news': {'Size (MB)': 107,
+                                       'LM order': 3,
+                                       'Description': 'local news.',
+                                       'Command': ['./lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
+                                                   './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
+                                                   ],
+                                       },
+                       'bahasa-wiki': {'Size (MB)': 70.5,
+                                       'LM order': 3,
+                                       'Description': 'MS wikipedia.',
+                                       'Command': ['./lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
+                                                   './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
+                                                   ],
+                                       },
+                       'redape-community': {'Size (MB)': 887.1,
+                                            'LM order': 4,
+                                            'Description': 'Mirror for https://github.com/redapesolutions/suara-kami-community',
+                                            'Command': ['./lmplz --text text.txt --arpa out.arpa -o 4 --prune 0 1 1 1',
+                                                        './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
+                                                        ],
+                                            },
+                       'dump-combined': {'Size (MB)': 310,
+                                         'LM order': 3,
+                                         'Description': 'Academia + News + IIUM + Parliament + Watpadd + Wikipedia + Common Crawl + training set from https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt',
+                                         'Command': ['./lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
+                                                     './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
+                                                     ],
+                                         },
+                       'manglish': {'Size (MB)': 202,
+                                    'LM order': 3,
+                                    'Description': 'Manglish News + Manglish Reddit + Manglish forum + training set from https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt.',
+                                    'Command': ['./lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
+                                                './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
+                                                ],
+                                    },
+                       'bahasa-manglish-combined': {'Size (MB)': 608,
+                                                    'LM order': 3,
+                                                    'Description': 'Combined `dump-combined` and `manglish`.',
+                                                    'Command': ['./lmplz --text text.txt --arpa out.arpa -o 3 --prune 0 1 1',
+                                                                './build_binary -q 8 -b 7 -a 256 trie out.arpa out.trie.klm',
+                                                                ],
+                                                    },
+                       }
 
 _gpt2_availability = {
     'mesolitica/gpt2-117m-bahasa-cased': {
@@ -100,9 +86,9 @@ def available_mlm():
     return describe_availability(_mlm_availability)
 
 
-@check_type
 def kenlm(
-    model: str = 'dump-combined', **kwargs
+    model: str = 'dump-combined',
+    **kwargs,
 ):
     """
     Load KenLM language model.
@@ -130,8 +116,11 @@ def kenlm(
     return path_model
 
 
-@check_type
-def gpt2(model: str = 'mesolitica/gpt2-117m-bahasa-cased', force_check: bool = True, **kwargs):
+def gpt2(
+    model: str = 'mesolitica/gpt2-117m-bahasa-cased',
+    force_check: bool = True,
+    **kwargs,
+):
     """
     Load GPT2 language model.
 
@@ -156,8 +145,11 @@ def gpt2(model: str = 'mesolitica/gpt2-117m-bahasa-cased', force_check: bool = T
     return lm.gpt2_load(model, **kwargs)
 
 
-@check_type
-def mlm(model: str = 'mesolitica/bert-base-standard-bahasa-cased', force_check: bool = True, **kwargs):
+def mlm(
+    model: str = 'mesolitica/bert-base-standard-bahasa-cased',
+    force_check: bool = True,
+    **kwargs,
+):
     """
     Load Masked language model.
 

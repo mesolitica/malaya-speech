@@ -63,15 +63,7 @@ def load(file: str, sr=16000, scale: bool = True):
     -------
     result: (y, sr)
     """
-    if file.endswith('.mp3'):
-        try:
-            import torchaudio
-        except BaseException:
-            raise ModuleNotFoundError('`torchaudio` is not available to read mp3 file.')
-        data, old_samplerate = torchaudio.load(file)
-        data = data.numpy().T
-    else:
-        data, old_samplerate = sf.read(file)
+    data, old_samplerate = sf.read(file)
     y, sr = read_audio(data, old_samplerate, sr)
     if scale:
         y = y / (np.max(np.abs(y)) + 1e-9)

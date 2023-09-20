@@ -1,6 +1,6 @@
 from malaya_speech.supervised import unet
-from herpetologist import check_type
 from malaya_speech.utils import describe_availability
+import warnings
 import logging
 
 logger = logging.getLogger(__name__)
@@ -65,6 +65,10 @@ def available_deep_masking():
     """
     List available Speech Enhancement STFT masking deep learning model.
     """
+    warnings.warn(
+        '`malaya_speech.speech_enhancement.deep_masking` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
+
     logger.info('Only calculate SDR, ISR, SAR on voice sample. Higher is better.')
 
     return describe_availability(_masking_availability)
@@ -74,12 +78,16 @@ def available_deep_enhance():
     """
     List available Speech Enhancement UNET Waveform sampling deep learning model.
     """
+    warnings.warn(
+        '`malaya_speech.speech_enhancement.deep_enhance` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning,
+    )
+
     logger.info('Only calculate SDR, ISR, SAR on voice sample. Higher is better.')
 
     return describe_availability(_sampling_availability)
 
 
-@check_type
 def deep_masking(model: str = 'resnet-unet', quantized: bool = False, **kwargs):
     """
     Load Speech Enhancement STFT UNET masking deep learning model.
@@ -97,6 +105,10 @@ def deep_masking(model: str = 'resnet-unet', quantized: bool = False, **kwargs):
     result : malaya_speech.model.unet.UNETSTFT class
     """
 
+    warnings.warn(
+        '`malaya_speech.speech_enhancement.deep_masking` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
+
     model = model.lower()
     if model not in _masking_availability:
         raise ValueError(
@@ -112,7 +124,6 @@ def deep_masking(model: str = 'resnet-unet', quantized: bool = False, **kwargs):
     )
 
 
-@check_type
 def deep_enhance(model: str = 'unet', quantized: bool = False, **kwargs):
     """
     Load Speech Enhancement UNET Waveform sampling deep learning model.
@@ -129,6 +140,10 @@ def deep_enhance(model: str = 'unet', quantized: bool = False, **kwargs):
     -------
     result : malaya_speech.model.unet.UNET1D class
     """
+
+    warnings.warn(
+        '`malaya_speech.speech_enhancement.deep_enhance` is using Tensorflow, malaya-speech no longer improved it after version 1.4.0',
+        DeprecationWarning)
 
     model = model.lower()
     if model not in _sampling_availability:

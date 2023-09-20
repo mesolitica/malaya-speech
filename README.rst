@@ -16,23 +16,23 @@
 
 =========
 
-**Malaya-Speech** is a Speech-Toolkit library for Malaysian language, powered by Tensorflow and PyTorch.
+**Malaysian-Speech** is a Speech-Toolkit library for Malaysian language, powered by PyTorch.
 
 Documentation
 --------------
 
-Stable released documentation is available at https://malaya-speech.readthedocs.io/en/stable/
+Stable released documentation is available at https://malaysian-speech.readthedocs.io/en/stable/
 
 Installing from the PyPI
 ----------------------------------
 
 ::
 
-    $ pip install malaya-speech
+    $ pip install malaysian-speech
 
-It will automatically install all dependencies except for Tensorflow and PyTorch. So you can choose your own Tensorflow CPU / GPU version and PyTorch CPU / GPU version.
+It will automatically install all dependencies except for PyTorch. So you can choose your own PyTorch CPU / GPU version.
 
-Only **Python >= 3.6.0**, **Tensorflow >= 1.15.0**, and **PyTorch >= 1.10** are supported.
+Only **Python >= 3.6.0**, and **PyTorch >= 1.13** are supported.
 
 Development Release
 ---------------------------------
@@ -40,12 +40,12 @@ Development Release
 Install from `master` branch,
 ::
 
-    $ pip install git+https://github.com/huseinzol05/malaya-speech.git
+    $ pip install git+https://github.com/huseinzol05/malaysian-speech.git
 
 
 We recommend to use **virtualenv** for development. 
 
-While development released documentation is available at https://malaya-speech.readthedocs.io/en/latest/
+While development released documentation is available at https://malaysian-speech.readthedocs.io/en/latest/
 
 Features
 --------
@@ -77,7 +77,7 @@ Features
 Pretrained Models
 ------------------
 
-Malaya-Speech also released pretrained models, simply check at `malaya-speech/pretrained-model <https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model>`_
+Malaysian-Speech also released pretrained models, simply check at `malaysian-speech/pretrained-model <https://github.com/huseinzol05/malaysian-speech/tree/master/pretrained-model>`_
 
 -  **Wave UNET**,  Multi-Scale Neural Network for End-to-End Audio Source Separation, https://arxiv.org/abs/1806.03185
 -  **Wave ResNet UNET**, added ResNet style into Wave UNET, no paper produced.
@@ -121,19 +121,19 @@ If you use our software for research, please cite:
 
 ::
 
-  @misc{Malaya, Speech-Toolkit library for bahasa Malaysia, powered by Deep Learning Tensorflow,
+  @misc{Malaysian, Speech-Toolkit library for Malaysian language, powered by PyTorch,
     author = {Husein, Zolkepli},
     title = {Malaya-Speech},
     year = {2020},
     publisher = {GitHub},
     journal = {GitHub repository},
-    howpublished = {\url{https://github.com/huseinzol05/malaya-speech}}
+    howpublished = {\url{https://github.com/huseinzol05/malaysian-speech}}
   }
 
 Acknowledgement
 ----------------
 
-Thanks to `KeyReply <https://www.keyreply.com/>`_ for private V100s cloud and `Mesolitica <https://mesolitica.com/>`_ for private RTXs cloud to train Malaya-Speech models,
+Thanks to `KeyReply <https://www.keyreply.com/>`_ for private V100s cloud and `Mesolitica <https://mesolitica.com/>`_ for private RTXs cloud to train Malaysian-Speech models,
 
 .. raw:: html
 

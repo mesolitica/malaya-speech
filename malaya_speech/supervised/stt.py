@@ -16,7 +16,7 @@ from malaya_speech.torch_model.huggingface import (
     Seq2Seq as HuggingFace_Seq2Seq,
     Seq2SeqAligner as HuggingFace_Seq2SeqAligner,
 )
-from malaya_speech.torch_model.torchaudio import Conformer, ForceAlignment
+from malaya_speech.torch_model.torchaudio import Transducer, ForceAlignment
 from transformers import AutoModelForCTC, AutoProcessor, AutoModelForSpeechSeq2Seq
 from malaya_speech.path import TRANSDUCER_VOCABS, TRANSDUCER_MIXED_VOCABS
 import tensorflow as tf
@@ -274,7 +274,7 @@ def torchaudio(model, stt=True, **kwargs):
     path = download_files(model, s3_file, **kwargs)
 
     if stt:
-        selected_model = Conformer
+        selected_model = Transducer
         name = 'speech-to-text'
     else:
         selected_model = ForceAlignment

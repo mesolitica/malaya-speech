@@ -9,6 +9,8 @@ from malaya_speech.utils.torch_featurization import (
     FeatureExtractor,
     RNNTBeamSearch,
     post_process_hypos,
+)
+from malaya_speech.torch_model.conformer import (
     conformer_rnnt_base,
     conformer_rnnt_tiny,
     conformer_rnnt_medium,
@@ -33,7 +35,7 @@ model_mapping = {
 }
 
 
-class Conformer(torch.nn.Module):
+class Transducer(torch.nn.Module):
 
     sample_rate = 16000
     segment_length = 16
@@ -110,7 +112,7 @@ class Conformer(torch.nn.Module):
         return [r_[0][0] for r_ in r]
 
 
-class ForceAlignment(Conformer):
+class ForceAlignment(Transducer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

@@ -1,6 +1,5 @@
 from malaya_speech.supervised import classification
 from malaya_speech.utils import describe_availability
-from herpetologist import check_type
 import logging
 import warnings
 
@@ -113,7 +112,8 @@ _huggingface_availability = {
 
 def _describe():
     logger.info('tested on VoxCeleb2 test set. Lower EER is better.')
-    logger.info('download the test set at https://github.com/huseinzol05/malaya-speech/tree/master/data/voxceleb')
+    logger.info(
+        'download the test set at https://github.com/huseinzol05/malaya-speech/tree/master/data/voxceleb')
 
 
 def available_model():
@@ -143,7 +143,6 @@ def available_huggingface():
     return describe_availability(_huggingface_availability)
 
 
-@check_type
 def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     """
     Load Speaker2Vec model.
@@ -177,7 +176,6 @@ def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
     )
 
 
-@check_type
 def nemo(
     model: str = 'huseinzol05/nemo-ecapa-tdnn',
     **kwargs,
@@ -205,7 +203,6 @@ def nemo(
     )
 
 
-@check_type
 def huggingface(
     model: str = 'microsoft/wavlm-base-plus-sv',
     force_check: bool = True,

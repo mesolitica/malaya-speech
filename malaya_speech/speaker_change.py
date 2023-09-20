@@ -6,66 +6,16 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-_availability = {
-    'vggvox-v2': {
-        'Size (MB)': 31.1,
-        'Quantized Size (MB)': 7.92,
-        'Accuracy': 0.63979,
+_nemo_availability = {
+    'huseinzol05/nemo-is-clean-speakernet': {
+        'original from': 'https://catalog.ngc.nvidia.com/orgs/nvidia/teams/nemo/models/vad_marblenet',
+        'Size (MB)': 16.2,
     },
-    'speakernet': {
-        'Size (MB)': 20.3,
-        'Quantized Size (MB)': 5.18,
-        'Accuracy': 0.64524,
+    'huseinzol05/nemo-is-clean-titanet_large': {
+        'original from': 'https://catalog.ngc.nvidia.com/orgs/nvidia/teams/nemo/models/vad_multilingual_marblenet',
+        'Size (MB)': 88.8,
     },
 }
-
-
-def available_model():
-    """
-    List available speaker change deep models.
-    """
-
-    logger.info('last accuracy during training session before early stopping.')
-
-    return describe_availability(_availability)
-
-
-@check_type
-def deep_model(model: str = 'vggvox-v2', quantized: bool = False, **kwargs):
-    """
-    Load speaker change deep model.
-
-    Parameters
-    ----------
-    model : str, optional (default='vggvox-v2')
-        Check available models at `malaya_speech.speaker_change.available_model()`.
-    quantized : bool, optional (default=False)
-        if True, will load 8-bit quantized model.
-        Quantized model not necessary faster, totally depends on the machine.
-
-    Returns
-    -------
-    result : malaya_speech.supervised.classification.load function
-    """
-    model = model.lower()
-    if model not in _availability:
-        raise ValueError(
-            'model not supported, please check supported models from `malaya_speech.speaker_change.available_model()`.'
-        )
-
-    settings = {
-        'vggvox-v2': {'hop_length': 50, 'concat': False, 'mode': 'eval'},
-        'speakernet': {'frame_ms': 20, 'stride_ms': 2},
-    }
-
-    return classification.load(
-        model=model,
-        module='speaker-change',
-        extra=settings[model],
-        label=[False, True],
-        quantized=quantized,
-        **kwargs
-    )
 
 
 def split_activities(
