@@ -39,7 +39,6 @@ from . import stt
 from . import super_resolution
 from . import tts
 from . import vad
-from . import vocoder
 from . import utils
 
 from .pipeline import Pipeline
