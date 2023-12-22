@@ -150,7 +150,7 @@ def main():
     start_step = 0
     try:
         with open(model_args.step_file) as fopen:
-            start_step = json.load(fopen)
+            start_step = json.load(fopen) + 1
         print(f'continue from {start_step}')
     except Exception as e:
         print('failed to load last step count, continue from 0', e)
@@ -217,8 +217,6 @@ def main():
                 json.dump(step, fopen)
 
             os.replace(step_file_temp, model_args.step_file)
-
-        break
 
     accelerator.wait_for_everyone()
 
