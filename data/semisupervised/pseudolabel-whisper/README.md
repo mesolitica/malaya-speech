@@ -31,3 +31,13 @@ NCCL_P2P_DISABLE=1 NCCL_IB_DISABLE=1 ~/my-env/bin/torchrun --nproc_per_node 2 \
 ```
 
 NCCL is not required.
+
+#### Run in 4x A100
+
+We use batch size of 52,
+
+```bash
+NCCL_P2P_DISABLE=1 NCCL_IB_DISABLE=1 torchrun --nproc_per_node 4 \
+-m run \
+--indices_filename=crawl-youtube-global-indices.json --batch_size=52
+```

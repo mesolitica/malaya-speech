@@ -34,11 +34,12 @@ def collactor(rows):
 
 class Train(Dataset):
     def __init__(self, indices, maxlen_cache_df=5, maxlen_cache_audio=50):
-        self.indices = indices
-        self.max_index = 0
+        self.indices = {}
         for k, v in indices.items():
-            self.max_index = max(self.max_index, v['start'] + v['end'])
+            for i in range(int(k), v['start'] + v['end'], 1):
+                self.indices[i] = v
 
+        self.max_index = len(self.indices)
         self.cache_df = {}
         self.cache_audio = {}
         self.maxlen_cache_df = maxlen_cache_df
@@ -52,9 +53,7 @@ class Train(Dataset):
         if item < 0:
             item = self.max_index + item
 
-        for k, v in self.indices.items():
-            if int(k) <= item < v['start'] + v['end']:
-                break
+        v = self.indices[item]
 
         key_row = f"{v['filename']}-{v['i']}"
         chunk_index = item - v['start']
