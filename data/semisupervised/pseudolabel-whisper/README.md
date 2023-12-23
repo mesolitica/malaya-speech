@@ -4,6 +4,10 @@ This pseudolabel included fast hashing load audio files and continue last step d
 
 ## how-to
 
+1. Prepare chunks hash map, [prepare-indices-chunks.ipynb](prepare-indices-chunks.ipynb).
+
+2. Generate chunks hash map, [generate-global-indices.ipynb](generate-global-indices.ipynb).
+
 ### Use accelerate
 
 1. Configure accelerate,
