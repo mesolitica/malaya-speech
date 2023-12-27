@@ -12,7 +12,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-_vits_availability = {
+available_vits = {
     'mesolitica/VITS-osman': {
         'Size (MB)': 145,
         'Understand punctuation': True,
@@ -99,7 +99,7 @@ _vits_availability = {
     },
 }
 
-_vits_v2_availability = {
+available_vits_v2 = {
     'mesolitica/VITS-V2-husein': {
         'Size (MB)': 145,
         'Understand punctuation': True,
@@ -107,22 +107,6 @@ _vits_v2_availability = {
         'num speakers': 1,
     },
 }
-
-
-def available_vits():
-    """
-    List available VITS, End-to-End models.
-    """
-
-    return describe_availability(_vits_availability)
-
-
-def available_vits_v2():
-    """
-    List available VITS V2, End-to-End models.
-    """
-
-    return describe_availability(_vits_v2_availability)
 
 
 def load_text_ids(
@@ -143,8 +127,8 @@ def load_text_ids(
             'malaya not installed. Please install it by `pip install malaya` and try again.'
         )
 
-    if version.parse(malaya.__version__) < version.parse('4.9.1'):
-        logger.warning('To get better speech synthesis, make sure Malaya version >= 4.9.1')
+    if version.parse(malaya.__version__) < version.parse('5.1'):
+        logger.warning('To get better speech synthesis, make sure Malaya version >= 5.1')
 
     normalizer = malaya.normalize.normalizer()
     sentence_tokenizer = malaya.text.function.split_into_sentences
@@ -171,12 +155,12 @@ def vits(model: str = 'mesolitica/VITS-osman', **kwargs):
     result : malaya_speech.torch_model.synthesis.VITS class
     """
 
-    if model not in _vits_availability:
+    if model not in available_vits:
         raise ValueError(
             'model not supported, please check supported models from `malaya_speech.tts.available_vits()`.'
         )
 
-    selected_model = _vits_availability[model]
+    selected_model = available_vits[model]
 
     text_ids = load_text_ids(
         pad_to=None,
@@ -204,12 +188,12 @@ def vits_v2(model: str = 'mesolitica/VITS-V2-husein', **kwargs):
     result : malaya_speech.torch_model.synthesis.VITS class
     """
 
-    if model not in _vits_v2_availability:
+    if model not in available_vits_v2:
         raise ValueError(
             'model not supported, please check supported models from `malaya_speech.tts.available_vits_v2()`.'
         )
 
-    selected_model = _vits_v2_availability[model]
+    selected_model = available_vits_v2[model]
 
     text_ids = load_text_ids(
         pad_to=None,

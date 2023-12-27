@@ -7,5 +7,4 @@
 # For license information, see https://github.com/huseinzol05/malaya-speech/blob/master/LICENSE
 
 from . import ctc
-from . import seq2seq
 from . import transducer

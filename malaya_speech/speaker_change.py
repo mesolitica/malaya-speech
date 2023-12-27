@@ -1,7 +1,5 @@
 from malaya_speech.supervised import classification
 from malaya_speech.model.frame import Frame
-from malaya_speech.utils import describe_availability
-from herpetologist import check_type
 import logging
 
 logger = logging.getLogger(__name__)

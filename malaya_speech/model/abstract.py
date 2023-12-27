@@ -1,4 +1,3 @@
-from malaya_speech.utils.execute import execute_graph
 from malaya_speech.utils.astype import float_to_int
 from typing import Callable
 
@@ -7,30 +6,20 @@ class Abstract:
     def __str__(self):
         return f'<{self.__name__}: {self.__model__}>'
 
-    def _execute(self, inputs, input_labels, output_labels):
-        return execute_graph(
-            inputs=inputs,
-            input_labels=input_labels,
-            output_labels=output_labels,
-            sess=self._sess,
-            input_nodes=self._input_nodes,
-            output_nodes=self._output_nodes,
-        )
-
     def _torch_method(self, method, **kwargs):
 
         if hasattr(self, 'model'):
             if hasattr(self.model, method):
                 try:
                     return getattr(self.model, method)(**kwargs)
-                except:
+                except BaseException:
                     raise ValueError('this model is not a PyTorch model.')
 
         if hasattr(self, 'hf_model'):
             if hasattr(self.hf_model, method):
                 try:
                     return getattr(self.hf_model, method)(**kwargs)
-                except:
+                except BaseException:
                     raise ValueError('this model is not a PyTorch model.')
 
     def cuda(self, **kwargs):

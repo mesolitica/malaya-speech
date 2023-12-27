@@ -1,5 +1,4 @@
 from malaya_speech.supervised import classification
-from malaya_speech.utils import describe_availability
 import logging
 
 logger = logging.getLogger(__name__)

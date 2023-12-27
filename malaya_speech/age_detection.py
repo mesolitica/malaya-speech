@@ -1,8 +1,4 @@
 from malaya_speech.supervised import classification
-from malaya_speech.utils import describe_availability
-import logging
-
-logger = logging.getLogger(__name__)
 
 _nemo_availability = {
     'huseinzol05/nemo-is-clean-speakernet': {

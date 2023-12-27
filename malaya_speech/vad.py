@@ -1,10 +1,9 @@
 from malaya_speech.model.webrtc import WebRTC
 from malaya_speech.supervised import classification
 from malaya_speech.utils import describe_availability
-import warnings
 
 
-_nemo_availability = {
+available_nemo = {
     'huseinzol05/nemo-vad-marblenet': {
         'original from': 'https://catalog.ngc.nvidia.com/orgs/nvidia/teams/nemo/models/vad_marblenet',
         'Size (MB)': 0.481,
@@ -34,14 +33,6 @@ webrtc_vad = {
     'macro recall': 0.46148,
     'macro f1-score': 0.46461,
 }
-
-
-def available_nemo():
-    """
-    List available Nvidia Nemo VAD models.
-    """
-
-    return describe_availability(_nemo_availability)
 
 
 def webrtc(
@@ -90,15 +81,15 @@ def nemo(
     Parameters
     ----------
     model : str, optional (default='huseinzol05/vad-marblenet')
-        Check available models at `malaya_speech.vad.available_nemo()`.
+        Check available models at `malaya_speech.vad.available_nemo`.
 
     Returns
     -------
     result : malaya_speech.torch_model.nemo.Classification class
     """
-    if model not in _nemo_availability:
+    if model not in available_nemo:
         raise ValueError(
-            'model not supported, please check supported models from `malaya_speech.vad.available_nemo()`.'
+            'model not supported, please check supported models from `malaya_speech.vad.available_nemo`.'
         )
 
     return classification.nemo_classification(
