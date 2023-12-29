@@ -68,6 +68,7 @@ from transformers.modeling_outputs import BaseModelOutput
 from transformers.models.whisper.english_normalizer import BasicTextNormalizer, EnglishTextNormalizer
 from transformers.utils import check_min_version
 from transformers.utils.versions import require_version
+from streaming import LocalDataset
 
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
@@ -232,6 +233,7 @@ class DataCollatorSpeechSeq2SeqWithPadding:
         # split inputs and labels since they have to be of different lengths and need
         # different padding methods
         model_input_name = self.processor.model_input_names[0]
+        features = [f for f in features if f is not None]
 
         # dataloader returns a list of features which we convert to a dict
         input_features = {model_input_name: [feature[model_input_name] for feature in features]}
@@ -631,34 +633,38 @@ def main():
     dataloader_num_workers = training_args.dataloader_num_workers
 
     class Train(Dataset):
-        def __init__(self, file):
-            self.data = []
-            with open(file) as fopen:
-                for l in fopen:
-                    self.data.append(json.loads(l))
-
+        def __init__(self, folder):
+            if folder.endswith('.json'):
+                with open(folder) as fopen:
+                    self.data = json.load(fopen)
+            else:
+                self.data = LocalDataset(folder)
             self.audio = Audio(sampling_rate=16000)
 
         def __len__(self):
             return len(self.data)
 
         def __getitem__(self, item):
-            audio = self.audio.decode_example(
-                self.audio.encode_example(
-                    self.data[item]['audio_filename']))['array']
-            inputs = feature_extractor(audio, sampling_rate=sampling_rate)
-            if self.data[item]['score_ms'] >= self.data[item]['score_en']:
-                input_str = self.data[item]['predict_ms']
-            else:
-                input_str = self.data[item]['predict_en']
 
-            token_ids = tokenizer(input_str, add_special_tokens=False).input_ids
+            try:
 
-            return {
-                'input_features': inputs.input_features[0],
-                'input_length': [len(audio)],
-                'labels': token_ids,
-            }
+                audio = self.audio.decode_example(
+                    self.audio.encode_example(
+                        self.data[item]['audio_filename']))['array']
+                inputs = feature_extractor(audio, sampling_rate=sampling_rate)
+                input_str = self.data[item]['new_text']
+
+                token_ids = tokenizer(input_str, add_special_tokens=False).input_ids
+
+                return {
+                    'input_features': inputs.input_features[0],
+                    'input_length': [len(audio)],
+                    'labels': token_ids,
+                }
+            except Exception as e:
+                print(e)
+
+                return None
 
     train_dataset = Train(data_args.train_dataset_name)
     eval_dataset = Train(data_args.eval_dataset_name)
