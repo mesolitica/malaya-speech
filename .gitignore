@@ -112,3 +112,4 @@ conformer-medium-v2-whisper-32
 speakernet-speaker-count-v2-bf16-mixed
 titanetl-speaker-count-v2-bf16-mixed
 conformer-xlarge-mixed-32
+websocket-fastapi/huggingface

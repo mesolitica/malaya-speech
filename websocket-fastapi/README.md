@@ -11,5 +11,18 @@ pip3 install -r requirements.txt
 2. Run FastAPI,
 
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0
+IMPORT_LOCAL=true uvicorn app.main:app --reload --host 0.0.0.0
+```
+
+Or use docker,
+
+```bash
+docker-compose up --build
+```
+
+## push to dockerhub
+
+```bash
+docker build -t mesoliticadev/realtime-stt-websocket .
+docker push mesoliticadev/realtime-stt-websocket
 ```

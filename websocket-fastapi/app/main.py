@@ -89,7 +89,10 @@ manager = ConnectionManager()
 
 @app.get('/')
 async def get():
-    with open('./app/index.html') as fopen:
+    f = 'index.html'
+    if IMPORT_LOCAL:
+        f = os.path.join('./app', f)
+    with open(f) as fopen:
         html = fopen.read().replace('{{model}}', MODEL)
     return HTMLResponse(html)
 
