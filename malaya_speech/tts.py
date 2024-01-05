@@ -6,7 +6,6 @@ from malaya_speech.utils.text import (
     TextIDS,
 )
 from malaya_speech.supervised import tts
-from malaya_speech.utils import describe_availability
 import numpy as np
 import logging
 

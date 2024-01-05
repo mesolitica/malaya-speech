@@ -3,7 +3,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-_nemo_availability = {
+available_nemo = {
     'huseinzol05/nemo-speaker-count-speakernet': {
         'original from': 'https://catalog.ngc.nvidia.com/orgs/nvidia/teams/nemo/models/vad_marblenet',
         'Size (MB)': 16.2,
@@ -23,14 +23,6 @@ labels = [
     '5 speakers',
     'more than 5 speakers',
 ]
-
-
-def available_nemo():
-    """
-    List available Nvidia Nemo speaker count models.
-    """
-
-    return describe_availability(_nemo_availability)
 
 
 def nemo(

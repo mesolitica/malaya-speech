@@ -1,8 +1,13 @@
 import sys
 import os
 
-SOURCE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__name__)))
-sys.path.insert(0, SOURCE_DIR)
+DEBUG_SAVE = os.environ.get('DEBUG_SAVE', 'false') == 'true'
+MODEL = os.environ.get('DEBUG_SAVE', 'mesolitica/malaysian-whisper-base')
+IMPORT_LOCAL = os.environ.get('IMPORT_LOCAL', 'false') == 'true'
+
+if IMPORT_LOCAL:
+    SOURCE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__name__)))
+    sys.path.insert(0, SOURCE_DIR)
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
@@ -14,6 +19,7 @@ from malaya_speech.utils.astype import float_to_int
 from malaya_speech.streaming import socket
 from malaya_speech.streaming import stream
 import soundfile as sf
+from transformers import AutoProcessor, AutoModelForSpeechSeq2Seq
 
 app = FastAPI()
 
@@ -25,18 +31,31 @@ pipeline = (
     .map(vad_model)
 )
 
-model = malaya_speech.stt.transducer.pt_transformer(
-    model='mesolitica/conformer-medium-malay-whisper'
-)
+processor = AutoProcessor.from_pretrained(MODEL)
+model = AutoModelForSpeechSeq2Seq.from_pretrained(MODEL)
 _ = model.eval()
 p_asr = Pipeline()
+
+index = 0
+
+
+def predict(y):
+    global index
+    if DEBUG_SAVE:
+        sf.write(f'{index}.mp3', y, 16000)
+    inputs = processor([y], return_tensors='pt', sampling_rate=16000)
+    r = model.generate(inputs['input_features'], language='ms', return_timestamps=True)
+    index += 1
+    return processor.tokenizer.decode(r[0], skip_special_tokens=True)
+
+
 pipeline_asr = (
-    p_asr.map(lambda x: model.beam_decoder([x])[0], name='speech-to-text')
+    p_asr.map(lambda x: predict(x), name='speech-to-text')
 )
 
 
 sample_rate = 16000
-min_length = 0.2
+min_length = 2.0
 
 
 class ConnectionManager:
@@ -71,11 +90,11 @@ manager = ConnectionManager()
 @app.get('/')
 async def get():
     with open('./app/index.html') as fopen:
-        html = fopen.read()
+        html = fopen.read().replace('{{model}}', MODEL)
     return HTMLResponse(html)
 
 
-@app.websocket("/ws/{client_id}")
+@app.websocket('/ws/{client_id}')
 async def websocket_endpoint(websocket: WebSocket, client_id: int):
 
     await manager.connect(websocket, client_id=client_id)

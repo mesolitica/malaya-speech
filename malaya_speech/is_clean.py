@@ -2,13 +2,24 @@ from malaya_speech.supervised import classification
 
 available_nemo = {
     'huseinzol05/nemo-is-clean-speakernet': {
-        'original from': 'https://catalog.ngc.nvidia.com/orgs/nvidia/teams/nemo/models/vad_marblenet',
         'Size (MB)': 16.2,
+        'frame size (MS)': [100, 200, 300],
     },
     'huseinzol05/nemo-is-clean-titanet_large': {
-        'original from': 'https://catalog.ngc.nvidia.com/orgs/nvidia/teams/nemo/models/vad_multilingual_marblenet',
         'Size (MB)': 88.8,
+        'frame size (MS)': [100, 200, 300],
     },
+}
+
+available_huggingface = {
+    'mesolitica/whisper-base-isclean': {
+        'Size (MB)': 82.9,
+        'frame size (MS)': [600, 800, 1000],
+    },
+    'mesolitica/whisper-tiny-isclean': {
+        'Size (MB)': 82.9,
+        'frame size (MS)': [600, 800, 1000],
+    }
 }
 
 

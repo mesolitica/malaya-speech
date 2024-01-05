@@ -1,6 +1,5 @@
 from malaya_speech.model.webrtc import WebRTC
 from malaya_speech.supervised import classification
-from malaya_speech.utils import describe_availability
 
 
 available_nemo = {
