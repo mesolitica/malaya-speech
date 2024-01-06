@@ -188,14 +188,14 @@ async def websocket_endpoint(websocket: WebSocket, client_id: int):
                     t_ = p_asr(wav_data)
                     text = t_['speech-to-text']
 
-                    if text.strip() in REJECTED_TEXT:
-                        continue
-
                     manager.wav_data[client_id] = np.array([], dtype=np.float32)
                     manager.length[client_id] = 0
 
             if len(text):
-                await manager.send_personal_message(text, websocket)
+                if text.strip() in REJECTED_TEXT:
+                    text = ''
+                else:
+                    await manager.send_personal_message(text, websocket)
 
     except WebSocketDisconnect:
         manager.disconnect(websocket, client_id=client_id)
