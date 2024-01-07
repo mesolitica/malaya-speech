@@ -14,6 +14,8 @@ available_huggingface = {
             'CER': 0.0830808938,
         },
         'Language': ['malay'],
+        'Understand punctuation': False,
+        'Is lowercase': True,
     },
     'mesolitica/conformer-base': {
         'Size (MB)': 121,
@@ -26,6 +28,8 @@ available_huggingface = {
             'CER': 0.050329148570,
         },
         'Language': ['malay'],
+        'Understand punctuation': False,
+        'Is lowercase': True,
     },
     'mesolitica/conformer-medium': {
         'Size (MB)': 243,
@@ -38,6 +42,8 @@ available_huggingface = {
             'CER': 0.04310504880,
         },
         'Language': ['malay'],
+        'Understand punctuation': False,
+        'Is lowercase': True,
     },
     'mesolitica/emformer-base': {
         'Size (MB)': 162,
@@ -50,6 +56,8 @@ available_huggingface = {
             'CER': 0.0773853362,
         },
         'Language': ['malay'],
+        'Understand punctuation': False,
+        'Is lowercase': True,
     },
     'mesolitica/conformer-base-singlish': {
         'Size (MB)': 121,
@@ -58,6 +66,8 @@ available_huggingface = {
             'CER': 0.03265430876,
         },
         'Language': ['singlish'],
+        'Understand punctuation': False,
+        'Is lowercase': True,
     },
     'mesolitica/conformer-medium-mixed': {
         'Size (MB)': 243,
@@ -74,6 +84,8 @@ available_huggingface = {
             'CER': 0.044627194623,
         },
         'Language': ['malay', 'singlish'],
+        'Understand punctuation': False,
+        'Is lowercase': True,
     },
     'mesolitica/conformer-medium-malay-whisper': {
         'Size (MB)': 243,
@@ -90,6 +102,8 @@ available_huggingface = {
             'CER': 0.10580679153,
         },
         'Language': ['malay', 'mixed'],
+        'Understand punctuation': False,
+        'Is lowercase': True,
     },
     'mesolitica/conformer-large-malay-whisper': {
         'Size (MB)': 413,
@@ -106,23 +120,8 @@ available_huggingface = {
             'CER': 0.113297559671,
         },
         'Language': ['malay', 'singlish', 'mixed'],
-
-    },
-    'mesolitica/conformer-xlarge-malay-whisper': {
-        'Size (MB)': 413,
-        'malay-malaya': {
-            'WER': 0.10028492039,
-            'CER': 0.0310868406,
-        },
-        'malay-fleur102': {
-            'WER': 0.08824373766,
-            'CER': 0.02993509570,
-        },
-        'whisper-mixed': {
-            'WER': 0.20429079189,
-            'CER': 0.12111372327,
-        },
-        'Language': ['malay', 'singlish', 'mixed'],
+        'Understand punctuation': False,
+        'Is lowercase': True,
     },
 }
 
