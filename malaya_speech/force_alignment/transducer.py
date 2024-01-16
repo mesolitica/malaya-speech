@@ -25,7 +25,7 @@ def huggingface(
 
     if model not in available_huggingface and force_check:
         raise ValueError(
-            'model not supported, please check supported models from `malaya_speech.stt.transducer.available_huggingface`.'
+            'model not supported, please check supported models from `malaya_speech.force_alignment.transducer.available_huggingface`.'
         )
 
     return stt.torchaudio(model=model, stt=False, **kwargs)

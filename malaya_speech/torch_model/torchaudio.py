@@ -137,6 +137,8 @@ class ForceAlignment(Transducer):
         input = input.array if isinstance(input, Frame) else input
         len_input = len(input)
         mel, mel_len = self.feature_extractor(input)
+        mel = to_tensor_cuda(mel, cuda)
+        mel_len = to_tensor_cuda(mel_len, cuda)
         input, length = mel, mel_len
         if input.dim() != 2 and not (input.dim() == 3 and input.shape[0] == 1):
             raise ValueError("input must be of shape (T, D) or (1, T, D)")
