@@ -36,7 +36,7 @@ time_reduction_factor = {
 }
 
 
-def huggingface_load(model, stt=True, **kwargs):
+def ctc(model, stt=True, **kwargs):
 
     hf_model = AutoModelForCTC.from_pretrained(model, **kwargs)
 
@@ -52,7 +52,7 @@ def huggingface_load(model, stt=True, **kwargs):
     )
 
 
-def huggingface_load_seq2seq(model, stt=True, **kwargs):
+def seq2seq(model, stt=True, **kwargs):
 
     hf_model = AutoModelForSpeechSeq2Seq.from_pretrained(model, **kwargs)
     processor = AutoProcessor.from_pretrained(model, **kwargs)
@@ -70,28 +70,6 @@ def huggingface_load_seq2seq(model, stt=True, **kwargs):
         name='speech-to-text',
         **kwargs,
     )
-
-
-def whisper(model, **kwargs):
-
-    s3_file = {
-        'model': 'model.pt',
-    }
-    path = download_files(model, s3_file, **kwargs)
-    checkpoint = torch.load(path['model'], map_location='cpu')
-
-    try:
-        from whisper.model import Whisper, ModelDimensions
-    except BaseException:
-        raise ModuleNotFoundError(
-            'openai-whisper not installed. Please install it by `pip install openai-whisper` and try again.'
-        )
-
-    dims = ModelDimensions(**checkpoint['dims'])
-    model = Whisper(dims)
-    model.load_state_dict(checkpoint['model_state_dict'])
-
-    return model
 
 
 def torchaudio(model, stt=True, **kwargs):

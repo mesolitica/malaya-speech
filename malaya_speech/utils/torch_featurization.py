@@ -39,8 +39,10 @@ def post_process_hypos(
         sp_model.eos_id(),
         sp_model.pad_id(),
     ]
-    filtered_hypo_tokens = [[token_index for token_index in h[tokens_idx]
-                             [1:] if token_index not in post_process_remove_list] for h in hypos]
+    filtered_hypo_tokens = [
+        [token_index for token_index in h[tokens_idx]
+         [1:] if token_index not in post_process_remove_list] for h in hypos
+    ]
     hypos_str = [sp_model.decode(s) for s in filtered_hypo_tokens]
     hypos_ids = [h[tokens_idx][1:] for h in hypos]
     hypos_score = [[math.exp(h[score_idx])] for h in hypos]

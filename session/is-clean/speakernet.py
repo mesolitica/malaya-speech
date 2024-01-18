@@ -38,7 +38,7 @@ wget https://huggingface.co/huseinzol05/nemo-speakernet/resolve/main/model_weigh
 """
 
 """
-CUDA_VISIBLE_DEVICES=1 python3 lightning-speakernet-is-clean.py --batch=32 --precision=32
+CUDA_VISIBLE_DEVICES=1 python3 speakernet.py --batch=32 --precision=32
 """
 
 Batch = namedtuple("Batch", ["features", 'features_length', "targets"])

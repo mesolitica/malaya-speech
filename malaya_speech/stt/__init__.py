@@ -114,7 +114,9 @@ for `malay-fleur102` language, tested on FLEURS102 `ms_my` test set, https://git
 for `malay-malaya` language, tested on malaya-speech test set, https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt
 for `singlish` language, tested on IMDA malaya-speech test set, https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt
 for `whisper-mixed` language, tested on semisupervised Whisper Large V2 test set, https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt
+Malaysian STT Leaderboard at https://huggingface.co/spaces/mesolitica/malaysian-stt-leaderboard
 """.strip()
 
 from . import ctc
+from . import seq2seq
 from . import transducer

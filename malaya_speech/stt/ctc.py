@@ -2,6 +2,15 @@ from malaya_speech.supervised import stt
 from malaya_speech.stt import info
 
 available_huggingface = {
+    'mesolitica/conformer-tiny-ctc': {
+        'Language': ['malay'],
+    },
+    'mesolitica/conformer-super-tiny-ctc': {
+        'Language': ['malay'],
+    },
+    'mesolitica/conformer-2x-super-tiny-ctc': {
+        'Language': ['malay'],
+    },
     'mesolitica/wav2vec2-xls-r-300m-mixed': {
         'Size (MB)': 1180,
         'malay-malaya': {
@@ -75,4 +84,4 @@ def huggingface(
             'model not supported, please check supported models from `malaya_speech.stt.ctc.available_huggingface`.'
         )
 
-    return stt.huggingface_load(model=model, **kwargs)
+    return stt.ctc(model=model, **kwargs)

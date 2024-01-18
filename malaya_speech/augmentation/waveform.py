@@ -3,6 +3,7 @@ import librosa
 import os
 import scipy
 import json
+import random
 from scipy.special import expit
 
 
@@ -263,3 +264,13 @@ def highpass_filter(y, sr=16000, cutoff=400):
 def bandpass_filter(y, sr=16000, cutoff_low=400, cutoff_high=400):
     y = highpass_filter(y, sr=sr, cutoff=cutoff_high)
     return lowpass_filter(y, sr=sr, cutoff=cutoff_low)
+
+
+def random_downsample(
+    y,
+    sr=16000,
+    srs=[4400, 5100, 6000, 8000, 10000]
+):
+    s_sr = random.choice(srs)
+    y_ = malaya_speech.resample(y, sr, s_sr)
+    return malaya_speech.resample(y_, s_sr, sr)
