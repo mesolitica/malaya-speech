@@ -8,7 +8,12 @@ from malaya_speech.torch_model.huggingface import (
     Seq2SeqAligner as HuggingFace_Seq2SeqAligner,
 )
 from malaya_speech.torch_model.torchaudio import Transducer, ForceAlignment
-from transformers import AutoModelForCTC, AutoProcessor, AutoModelForSpeechSeq2Seq
+from transformers import (
+    AutoModel,
+    AutoProcessor,
+    AutoModelForCTC,
+    AutoModelForSpeechSeq2Seq
+)
 from malaya_speech.path import TRANSDUCER_VOCABS, TRANSDUCER_MIXED_VOCABS
 import torch
 import os
@@ -38,7 +43,10 @@ time_reduction_factor = {
 
 def ctc(model, stt=True, **kwargs):
 
-    hf_model = AutoModelForCTC.from_pretrained(model, **kwargs)
+    if 'conformer' in model:
+        hf_model = AutoModel.from_pretrained(model, trust_remote_code=True, **kwargs)
+    else:
+        hf_model = AutoModelForCTC.from_pretrained(model, **kwargs)
 
     if stt:
         selected_model = HuggingFace_CTC

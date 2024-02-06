@@ -15,6 +15,7 @@ from malaya_speech.utils.aligner import (
     merge_words,
 )
 from malaya_speech.utils.subword import merge_bpe_tokens
+from malaya_speech.utils.torch_featurization import melspectrogram, piecewise_linear_log
 from malaya_speech.model.abstract import Abstract
 from malaya_boilerplate.torch_utils import to_tensor_cuda, to_numpy
 from scipy.special import log_softmax
@@ -49,12 +50,26 @@ def batching(audios):
     return normed_input_values.astype(np.float32), attentions
 
 
+def batching_conformer(audios):
+    inputs, lengths = [], []
+    for audio in audios:
+        mel = melspectrogram(audio)
+        mel = piecewise_linear_log(mel)
+        inputs.append(mel)
+        lengths.append(len(mel))
+
+    inputs = torch.nn.utils.rnn.pad_sequence(inputs, batch_first=True)
+    lengths = torch.tensor(lengths)
+    return inputs, lengths
+
+
 class CTC(torch.nn.Module):
     def __init__(self, hf_model, model, name):
         super().__init__()
         self.hf_model = hf_model
         self.__model__ = model
         self.__name__ = name
+        self.is_conformer = 'conformer' in self.__model__
 
     def greedy_decoder(self, inputs):
         """
@@ -118,12 +133,21 @@ class CTC(torch.nn.Module):
             for input in inputs
         ]
         cuda = next(self.hf_model.parameters()).is_cuda
-        normed_input_values, attentions = batching(inputs)
-        normed_input_values = to_tensor_cuda(torch.tensor(normed_input_values), cuda)
-        normed_input_values = normed_input_values.type(self.hf_model.dtype)
-        attentions = to_tensor_cuda(torch.tensor(attentions), cuda)
-        attentions = attentions.type(self.hf_model.dtype)
-        out = self.hf_model(normed_input_values, attention_mask=attentions)
+        if self.is_conformer:
+            inputs, lengths = batching_conformer(inputs)
+            inputs = to_tensor_cuda(inputs, cuda)
+            inputs = inputs.type(self.hf_model.dtype)
+            lengths = to_tensor_cuda(lengths, cuda)
+            lengths = lengths.type(self.hf_model.dtype)
+            out = self.hf_model(inputs=inputs, lengths=lengths)
+        else:
+            normed_input_values, attentions = batching(inputs)
+            normed_input_values = to_tensor_cuda(torch.tensor(normed_input_values), cuda)
+            normed_input_values = normed_input_values.type(self.hf_model.dtype)
+            attentions = to_tensor_cuda(torch.tensor(attentions), cuda)
+            attentions = attentions.type(self.hf_model.dtype)
+            out = self.hf_model(normed_input_values, attention_mask=attentions)
+
         return norm_func(to_numpy(out[0]), axis=-1)
 
     def gradio(self, record_mode: bool = True,

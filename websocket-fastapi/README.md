@@ -14,6 +14,12 @@ pip3 install -r requirements.txt
 IMPORT_LOCAL=true uvicorn app.main:app --reload --host 0.0.0.0
 ```
 
+Or to debug the audio,
+
+```bash
+IMPORT_LOCAL=true DEBUG_SAVE=true uvicorn app.main:app --reload --host 0.0.0.0
+```
+
 Or use docker,
 
 ```bash

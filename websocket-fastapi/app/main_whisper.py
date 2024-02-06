@@ -2,13 +2,13 @@ import sys
 import os
 
 DEBUG_SAVE = os.environ.get('DEBUG_SAVE', 'false') == 'true'
-MODEL = os.environ.get('MODEL', 'mesolitica/conformer-tiny-ctc')
-MODEL_LM = os.environ.get('MODEL_LM', 'mesolitica/kenlm-pseudolabel-whisper-large-v3')
-LM_ALPHA = float(os.environ.get('LM_ALPHA', '0.2'))
-LM_BETA = float(os.environ.get('LM_BETA', '1.0'))
+MODEL = os.environ.get('MODEL', 'mesolitica/malaysian-whisper-base')
+FORCE_LANGUAGE = os.environ.get('FORCE_LANGUAGE', 'ms')
+IMPORT_LOCAL = os.environ.get('IMPORT_LOCAL', 'false') == 'true'
+USE_CTRANSLATE2 = os.environ.get('USE_CTRANSLATE2', 'false') == 'true'
+CTRANSLATE2_OUTPUT = os.environ.get('CTRANSLATE2_OUTPUT', 'out')
 MIN_LENGTH = float(os.environ.get('MIN_LENGTH', '1.0'))
 SILENCE_TIMEOUT = float(os.environ.get('SILENCE_TIMEOUT', '1.0'))
-IMPORT_LOCAL = os.environ.get('IMPORT_LOCAL', 'false') == 'true'
 
 if IMPORT_LOCAL:
     SOURCE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__name__)))
@@ -16,94 +16,20 @@ if IMPORT_LOCAL:
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
-import time
-import json
 import base64
 import numpy as np
-import torch
-import torchaudio
-import math
 import malaya_speech
-from itertools import groupby
-from huggingface_hub import hf_hub_download
-from transformers import AutoModel
-from pyctcdecode import build_ctcdecoder
-import kenlm
 from malaya_speech import Pipeline
 from malaya_speech.utils.astype import float_to_int
 from malaya_speech.streaming import socket
 from malaya_speech.streaming import stream
 from datetime import datetime
 import soundfile as sf
-
-HF_CTC_VOCAB = [
-    '',
-    'a',
-    'b',
-    'c',
-    'd',
-    'e',
-    'f',
-    'g',
-    'h',
-    'i',
-    'j',
-    'k',
-    'l',
-    'm',
-    'n',
-    'o',
-    'p',
-    'q',
-    'r',
-    's',
-    't',
-    'u',
-    'v',
-    'w',
-    'x',
-    'y',
-    'z',
-    '0',
-    '1',
-    '2',
-    '3',
-    '4',
-    '5',
-    '6',
-    '7',
-    '8',
-    '9',
-    ' ',
-    '?',
-    '_'
-]
-HF_CTC_VOCAB_INDEX = {no: c for no, c in enumerate(HF_CTC_VOCAB)}
-HF_CTC_VOCAB_REV = {v: k for k, v in HF_CTC_VOCAB_INDEX.items()}
-
-DECIBEL = 2 * 20 * math.log10(torch.iinfo(torch.int16).max)
-GAIN = pow(10, 0.05 * DECIBEL)
-
-spectrogram_transform = torchaudio.transforms.MelSpectrogram(
-    sample_rate=16000, n_fft=400, n_mels=80, hop_length=160)
-
-
-def piecewise_linear_log(x):
-    x = x * GAIN
-    x[x > math.e] = torch.log(x[x > math.e])
-    x[x <= math.e] = x[x <= math.e] / math.e
-    return x
-
-
-def melspectrogram(x):
-    if isinstance(x, np.ndarray):
-        x = torch.Tensor(x)
-    x = spectrogram_transform(x).transpose(1, 0)
-    return piecewise_linear_log(x)
-
+import ctranslate2
+from transformers import AutoProcessor, AutoModelForSpeechSeq2Seq
 
 app = FastAPI()
-SR = 16000
+
 
 vad_model = malaya_speech.vad.webrtc()
 p_vad = Pipeline()
@@ -112,58 +38,52 @@ pipeline = (
     .map(vad_model)
 )
 
-lm = hf_hub_download(MODEL_LM, 'out.binary')
-kenlm_model = kenlm.Model(lm)
-decoder = build_ctcdecoder(
-    HF_CTC_VOCAB,
-    kenlm_model,
-    alpha=LM_ALPHA,
-    beta=LM_BETA,
-    ctc_token_idx=len(HF_CTC_VOCAB) - 1
-)
+processor = AutoProcessor.from_pretrained(MODEL)
 
-model = AutoModel.from_pretrained(MODEL, trust_remote_code=True)
-mel = melspectrogram(np.zeros((SR * 5,)))
-inputs = {
-    'inputs': mel.unsqueeze(0),
-    'lengths': torch.tensor([len(mel)])
-}
-model(**inputs)
+if USE_CTRANSLATE2:
+    if not os.path.exists(os.path.join(CTRANSLATE2_OUTPUT, 'model.bin')):
+        converter = ctranslate2.converters.TransformersConverter(MODEL)
+        converter.convert(CTRANSLATE2_OUTPUT, quantization='int8', force=True)
+    model = ctranslate2.models.Whisper(CTRANSLATE2_OUTPUT)
+else:
+    model = AutoModelForSpeechSeq2Seq.from_pretrained(MODEL)
+    _ = model.eval()
 
 p_asr = Pipeline()
 
-index = 0
+REJECTED_TEXT = {
+    'Terima kasih kerana menonton!',
+    'Terima kasih.'
+}
+
+index = 1
 
 
 def predict(y):
     global index
     if DEBUG_SAVE:
-        sf.write(f'{index}.mp3', y, SR)
-    before = time.time()
-    mel = melspectrogram(y)
-    inputs = {
-        'inputs': mel.unsqueeze(0),
-        'lengths': torch.tensor([len(mel)])
-    }
-    r = model(**inputs)
-    logits = r[0].detach().numpy()
-    argmax = np.argmax(logits, axis=-1)
-    tokens = ''.join([HF_CTC_VOCAB_INDEX[k] for k in argmax[0]])
-    grouped_tokens = [token_group[0] for token_group in groupby(tokens)]
-    filtered_tokens = list(filter(lambda token: token != '_', grouped_tokens))
-    r = ''.join(filtered_tokens).strip()
-    if len(r) < 2:
-        return
-    out = decoder.decode_beams(logits[0], prune_history=True)
-    d_lm, lm_state, timesteps, logit_score, lm_score = out[0]
-    time_taken = time.time() - before
+        sf.write(f'{index}.mp3', y, 16000)
+    if USE_CTRANSLATE2:
+        inputs = processor(y, return_tensors='np', sampling_rate=16000)
+        features = ctranslate2.StorageView.from_array(inputs.input_features)
+        prompt = processor.tokenizer.convert_tokens_to_ids(
+            [
+                '<|startoftranscript|>',
+                f'<|{FORCE_LANGUAGE}|>',
+                '<|transcribe|>',
+            ]
+        )
+        results = model.generate(features, [prompt])
+        transcription = processor.decode(results[0].sequences_ids[0])
+    else:
+        inputs = processor([y], return_tensors='pt', sampling_rate=16000)
+        r = model.generate(
+            inputs['input_features'],
+            language=FORCE_LANGUAGE,
+            return_timestamps=True)
+        transcription = processor.tokenizer.decode(r[0], skip_special_tokens=True)
     index += 1
-    d = {
-        'predict': r,
-        'predict_lm': d_lm,
-        'time_taken': time_taken
-    }
-    return json.dumps(d)
+    return transcription
 
 
 pipeline_asr = (
@@ -217,7 +137,12 @@ async def get():
     if IMPORT_LOCAL:
         f = os.path.join('./app', f)
     with open(f) as fopen:
-        html = fopen.read().replace('{{model}}', MODEL)
+        if USE_CTRANSLATE2:
+            model_name = f'Ctranslate2 {MODEL}'
+        else:
+            model_name = MODEL
+        model_name = f'{model_name} forcing language {FORCE_LANGUAGE}'
+        html = fopen.read().replace('{{model}}', model_name)
     return HTMLResponse(html)
 
 
@@ -261,15 +186,16 @@ async def websocket_endpoint(websocket: WebSocket, client_id: int):
                         [np.zeros(shape=(int(0.05 * sample_rate),)), manager.wav_data[client_id]])
 
                     t_ = p_asr(wav_data)
-                    t_ = t_['speech-to-text']
-                    if t_ is not None:
-                        text = t_
+                    text = t_['speech-to-text']
 
                     manager.wav_data[client_id] = np.array([], dtype=np.float32)
                     manager.length[client_id] = 0
 
             if len(text):
-                await manager.send_personal_message(text, websocket)
+                if text.strip() in REJECTED_TEXT:
+                    text = ''
+                else:
+                    await manager.send_personal_message(text, websocket)
 
     except WebSocketDisconnect:
         manager.disconnect(websocket, client_id=client_id)
