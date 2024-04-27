@@ -32,7 +32,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import datasets
-import evaluate
 import numpy as np
 import torch
 import torch.nn as nn
@@ -135,11 +134,6 @@ class DataTrainingArguments:
             "help": "The name of the training dataset to use (via the datasets library). Load and combine "
             "multiple datasets by separating dataset ids by a '+' symbol. For example, to load LibriSpeech "
             "and Common Voice, set `train_dataset_name='librispeech_asr+common_voice'`."}, )
-    eval_dataset_name: str = field(
-        default=None, metadata={
-            "help": "The name of the evaluation dataset to use (via the datasets library). Defaults to the training "
-            "dataset name if unspecified. Load multiple evaluation datasets by separating dataset "
-            "ids by a '+' symbol."}, )
     overwrite_cache: bool = field(
         default=False,
         metadata={"help": "Overwrite the cached training and evaluation sets"},
@@ -290,15 +284,6 @@ def main():
     if os.path.isdir(
             training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
         last_checkpoint = get_last_checkpoint(training_args.output_dir)
-        if last_checkpoint is None and len(os.listdir(training_args.output_dir)) > 0:
-            raise ValueError(
-                f"Output directory ({training_args.output_dir}) already exists and is not empty. "
-                "Use --overwrite_output_dir to overcome."
-            )
-        elif last_checkpoint is not None and training_args.resume_from_checkpoint is None:
-            logger.info(
-                f"Checkpoint detected, resuming training at {last_checkpoint}. To avoid this behavior, change "
-                "the `--output_dir` or add `--overwrite_output_dir` to train from scratch.")
 
     # 7. Load pretrained model, tokenizer, and feature extractor
     config = WhisperConfig.from_pretrained(
@@ -380,7 +365,7 @@ def main():
                     self.audio.encode_example(
                         self.data[item]['audio_filename']))['array']
                 inputs = feature_extractor(audio, sampling_rate=sampling_rate)
-                input_str = self.data[item]['new_text']
+                input_str = self.data[item]['text']
 
                 token_ids = tokenizer(input_str, add_special_tokens=False).input_ids
                 token_ids = token_ids[:max_label_length]
@@ -396,7 +381,6 @@ def main():
                 return None
 
     train_dataset = Train(data_args.train_dataset_name)
-    eval_dataset = Train(data_args.eval_dataset_name)
 
     data_collator = DataCollatorSpeechSeq2SeqWithPadding(
         processor=processor,
@@ -407,29 +391,14 @@ def main():
         max_target_length=max_label_length,
     )
 
-    metric = evaluate.load("wer")
-
-    def compute_metrics(pred):
-        pred_ids = pred.predictions
-
-        pred.label_ids[pred.label_ids == -100] = tokenizer.pad_token_id
-
-        pred_str = tokenizer.batch_decode(pred_ids, skip_special_tokens=True)
-        # we do not want to group tokens when computing the metrics
-        label_str = tokenizer.batch_decode(pred.label_ids, skip_special_tokens=True)
-
-        wer = metric.compute(predictions=pred_str, references=label_str)
-
-        return {"wer": wer}
-
     trainer = Seq2SeqTrainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
+        eval_dataset=None,
         tokenizer=feature_extractor,
         data_collator=data_collator,
-        compute_metrics=compute_metrics if training_args.predict_with_generate else None,
+        compute_metrics=None,
     )
 
     checkpoint = None

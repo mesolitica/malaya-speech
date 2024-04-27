@@ -1,9 +1,8 @@
-WANDB_PROJECT=malaysian-whisper-medium \
+WANDB_PROJECT=malaysian-whisper-medium-v2 \
 torchrun --nproc_per_node 4 \
--m finetune \
+-m whisper \
 --model_name_or_path "openai/whisper-medium" \
---train_dataset_name "mosaic-combine-stt" \
---eval_dataset_name "test-fleurs.json" \
+--train_dataset_name "mosaic-stt" \
 --eval_steps 1000 \
 --save_steps 100 \
 --warmup_steps 100 \
