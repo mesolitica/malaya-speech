@@ -117,3 +117,11 @@ websocket-fastapi/out
 *wandb
 pretrained-model/stt/conformer-ctc/tiny
 websocket-fastapi/*.mp3
+*.tar.gz
+ms_my
+malay-test
+malay-asr-test.json
+malaya-malay-test-set.json
+pretrained-model/stt/conformer-ctc/*/checkpoint*
+pretrained-model/stt/conformer-ctc/*/runs*
+pretrained-model/stt/conformer-ctc/out
