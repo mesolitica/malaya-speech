@@ -6,10 +6,6 @@
 # URL: <https://malaya-speech.readthedocs.io/>
 # For license information, see https://github.com/huseinzol05/malaya-speech/blob/master/LICENSE
 
-import logging
-
-logger = logging.getLogger(__name__)
-
 # https://github.com/huseinzol05/malaya-speech/blob/master/pretrained-model/prepare-stt/benchmark-google-speech-malay-dataset.ipynb
 # https://github.com/huseinzol05/malaya-speech/blob/master/pretrained-model/prepare-stt/benchmark-google-speech-ms-fleurs102.ipynb
 # https://github.com/huseinzol05/malaya-speech/blob/master/pretrained-model/prepare-stt/benchmark-google-speech-singlish-dataset.ipynb
@@ -113,13 +109,13 @@ whisper_accuracy = {
     }
 }
 
-
-def _describe():
-    logger.info('for `malay-fleur102` language, tested on FLEURS102 `ms_my` test set, https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt')
-    logger.info('for `malay-malaya` language, tested on malaya-speech test set, https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt')
-    logger.info('for `singlish` language, tested on IMDA malaya-speech test set, https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt')
-    logger.info('for `whisper-mixed` language, tested on semisupervised Whisper Large V2 test set, https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt')
-
+info = """
+for `malay-fleur102` language, tested on FLEURS102 `ms_my` test set, https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt
+for `malay-malaya` language, tested on malaya-speech test set, https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt
+for `singlish` language, tested on IMDA malaya-speech test set, https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt
+for `whisper-mixed` language, tested on semisupervised Whisper Large V2 test set, https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model/prepare-stt
+Malaysian STT Leaderboard at https://huggingface.co/spaces/mesolitica/malaysian-stt-leaderboard
+""".strip()
 
 from . import ctc
 from . import seq2seq

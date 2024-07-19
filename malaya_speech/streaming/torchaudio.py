@@ -4,8 +4,8 @@ https://pytorch.org/audio/stable/tutorials/online_asr_tutorial.html
 import collections
 from datetime import datetime
 from malaya_speech.utils.validator import check_pipeline
-from malaya_speech.utils.torch_featurization import StreamReader, torchaudio_available
-from malaya_speech.torch_model.torchaudio import Conformer
+from malaya_speech.utils.torch_featurization import StreamReader
+from malaya_speech.torch_model.torchaudio import Transducer
 from malaya_speech.streaming import stream as base_stream
 from functools import partial
 import torch
@@ -284,7 +284,7 @@ def stream_rnnt(
         Will print results for ASR.
     """
 
-    if not isinstance(asr_model, Conformer):
+    if not isinstance(asr_model, Transducer):
         raise ValueError('`asr_model` only support Enformer RNNT.')
 
     if not getattr(asr_model, 'rnnt_streaming', False):

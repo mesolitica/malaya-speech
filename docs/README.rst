@@ -16,7 +16,7 @@
 
 =========
 
-**Malaya-Speech** is a Speech-Toolkit library for Malaysian language, powered by Tensorflow and PyTorch.
+**Malaya-Speech** is a Speech-Toolkit library for Malaysian language, powered by PyTorch.
 
 Documentation
 --------------
@@ -30,9 +30,9 @@ Installing from the PyPI
 
     $ pip install malaya-speech
 
-It will automatically install all dependencies except for Tensorflow and PyTorch. So you can choose your own Tensorflow CPU / GPU version and PyTorch CPU / GPU version.
+It will automatically install all dependencies except for PyTorch. So you can choose your own PyTorch CPU / GPU version.
 
-Only **Python >= 3.6.0**, **Tensorflow >= 1.15.0**, and **PyTorch >= 1.10** are supported.
+Only **Python >= 3.6.0**, and **PyTorch >= 1.13** are supported.
 
 Development Release
 ---------------------------------
@@ -40,7 +40,7 @@ Development Release
 Install from `master` branch,
 ::
 
-    $ pip install git+https://github.com/huseinzol05/malaya-speech.git
+    $ pip install git+https://github.com/mesolitica/malaya-speech.git
 
 
 We recommend to use **virtualenv** for development. 
@@ -58,26 +58,22 @@ Features
 -  **Clean speech Detection**, detect clean speech using Finetuned Speaker Vector.
 -  **Language Detection**, detect hyperlocal languages in speech using Finetuned Speaker Vector.
 -  **Language Model**, using KenLM, Masked language model using BERT and RoBERTa, and GPT2 to do ASR decoder scoring.
--  **Multispeaker Separation**, Multispeaker separation using FastSep on 8k Wav.
 -  **Noise Reduction**, reduce multilevel noises using STFT UNET.
 -  **Speaker Change Detection**, detect changing speakers using Finetuned Speaker Vector.
 -  **Speaker Count Detection**, detect number of speakers using Finetuned Speaker Vector.
 -  **Speaker overlap Detection**, detect overlap speakers using Finetuned Speaker Vector.
 -  **Speaker Vector**, calculate similarity between speakers using Pretrained Speaker Vector.
 -  **Speech Enhancement**, enhance voice activities using Waveform UNET.
--  **SpeechSplit Conversion**, detailed speaking style conversion by disentangling speech into content, timbre, rhythm and pitch using PyWorld and PySPTK.
 -  **Speech-to-Text**, End-to-End Speech to Text for Malay, Mixed (Malay, Singlish) and Singlish using RNNT, Wav2Vec2 CTC and Whisper Seq2Seq.
 -  **Super Resolution**, Super Resolution 4x for Waveform using ResNet UNET and Neural Vocoder.
--  **Text-to-Speech**, Text to Speech for Malay and Singlish using Tacotron2, FastSpeech2, FastPitch, GlowTTS, LightSpeech and VITS.
--  **Vocoder**, convert Mel to Waveform using MelGAN, Multiband MelGAN and Universal MelGAN Vocoder.
+-  **Text-to-Speech**, Text to Speech for Malay and Singlish using VITS.
 -  **Voice Activity Detection**, detect voice activities using Finetuned Speaker Vector.
--  **Voice Conversion**, Many-to-One and Zero-shot Voice Conversion.
 -  **Real time interface**, provide PyAudio and TorchAudio streaming interface to do real time inference.
 
 Pretrained Models
 ------------------
 
-Malaya-Speech also released pretrained models, simply check at `malaya-speech/pretrained-model <https://github.com/huseinzol05/malaya-speech/tree/master/pretrained-model>`_
+Malaya-Speech also released pretrained models, simply check at `malaya-speech/pretrained-model <https://github.com/mesolitica/malaya-speech/tree/master/pretrained-model>`_
 
 -  **Wave UNET**,  Multi-Scale Neural Network for End-to-End Audio Source Separation, https://arxiv.org/abs/1806.03185
 -  **Wave ResNet UNET**, added ResNet style into Wave UNET, no paper produced.
@@ -121,13 +117,13 @@ If you use our software for research, please cite:
 
 ::
 
-  @misc{Malaya, Speech-Toolkit library for bahasa Malaysia, powered by Deep Learning Tensorflow,
+  @misc{Malaya-Speech, Speech-Toolkit library for Malaysian language, powered by PyTorch,
     author = {Husein, Zolkepli},
     title = {Malaya-Speech},
     year = {2020},
     publisher = {GitHub},
     journal = {GitHub repository},
-    howpublished = {\url{https://github.com/huseinzol05/malaya-speech}}
+    howpublished = {\url{https://github.com/mesolitica/malaya-speech}}
   }
 
 Acknowledgement

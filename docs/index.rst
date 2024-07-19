@@ -18,7 +18,6 @@ Contents:
 
    installation
    mock-tensorflow
-   Dataset
    Contributing
 
 .. toctree::

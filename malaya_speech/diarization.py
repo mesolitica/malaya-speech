@@ -1,9 +1,9 @@
 from sklearn.metrics.pairwise import cosine_similarity
 from malaya_speech.utils.dist import l2_normalize, compute_log_dist_matrix
 import numpy as np
-from typing import Callable
 import copy
 import logging
+from typing import Callable
 
 logger = logging.getLogger(__name__)
 

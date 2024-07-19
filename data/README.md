@@ -1,39 +1,55 @@
 # Speech Dataset
 
-## How we gather dataset?
-
-1. For semisupervised transcript, we use Google Speech to Text, after that verified / corrected by human.
-2. We recorded using our own microphones.
-
-## License
-
-Malay-Speech dataset is available to download for research purposes under a Creative Commons Attribution 4.0 International License.
-
-<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
-
-## Dataset
-
-### [Ambient](https://github.com/huseinzol05/malaya-speech/tree/master/data/ambient)
+## [Ambient](ambient)
 
 Simple ambients gathered from Youtube.
 
-### [Audiobook](https://github.com/huseinzol05/malaya-speech/tree/master/data/audiobook)
+## [Cloud-TTS](cloud-tts)
 
-Gather Youtube urls for indonesian, english and low quality english audiobooks only.
-
-### [Azure-TTS](https://github.com/huseinzol05/malaya-speech/tree/master/data/azure-tts)
+### [Azure-TTS](cloud-tts/azure-tts)
 
 Semisupervised Malay TTS dataset from Azure TTS cloud.
 
-### [GCP-TTS](https://github.com/huseinzol05/malaya-speech/tree/master/data/gcp-tts)
+### [GCP-TTS](cloud-tts/gcp-tts)
 
 Semisupervised Malay TTS dataset from GCP TTS cloud.
 
-### [Emotion](https://github.com/huseinzol05/malaya-speech/tree/master/data/emotion)
+## [Common Voice](common-voice)
+
+
+## [Corpus](corpus)
+
+Corpus we use to train KenLM and Neural CausalLM.
+
+## [Emotion](emotion)
 
 Speech emotion dataset used by Malaya-Speech for speech emotion detection.
 
-### [IIUM](https://github.com/huseinzol05/malaya-speech/tree/master/data/iium)
+## [IMDA](imbda)
+
+Mirror link for IMDA dataset, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus, only downloaded PART 3 and SST dataset.
+
+- 16000 sample rate.
+- supervised approximate 2024 hours.
+
+## [Language](language)
+
+Language detection dataset used by Malaya-Speech for speech language detection.
+
+- Gather youtube urls for hyperlocal language detection from speech {malay, manglish}.
+- Use Common Voice to gather {english, mandarin, others}.
+
+## [mixheadset](mixheadset)
+
+Script to download mixheadset dataset.
+
+## [noise](noise)
+
+Simple noises gathered from Youtube for augmentation purpose.
+
+## [self-record](self-record)
+
+### [IIUM](self-record/iium)
 
 Read random sentences from IIUM Confession.
 
@@ -55,7 +71,7 @@ Read random sentences from IIUM Confession.
 }
 ```
 
-### [IIUM-Clear](https://github.com/huseinzol05/malaya-speech/tree/master/data/iium-clear)
+### [IIUM-Clear](self-record/iium-clear)
 
 Read random sentences from IIUM Confession, cleaner version.
 
@@ -76,34 +92,6 @@ Read random sentences from IIUM Confession, cleaner version.
 }
 ```
 
-### [IMDA](https://github.com/huseinzol05/malaya-speech/tree/master/data/imda)
-
-Mirror link for IMDA dataset, https://www.imda.gov.sg/programme-listing/digital-services-lab/national-speech-corpus, only downloaded PART 3 and SST dataset.
-
-- 16000 sample rate.
-- supervised approximate 2024 hours.
-
-### [language](https://github.com/huseinzol05/malaya-speech/tree/master/data/language)
-
-Gather youtube urls for hyperlocal language detection from speech {malay, indonesian, manglish, english, mandarin}.
-
-Check hyperlocal language detection models at https://malaya-speech.readthedocs.io/en/latest/load-language-detection.html
-
-```bibtex
-@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Hyperlocal languages for speech dataset,
-  author = {Husein, Zolkepli},
-  title = {Malay-Dataset},
-  year = {2018},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/language}}
-}
-```
-
-### [mixed-stt](https://github.com/huseinzol05/malaya-speech/tree/master/data/mixed-stt)
-
-Malay, Singlish and Mandarin STT dataset in TFRecord format. Included scripts how to load using `torch.dataset`.
-
 ### [news](https://github.com/huseinzol05/malaya-speech/tree/master/data/news)
 
 Read random sentences from bahasa news.
@@ -115,21 +103,6 @@ Read random sentences from bahasa news.
 - approximate 3.01 hours.
 - Still on going recording.
 
-```bibtex
-@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Speech Dataset from local news texts,
-  author = {Husein, Zolkepli},
-  title = {Malay-Dataset},
-  year = {2018},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/news}}
-}
-```
-
-### [noise](https://github.com/huseinzol05/malaya-speech/tree/master/data/noise)
-
-Simple noises gathered from Youtube.
-
 ### [Sebut perkataan](https://github.com/huseinzol05/malaya-speech/tree/master/data/sebut-perkataan)
 
 Read random words from malay dictionary started with 'tolong sebut <word>'.
@@ -138,75 +111,6 @@ Read random words from malay dictionary started with 'tolong sebut <word>'.
 - `tolong-sebut` voice by [Khalil Nooh](https://www.linkedin.com/in/khalilnooh/)
 - `sebut-perkataan-woman` voice by [Mas Aisyah Ahmad](https://www.linkedin.com/in/mas-aisyah-ahmad-b46508a9/)
 - Recorded using low-end tech microphones.
-
-```bibtex
-@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Short Speech Dataset,
-  author = {Husein, Zolkepli},
-  title = {Malay-Dataset},
-  year = {2018},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/sebut-perkataan}}
-}
-```
-
-### [Semisupervised audiobook](https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-audiobook)
-
-Semisupervised malay audiobooks from Nusantara Audiobook using Google Speech to Text.
-
-- 44100 sample rate, super clean.
-- semisupervised approximate 45.29 hours.
-- windowed using Malaya-Speech VAD, each atleast 5 negative voice activities.
-
-```bibtex
-@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Semisupervised Speech Recognition from Audiobook,
-  author = {Husein, Zolkepli},
-  title = {Malay-Dataset},
-  year = {2018},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-audiobook}}
-}
-```
-
-### [Semisupervised malay](https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-malay)
-
-Semisupervised malay youtube videos using Google Speech to Text, after that corrected by human.
-
-- 16000 sample rate.
-- semisupervised approximate 1804 hours.
-- random length between 2 - 20 seconds, windowed using google VAD.
-- supervised 768 samples, approximate 1.3 hours.
-
-```bibtex
-@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Semisupervised Speech Recognition from Malay Youtube Videos,
-  author = {Husein, Zolkepli},
-  title = {Malay-Dataset},
-  year = {2018},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-malay}}
-}
-```
-
-### [Semisupervised manglish](https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-manglish)
-
-Semisupervised manglish youtube videos using Google Speech to Text.
-
-- 16000 sample rate.
-- semisupervised approximate 107 hours.
-- random length between 2 - 20 seconds, windowed using google VAD.
-
-```bibtex
-@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Semisupervised Speech Recognition from Manglish Youtube Videos,
-  author = {Husein, Zolkepli},
-  title = {Malay-Dataset},
-  year = {2018},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/semisupervised-manglish}}
-}
-```
 
 ### [wattpad](https://github.com/huseinzol05/malaya-speech/tree/master/data/wattpad)
 
@@ -219,17 +123,6 @@ Read random sentences from bahasa wattpad.
 - approximate 0.15 hours.
 - Still on going recording.
 
-```bibtex
-@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Speech Dataset from Wattpad texts,
-  author = {Husein, Zolkepli},
-  title = {Malay-Dataset},
-  year = {2018},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/wattpad}}
-}
-```
-
 ### [Wikipedia](https://github.com/huseinzol05/malaya-speech/tree/master/data/wikipedia)
 
 Read random sentences from Bahasa Wikipedia.
@@ -241,21 +134,43 @@ Read random sentences from Bahasa Wikipedia.
 - approximate 3.4 hours.
 - Still on going recording.
 
-```bibtex
-@misc{Malay-Dataset, We gather Bahasa Malaysia corpus!, Speech Dataset from Wikipedia texts,
-  author = {Husein, Zolkepli},
-  title = {Malay-Dataset},
-  year = {2018},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/huseinzol05/malaya-speech/tree/master/data/wikipedia}}
-}
-```
+## [Semisupervised](semisupervised)
 
-### [youtube](https://github.com/huseinzol05/malaya-speech/tree/master/data/youtube)
+### [audiobook](semisupervised/audiobook)
+
+Semisupervised malay audiobooks from Nusantara Audiobook using Google Speech to Text.
+
+- 44100 sample rate, super clean.
+- semisupervised approximate 45.29 hours.
+- windowed using Malaya-Speech VAD, each atleast 5 negative voice activities.
+
+### [malay](semisupervised/malay)
+
+Semisupervised malay youtube videos using Google Speech to Text, after that corrected by human.
+
+- 16000 sample rate.
+- semisupervised approximate 1804 hours.
+- random length between 2 - 20 seconds, windowed using google VAD.
+- supervised 768 samples, approximate 1.3 hours.
+
+### [manglish](semisupervised/manglish)
+
+Semisupervised manglish youtube videos using Google Speech to Text.
+
+- 16000 sample rate.
+- semisupervised approximate 107 hours.
+- random length between 2 - 20 seconds, windowed using google VAD.
+
+### [whisper-stt](semisupervised/whisper-stt)
+
+Semisupervised 25k youtube videos using Whisper Large v2.
+
+## [STT](stt)
+
+### [Mixed STT](mixed-stt)
+
+Malay, Singlish and Mandarin STT dataset in TFRecord format. Included scripts how to load using `torch.dataset`.
+
+## [youtube](youtube)
 
 Semisupervised transcription and Unsupervised Speaker Diarization on 5k malay speakers youtube videos.
-
-## Contribution
-
-Contact us at husein.zol05@gmail.com or husein@mesolitica.com if want to contribute to speech bahasa dataset.

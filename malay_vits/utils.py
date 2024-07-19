@@ -15,7 +15,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging
 
 
-def load_checkpoint(checkpoint_path, model, optimizer=None):
+def load_checkpoint(checkpoint_path, model, optimizer=None, drop_speaker_emb=False):
     assert os.path.isfile(checkpoint_path)
     checkpoint_dict = torch.load(checkpoint_path, map_location='cpu')
     iteration = checkpoint_dict['iteration']
@@ -30,7 +30,14 @@ def load_checkpoint(checkpoint_path, model, optimizer=None):
     new_state_dict = {}
     for k, v in state_dict.items():
         try:
-            new_state_dict[k] = saved_state_dict[k]
+            if k == 'emb_g.weight':
+                if drop_speaker_emb:
+                    new_state_dict[k] = v
+                    continue
+                v[:saved_state_dict[k].shape[0], :] = saved_state_dict[k]
+                new_state_dict[k] = v
+            else:
+                new_state_dict[k] = saved_state_dict[k]
         except BaseException:
             logger.info("%s is not in the checkpoint" % k)
             new_state_dict[k] = v

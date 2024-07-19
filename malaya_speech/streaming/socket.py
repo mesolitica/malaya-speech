@@ -1,5 +1,6 @@
 import collections
 from functools import partial
+from datetime import datetime
 import numpy as np
 import logging
 
@@ -15,20 +16,23 @@ class Audio:
         num_padding_frames: int = 20,
         ratio: float = 0.25,
         mode_utterence: bool = True,
-        hard_utterence: bool = True,
+        enable_silent_timeout: bool = False,
+        silent_timeout: float = 5.0,
         **kwargs,
     ):
 
         self.vad_model = vad_model
         self.segment_length = segment_length
         self.mode_utterence = mode_utterence
-        self.hard_utterence = hard_utterence
+        self.enable_silent_timeout = enable_silent_timeout
+        self.silent_timeout = silent_timeout
         self.queue = np.array([], np.float32)
         self.num_padding_frames = num_padding_frames
         self.ratio = ratio
         self.ring_buffer = collections.deque(maxlen=num_padding_frames)
         self.triggered = False
         self.i = 0
+        self.last_silent = datetime.now()
 
     def vad_collector(self, array, **kwargs):
         """
@@ -66,23 +70,22 @@ class Audio:
 
             if self.mode_utterence:
 
-                if not self.hard_utterence:
-                    yield frame
-
                 if not self.triggered:
                     self.ring_buffer.append((frame, is_speech))
                     num_voiced = len([f for f, speech in self.ring_buffer if speech])
                     if num_voiced > self.ratio * self.ring_buffer.maxlen:
                         self.triggered = True
-                        if self.hard_utterence:
-                            for f, s in self.ring_buffer:
-                                yield f
+
+                        self.last_silent = datetime.now()
+                        for f, s in self.ring_buffer:
+                            yield f
 
                         self.ring_buffer.clear()
 
                 else:
-                    if self.hard_utterence:
-                        yield frame
+                    self.last_silent = datetime.now()
+                    yield frame
+
                     self.ring_buffer.append((frame, is_speech))
                     num_unvoiced = len(
                         [f for f, speech in self.ring_buffer if not speech]
@@ -91,6 +94,11 @@ class Audio:
                         self.triggered = False
                         yield None
                         self.ring_buffer.clear()
+
+                if self.enable_silent_timeout and (
+                        datetime.now() - self.last_silent).seconds >= self.silent_timeout:
+                    self.last_silent = datetime.now()
+                    yield None
 
             else:
                 yield frame

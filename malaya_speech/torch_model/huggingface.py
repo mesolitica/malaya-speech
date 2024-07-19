@@ -15,6 +15,7 @@ from malaya_speech.utils.aligner import (
     merge_words,
 )
 from malaya_speech.utils.subword import merge_bpe_tokens
+from malaya_speech.utils.torch_featurization import melspectrogram, piecewise_linear_log
 from malaya_speech.model.abstract import Abstract
 from malaya_boilerplate.torch_utils import to_tensor_cuda, to_numpy
 from scipy.special import log_softmax
@@ -49,12 +50,26 @@ def batching(audios):
     return normed_input_values.astype(np.float32), attentions
 
 
+def batching_conformer(audios):
+    inputs, lengths = [], []
+    for audio in audios:
+        mel = melspectrogram(audio)
+        mel = piecewise_linear_log(mel)
+        inputs.append(mel)
+        lengths.append(len(mel))
+
+    inputs = torch.nn.utils.rnn.pad_sequence(inputs, batch_first=True)
+    lengths = torch.tensor(lengths)
+    return inputs, lengths
+
+
 class CTC(torch.nn.Module):
     def __init__(self, hf_model, model, name):
         super().__init__()
         self.hf_model = hf_model
         self.__model__ = model
         self.__name__ = name
+        self.is_conformer = 'conformer' in self.__model__
 
     def greedy_decoder(self, inputs):
         """
@@ -118,10 +133,21 @@ class CTC(torch.nn.Module):
             for input in inputs
         ]
         cuda = next(self.hf_model.parameters()).is_cuda
-        normed_input_values, attentions = batching(inputs)
-        normed_input_values = to_tensor_cuda(torch.tensor(normed_input_values), cuda)
-        attentions = to_tensor_cuda(torch.tensor(attentions), cuda)
-        out = self.hf_model(normed_input_values, attention_mask=attentions)
+        if self.is_conformer:
+            inputs, lengths = batching_conformer(inputs)
+            inputs = to_tensor_cuda(inputs, cuda)
+            inputs = inputs.type(self.hf_model.dtype)
+            lengths = to_tensor_cuda(lengths, cuda)
+            lengths = lengths.type(self.hf_model.dtype)
+            out = self.hf_model(inputs=inputs, lengths=lengths)
+        else:
+            normed_input_values, attentions = batching(inputs)
+            normed_input_values = to_tensor_cuda(torch.tensor(normed_input_values), cuda)
+            normed_input_values = normed_input_values.type(self.hf_model.dtype)
+            attentions = to_tensor_cuda(torch.tensor(attentions), cuda)
+            attentions = attentions.type(self.hf_model.dtype)
+            out = self.hf_model(normed_input_values, attention_mask=attentions)
+
         return norm_func(to_numpy(out[0]), axis=-1)
 
     def gradio(self, record_mode: bool = True,
@@ -216,7 +242,9 @@ class Aligner(torch.nn.Module):
         cuda = next(self.hf_model.parameters()).is_cuda
         normed_input_values, attentions = batching([input])
         normed_input_values = to_tensor_cuda(torch.tensor(normed_input_values), cuda)
+        normed_input_values = normed_input_values.type(self.hf_model.dtype)
         attentions = to_tensor_cuda(torch.tensor(attentions), cuda)
+        attentions = attentions.type(self.hf_model.dtype)
         out = self.hf_model(normed_input_values, attention_mask=attentions)
         logits = to_numpy(out[0])
         o = log_softmax(logits, axis=-1)[0]
@@ -229,21 +257,25 @@ class Aligner(torch.nn.Module):
         t = (len(input) / sample_rate) / o.shape[0]
         chars_alignment = []
         for s in segments:
-            chars_alignment.append({'text': s.label,
-                                    'start': s.start * t,
-                                    'end': s.end * t,
-                                    'start_t': s.start,
-                                    'end_t': s.end,
-                                    'score': s.score})
+            chars_alignment.append(
+                {'text': s.label,
+                 'start': s.start * t,
+                 'end': s.end * t,
+                 'start_t': s.start,
+                 'end_t': s.end,
+                 'score': s.score}
+            )
 
         words_alignment = []
         for s in word_segments:
-            words_alignment.append({'text': s.label,
-                                    'start': s.start * t,
-                                    'end': s.end * t,
-                                    'start_t': s.start,
-                                    'end_t': s.end,
-                                    'score': s.score})
+            words_alignment.append(
+                {'text': s.label,
+                 'start': s.start * t,
+                 'end': s.end * t,
+                 'start_t': s.start,
+                 'end_t': s.end,
+                 'score': s.score}
+            )
 
         return {
             'chars_alignment': chars_alignment,
@@ -269,25 +301,12 @@ class Aligner(torch.nn.Module):
 
 
 class Seq2Seq(torch.nn.Module):
-    def __init__(self, hf_model, processor, model, name, use_whisper_processor=False, **kwargs):
+    def __init__(self, hf_model, processor, model, name, **kwargs):
         super().__init__()
         self.hf_model = hf_model
         self.processor = processor
         self.__model__ = model
         self.__name__ = name
-
-        if use_whisper_processor:
-            if 'whisper' not in model.lower():
-                logger.warning(
-                    '`use_whisper_processor` only available for whisper model, will fallback to huggingface processor')
-                use_whisper_processor = False
-
-            if not whisper_available:
-                logger.warning(
-                    'openai-whisper not installed. Please install it by `pip install openai-whisper` and try again. Will fallback to huggingface processor')
-                use_whisper_processor = False
-
-        self.use_whisper_processor = use_whisper_processor
 
     def generate(self, inputs, skip_special_tokens: bool = True, **kwargs):
         """
@@ -315,23 +334,13 @@ class Seq2Seq(torch.nn.Module):
             for input in inputs
         ]
         cuda = next(self.hf_model.parameters()).is_cuda
-
-        if self.use_whisper_processor:
-
-            mels = []
-            for k in range(len(inputs)):
-                audio = whisper.pad_or_trim(inputs[k].astype(np.float32))
-                mel = whisper.log_mel_spectrogram(audio)
-                mels.append({'input_features': mel})
-
-            batch = self.processor.feature_extractor.pad(mels, return_tensors="pt")
-            input_features = batch.input_features
-
-        else:
-            input_features = self.processor(
-                inputs, return_tensors='pt', sampling_rate=16000).input_features
-
+        input_features = self.processor(
+            inputs,
+            return_tensors='pt',
+            sampling_rate=16000,
+        ).input_features
         input_features = to_tensor_cuda(input_features, cuda)
+        input_features = input_features.type(self.hf_model.dtype)
         outputs = self.hf_model.generate(input_features, **kwargs)
         return self.processor.tokenizer.batch_decode(
             outputs, skip_special_tokens=skip_special_tokens)
@@ -433,6 +442,7 @@ class Seq2SeqAligner(torch.nn.Module):
 
         input_features = self.processor([input], return_tensors='pt').input_features
         input_features = to_tensor_cuda(input_features, cuda)
+        input_features = input_features.type(self.hf_model.dtype)
 
         label = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(
             f'<|startoftranscript|><|{lang}|><|transcribe|><|notimestamps|>{transcription}<|endoftext|>'))
