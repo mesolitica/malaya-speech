@@ -1,4 +1,4 @@
-WANDB_PROJECT=malaysian-whisper-small-v2 \
+WANDB_PROJECT=malaysian-whisper-small-v3 \
 torchrun --nproc_per_node 4 \
 -m whisper \
 --model_name_or_path "openai/whisper-small" \

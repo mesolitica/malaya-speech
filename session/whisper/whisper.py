@@ -406,8 +406,16 @@ def main():
         checkpoint = training_args.resume_from_checkpoint
     elif last_checkpoint is not None:
         checkpoint = last_checkpoint
-    train_result = trainer.train(resume_from_checkpoint=checkpoint)
-    trainer.save_model()
+    try:
+        trainer.train(resume_from_checkpoint=checkpoint)
+        trainer.save_model()
+        trainer.save_state()
+
+    except Exception as e:
+        e = str(e)
+        print(e)
+        if checkpoint and ('checkpoint' in e or 'central directory' in e):
+            os.system(f'mv {checkpoint} {checkpoint}-temp')
 
 
 if __name__ == "__main__":

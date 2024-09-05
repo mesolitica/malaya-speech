@@ -1,5 +1,5 @@
-WANDB_PROJECT=malaysian-whisper-medium-v2 \
-torchrun --nproc_per_node 4 \
+WANDB_PROJECT=malaysian-whisper-medium-v3 \
+~/.local/bin/torchrun --nproc_per_node 4 \
 -m whisper \
 --model_name_or_path "openai/whisper-medium" \
 --train_dataset_name "mosaic-stt" \
