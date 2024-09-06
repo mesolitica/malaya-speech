@@ -32,7 +32,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import datasets
-import evaluate
 import numpy as np
 import torch
 import torch.nn as nn
@@ -175,6 +174,18 @@ class DistillationTrainingArguments(Seq2SeqTrainingArguments):
             "help": (
                 "Whether to freeze the entire encoder model. Only recommended when the entire encoder has been "
                 "copied from the teacher model.")}, )
+    freeze_decoder: Optional[bool] = field(
+        default=False,
+        metadata={
+            "help": (
+                "Whether to freeze the entire decoder model. Note that the decoder input embeddings are **not** frozen, since they are tied to the LM head."
+            )
+        },
+    )
+    freeze_embed_positions: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Whether to freeze the decoder embedding positions."},
+    )
     temperature: Optional[float] = field(
         default=2.0, metadata={
             "help": "Temperature to anneal the logits when computing the softmax."})
@@ -497,15 +508,6 @@ def main():
     if os.path.isdir(
             training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
         last_checkpoint = get_last_checkpoint(training_args.output_dir)
-        if last_checkpoint is None and len(os.listdir(training_args.output_dir)) > 0:
-            raise ValueError(
-                f"Output directory ({training_args.output_dir}) already exists and is not empty. "
-                "Use --overwrite_output_dir to overcome."
-            )
-        elif last_checkpoint is not None and training_args.resume_from_checkpoint is None:
-            logger.info(
-                f"Checkpoint detected, resuming training at {last_checkpoint}. To avoid this behavior, change "
-                "the `--output_dir` or add `--overwrite_output_dir` to train from scratch.")
 
     # 5. Handle the repository creation
     if accelerator.is_main_process:
@@ -588,24 +590,30 @@ def main():
     if training_args.gradient_checkpointing:
         student_model.gradient_checkpointing_enable()
 
+    def set_trainable_parameters(module, requires_grad=False):
+        for param in module.parameters():
+            param.requires_grad = requires_grad
+        module._requires_grad = requires_grad
+
     # freeze student encoder if necessary
     if training_args.freeze_encoder:
-        student_model.freeze_encoder()
+        set_trainable_parameters(student_model.model.encoder, requires_grad=False)
         student_model.model.encoder.gradient_checkpointing = False
 
-    # if share_hidden_states:
-    # tie the weights for the student encoder if we're freezing it and it's the same as the teacher
-    #    student_model.model.encoder = teacher_model.model.encoder
+    if training_args.freeze_decoder:
+        set_trainable_parameters(student_model.model.decoder, requires_grad=False)
+        student_model.model.decoder.gradient_checkpointing = False
+        # un-freeze LM head parameters (and consequently word embeddings), frozen
+        # when frozing decoder since tied word embedding and LM head
+        set_trainable_parameters(student_model.proj_out, requires_grad=True)
 
-    tokenizer.set_prefix_tokens(
-        task=data_args.task,
-        predict_timestamps=True
-    )
-    student_model.generation_config.update(
-        **{
-            "task": data_args.task,
-        }
-    )
+    if training_args.freeze_embed_positions:
+        # set_trainable_parameters(student_model.model.decoder.embed_tokens, requires_grad=False)
+        set_trainable_parameters(student_model.model.decoder.embed_positions, requires_grad=False)
+        if student_model.model.decoder.gradient_checkpointing:
+            logger.info(
+                "Disabling gradient checkpointing in the decoder since it's incompatible with `freeze_embed_positions`."
+            )
 
     # 8. Create a single speech processor - make sure all processes wait until data is saved
     if accelerator.is_main_process:
@@ -613,7 +621,6 @@ def main():
         tokenizer.save_pretrained(training_args.output_dir)
         # save the config and generation config as well
         config.save_pretrained(training_args.output_dir)
-        student_model.generation_config.save_pretrained(training_args.output_dir)
 
     accelerator.wait_for_everyone()
     processor = WhisperProcessor.from_pretrained(training_args.output_dir)
@@ -631,6 +638,8 @@ def main():
 
     num_workers = data_args.preprocessing_num_workers
     dataloader_num_workers = training_args.dataloader_num_workers
+    torch.manual_seed(42)
+    torch.cuda.manual_seed_all(42)
 
     class Train(Dataset):
         def __init__(self, folder):
@@ -652,9 +661,10 @@ def main():
                     self.audio.encode_example(
                         self.data[item]['audio_filename']))['array']
                 inputs = feature_extractor(audio, sampling_rate=sampling_rate)
-                input_str = self.data[item]['new_text']
+                input_str = self.data[item]['text']
 
                 token_ids = tokenizer(input_str, add_special_tokens=False).input_ids
+                token_ids = token_ids[:max_label_length]
 
                 return {
                     'input_features': inputs.input_features[0],
@@ -667,49 +677,10 @@ def main():
                 return None
 
     train_dataset = Train(data_args.train_dataset_name)
-    eval_dataset = Train(data_args.eval_dataset_name)
 
-    # 11. Define Evaluation Metrics
-    def compute_metrics(preds, labels):
-        # replace padded labels by the padding token
-        for idx in range(len(labels)):
-            labels[idx][labels[idx] == -100] = tokenizer.pad_token_id
-
-        pred_str = tokenizer.batch_decode(
-            preds,
-            skip_special_tokens=True,
-            decode_with_timestamps=return_timestamps)
-        # we do not want to group tokens when computing the metrics
-        label_str = tokenizer.batch_decode(labels, skip_special_tokens=True)
-        wer_ortho = 100 * metric.compute(predictions=pred_str, references=label_str)
-
-        # normalize everything and re-compute the WER
-        norm_pred_str = [normalizer(pred) for pred in pred_str]
-        norm_label_str = [normalizer(label) for label in label_str]
-        # for logging, we need the pred/labels to match the norm_pred/norm_labels,
-        # so discard any filtered samples here
-        pred_str = [pred_str[i] for i in range(len(norm_pred_str)) if len(norm_label_str[i]) > 0]
-        label_str = [label_str[i] for i in range(len(norm_label_str)) if len(norm_label_str[i]) > 0]
-        # filtering step to only evaluate the samples that correspond to non-zero
-        # normalized references:
-        norm_pred_str = [
-            norm_pred_str[i] for i in range(
-                len(norm_pred_str)) if len(
-                norm_label_str[i]) > 0]
-        norm_label_str = [
-            norm_label_str[i] for i in range(
-                len(norm_label_str)) if len(
-                norm_label_str[i]) > 0]
-
-        wer = 100 * metric.compute(predictions=norm_pred_str, references=norm_label_str)
-        return {"wer": wer, "wer_ortho": wer_ortho}, pred_str, label_str, norm_pred_str, norm_label_str
-
-    # 12. Define Training Schedule
-    # Store some constants
     per_device_train_batch_size = int(training_args.per_device_train_batch_size)
     train_batch_size = per_device_train_batch_size * accelerator.num_processes
     gradient_accumulation_steps = int(training_args.gradient_accumulation_steps)
-    per_device_eval_batch_size = int(training_args.per_device_eval_batch_size)
 
     if training_args.max_steps < 0:
         num_epochs = int(training_args.num_train_epochs)
@@ -722,14 +693,6 @@ def main():
         # necessary over the iterator.
         num_epochs = sys.maxsize
         steps_per_epoch = total_train_steps
-
-    if training_args.eval_steps is None:
-        logger.info(
-            f"eval_steps is not set, evaluating at the end of {'each epoch' if not data_args.streaming else 'training'}"
-        )
-        eval_steps = steps_per_epoch
-    else:
-        eval_steps = training_args.eval_steps
 
     # 13. Define optimizer, LR scheduler, collator
     decay_parameters = get_parameter_names(
@@ -850,42 +813,6 @@ def main():
         metrics = {"loss": loss, "ce_loss": ce_loss, "kl_loss": kl_loss}
         return loss, metrics
 
-    # Define eval fn
-    def eval_step(batch):
-        student_model.eval()
-        teacher_model.eval()
-
-        with torch.no_grad():
-            student_outputs = student_model(**batch)
-            if share_hidden_states:
-                encoder_outputs = BaseModelOutput(student_outputs.encoder_last_hidden_state)
-                teacher_outputs = teacher_model(
-                    encoder_outputs=encoder_outputs, labels=batch["labels"])
-            else:
-                teacher_outputs = teacher_model(**batch)
-
-        # CE (data) loss
-        ce_loss = student_outputs.loss
-
-        # log softmax / softmax for numerical stability
-        student_distribution = nn.functional.log_softmax(student_outputs.logits, dim=-1)
-        teacher_distribution = nn.functional.softmax(teacher_outputs.logits, dim=-1)
-        # temperature is always 1 for eval
-        kl_loss = kl_divergence(teacher_distribution, student_distribution, batch["labels"])
-
-        # use Distil-Whisper formulation (fix weight of CE loss and tune KL weight)
-        loss = 0.8 * ce_loss + training_args.kl_weight * kl_loss
-        metrics = {"loss": loss, "ce_loss": ce_loss, "kl_loss": kl_loss}
-        return metrics
-
-    def generate_step(batch):
-        student_model.eval()
-        output_ids = accelerator.unwrap_model(student_model).generate(
-            batch["input_features"], **gen_kwargs)
-        output_ids = accelerator.pad_across_processes(
-            output_ids, dim=1, pad_index=tokenizer.pad_token_id)
-        return output_ids
-
     logger.info("***** Running training *****")
     logger.info(
         f"  Num examples = {total_train_steps * train_batch_size * gradient_accumulation_steps}")
@@ -897,7 +824,6 @@ def main():
     )
     logger.info(f"  Total optimization steps = {total_train_steps}")
 
-    # ======================== Training ================================
     train_time = 0
     train_start = time.time()
     steps_trained_progress_bar = tqdm(
@@ -908,6 +834,8 @@ def main():
     continue_training = True
     epochs_trained = 0
     cur_step = 0
+    vectorized_datasets = DatasetDict()
+    vectorized_datasets['train'] = train_dataset
 
     checkpoint = None
     if training_args.resume_from_checkpoint is not None:
@@ -916,8 +844,12 @@ def main():
         checkpoint = last_checkpoint
 
     if checkpoint is not None:
-        accelerator.load_state(checkpoint)
-        # Find num steps and epoch from saved state string pattern
+        try:
+            accelerator.load_state(checkpoint)
+        except BaseException:
+            os.system(f'mv {checkpoint} {checkpoint}-temp')
+            os._exit(0)
+
         pattern = r"checkpoint-(\d+)-epoch-(\d+)"
         match = re.search(pattern, checkpoint)
         cur_step = int(match.group(1))
@@ -929,25 +861,26 @@ def main():
 
         steps_trained_progress_bar.update(cur_step)
 
-        resume_step = (cur_step - epochs_trained * steps_per_epoch) * gradient_accumulation_steps
+        resume_step = (cur_step - epochs_trained * steps_per_epoch) * \
+            gradient_accumulation_steps
+        else:
+            # Currently we don't know how many steps we've taken in the current epoch
+            # So we just shuffle the dataset one extra time and start from a fresh epoch
+            # This is "good enough" for our purposes but not fully correct
+            resume_step = None
     else:
         resume_step = None
 
     for epoch in range(epochs_trained, num_epochs):
         train_dataloader = DataLoader(
-            train_dataset,
+            vectorized_datasets["train"],
             collate_fn=data_collator,
             batch_size=per_device_train_batch_size,
             num_workers=dataloader_num_workers,
             pin_memory=training_args.dataloader_pin_memory,
+            shuffle=True,
         )
         train_dataloader = accelerator.prepare(train_dataloader)
-        if hasattr(
-                train_dataloader,
-                "dataset") and isinstance(
-                train_dataloader.dataset,
-                IterableDataset):
-            train_dataloader.dataset.set_epoch(epoch)
 
         if resume_step is not None:
             # Skip the first N batches in the dataloader when resuming from a checkpoint
@@ -986,111 +919,39 @@ def main():
                         prefix="train",
                     )
 
-                # save checkpoint and weights after each save_steps and at the end of training
                 if (cur_step % training_args.save_steps == 0) or cur_step == total_train_steps:
                     intermediate_dir = os.path.join(
                         training_args.output_dir, f"checkpoint-{cur_step}-epoch-{epoch}")
                     accelerator.save_state(output_dir=intermediate_dir)
+                    feature_extractor.save_pretrained(intermediate_dir)
+                    tokenizer.save_pretrained(intermediate_dir)
+                    config.save_pretrained(intermediate_dir)
+
                     accelerator.wait_for_everyone()
                     if accelerator.is_main_process:
                         rotate_checkpoints(
                             training_args.save_total_limit,
                             output_dir=training_args.output_dir)
 
-                        if cur_step == total_train_steps:
-                            student_model = accelerator.unwrap_model(student_model)
-                            student_model.save_pretrained(training_args.output_dir)
-
-                        if training_args.push_to_hub:
-                            repo.push_to_hub(
-                                commit_message=f"Saving train state of step {cur_step}",
-                                blocking=False,
-                            )
-
-                if training_args.do_eval and (cur_step %
-                                              eval_steps == 0 or cur_step == total_train_steps):
                     train_time += time.time() - train_start
-                    student_model.eval()
-                    eval_split = 'eval'
-                    # ======================== Evaluating ==============================
-                    eval_metrics = []
-                    eval_preds = []
-                    eval_labels = []
-                    eval_start = time.time()
-
-                    validation_dataloader = DataLoader(
-                        eval_dataset,
-                        collate_fn=data_collator,
-                        batch_size=per_device_eval_batch_size,
-                        drop_last=False,
-                        num_workers=dataloader_num_workers,
-                        pin_memory=training_args.dataloader_pin_memory,
-                    )
-                    validation_dataloader = accelerator.prepare(validation_dataloader)
-
-                    for batch in tqdm(
-                        validation_dataloader,
-                        desc=f"Evaluating {eval_split}...",
-                        position=2,
-                        disable=not accelerator.is_local_main_process,
-                    ):
-                        # Model forward
-                        eval_metric = eval_step(batch)
-                        eval_metric = accelerator.gather_for_metrics(eval_metric)
-                        eval_metrics.append(eval_metric)
-
-                        # generation
-                        if training_args.predict_with_generate:
-                            generated_ids = generate_step(batch)
-                            # Gather all predictions and targets
-                            generated_ids, labels = accelerator.gather_for_metrics(
-                                (generated_ids, batch["labels"])
-                            )
-                            eval_preds.extend(generated_ids)
-                            eval_labels.extend(labels)
-
-                        eval_time = time.time() - eval_start
-                        # normalize eval metrics
-                        eval_metrics = {key: torch.mean(torch.stack(
-                            [d[key] for d in eval_metrics])) for key in eval_metrics[0]}
-
-                        # compute WER metric
-                        wer_desc = ""
-                        if training_args.predict_with_generate:
-                            wer_metric, pred_str, label_str, norm_pred_str, norm_label_str = compute_metrics(
-                                eval_preds, eval_labels)
-                            eval_metrics.update(wer_metric)
-                            wer_desc = " ".join(
-                                [f"Eval {key}: {value} |" for key, value in wer_metric.items()])
-                            log_pred(
-                                accelerator,
-                                pred_str,
-                                label_str,
-                                norm_pred_str,
-                                norm_label_str,
-                                step=cur_step,
-                                prefix=eval_split,
-                            )
-
-                        # Print metrics and update progress bar
-                        steps_trained_progress_bar.write(
-                            f"Eval results for step ({cur_step} / {total_train_steps} | Eval Loss: {eval_metrics['loss']} |"
-                            f" {wer_desc})")
-
-                        log_metric(
-                            accelerator,
-                            metrics=eval_metrics,
-                            train_time=eval_time,
-                            step=cur_step,
-                            epoch=epoch,
-                            prefix=eval_split,
-                        )
-
-                    # flush the train metrics
-                    train_start = time.time()
 
                 # break condition
                 if cur_step == total_train_steps:
+
+                    # the model under training_args.output_dir is the best model, let's also
+                    # save end of training weights
+                    final_weights_dir = os.path.join(
+                        training_args.output_dir, "end-of-training-weights")
+
+                    feature_extractor.save_pretrained(final_weights_dir)
+                    tokenizer.save_pretrained(final_weights_dir)
+                    # save the config and generation config as well
+                    config.save_pretrained(final_weights_dir)
+
+                    # un-wrap student model for save
+                    student_model = accelerator.unwrap_model(student_model)
+                    student_model.save_pretrained(final_weights_dir)
+
                     continue_training = False
                     break
 
