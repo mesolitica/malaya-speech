@@ -863,11 +863,7 @@ def main():
 
         resume_step = (cur_step - epochs_trained * steps_per_epoch) * \
             gradient_accumulation_steps
-        else:
-            # Currently we don't know how many steps we've taken in the current epoch
-            # So we just shuffle the dataset one extra time and start from a fresh epoch
-            # This is "good enough" for our purposes but not fully correct
-            resume_step = None
+
     else:
         resume_step = None
 
