@@ -149,15 +149,6 @@ def main():
     if os.path.isdir(
             training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
         last_checkpoint = get_last_checkpoint(training_args.output_dir)
-        if last_checkpoint is None and len(os.listdir(training_args.output_dir)) > 0:
-            raise ValueError(
-                f"Output directory ({training_args.output_dir}) already exists and is not empty. "
-                "Use --overwrite_output_dir to overcome."
-            )
-        elif last_checkpoint is not None and training_args.resume_from_checkpoint is None:
-            logger.info(
-                f"Checkpoint detected, resuming training at {last_checkpoint}. To avoid this behavior, change "
-                "the `--output_dir` or add `--overwrite_output_dir` to train from scratch.")
 
     # Setup logging
     logging.basicConfig(
@@ -814,7 +805,11 @@ def main():
     accelerator.wait_for_everyone()
 
     if checkpoint is not None:
-        accelerator.load_state(checkpoint)
+        try:
+            accelerator.load_state(checkpoint)
+        except BaseException:
+            os.system(f'mv {checkpoint} {checkpoint}-temp')
+            os._exit(0)
         # Find num steps and epoch from saved state string pattern
         pattern = r"checkpoint-(\d+)-epoch-(\d+)"
         match = re.search(pattern, checkpoint)
