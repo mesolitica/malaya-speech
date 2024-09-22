@@ -31,6 +31,7 @@ import torch
 from torch.utils.data import DataLoader
 
 import datasets
+from datasets import Audio
 from datasets import DatasetDict, Dataset, IterableDataset, concatenate_datasets, load_dataset
 
 from huggingface_hub import HfApi
@@ -552,22 +553,6 @@ def main():
 
         accelerator.free_memory()
         del generate_labels, all_lens
-
-        with accelerator.local_main_process_first():
-            # NOTE: filtering is done at the end because in the `datasets` library, caching audio files is done after most operations
-            # caching audio files is time and disk-space consuming, so we want to avoid it at all costs, especially for large (>1Kh) audio datasets.
-            # That's also why we avoid to concat the processed datasets
-            # (vectorized_datasets) with the audio column present in raw_datasets.
-
-            def is_audio_in_length_range(length):
-                return length > min_target_length and length < max_target_length
-
-            # filter data that is shorter than min_target_length
-            vectorized_datasets = vectorized_datasets.filter(
-                is_audio_in_length_range,
-                num_proc=num_workers,
-                input_columns=["target_length"],
-            )
 
         if description_column_name is not None and data_args.max_description_token_length is not None:
             with accelerator.local_main_process_first():
