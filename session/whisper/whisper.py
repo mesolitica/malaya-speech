@@ -200,15 +200,16 @@ class DataCollatorSpeechSeq2SeqWithPadding:
         features = [f for f in features if f is not None]
 
         # dataloader returns a list of features which we convert to a dict
-        input_features = {model_input_name: [feature[model_input_name] for feature in features]}
+        audios = [feature['input_features'] for feature in features]
         label_features = {"input_ids": [feature["labels"] for feature in features]}
 
-        # reformat list to dict and set to pytorch format
-        batch = self.processor.feature_extractor.pad(
-            input_features,
-            padding=self.input_padding,
-            return_tensors="pt",
-        )
+        with torch.no_grad():
+            batch = self.processor(
+                audios,
+                return_tensors='pt',
+                sampling_rate=self.processor.feature_extractor.sampling_rate,
+                device = 'cuda'
+            )
 
         labels_batch = self.processor.tokenizer.pad(
             label_features,
@@ -319,7 +320,7 @@ def main():
         model_args.model_name_or_path,
         config=config,
         torch_dtype=dtype,
-        use_flash_attention_2=True,
+        attn_implementation='sdpa',
     )
 
     tokenizer.set_prefix_tokens(
@@ -364,17 +365,18 @@ def main():
                 audio = self.audio.decode_example(
                     self.audio.encode_example(
                         self.data[item]['audio_filename']))['array']
-                inputs = feature_extractor(audio, sampling_rate=sampling_rate)
                 input_str = self.data[item]['text']
 
                 token_ids = tokenizer(input_str, add_special_tokens=False).input_ids
-                token_ids = token_ids[:max_label_length]
-
-                return {
-                    'input_features': inputs.input_features[0],
+                if len(token_ids) > max_label_length:
+                    return None
+                
+                d = {
+                    'input_features': audio,
                     'input_length': [len(audio)],
                     'labels': token_ids,
                 }
+                return d
             except Exception as e:
                 print(e)
 
@@ -386,8 +388,8 @@ def main():
         processor=processor,
         decoder_start_token_id=decoder_start_token_id,
         decoder_prev_token_id=decoder_prev_token_id,
-        input_padding="longest",
-        target_padding="longest",
+        input_padding="max_length",
+        target_padding="max_length",
         max_target_length=max_label_length,
     )
 

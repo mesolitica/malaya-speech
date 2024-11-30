@@ -1,5 +1,5 @@
-WANDB_PROJECT=malaysian-whisper-small-v3 \
-torchrun --nproc_per_node 4 \
+WANDB_PROJECT=malaysian-whisper-small-v2 \
+torchrun --nproc_per_node 2 \
 -m whisper \
 --model_name_or_path "openai/whisper-small" \
 --train_dataset_name "mosaic-stt" \
@@ -11,11 +11,14 @@ torchrun --nproc_per_node 4 \
 --logging_steps 1 \
 --save_total_limit 3 \
 --num_train_epochs 3 \
---per_device_train_batch_size 128 \
+--per_device_train_batch_size 70 \
+--gradient_accumulation_steps 1 \
 --per_device_eval_batch_size 4 \
---output_dir "./small" \
+--output_dir "malaysian-whisper-small-v2" \
 --do_train \
 --gradient_checkpointing \
 --predict_with_generate \
 --max_label_length 440 \
---bf16
+--bf16 \
+--torch_compile \
+--torch_compile_backend inductor
