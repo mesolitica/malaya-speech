@@ -44,9 +44,8 @@ snapshot_download(repo_id='mesolitica/Malaysian-Emilia', repo_type='dataset', al
 2. Install libraries,
 
 ```bash
-git clone https://github.com/SWivid/F5-TTS
+git clone https://github.com/mesolitica/F5-TTS
 cd F5-TTS
-git checkout be53fb179c17c8db16656d017af26578633cd343
 pip3 install -e .
 pip3 install torchdiffeq x-transformers jieba pypinyin ema_pytorch accelerate==1.1.1
 python3 -c "
