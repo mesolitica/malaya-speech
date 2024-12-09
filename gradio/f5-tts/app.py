@@ -178,6 +178,8 @@ def basic_tts(
     if len(gen_text_input) < 2:
         raise gr.Error(f"Text to generate is too short.")
 
+    torch.cuda.empty_cache()
+
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
         aseg = AudioSegment.from_file(ref_audio_input)
         non_silent_segs = silence.split_on_silence(
@@ -392,7 +394,8 @@ If you're having issues, try converting your reference audio to WAV or MP3, clip
     gr.Markdown("""
 ## Remarks
 
-If you found the audio generated
+If the audio generated sounds like little bit underwater, that is probably Vocoder, we are building better Vocoder!
+
 ## Source code
 
 Source code of the Gradio UI at [malaya-speech/gradio/f5-tts](https://github.com/mesolitica/malaya-speech/tree/master/gradio/f5-tts).
