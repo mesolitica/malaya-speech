@@ -1,0 +1,15 @@
+torch==2.5.1
+torchaudio==2.5.1
+git+https://github.com/mesolitica/dynamic-batch-TTS-pipeline
+gradio==5.8.0
+transformers
+pydub
+vocos
+vector_quantize_pytorch==1.14.24
+torchdiffeq==0.2.4
+librosa
+x-transformers==1.42.11
+jieba==0.42.1
+pypinyin==0.53.0
+omegaconf==2.3.0
+matplotlib
