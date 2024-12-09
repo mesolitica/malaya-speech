@@ -54,7 +54,7 @@ maxlen_str = f'{maxlen // 1000} seconds'
 
 examples = []
 for f in glob('*.mp3'):
-    examples.append([f, '', 'Helo, saya nak makan nasi ayam, sekian.', True, True, 0.15, 1.0])
+    examples.append([f, '', 'Model Text to Speech TTS ini dibangunkan seratus peratus oleh Mesolitica, syarikat pemula di Malaysia yang membangunkan juga Malaysia Large Language Model mallam.', False, True, 0.15, 1.0])
 
 def load_speech_enhancement():
     global speech_enhancement, hp, speech_enhancement_sr, chunk_length, overlap_length, speech_enhancement_hop_length
@@ -85,7 +85,7 @@ def load_tts():
     global model, vocoder
     gr.Info('Loading TTS model.')
     model = load_f5_tts('mesolitica/Malaysian-F5-TTS', device = device, dtype = torch.float16)
-    vocoder = load_vocoder(device = device)
+    vocoder = load_vocoder('mesolitica/malaysian-vocos-mel-24khz', device = device)
     convert_char_to_pinyin(['helo'])
 
 
@@ -107,14 +107,21 @@ def speech_enhancement_func(y, sr, resample_back = True):
             lengths.append(chunk.shape[-1])
             abs_max = chunk.abs().max().clamp(min=1e-7)
             abs_maxes.append(abs_max)
-            chunk = chunk.type(torch.float32).to(device)
+            chunk = chunk.type(torch.float32)
             chunk = chunk / abs_max
             chunk = F.pad(chunk, (0, npad))
             audios.append(chunk)
-        
-        audios = pad_sequence(audios, batch_first=True)
-        hwav = speech_enhancement(audios).cpu()
-        results = [hwav[i][:lengths[i]] * abs_maxes[i] for i in range(len(hwav))]
+
+        results = []
+        batch_size = 3
+        for i in range(0, len(audios), batch_size):
+            b = audios[i: i + batch_size]
+            l = lengths[i: i + batch_size]
+            a = abs_maxes[i: i + batch_size]
+            padded = pad_sequence(b, batch_first=True).to(device)
+            hwav = speech_enhancement(padded).cpu()
+            results.extend([hwav[k][:l[k]] * a[k] for k in range(len(hwav))])
+
         hwav = merge_chunks(
             results, 
             chunk_length, 
@@ -140,6 +147,15 @@ def remove_silence_edges(audio, silence_threshold=-42):
 
     return trimmed_audio
 
+def hotload():
+    if model is None:
+        load_tts()
+
+    if asr_pipe is None:
+        load_asr_pipe()
+
+    if speech_enhancement is None:
+        load_speech_enhancement()
 
 def basic_tts(
     ref_audio_input,
@@ -196,14 +212,7 @@ def basic_tts(
     y, sr = torchaudio.load(ref_audio_input)
     y = y.mean(dim=0)
 
-    if model is None:
-        load_tts()
-
-    if asr_pipe is None:
-        load_asr_pipe()
-
-    if speech_enhancement is None:
-        load_speech_enhancement()
+    hotload()
 
     if reference_enhancement:
         y = speech_enhancement_func(y, sr)
@@ -229,7 +238,10 @@ def basic_tts(
     cross_fade_duration = cross_fade_duration_slider
     
     max_chars = int(len(ref_text.encode("utf-8")) / (audio.shape[-1] / sr) * (25 - audio.shape[-1] / sr))
-    gen_text_batches = chunk_text(text, max_chars=max_chars)
+    text = [t.strip() for t in text.split('\n') if len(t.strip())]
+    gen_text_batches = []
+    for t in text:
+        gen_text_batches.extend(chunk_text(t, max_chars=max_chars))
     print(gen_text_batches)
 
     if not ref_text.endswith(". ") and not ref_text.endswith("。"):
@@ -326,7 +338,7 @@ If you're having issues, try converting your reference audio to WAV or MP3, clip
     reference_enhancement = gr.Checkbox(
         label="Reference Enhancement",
         info="Apply Speech Enhancement to reduce noise for reference audio, this will also increase generation time.",
-        value=True,
+        value=False,
     )
     output_enhancement = gr.Checkbox(
         label="Output Enhancement",
@@ -378,6 +390,9 @@ If you're having issues, try converting your reference audio to WAV or MP3, clip
         ],
     )
     gr.Markdown("""
+## Remarks
+
+If you found the audio generated
 ## Source code
 
 Source code of the Gradio UI at [malaya-speech/gradio/f5-tts](https://github.com/mesolitica/malaya-speech/tree/master/gradio/f5-tts).
@@ -397,4 +412,8 @@ We created a library to do dynamic batching with Torch compile to serve better c
 
 
 if __name__ == "__main__":
+    if os.environ.get('HOTLOAD', 'false').lower() == 'true':
+        print('hotloading the models')
+        hotload()
+
     demo.queue().launch(server_name="0.0.0.0")

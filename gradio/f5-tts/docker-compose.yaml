@@ -15,5 +15,7 @@ services:
     ports:
       - "7860:7860"
     volumes:
-      - "~/.cache/huggingface:/workspace/.cache/huggingface"
+      - "~/.cache/huggingface:/root/.cache/huggingface"
+    environment:
+      - HOTLOAD=true
     command: gradio app.py
