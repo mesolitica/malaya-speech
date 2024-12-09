@@ -23,12 +23,12 @@ dataset_name = "Emilia_Malaysian"
 
 exp_name = "F5TTS_Base"  # F5TTS_Base | E2TTS_Base
 
-learning_rate = 1e-4
+learning_rate = 2.5e-5
 
 batch_size_per_gpu = 10400  # 8 GPUs, 8 * 38400 = 307200
 batch_size_type = "frame"  # "frame" or "sample"
 max_samples = 64  # max sequences per batch if use frame-wise batch_size. we set 32 for small models, 64 for base models
-grad_accumulation_steps = 4  # note: updates = steps / grad_accumulation_steps
+grad_accumulation_steps = 1  # note: updates = steps / grad_accumulation_steps
 max_grad_norm = 1.0
 
 epochs = 100  # use linear decay, thus epochs control the slope
