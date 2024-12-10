@@ -49,6 +49,7 @@ chunk_length = None
 overlap_length = None
 speech_enhancement_hop_length = None
 
+maxlen_text = int(os.environ.get('MAXLEN_TEXT', '1000'))
 maxlen = 20000
 maxlen_str = f'{maxlen // 1000} seconds'
 
@@ -177,6 +178,9 @@ def basic_tts(
 
     if len(gen_text_input) < 2:
         raise gr.Error(f"Text to generate is too short.")
+
+    if len(gen_text_input) >= maxlen_text:
+        raise gr.Error(f"Text to generate is more than {maxlen_text} characters, for fair public use, we limit it, feel free to self host.")
 
     torch.cuda.empty_cache()
 
@@ -324,6 +328,8 @@ The model should able to zero-shot any Malaysian and Singaporean speakers.
 If you're having issues, try converting your reference audio to WAV or MP3, clipping it to {maxlen_str} with  ✂  in the bottom right corner (otherwise might have non-optimal auto-trimmed result).
 
 **Reference text will be automatically transcribed with Whisper if not provided. For best results, keep your reference clips shorter than {maxlen_str}. Ensure the audio is fully uploaded before generating.**
+
+**For fair public use, we limit the maximum to {maxlen_text} characters only.**
 """
     )
     ref_audio_input = gr.Audio(label="Reference Audio", type="filepath")

@@ -18,4 +18,4 @@ services:
       - "~/.cache/huggingface:/root/.cache/huggingface"
     environment:
       - HOTLOAD=true
-    command: gradio app.py
+    command: python3 app.py
