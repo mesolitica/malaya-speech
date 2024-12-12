@@ -49,13 +49,15 @@ chunk_length = None
 overlap_length = None
 speech_enhancement_hop_length = None
 
+MODEL_NAME = os.environ.get('MODEL_NAME', 'mesolitica/Malaysian-F5-TTS')
+VOCODER_NAME = os.environ.get('VOCODER_NAME', 'charactr/vocos-mel-24khz')
 maxlen_text = int(os.environ.get('MAXLEN_TEXT', '1000'))
 maxlen = 20000
 maxlen_str = f'{maxlen // 1000} seconds'
 
 examples = []
 for f in glob('*.mp3'):
-    examples.append([f, '', 'Model Text to Speech TTS ini dibangunkan seratus peratus oleh Mesolitica, syarikat pemula di Malaysia yang membangunkan juga Malaysia Large Language Model mallam.', False, True, 0.15, 1.0])
+    examples.append([f, '', 'Model Text to Speech TTS ini dibangunkan seratus peratus oleh Mesolitica, syarikat pemula di Malaysia yang membangunkan juga Malaysia Large Language Model mallam.', False, 0.15, 1.0])
 
 def load_speech_enhancement():
     global speech_enhancement, hp, speech_enhancement_sr, chunk_length, overlap_length, speech_enhancement_hop_length
@@ -85,8 +87,8 @@ def load_asr_pipe():
 def load_tts():
     global model, vocoder
     gr.Info('Loading TTS model.')
-    model = load_f5_tts('mesolitica/Malaysian-F5-TTS', device = device, dtype = torch.float16)
-    vocoder = load_vocoder('mesolitica/malaysian-vocos-mel-24khz', device = device)
+    model = load_f5_tts(MODEL_NAME, device = device, dtype = torch.float16)
+    vocoder = load_vocoder(VOCODER_NAME, device = device)
     convert_char_to_pinyin(['helo'])
 
 
@@ -163,7 +165,6 @@ def basic_tts(
     ref_text_input,
     gen_text_input,
     reference_enhancement,
-    output_enhancement,
     cross_fade_duration_slider,
     speed_slider,
 ):
@@ -308,13 +309,10 @@ def basic_tts(
             final_wave = new_wave
         y = final_wave
 
-    if output_enhancement:
-        y = speech_enhancement_func(torch.tensor(y), sr, resample_back = False)
-        sr = speech_enhancement_sr
-        y = y.numpy()
+    e_y = speech_enhancement_func(torch.tensor(y), sr, resample_back = False)
+    e_y = e_y.numpy()
 
-    audio = (sr, y)
-    return [audio, ref_text_input]
+    return [(sr, y), (speech_enhancement_sr, e_y), ref_text_input]
 
 with gr.Blocks(theme=theme) as demo:
     gr.Markdown(
@@ -348,11 +346,6 @@ If you're having issues, try converting your reference audio to WAV or MP3, clip
         info="Apply Speech Enhancement to reduce noise for reference audio, this will also increase generation time.",
         value=False,
     )
-    output_enhancement = gr.Checkbox(
-        label="Output Enhancement",
-        info="Apply Speech Enhancement to reduce noise for generated audio, this will also increase generation time.",
-        value=True,
-    )
     speed_slider = gr.Slider(
         label="Speed",
         minimum=0.3,
@@ -370,6 +363,7 @@ If you're having issues, try converting your reference audio to WAV or MP3, clip
         info="Set the duration of the cross-fade between audio clips.",
     )
     audio_output = gr.Audio(label="Synthesized Audio", show_download_button = True)
+    enhanced_audio_output = gr.Audio(label="Enhanced Synthesized Audio", show_download_button = True)
     generate_btn = gr.Button("Synthesize", variant="primary")
     
     generate_btn.click(
@@ -379,11 +373,10 @@ If you're having issues, try converting your reference audio to WAV or MP3, clip
             ref_text_input,
             gen_text_input,
             reference_enhancement,
-            output_enhancement,
             cross_fade_duration_slider,
             speed_slider,
         ],
-        outputs=[audio_output, ref_text_input],
+        outputs=[audio_output, enhanced_audio_output, ref_text_input],
     )
     examples = gr.Examples(
         examples=examples,
@@ -392,7 +385,6 @@ If you're having issues, try converting your reference audio to WAV or MP3, clip
             ref_text_input,
             gen_text_input,
             reference_enhancement,
-            output_enhancement,
             cross_fade_duration_slider,
             speed_slider,
         ],

@@ -34,7 +34,7 @@ max_grad_norm = 1.0
 epochs = 100  # use linear decay, thus epochs control the slope
 num_warmup_updates = 2000  # warmup steps
 save_per_updates = 50000  # save checkpoint per steps
-last_per_steps = 500  # save last checkpoint per steps
+last_per_steps = 2000  # save last checkpoint per steps
 
 # model params
 if exp_name == "F5TTS_Base":
@@ -84,7 +84,7 @@ def main():
         max_samples=max_samples,
         grad_accumulation_steps=grad_accumulation_steps,
         max_grad_norm=max_grad_norm,
-        wandb_project="CFM-TTS",
+        wandb_project="CFM-TTS-original",
         wandb_run_name=exp_name,
         wandb_resume_id=wandb_resume_id,
         last_per_steps=last_per_steps,
