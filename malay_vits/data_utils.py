@@ -94,7 +94,7 @@ class TextAudioLoader(torch.utils.data.Dataset):
         return spec, audio_norm
 
     def get_text(self, text):
-        text_norm = text_to_sequence(text)
+        text_norm = text
         if self.add_blank:
             text_norm = commons.intersperse(text_norm, 0)
         text_norm = torch.LongTensor(text_norm)
@@ -214,7 +214,6 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         return (text, spec, wav, sid)
 
     def get_audio(self, filename):
-
         audio, sampling_rate = load_wav_to_torch(filename)
         if sampling_rate != self.sampling_rate:
             raise ValueError("{} {} SR doesn't match target {} SR".format(
@@ -233,7 +232,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         return spec, audio_norm
 
     def get_text(self, text):
-        text_norm = text_to_sequence(text)
+        text_norm = text
         if self.add_blank:
             text_norm = commons.intersperse(text_norm, 0)
         text_norm = torch.LongTensor(text_norm)

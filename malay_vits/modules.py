@@ -346,7 +346,7 @@ class ResidualCouplingLayer(nn.Module):
 
 
 class ConvFlow(nn.Module):
-    def __init__(self, in_channels, filter_channels, kernel_size, n_layers, num_bins=10, tail_bound=5.0):
+    def __init__(self, in_channels, filter_channels, kernel_size, n_layers, num_bins=10, tail_bound=7.0):
         super().__init__()
         self.in_channels = in_channels
         self.filter_channels = filter_channels

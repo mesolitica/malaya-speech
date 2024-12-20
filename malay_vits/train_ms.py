@@ -4,12 +4,12 @@ import argparse
 import itertools
 import math
 import torch
+import wandb
 from torch import nn, optim
 from torch.nn import functional as F
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
-from accelerate import Accelerator
-from accelerate.utils import LoggerType
+from torch.cuda.amp import autocast, GradScaler
 
 import commons
 import utils
@@ -102,19 +102,17 @@ def run(hps):
     scheduler_d = torch.optim.lr_scheduler.ExponentialLR(
         optim_d, gamma=hps.train.lr_decay, last_epoch=epoch_str-2)
 
+    scaler = GradScaler(enabled=hps.train.fp16_run)
+
     for epoch in range(epoch_str, hps.train.epochs + 1):
         train_and_evaluate(
-            epoch, hps, [
-                net_g, net_d], [
-                optim_g, optim_d], [
-                scheduler_g, scheduler_d], [
-                    train_loader, eval_loader], logger)
+            epoch, hps, [net_g, net_d], [optim_g, optim_d], [scheduler_g, scheduler_d], scaler, [train_loader, eval_loader], logger)
         scheduler_g.step()
         scheduler_d.step()
 
 
-def train_and_evaluate(epoch, hps, nets, optims, schedulers, loaders, logger):
-    writer = SummaryWriter(log_dir=hps.model_dir)
+def train_and_evaluate(epoch, hps, nets, optims, schedulers, scaler, loaders, logger):
+    writer = wandb.init()
     net_g, net_d = nets
     optim_g, optim_d = optims
     scheduler_g, scheduler_d = schedulers
@@ -132,57 +130,65 @@ def train_and_evaluate(epoch, hps, nets, optims, schedulers, loaders, logger):
         y, y_lengths = y.cuda(non_blocking=True), y_lengths.cuda(non_blocking=True)
         speakers = speakers.cuda(non_blocking=True)
 
-        y_hat, l_length, attn, ids_slice, x_mask, z_mask,\
-            (z, z_p, m_p, logs_p, m_q, logs_q) = net_g(x, x_lengths, spec, spec_lengths, speakers)
+        with autocast(dtype=torch.bfloat16, enabled=hps.train.fp16_run):
+            y_hat, l_length, attn, ids_slice, x_mask, z_mask,\
+                (z, z_p, m_p, logs_p, m_q, logs_q) = net_g(x, x_lengths, spec, spec_lengths, speakers)
 
-        mel = spec_to_mel_torch(
-            spec,
-            hps.data.filter_length,
-            hps.data.n_mel_channels,
-            hps.data.sampling_rate,
-            hps.data.mel_fmin,
-            hps.data.mel_fmax)
-        y_mel = commons.slice_segments(
-            mel, ids_slice, hps.train.segment_size // hps.data.hop_length)
-        y_hat_mel = mel_spectrogram_torch(
-            y_hat.squeeze(1),
-            hps.data.filter_length,
-            hps.data.n_mel_channels,
-            hps.data.sampling_rate,
-            hps.data.hop_length,
-            hps.data.win_length,
-            hps.data.mel_fmin,
-            hps.data.mel_fmax
-        )
+            mel = spec_to_mel_torch(
+                spec,
+                hps.data.filter_length,
+                hps.data.n_mel_channels,
+                hps.data.sampling_rate,
+                hps.data.mel_fmin,
+                hps.data.mel_fmax)
+            y_mel = commons.slice_segments(
+                mel, ids_slice, hps.train.segment_size // hps.data.hop_length)
+            y_hat_mel = mel_spectrogram_torch(
+                y_hat.squeeze(1),
+                hps.data.filter_length,
+                hps.data.n_mel_channels,
+                hps.data.sampling_rate,
+                hps.data.hop_length,
+                hps.data.win_length,
+                hps.data.mel_fmin,
+                hps.data.mel_fmax
+            )
 
-        try:
-            y = commons.slice_segments(y, ids_slice *
-                                       hps.data.hop_length, hps.train.segment_size)  # slice
-        except BaseException as e:
-            print(e)
-            continue
+            try:
+                y = commons.slice_segments(y, ids_slice *
+                                        hps.data.hop_length, hps.train.segment_size)  # slice
+            except BaseException as e:
+                print(e)
+                continue
+            
+            y_d_hat_r, y_d_hat_g, _, _ = net_d(y, y_hat.detach())
+            with autocast(enabled=False):
+                loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(y_d_hat_r, y_d_hat_g)
+                loss_disc_all = loss_disc
 
-        # Discriminator
-        y_d_hat_r, y_d_hat_g, _, _ = net_d(y, y_hat.detach())
-        loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(y_d_hat_r, y_d_hat_g)
-        loss_disc_all = loss_disc
         optim_d.zero_grad()
-        loss_disc_all.backward()
+        scaler.scale(loss_disc_all).backward()
+        scaler.unscale_(optim_d)
         grad_norm_d = commons.clip_grad_value_(net_d.parameters(), None)
-        optim_d.step()
+        scaler.step(optim_d)
 
-        y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
-        loss_dur = torch.sum(l_length.float())
-        loss_mel = F.l1_loss(y_mel, y_hat_mel) * hps.train.c_mel
-        loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * hps.train.c_kl
+        with autocast(dtype=torch.bfloat16, enabled=hps.train.fp16_run):
+            y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
+            with autocast(enabled=False):
+                loss_dur = torch.sum(l_length.float())
+                loss_mel = F.l1_loss(y_mel, y_hat_mel) * hps.train.c_mel
+                loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * hps.train.c_kl
 
-        loss_fm = feature_loss(fmap_r, fmap_g)
-        loss_gen, losses_gen = generator_loss(y_d_hat_g)
-        loss_gen_all = loss_gen + loss_fm + loss_mel + loss_dur + loss_kl
+                loss_fm = feature_loss(fmap_r, fmap_g)
+                loss_gen, losses_gen = generator_loss(y_d_hat_g)
+                loss_gen_all = loss_gen + loss_fm + loss_mel + loss_dur + loss_kl
+
         optim_g.zero_grad()
-        loss_gen_all.backward()
+        scaler.scale(loss_gen_all).backward()
+        scaler.unscale_(optim_g)
         grad_norm_g = commons.clip_grad_value_(net_g.parameters(), None)
-        optim_g.step()
+        scaler.step(optim_g)
+        scaler.update()
 
         if global_step % hps.train.log_interval == 0:
             lr = optim_g.param_groups[0]['lr']
@@ -204,12 +210,9 @@ def train_and_evaluate(epoch, hps, nets, optims, schedulers, loaders, logger):
             scalar_dict.update({"loss/g/{}".format(i): v for i, v in enumerate(losses_gen)})
             scalar_dict.update({"loss/d_r/{}".format(i): v for i, v in enumerate(losses_disc_r)})
             scalar_dict.update({"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)})
-            image_dict = {}
-            utils.summarize(
-                writer=writer,
-                global_step=global_step,
-                images=image_dict,
-                scalars=scalar_dict)
+
+            scalar_dict['global_step'] = global_step
+            writer.log(scalar_dict)
 
         if global_step % hps.train.eval_interval == 0:
             utils.save_checkpoint(

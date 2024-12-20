@@ -158,7 +158,8 @@ class TextEncoder(nn.Module):
                  n_heads,
                  n_layers,
                  kernel_size,
-                 p_dropout):
+                 p_dropout,
+                 use_sdpa=False):
         super().__init__()
         self.n_vocab = n_vocab
         self.out_channels = out_channels
@@ -178,7 +179,8 @@ class TextEncoder(nn.Module):
             n_heads,
             n_layers,
             kernel_size,
-            p_dropout)
+            p_dropout,
+            use_sdpa=use_sdpa)
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
     def forward(self, x, x_lengths):
@@ -442,6 +444,7 @@ class SynthesizerTrn(nn.Module):
                  n_speakers=0,
                  gin_channels=0,
                  use_sdp=True,
+                 use_sdpa=False,
                  **kwargs):
 
         super().__init__()
@@ -473,7 +476,8 @@ class SynthesizerTrn(nn.Module):
                                  n_heads,
                                  n_layers,
                                  kernel_size,
-                                 p_dropout)
+                                 p_dropout,
+                                 use_sdpa=use_sdpa)
         self.dec = Generator(
             inter_channels,
             resblock,

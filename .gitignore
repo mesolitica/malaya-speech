@@ -75,6 +75,7 @@ conformer-large.py
 malay_vits/config/*
 malay_vits/logs/*
 malay_vits/*.json
+!malay_vits/config/*.json
 malay_vits/*.ipynb
 conformer-large-mixed-32
 female.ipynb
@@ -125,3 +126,4 @@ malaya-malay-test-set.json
 pretrained-model/stt/conformer-ctc/*/checkpoint*
 pretrained-model/stt/conformer-ctc/*/runs*
 pretrained-model/stt/conformer-ctc/out
+malay_vits/monotonic_align/monotonic_align

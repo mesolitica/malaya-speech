@@ -17,6 +17,7 @@ python3 setup.py build_ext --inplace
 
 ```bash
 python3 train.py -c config.json -m speaker
+CUDA_VISIBLE_DEVICES=1 python3.10 train_ms.py -c config/multispeaker-clean.json -m multispeaker
 ```
 
 ### VITS 2

@@ -30,15 +30,13 @@ import warnings
 from dataclasses import dataclass, field
 from itertools import chain
 from typing import Optional
-
 import datasets
 import evaluate
 import torch
-
-torch._dynamo.config.optimize_ddp=False
-
+import torch.nn as nn
+import torch.nn.functional as F
+import copy
 from datasets import load_dataset
-
 import transformers
 import random
 from transformers import (
@@ -60,13 +58,16 @@ from transformers.testing_utils import CaptureLogger
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
+from transformers.models.llama.modeling_llama import LlamaForCausalLM, LlamaDecoderLayer
 from transformers import AddedToken
 import streaming
 import json
 import numpy as np
-from streaming import LocalDataset
-from streaming.base.format.mds.encodings import Encoding, _encodings
-from peft import LoraConfig, get_peft_model
+import pandas as pd
+from cut_cross_entropy.transformers import cce_patch
+
+cce_patch("llama")
+IGNORE_INDEX = -100
 
 require_version(
     "datasets>=1.8.0",
@@ -78,19 +79,122 @@ logger = logging.getLogger(__name__)
 MODEL_CONFIG_CLASSES = list(MODEL_FOR_CAUSAL_LM_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 
+def lengths_to_padding_mask(lens):
+    bsz, max_lens = lens.size(0), torch.max(lens).item()
+    mask = torch.arange(max_lens).to(lens.device).view(1, max_lens)
+    mask = mask.expand(bsz, -1) >= lens.view(bsz, 1).expand(-1, max_lens)
+    return mask
+
+
+def _uniform_assignment(src_lens, tgt_lens):
+    tgt_indices = torch.arange(torch.max(tgt_lens)).expand(len(tgt_lens), -1).to(tgt_lens.device)
+    ratio = tgt_lens / src_lens
+    index_t = (tgt_indices / ratio.view(-1, 1)).long()
+    return index_t
+
+class SpeechGeneratorCTC(torch.nn.Module):
+    def __init__(self, config, ctc_upsample_factor = 26, unit_vocab_size = 1024):
+        super().__init__()
+        n_layers, n_dims, n_heads, n_inter_dims = 2,4096,32,11008
+        _config = copy.deepcopy(config)
+        _config.hidden_size = n_dims
+        _config.num_hidden_layers = n_layers
+        _config.num_attention_heads = n_heads
+        _config.num_key_value_heads = n_heads
+        _config.intermediate_size = n_inter_dims
+        _config._attn_implementation = "flash_attention_2"
+        self.upsample_factor = ctc_upsample_factor
+        self.input_proj = nn.Linear(config.hidden_size, n_dims)
+        self.layers = nn.ModuleList(
+            [LlamaDecoderLayer(_config, layer_idx) for layer_idx in range(n_layers)]
+        )
+        self.unit_vocab_size = unit_vocab_size
+        self.output_proj = nn.Linear(n_dims, self.unit_vocab_size + 1)
+    
+    def upsample(self, reps, tgt_units=None):
+        src_lens = torch.LongTensor([len(rep) for rep in reps]).to(reps[0].device)
+        up_lens = src_lens * self.upsample_factor
+        if tgt_units is not None:
+            tgt_lens = tgt_units.ne(IGNORE_INDEX).long().sum(dim=-1)
+            up_lens = torch.max(up_lens, tgt_lens)
+        reps = torch.nn.utils.rnn.pad_sequence(reps, batch_first=True)
+        padding_mask = lengths_to_padding_mask(up_lens)
+        mapped_inputs = _uniform_assignment(src_lens, up_lens).masked_fill(
+            padding_mask, 0
+        )
+        copied_reps = torch.gather(
+            reps,
+            1,
+            mapped_inputs.unsqueeze(-1).expand(
+                *mapped_inputs.size(), reps.size(-1)
+            ),
+        )
+        copied_reps = copied_reps.masked_fill(padding_mask.unsqueeze(-1), 0)
+        position_ids = torch.arange(0, max(up_lens)).unsqueeze(0).expand(len(reps), -1).to(device=copied_reps.device)
+        return copied_reps, ~padding_mask, position_ids
+
+    def forward(self, tgt_reps, labels, tgt_units):
+        tgt_label_reps = []
+        for tgt_rep, label in zip(tgt_reps, labels):
+            tgt_label_reps.append(tgt_rep[label != IGNORE_INDEX])
+        hidden_states, attention_mask, position_ids = self.upsample(tgt_label_reps, tgt_units)
+        hidden_states = self.input_proj(hidden_states)
+        for layer in self.layers:
+            layer_outputs = layer(
+                hidden_states,
+                attention_mask=attention_mask,
+                position_ids=position_ids,
+            )
+            hidden_states = layer_outputs[0]
+        ctc_logits = self.output_proj(hidden_states)
+        ctc_lprobs = F.log_softmax(ctc_logits.float(), dim=-1, dtype=torch.float32)
+        ctc_lens = attention_mask.long().sum(dim=-1)
+        ctc_tgt_lens = tgt_units.ne(IGNORE_INDEX).long().sum(dim=-1)
+        ctc_tgt_mask = ~lengths_to_padding_mask(ctc_tgt_lens)
+        ctc_tgt_flat = tgt_units.masked_select(ctc_tgt_mask)
+        ctc_loss = F.ctc_loss(
+            ctc_lprobs.transpose(0, 1),
+            ctc_tgt_flat,
+            ctc_lens,
+            ctc_tgt_lens,
+            reduction="sum",
+            zero_infinity=True,
+            blank=self.unit_vocab_size
+        )
+        ctc_loss /= ctc_tgt_lens.sum().item()
+        return ctc_loss
+    
+    def predict(self, tgt_reps):
+        hidden_states, attention_mask, position_ids = self.upsample([tgt_reps])
+        hidden_states = self.input_proj(hidden_states)
+        for layer in self.layers:
+            layer_outputs = layer(
+                hidden_states,
+                attention_mask=attention_mask,
+                position_ids=position_ids,
+            )
+            hidden_states = layer_outputs[0]
+        ctc_logits = self.output_proj(hidden_states)
+        ctc_lprobs = F.log_softmax(ctc_logits.float(), dim=-1, dtype=torch.float32)
+        ctc_pred = ctc_lprobs.argmax(dim=-1).masked_fill_(~attention_mask, self.unit_vocab_size)
+        return ctc_pred
+
+class LlamaTTS(LlamaForCausalLM):
+    def __init__(self, config):
+        super().__init__(config)
+        self.speech_generator = SpeechGeneratorCTC(self.config)
+        
+    def forward(self, tgt_units = None, **kwargs):
+        super_out = super().forward(**kwargs, output_hidden_states = True)
+        tgt_reps = super_out.hidden_states[-1]
+        ctc_loss = self.speech_generator(tgt_reps, kwargs.get('labels'), tgt_units)
+        return {'loss': super_out.loss + ctc_loss}
 
 @dataclass
 class ModelArguments:
     """
     Arguments pertaining to which model/config/tokenizer we are going to fine-tune, or train from scratch.
     """
-
-    rank: int = field(
-        default=256,
-        metadata={
-            "help": "lora rank"
-        },
-    )
 
     model_name_or_path: Optional[str] = field(
         default=None,
@@ -355,42 +459,46 @@ def main():
             logger.info(f"New config: {config}")
 
     tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path)
-
-    class UInt32(Encoding):
-        def encode(self, obj) -> bytes:
-            return obj.tobytes()
-
-        def decode(self, data: bytes):
-            return np.frombuffer(data, np.uint32)
-
-    _encodings['uint32'] = UInt32
+    new = ['<|speaker|>']
+    new = [AddedToken(t) for t in new]
+    tokenizer.add_tokens(new)
 
     class DatasetFixed(torch.utils.data.Dataset):
-        def __init__(self, local):
-            self.dataset = LocalDataset(local=local)
-
+        def __init__(self, file):
+            self.df = pd.read_parquet(file).to_dict(orient = 'records')
+        
         def __getitem__(self, idx):
-            data = self.dataset[idx]
-            data['labels'] = data["input_ids"].copy()
-            masking = data.pop('attention_mask')
-            
-            data.pop('token_type_ids', None)
-            for k in data.keys():
-                data[k] = data[k].astype(np.int64)
-                
-            masks = []
-            for m in masking:
-                masks.append(torch.tril(torch.ones(m, m)))
-            attention_mask = block_diagonal_concat_inverted(*masks)
-            data['attention_mask'] = attention_mask
-            
-            return data
+            row = self.df[idx]
+            speaker = f"<|speaker|>{row['speaker']}<|speaker|>"
+            prompt = f"{speaker}{row['transcription']}"
+            input_ids = tokenizer(prompt, add_special_tokens = False)
+            splitted = row['audio_filename'].split('/')
+            new_f = '/'.join([splitted[0] + '_vqgan'] + splitted[1:]).replace('.mp3', '.npy')
+            speech_token = np.load(new_f)
+            input_ids['tgt_units'] = torch.tensor(speech_token)
+            if input_ids['tgt_units'].shape[-1] >= (model.config.max_position_embeddings // 2):
+                print(input_ids['tgt_units'].shape[-1], 'too long, skip')
+                return None
+            return input_ids
 
         def __len__(self):
-            return len(self.dataset)
+            return len(self.df)
+
+    def collator(batch):
+        batch = [b for b in batch if b is not None]
+        input_ids = [{'input_ids': b['input_ids']} for b in batch]
+        tgt_units = [b['tgt_units'] for b in batch]
+        tgt_units = torch.nn.utils.rnn.pad_sequence(tgt_units, batch_first = True, padding_value = -100)
+        input_ids = tokenizer.pad(input_ids, return_tensors = 'pt')
+        input_ids['labels'] = torch.clone(input_ids['input_ids'])
+        input_ids['labels'][input_ids['labels'] == tokenizer.pad_token_id] = -100
+        input_ids['tgt_units'] = tgt_units
+        print(input_ids['tgt_units'].shape)
+        
+        return input_ids
 
     dataset = DatasetFixed(data_args.train_file)
-    print(len(dataset), dataset[0]['attention_mask'].shape)
+    print(len(dataset))
 
     torch_dtype = (
         model_args.torch_dtype
@@ -398,18 +506,11 @@ def main():
         else getattr(torch, model_args.torch_dtype)
     )
 
-    model = AutoModelForCausalLM.from_pretrained(
+    model = LlamaTTS.from_pretrained(
         model_args.model_name_or_path,
-        from_tf=bool(".ckpt" in model_args.model_name_or_path),
-        config=config,
-        cache_dir=model_args.cache_dir,
-        revision=model_args.model_revision,
-        token=model_args.token,
-        trust_remote_code=model_args.trust_remote_code,
-        torch_dtype=torch_dtype,
-        low_cpu_mem_usage=model_args.low_cpu_mem_usage,
-        attn_implementation = 'sdpa',
+        torch_dtype = torch_dtype,
     )
+    model.resize_token_embeddings(len(tokenizer), mean_resizing=False)
 
     trainer = Trainer(
         model=model,
@@ -417,7 +518,7 @@ def main():
         train_dataset=dataset,
         eval_dataset=None,
         tokenizer=tokenizer,
-        data_collator=default_data_collator,
+        data_collator=collator,
         compute_metrics=None,
         preprocess_logits_for_metrics=None,
     )
