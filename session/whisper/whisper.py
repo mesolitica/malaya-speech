@@ -67,6 +67,7 @@ from transformers.trainer_utils import get_last_checkpoint, is_main_process
 from transformers.utils import check_min_version
 from transformers.utils.versions import require_version
 from streaming import LocalDataset
+from cut_cross_entropy.transformers import cce_patch
 
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
@@ -261,7 +262,6 @@ def main():
     # it to accelerate format
     # The teacher model can safely be cast to the dtype of training since we don't
     # update the params
-    dtype = torch.bfloat16
 
     # 3. Set-up basic logging
     # Create one log on every process with the configuration for debugging
@@ -314,14 +314,18 @@ def main():
             lstrip=False,
             rstrip=False) for i in range(
             1500 + 1)]
+    timestamps.append(AddedToken('<|transcribeprecise|>'))
     tokenizer.add_tokens(timestamps)
 
     model = WhisperForConditionalGeneration.from_pretrained(
         model_args.model_name_or_path,
         config=config,
-        torch_dtype=dtype,
+        torch_dtype=torch.bfloat16,
         attn_implementation='sdpa',
     )
+    model.resize_token_embeddings(len(tokenizer), mean_resizing=False)
+    model = cce_patch(model)
+    print(model)
 
     tokenizer.set_prefix_tokens(
         task=data_args.task,
@@ -408,16 +412,9 @@ def main():
         checkpoint = training_args.resume_from_checkpoint
     elif last_checkpoint is not None:
         checkpoint = last_checkpoint
-    try:
-        trainer.train(resume_from_checkpoint=checkpoint)
-        trainer.save_model()
-        trainer.save_state()
-
-    except Exception as e:
-        e = str(e)
-        print(e)
-        if checkpoint and ('checkpoint' in e or 'central directory' in e):
-            os.system(f'mv {checkpoint} {checkpoint}-temp')
+    trainer.train(resume_from_checkpoint=checkpoint)
+    trainer.save_model()
+    trainer.save_state()
 
 
 if __name__ == "__main__":

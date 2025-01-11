@@ -1,5 +1,6 @@
-WANDB_PROJECT=malaysian-whisper-medium-v3 \
-~/.local/bin/torchrun --nproc_per_node 4 \
+WANDB_PROJECT=malaysian-whisper-medium-v2 \
+CUDA_VISIBLE_DEVICES="0,1" \
+torchrun --nproc_per_node 2 \
 -m whisper \
 --model_name_or_path "openai/whisper-medium" \
 --train_dataset_name "mosaic-stt" \
@@ -7,15 +8,16 @@ WANDB_PROJECT=malaysian-whisper-medium-v3 \
 --save_steps 100 \
 --warmup_steps 100 \
 --learning_rate 0.00005 \
---lr_scheduler_type "constant_with_warmup" \
 --logging_steps 1 \
 --save_total_limit 3 \
 --num_train_epochs 3 \
---per_device_train_batch_size 128 \
+--per_device_train_batch_size 60 \
+--gradient_accumulation_steps 1 \
 --per_device_eval_batch_size 4 \
---output_dir "./medium" \
+--output_dir "malaysian-whisper-medium-v2" \
 --do_train \
 --gradient_checkpointing \
 --predict_with_generate \
---max_label_length 440 \
---bf16
+--max_label_length 400 \
+--bf16 \
+--torch_compile
