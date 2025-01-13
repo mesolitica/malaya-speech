@@ -1,44 +1,17 @@
 # F5-TTS
 
-## how to Speech Enhancement
+## how to finetune
 
 1. Download dataset,
 
 ```bash
-cd /workspace
-wget https://www.7-zip.org/a/7z2301-linux-x64.tar.xz
-tar -xf 7z2301-linux-x64.tar.xz
-pip3 install huggingface-hub wandb
-python3 -c "
-from huggingface_hub import snapshot_download
-snapshot_download(repo_id='mesolitica/Malaysian-Emilia', repo_type='dataset', allow_patterns = 'filtered-24k_processed.z*', local_dir = './')
-"
-python3 -c "
-from huggingface_hub import snapshot_download
-snapshot_download(repo_id='mesolitica/Malaysian-Emilia', repo_type='dataset', allow_patterns = 'malaysian-podcast-processed.z*', local_dir = './')
-"
-python3 -c "
-from huggingface_hub import snapshot_download
-snapshot_download(repo_id='mesolitica/Malaysian-Emilia', repo_type='dataset', allow_patterns = 'sg-podcast_processed.zip', local_dir = './')
-"
-python3 -c "
-from huggingface_hub import snapshot_download
-snapshot_download(repo_id='mesolitica/Malaysian-Emilia', repo_type='dataset', allow_patterns = 'malaysian-cartoon.z*', local_dir = './')
-"
-python3 -c "
-from huggingface_hub import snapshot_download
-snapshot_download(repo_id='mesolitica/Malaysian-Emilia', repo_type='dataset', allow_patterns = 'parlimen-24k-chunk_processed.z*', local_dir = './')
-"
-/workspace/7zz x filtered-24k_processed.zip -y -mmt40
-/workspace/7zz x malaysian-podcast-processed.zip -y -mmt40
-/workspace/7zz x sg-podcast_processed.zip -y -mmt40
-/workspace/7zz x parlimen-24k-chunk_processed.zip -y -mmt40
-/workspace/7zz x malaysian-cartoon.zip -y -mmt40
+bash download.sh
 ```
 
 2. Install libraries,
 
 ```bash
+cd /workspace
 git clone https://github.com/mesolitica/F5-TTS
 cd F5-TTS
 pip3 install -e .
