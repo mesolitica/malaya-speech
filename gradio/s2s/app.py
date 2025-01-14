@@ -1,54 +1,163 @@
 import malaya_speech
 import numpy as np
 import gradio as gr
-import modelscope_studio as mgr
+from transformers import Qwen2AudioForConditionalGeneration, AutoProcessor, TextIteratorStreamer
 import os
 import torch
 import time
+import librosa
+import soundfile as sf
+from threading import Thread
+from datasets import Audio
 
 tts = None
+processor = None
+model = None
+streamer = None
+
+audio_token = "<|AUDIO|>"
+audio_bos_token = "<|audio_bos|>"
+audio_eos_token = "<|audio_eos|>"
+audio_token_id = None
+pad_token_id = None
+
+audio = Audio(sampling_rate=16000)
+
 def load_tts():
     global tts
+
     tts = malaya_speech.tts.vits(model = 'mesolitica/VITS-osman')
     _ = tts.cuda()
     print('done load TTS')
 
+def load_model():
+    global processor, model, audio_token_id, pad_token_id, streamer
+
+    processor = AutoProcessor.from_pretrained('Qwen/Qwen2-Audio-7B-Instruct')
+    model = Qwen2AudioForConditionalGeneration.from_pretrained(
+    'mesolitica/Malaysian-Qwen2-Audio-7B-Instruct', torch_dtype = torch.bfloat16).cuda()
+
+    with torch.no_grad():
+        model(input_ids = torch.arange(1024)[None].cuda())
+
+    audio_token_id = processor.tokenizer._convert_token_to_id_with_added_voc('<|AUDIO|>')
+    pad_token_id = processor.tokenizer.pad_token_id
+
+    print('done load Model')
+
 def hotload():
     load_tts()
-    pass
+    load_model()
 
 def add_speech(speech, text, temperature, top_p, max_output_tokens, chunk_size):
-    text = text.strip().split()
-    text_list = []
+    print(speech, text, temperature, top_p, max_output_tokens, chunk_size)
+    if speech is None and len(text) < 2:
+        raise gr.Error(f"Cannot both audio and text empty.")
+    
+    inputs = []
+    if speech is not None:
+        inputs.append({"type": "audio", "audio_url": "url"})
+    if len(text):
+        inputs.append({"type": "text", "text": text})
+    
+    d = [{"role": "user", "content": inputs}]
+    text = processor.apply_chat_template(d, return_tensors = 'pt', add_generation_prompt=True)
+
+    sample = text
+    if speech is not None:
+        y = speech[1].astype(np.float32) / np.iinfo(np.int16).max
+        y = librosa.resample(y, orig_sr = speech[0], target_sr = 16000)
+
+        inputs_audio = processor.feature_extractor([y], return_attention_mask=True, padding="max_length", return_tensors = 'pt')
+        audio_lengths = inputs_audio["attention_mask"].sum(-1).tolist()
+        input_features = inputs_audio['input_features']
+        feature_attention_mask = inputs_audio['attention_mask']
+        num_audio_tokens = sample.count(audio_token)
+        replace_str = []
+        while audio_token in sample:
+            audio_length = audio_lengths.pop(0)
+            input_length = (audio_length - 1) // 2 + 1
+            num_audio_tokens = (input_length - 2) // 2 + 1
+
+            expanded_audio_token = audio_token * num_audio_tokens
+
+            audio_token_start_idx = sample.find(audio_token)
+            audio_token_end_idx = audio_token_start_idx + len(audio_token)
+
+            has_bos = (
+                sample[audio_token_start_idx - len(audio_bos_token) : audio_token_start_idx]
+                == audio_bos_token
+            )
+            has_eos = (
+                sample[audio_token_end_idx : audio_token_end_idx + len(audio_eos_token)]
+                == audio_eos_token
+            )
+
+            if not has_bos and not has_eos:
+                expanded_audio_token = audio_bos_token + expanded_audio_token + audio_eos_token
+
+            replace_str.append(expanded_audio_token)
+            sample = sample.replace(audio_token, "<placeholder>", 1)
+
+        while "<placeholder>" in sample:
+            sample = sample.replace("<placeholder>", replace_str.pop(0), 1)
+
+    else:
+        input_features = None
+        feature_attention_mask = None
+    
+    inputs = processor.tokenizer(sample, return_tensors = 'pt').to('cuda')
+    inputs['input_features'] = input_features
+    inputs['feature_attention_mask'] = feature_attention_mask
+
+    streamer = TextIteratorStreamer(processor.tokenizer)
+    generation_kwargs = dict(
+        max_new_tokens=max_output_tokens,
+        top_p=top_p,
+        top_k=20,
+        temperature=temperature,
+        do_sample=True,
+        repetition_penalty=1.1,
+        streamer=streamer,
+        **inputs
+    )
     with torch.no_grad():
-        t = []
-        for i in range(len(text)):
-            t.append(text[i])
-            if len(t) >= chunk_size or t[-1][-1] in ',.?':
-                t = ' '.join(t)
-                r_osman = tts.predict(t)
-                text_list.append(t)
+        thread = Thread(target=model.generate, kwargs=generation_kwargs)
+        thread.start()
+        generated_text = ''
+        temp = ''
+        for new_text in streamer:
+            if new_text == sample:
+                continue
+
+            new_text = new_text.replace('<|im_end|>', '')
+
+            temp += new_text
+            t = temp.strip()
+
+            if len(t.split()) >= chunk_size or (len(t) and t[-1] in ',.?'):
+                r_osman = tts.predict(temp)
+                generated_text += temp
             
-                yield ' '.join(text_list), (22050, r_osman['y'])
-                time.sleep(0.5)
-                t = []
+                yield generated_text, (22050, r_osman['y'])
+                temp = ''
 
-        if len(t):
-            t = ' '.join(t)
-            r_osman = tts.predict(t)
-            text_list.append(t)
+        if len(temp):
+            r_osman = tts.predict(temp)
+            generated_text += temp
         
-            yield ' '.join(text_list), (22050, r_osman['y'])
+            yield generated_text, (22050, r_osman['y'])
             time.sleep(0.0)
-
-
 
 def clear_history():
     return None, '', None
 
 with gr.Blocks() as demo:
     gr.Markdown("""<p align="center"><img src="https://mesolitica.com/images/mesolitica-transparent.png" style="height: 60px"/><p>""")
-    gr.Markdown("""<center><font size=4>🇲🇾 Malaysian Speech-to-Speech</center>""")
+    gr.Markdown("""<center><font size=5>🇲🇾 Malaysian Speech-to-Speech</center>""")
+    gr.Markdown(
+        """\
+<center><font size=3>This model is still in early stage development, the respond might be not perfect, but we can make it better!</center>""")
     with gr.Row():
         with gr.Column():
             audio_input_box = gr.Audio(sources=["upload", "microphone"], label="Speech Input")
@@ -69,7 +178,7 @@ with gr.Blocks() as demo:
         streaming=True, autoplay=True,
     )
 
-    submit_btn.click(
+    click_event = submit_btn.click(
         add_speech,
         [audio_input_box, text_input_box, temperature, top_p, max_output_tokens, chunk_size],
         [text_output_box, audio_output_box]
@@ -79,7 +188,8 @@ with gr.Blocks() as demo:
         clear_history,
         None,
         [audio_input_box, text_output_box, audio_output_box],
-        queue=False
+        queue=False,
+        cancels=[click_event]
     )
 
 if __name__ == "__main__":
