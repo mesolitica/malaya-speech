@@ -21,7 +21,9 @@ class StochasticDurationPredictor(nn.Module):
             kernel_size,
             p_dropout,
             n_flows=4,
-            gin_channels=0):
+            gin_channels=0,
+            tail_bound=5,
+            ):
         super().__init__()
         filter_channels = in_channels  # it needs to be removed from future version.
         self.in_channels = in_channels
@@ -35,7 +37,7 @@ class StochasticDurationPredictor(nn.Module):
         self.flows = nn.ModuleList()
         self.flows.append(modules.ElementwiseAffine(2))
         for i in range(n_flows):
-            self.flows.append(modules.ConvFlow(2, filter_channels, kernel_size, n_layers=3))
+            self.flows.append(modules.ConvFlow(2, filter_channels, kernel_size, n_layers=3, tail_bound=tail_bound))
             self.flows.append(modules.Flip())
 
         self.post_pre = nn.Conv1d(1, filter_channels, 1)
@@ -445,6 +447,7 @@ class SynthesizerTrn(nn.Module):
                  gin_channels=0,
                  use_sdp=True,
                  use_sdpa=False,
+                 tail_bound=5,
                  **kwargs):
 
         super().__init__()
@@ -494,7 +497,7 @@ class SynthesizerTrn(nn.Module):
 
         if use_sdp:
             self.dp = StochasticDurationPredictor(
-                hidden_channels, 192, 3, 0.5, 4, gin_channels=gin_channels)
+                hidden_channels, 192, 3, 0.5, 4, gin_channels=gin_channels,tail_bound=tail_bound)
         else:
             self.dp = DurationPredictor(hidden_channels, 256, 3, 0.5, gin_channels=gin_channels)
 
