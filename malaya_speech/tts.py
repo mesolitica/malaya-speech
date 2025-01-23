@@ -156,7 +156,7 @@ def vits(model: str = 'mesolitica/VITS-osman', **kwargs):
 
     if model not in available_vits:
         raise ValueError(
-            'model not supported, please check supported models from `malaya_speech.tts.available_vits()`.'
+            'model not supported, please check supported models from `malaya_speech.tts.available_vits`.'
         )
 
     selected_model = available_vits[model]

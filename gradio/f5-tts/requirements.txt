@@ -1,6 +1,6 @@
 torch==2.5.1
 torchaudio==2.5.1
-git+https://github.com/mesolitica/dynamic-batch-TTS-pipeline
+git+https://github.com/mesolitica/dynamic-batch-TTS-pipeline@b2e7b15f26f2c31273a135f9c3363c89148473fc
 gradio==5.8.0
 transformers
 pydub

@@ -12,9 +12,8 @@ bash download.sh
 
 ```bash
 cd /workspace
-wget https://huggingface.co/datasets/huseinzol05/temp-storage/resolve/main/F5-TTS-main.zip
-unzip F5-TTS-main.zip
-cd F5-TTS-main
+git clone https://github.com/mesolitica/F5-TTS
+cd F5-TTS
 pip3 install -e .
 pip3 install torchdiffeq x-transformers jieba pypinyin ema_pytorch accelerate==1.1.1 torch==2.5.1 torchaudio==2.5.1
 python3 -c "
@@ -28,9 +27,7 @@ wget https://huggingface.co/SWivid/F5-TTS/resolve/main/F5TTS_Base/model_1200000.
 3. Train,
 
 ```bash
-cd /workspace/F5-TTS-main
-apt update
-apt install screen vim -y
+cd /workspace/F5-TTS
 accelerate config
 accelerate launch src/f5_tts/train/train.py
 ```

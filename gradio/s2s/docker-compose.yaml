@@ -1,0 +1,21 @@
+version: "3.3"
+
+services:
+  gradio-f5-tts:
+    build:
+      context: .
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["1"]
+              capabilities: [gpu]
+    container_name: gradio-f5-tts
+    ports:
+      - "7860:7860"
+    volumes:
+      - "~/.cache/huggingface:/root/.cache/huggingface"
+    environment:
+      - HOTLOAD=true
+    command: python3 app.py

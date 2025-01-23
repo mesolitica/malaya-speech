@@ -1,0 +1,10 @@
+torch==2.5.1
+torchaudio==2.5.1
+git+https://github.com/mesolitica/dynamic-batch-TTS-pipeline
+malaya-speech==1.4.0rc2
+gradio==5.8.0
+transformers
+malaya
+soundfile
+librosa
+datasets

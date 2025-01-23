@@ -2,6 +2,7 @@
 
 apt update
 apt install unzip ffmpeg -y
+apt install screen vim -y
 apt update && apt install -y locales
 locale-gen en_US.UTF-8
 cd /workspace
@@ -92,19 +93,22 @@ export LC_ALL=en_US.UTF-8; export LANG=en_US.UTF-8;
 cd /workspace
 python3 -c \"
 from huggingface_hub import snapshot_download
-snapshot_download(repo_id='mesolitica/Malaysian-Voice-Conversion', repo_type='dataset', allow_patterns = 'data/other-chunk.z*', local_dir = './')
+snapshot_download(repo_id='mesolitica/Malaysian-Voice-Conversion', repo_type='dataset', allow_patterns = 'data/other-chunk-v2.z*', local_dir = './')
 \"
-mv data/other-chunk.z* .
-/workspace/7zz x other-chunk.zip -y -mmt40
-rm other-chunk.z*
+mv data/other-chunk-v2.z* .
+/workspace/7zz x other-chunk-v2.zip -y -mmt40
+rm other-chunk-v2.z*
 "
 
 cmd9="
 export LC_ALL=en_US.UTF-8; export LANG=en_US.UTF-8;
 cd /workspace
-wget https://huggingface.co/datasets/mesolitica/Extra-Emilia/resolve/main/emilia-mandarin.zip
-unzip emilia-mandarin.zip
-rm emilia-mandarin.zip
+python3 -c \"
+from huggingface_hub import snapshot_download
+snapshot_download(repo_id='mesolitica/Extra-Emilia', repo_type='dataset', allow_patterns = 'emilia-mandarin.z*', local_dir = './')
+\"
+/workspace/7zz x emilia-mandarin.zip -y -mmt40
+rm emilia-mandarin.z*
 "
 
 cmd10="
@@ -117,6 +121,11 @@ rm parliament-chunk.zip
 wget https://huggingface.co/datasets/mesolitica/Malaysian-Voice-Conversion/resolve/main/data/text-chunk-podcasts.zip
 unzip text-chunk-podcasts.zip
 rm text-chunk-podcasts.zip
+
+wget https://huggingface.co/datasets/mesolitica/synthetic-azure-tts/resolve/main/osman-synthetic.tar
+wget https://huggingface.co/datasets/mesolitica/synthetic-azure-tts/resolve/main/yasmin-synthetic.tar
+tar -xf osman-synthetic.tar
+tar -xf yasmin-synthetic.tar
 "
 
 bash -c "$cmd1" &

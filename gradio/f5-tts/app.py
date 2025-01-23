@@ -49,7 +49,7 @@ chunk_length = None
 overlap_length = None
 speech_enhancement_hop_length = None
 
-MODEL_NAME = os.environ.get('MODEL_NAME', 'mesolitica/Malaysian-F5-TTS')
+MODEL_NAME = os.environ.get('MODEL_NAME', 'mesolitica/Malaysian-F5-TTS-v2')
 VOCODER_NAME = os.environ.get('VOCODER_NAME', 'charactr/vocos-mel-24khz')
 maxlen_text = int(os.environ.get('MAXLEN_TEXT', '1000'))
 maxlen = 20000

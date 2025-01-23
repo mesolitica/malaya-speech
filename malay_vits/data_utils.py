@@ -61,7 +61,9 @@ class TextAudioLoader(torch.utils.data.Dataset):
 
         audiopaths_and_text_new = []
         lengths = []
-        for audiopath, text in self.audiopaths_and_text:
+        for row in self.audiopaths_and_text:
+            audiopath = row[0]
+            text = row[-1]
             if self.min_text_len <= len(text) and len(text) <= self.max_text_len:
                 audiopaths_and_text_new.append([audiopath, text])
                 lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
@@ -70,7 +72,7 @@ class TextAudioLoader(torch.utils.data.Dataset):
 
     def get_audio_text_pair(self, audiopath_and_text):
         # separate filename and text
-        audiopath, text = audiopath_and_text[0], audiopath_and_text[1]
+        audiopath, text = audiopath_and_text[0], audiopath_and_text[-1]
         text = self.get_text(text)
         spec, wav = self.get_audio(audiopath)
         return (text, spec, wav)

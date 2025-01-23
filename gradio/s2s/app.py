@@ -26,7 +26,7 @@ audio = Audio(sampling_rate=16000)
 def load_tts():
     global tts
 
-    tts = malaya_speech.tts.vits(model = 'mesolitica/VITS-osman')
+    tts = malaya_speech.tts.vits(model = 'mesolitica/VITS-husein')
     _ = tts.cuda()
     print('done load TTS')
 

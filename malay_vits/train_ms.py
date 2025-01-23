@@ -125,6 +125,7 @@ def train_and_evaluate(epoch, hps, nets, optims, schedulers, scaler, loaders, lo
     net_d.train()
     for batch_idx, (x, x_lengths, spec, spec_lengths, y, y_lengths,
                     speakers) in enumerate(train_loader):
+        print(x.shape, x)
         x, x_lengths = x.cuda(non_blocking=True), x_lengths.cuda(non_blocking=True)
         spec, spec_lengths = spec.cuda(non_blocking=True), spec_lengths.cuda(non_blocking=True)
         y, y_lengths = y.cuda(non_blocking=True), y_lengths.cuda(non_blocking=True)
@@ -221,6 +222,7 @@ def train_and_evaluate(epoch, hps, nets, optims, schedulers, scaler, loaders, lo
             utils.save_checkpoint(
                 net_d, optim_d, hps.train.learning_rate, epoch, os.path.join(
                     hps.model_dir, "D_{}.pth".format(global_step)))
+
         global_step += 1
 
     logger.info('====> Epoch: {}'.format(epoch))

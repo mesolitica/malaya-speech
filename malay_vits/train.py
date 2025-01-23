@@ -4,10 +4,10 @@ import argparse
 import itertools
 import math
 import torch
+import wandb
 from torch import nn, optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
 from torch.cuda.amp import autocast, GradScaler
 
 import commons
@@ -45,8 +45,6 @@ def run(hps):
     global global_step
     logger = utils.get_logger(hps.model_dir)
     logger.info(hps)
-    writer = SummaryWriter(log_dir=hps.model_dir)
-    writer_eval = SummaryWriter(log_dir=os.path.join(hps.model_dir, "eval"))
 
     torch.manual_seed(hps.train.seed)
 
@@ -106,19 +104,17 @@ def run(hps):
                 net_g, net_d], [
                 optim_g, optim_d], [
                 scheduler_g, scheduler_d], scaler, [
-                    train_loader, eval_loader], logger, [
-                        writer, writer_eval])
+                    train_loader, eval_loader], logger)
         scheduler_g.step()
         scheduler_d.step()
 
 
-def train_and_evaluate(epoch, hps, nets, optims, schedulers, scaler, loaders, logger, writers):
+def train_and_evaluate(epoch, hps, nets, optims, schedulers, scaler, loaders, logger):
     net_g, net_d = nets
     optim_g, optim_d = optims
     scheduler_g, scheduler_d = schedulers
     train_loader, eval_loader = loaders
-    if writers is not None:
-        writer, writer_eval = writers
+    writer = wandb.init()
 
     train_loader.batch_sampler.set_epoch(epoch)
     global global_step
@@ -206,15 +202,10 @@ def train_and_evaluate(epoch, hps, nets, optims, schedulers, scaler, loaders, lo
             scalar_dict.update({"loss/g/{}".format(i): v for i, v in enumerate(losses_gen)})
             scalar_dict.update({"loss/d_r/{}".format(i): v for i, v in enumerate(losses_disc_r)})
             scalar_dict.update({"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)})
-            image_dict = {}
-            utils.summarize(
-                writer=writer,
-                global_step=global_step,
-                images=image_dict,
-                scalars=scalar_dict)
+            scalar_dict['global_step'] = global_step
+            writer.log(scalar_dict)
 
         if global_step % hps.train.eval_interval == 0:
-            evaluate(hps, net_g, eval_loader, writer_eval)
             utils.save_checkpoint(net_g, optim_g, hps.train.learning_rate, epoch,
                                   os.path.join(hps.model_dir, "G_{}.pth".format(global_step)))
             utils.save_checkpoint(net_d, optim_d, hps.train.learning_rate, epoch,
