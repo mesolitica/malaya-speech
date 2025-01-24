@@ -126,7 +126,7 @@ def train_and_evaluate(epoch, hps, nets, optims, schedulers, scaler, loaders, lo
         spec, spec_lengths = spec.cuda(non_blocking=True), spec_lengths.cuda(non_blocking=True)
         y, y_lengths = y.cuda(non_blocking=True), y_lengths.cuda(non_blocking=True)
 
-        with autocast(dtype=torch.bfloat16, enabled=hps.train.fp16_run):
+        with autocast(dtype=torch.float16, enabled=hps.train.fp16_run):
             y_hat, l_length, attn, ids_slice, x_mask, z_mask,\
                 (z, z_p, m_p, logs_p, m_q, logs_q) = net_g(x, x_lengths, spec, spec_lengths)
 
@@ -164,7 +164,7 @@ def train_and_evaluate(epoch, hps, nets, optims, schedulers, scaler, loaders, lo
         grad_norm_d = commons.clip_grad_value_(net_d.parameters(), None)
         scaler.step(optim_d)
 
-        with autocast(dtype=torch.bfloat16, enabled=hps.train.fp16_run):
+        with autocast(dtype=torch.float16, enabled=hps.train.fp16_run):
             # Generator
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
             with autocast(enabled=False):

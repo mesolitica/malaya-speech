@@ -15,7 +15,7 @@ from commons import init_weights, get_padding
 
 
 class StochasticDurationPredictor(nn.Module):
-    def __init__(self, in_channels, filter_channels, kernel_size, p_dropout, n_flows=4, gin_channels=0):
+    def __init__(self, in_channels, filter_channels, kernel_size, p_dropout, n_flows=4, gin_channels=0, tail_bound=5):
         super().__init__()
         filter_channels = in_channels  # it needs to be removed from future version.
         self.in_channels = in_channels
@@ -29,7 +29,7 @@ class StochasticDurationPredictor(nn.Module):
         self.flows = nn.ModuleList()
         self.flows.append(modules.ElementwiseAffine(2))
         for i in range(n_flows):
-            self.flows.append(modules.ConvFlow(2, filter_channels, kernel_size, n_layers=3))
+            self.flows.append(modules.ConvFlow(2, filter_channels, kernel_size, n_layers=3, tail_bound=tail_bound))
             self.flows.append(modules.Flip())
 
         self.post_pre = nn.Conv1d(1, filter_channels, 1)
@@ -38,7 +38,7 @@ class StochasticDurationPredictor(nn.Module):
         self.post_flows = nn.ModuleList()
         self.post_flows.append(modules.ElementwiseAffine(2))
         for i in range(4):
-            self.post_flows.append(modules.ConvFlow(2, filter_channels, kernel_size, n_layers=3))
+            self.post_flows.append(modules.ConvFlow(2, filter_channels, kernel_size, n_layers=3, tail_bound=tail_bound))
             self.post_flows.append(modules.Flip())
 
         self.pre = nn.Conv1d(in_channels, filter_channels, 1)
@@ -417,6 +417,7 @@ class SynthesizerTrn(nn.Module):
                  gin_channels=0,
                  use_sdp=True,
                  use_sdpa=False,
+                 tail_bound=5,
                  **kwargs):
 
         super().__init__()

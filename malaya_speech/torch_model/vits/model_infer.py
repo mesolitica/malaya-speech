@@ -50,7 +50,7 @@ class StochasticDurationPredictor(nn.Module):
         self.post_flows = nn.ModuleList()
         self.post_flows.append(modules.ElementwiseAffine(2))
         for i in range(4):
-            self.post_flows.append(modules.ConvFlow(2, filter_channels, kernel_size, n_layers=3))
+            self.post_flows.append(modules.ConvFlow(2, filter_channels, kernel_size, n_layers=3, tail_bound=tail_bound))
             self.post_flows.append(modules.Flip())
 
         self.pre = nn.Conv1d(in_channels, filter_channels, 1)
