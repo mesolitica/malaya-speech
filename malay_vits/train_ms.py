@@ -7,7 +7,6 @@ import torch
 import wandb
 from torch import nn, optim
 from torch.nn import functional as F
-from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from torch.cuda.amp import autocast, GradScaler
 
@@ -59,7 +58,7 @@ def run(hps):
         [32, 300, 400, 500, 600, 700, 800, 900, 1000],
         shuffle=True, num_replicas=1, rank=0)
     collate_fn = TextAudioSpeakerCollate()
-    train_loader = DataLoader(train_dataset, num_workers=4, shuffle=False, pin_memory=True,
+    train_loader = DataLoader(train_dataset, num_workers=5, prefetch_factor=4, shuffle=False, pin_memory=True,
                               collate_fn=collate_fn, batch_sampler=train_sampler)
     eval_dataset = TextAudioSpeakerLoader(hps.data.validation_files, hps.data)
     eval_loader = DataLoader(eval_dataset, num_workers=4, shuffle=False,
@@ -125,13 +124,12 @@ def train_and_evaluate(epoch, hps, nets, optims, schedulers, scaler, loaders, lo
     net_d.train()
     for batch_idx, (x, x_lengths, spec, spec_lengths, y, y_lengths,
                     speakers) in enumerate(train_loader):
-        print(x.shape, x)
         x, x_lengths = x.cuda(non_blocking=True), x_lengths.cuda(non_blocking=True)
         spec, spec_lengths = spec.cuda(non_blocking=True), spec_lengths.cuda(non_blocking=True)
         y, y_lengths = y.cuda(non_blocking=True), y_lengths.cuda(non_blocking=True)
         speakers = speakers.cuda(non_blocking=True)
 
-        with autocast(dtype=torch.bfloat16, enabled=hps.train.fp16_run):
+        with autocast(dtype=torch.float16, enabled=hps.train.fp16_run):
             y_hat, l_length, attn, ids_slice, x_mask, z_mask,\
                 (z, z_p, m_p, logs_p, m_q, logs_q) = net_g(x, x_lengths, spec, spec_lengths, speakers)
 
@@ -173,7 +171,7 @@ def train_and_evaluate(epoch, hps, nets, optims, schedulers, scaler, loaders, lo
         grad_norm_d = commons.clip_grad_value_(net_d.parameters(), None)
         scaler.step(optim_d)
 
-        with autocast(dtype=torch.bfloat16, enabled=hps.train.fp16_run):
+        with autocast(dtype=torch.float16, enabled=hps.train.fp16_run):
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
             with autocast(enabled=False):
                 loss_dur = torch.sum(l_length.float())

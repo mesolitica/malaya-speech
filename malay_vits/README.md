@@ -2,8 +2,6 @@
 
 Originally from https://github.com/jaywalnut310/vits, https://arxiv.org/abs/2106.06103
 
-V2 from https://github.com/p0p4k/vits2_pytorch
-
 ## Preprocessing
 
 1. Simply run,
@@ -23,24 +21,23 @@ cd monotonic_align
 python3 setup.py build_ext --inplace
 ```
 
-### VITS 1
-
-#### Single speaker
+### Single speaker
 
 ```bash
-CUDA_VISIBLE_DEVICES=1 WANDB_PROJECT=vits-husein python3.10 train.py -c config/husein.json -m husein
+CUDA_VISIBLE_DEVICES=0 \
+WANDB_PROJECT=vits-husein-v2 \
+python3.10 train.py -c config/husein.json -m husein-v2
 ```
 
-#### Multi speakers
+### Multi speakers
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 WANDB_PROJECT=vits-multispeaker-medium python3.10 train_ms.py -c config/multispeaker-clean-medium.json -m multispeaker-v2-medium
-```
-
-### VITS 2
-
-```bash
-python3 train_v2.py -c config.json -m speaker
+CUDA_VISIBLE_DEVICES=0 \
+WANDB_PROJECT=vits-multispeaker-medium \
+python3.10 train_ms.py -c config/multispeaker-clean-medium.json -m multispeaker-medium
+CUDA_VISIBLE_DEVICES=0 \
+WANDB_PROJECT=vits-multispeaker-v3 \
+python3.10 train_ms.py -c config/multispeaker-clean-v2.json -m multispeaker-v4
 ```
 
 ## Citation

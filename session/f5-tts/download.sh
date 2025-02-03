@@ -105,10 +105,10 @@ export LC_ALL=en_US.UTF-8; export LANG=en_US.UTF-8;
 cd /workspace
 python3 -c \"
 from huggingface_hub import snapshot_download
-snapshot_download(repo_id='mesolitica/Extra-Emilia', repo_type='dataset', allow_patterns = 'emilia-mandarin.z*', local_dir = './')
+snapshot_download(repo_id='mesolitica/Extra-Emilia', repo_type='dataset', allow_patterns = 'mandarin-emilia-v2.z*', local_dir = './')
 \"
-/workspace/7zz x emilia-mandarin.zip -y -mmt40
-rm emilia-mandarin.z*
+/workspace/7zz x mandarin-emilia-v2.zip -y -mmt40
+rm mandarin-emilia-v2.z*
 "
 
 cmd10="

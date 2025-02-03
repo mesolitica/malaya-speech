@@ -1,6 +1,6 @@
 accelerate launch run.py \
---wandb_project "malaysian-parler-tts-large-v1" \
---model_name_or_path "parler-tts/parler-tts-large-v1" \
+--wandb_project "malaysian-parler-tts-tiny-v1" \
+--model_name_or_path "parler-tts/parler-tts-tiny-v1" \
 --feature_extractor_name "parler-tts/dac_44khZ_8kbps" \
 --description_tokenizer_name "google/flan-t5-large" \
 --prompt_tokenizer_name "google/flan-t5-large" \
@@ -20,10 +20,10 @@ accelerate launch run.py \
 --id_column_name "id" \
 --preprocessing_num_workers 8 \
 --do_train true \
---num_train_epochs 3 \
+--num_train_epochs 5 \
 --gradient_accumulation_steps 2 \
 --gradient_checkpointing true \
---per_device_train_batch_size 24 \
+--per_device_train_batch_size 32 \
 --learning_rate 0.00095 \
 --adam_beta1 0.9 \
 --adam_beta2 0.99 \
@@ -42,7 +42,7 @@ accelerate launch run.py \
 --audio_encoder_per_device_batch_size 4 \
 --dtype "bfloat16" \
 --seed 456 \
---output_dir "./output_dir_training-v3/" \
+--output_dir "./output_tiny/" \
 --temporary_save_to_disk "./audio_code_tmp/" \
 --save_to_disk "./tmp_dataset_audio/" \
 --max_eval_samples 40 \
