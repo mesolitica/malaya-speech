@@ -2,7 +2,7 @@
 
 ## dataset
 
-Dataset at https://huggingface.co/datasets/mesolitica/TTS, notebook preparation at [prepare-dataset.ipynb](prepare-dataset.ipynb).
+Dataset at https://huggingface.co/datasets/mesolitica/TTS
 
 ### Prepare dataset
 
