@@ -1,7 +1,8 @@
 WANDB_PROJECT="malay-orpheus-3b-0.1-ft-lora-128" \
+HF_HOME="/workspace/cache" \
 TORCH_DISTRIBUTED_DEBUG="info" \
-CUDA_VISIBLE_DEVICES="0,1" \
-torchrun --nproc_per_node 2 \
+CUDA_VISIBLE_DEVICES="0,1,2,3" \
+torchrun --nproc_per_node 4 \
 -m train_multipacking \
 --model_name_or_path canopylabs/orpheus-3b-0.1-ft \
 --per_device_train_batch_size 2 \
