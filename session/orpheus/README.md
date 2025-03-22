@@ -39,3 +39,5 @@ huggingface-cli download canopylabs/orpheus-3b-0.1-ft --exclude '*.bin*'
 ```bash
 bash 3b.sh
 ```
+
+Merge the layers, [merge-3b.ipynb](merge-3b.ipynb).
