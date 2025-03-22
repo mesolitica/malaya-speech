@@ -2,7 +2,7 @@ torch==2.6.0
 torchaudio==2.6.0
 transformers==4.47.1
 accelerate==1.1.1
-git+https://github.com/malaysia-ai/ml-cross-entropy-lora-lm-head
+git+https://github.com/malaysia-ai/Chunk-loss-LoRA
 huggingface-hub
 multiprocess
 wandb
