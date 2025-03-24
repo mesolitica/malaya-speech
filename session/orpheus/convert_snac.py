@@ -62,7 +62,7 @@ def loop(rows):
             continue
             
         y, _ = librosa.load(f, sr = 24000)
-        myts = tokenise_audio(y)
+        myts = tokenise_audio(snac_model, y)
         myts = [int(i) for i in myts]
         
         os.makedirs(os.path.split(splitted)[0], exist_ok = True)
