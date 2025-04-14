@@ -12,28 +12,24 @@ bash download.sh
 
 ```bash
 cd /workspace
-git clone https://github.com/mesolitica/F5-TTS
+git clone https://github.com/SWivid/F5-TTS
 cd F5-TTS
-git submodule update --init --recursive
 pip3 install -e .
-pip3 install torchdiffeq x-transformers jieba pypinyin ema_pytorch accelerate==1.1.1 torch==2.5.1 torchaudio==2.5.1
-python3 -c "
-from huggingface_hub import snapshot_download
-snapshot_download(repo_id='mesolitica/Malaysian-Voice-Conversion', repo_type='dataset', allow_patterns = 'data/Emilia_Malaysian_pinyin/*', local_dir = './')
-"
-mkdir ckpts/F5TTS_Base
-
-# vocos
-wget https://huggingface.co/SWivid/F5-TTS/resolve/main/F5TTS_Base/model_1200000.pt -O ckpts/F5TTS_Base/model_1200000.pt
-
-# bigvgan
-wget https://huggingface.co/SWivid/F5-TTS/resolve/main/F5TTS_Base_bigvgan/model_1250000.pt -O ckpts/F5TTS_Base/model_1250000.pt
+mkdir ckpts/F5TTS_v1_Base_vocos_pinyin_Emilia_Malaysian
+wget https://huggingface.co/SWivid/F5-TTS/resolve/main/F5TTS_v1_Base/model_1250000.safetensors -O ckpts/F5TTS_v1_Base_vocos_pinyin_Emilia_Malaysian/pretrained_model_1250000.safetensors
 ```
 
 3. Train,
 
 ```bash
-cd /workspace/F5-TTS
 accelerate config
-accelerate launch src/f5_tts/train/train.py
+accelerate launch --mixed_precision=fp16 src/f5_tts/train/train.py \
+--config-name F5TTS_v1_Base.yaml \
+++optim.num_warmup_updates=5000 \
+++optim.learning_rate=2.5e-5 \
+++datasets.name=Emilia_Malaysian \
+++datasets.batch_size_per_gpu=42400 \
+++model.arch.checkpoint_activations=True \
+++ckpts.save_per_updates=10000 \
+++ckpts.last_per_updates=5000
 ```
