@@ -2,7 +2,7 @@ WANDB_PROJECT="dia-tts-malaysian-emilia-full-mixed-precision-multipacking" \
 TORCH_DISTRIBUTED_DEBUG="info" \
 torchrun --nproc_per_node 8 --master_port 29502 \
 -m dia_multipacking \
---per_device_train_batch_size 8 \
+--per_device_train_batch_size 10 \
 --gradient_accumulation_steps 1 \
 --output_dir dia-tts-malaysian-emilia-full-mixed-precision-multipacking \
 --bf16 --do_train --do_eval false --num_train_epochs 2 \
