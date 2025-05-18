@@ -31,6 +31,7 @@ torch.serialization.add_safe_globals(
     [np.core.multiarray._reconstruct, np.ndarray, np.dtype, np.dtypes.UInt32DType]
 )
 import torch.nn.init as init
+import torch.nn.functional as F
 import math
 import torch.nn as nn
 import torchaudio
@@ -83,15 +84,6 @@ class DataTrainingArguments:
     merged_file: Optional[str] = field(
         default=None, metadata={
             "help": "merged file"})
-
-import torch
-import torch.nn.functional as F
-import json
-from datasets import load_dataset
-from audio import build_delay_indices, apply_audio_delay
-from torch.nn.utils.rnn import pad_sequence
-from torch.nn.functional import pad
-from config import DiaConfig
 
 def pad_attention_mask_4d(attention_mask, maxlen = 2048):
     maxlen_right = maxlen
