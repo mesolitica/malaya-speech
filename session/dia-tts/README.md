@@ -36,4 +36,4 @@ class TTS(nn.Module):
         self.model = model
 ```
 
-So make sure you trimmed first the prefix before load using Dia-TTS library.
+So make sure you trim first the prefix before load using Dia-TTS library.
