@@ -127,3 +127,4 @@ pretrained-model/stt/conformer-ctc/*/checkpoint*
 pretrained-model/stt/conformer-ctc/*/runs*
 pretrained-model/stt/conformer-ctc/out
 malay_vits/monotonic_align/monotonic_align
+*.env
