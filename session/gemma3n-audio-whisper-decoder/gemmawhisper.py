@@ -314,7 +314,6 @@ class Model(GemmaWhisperForConditionalGeneration):
             attention_mask=attention_mask, 
             decoder_input_ids=decoder_input_ids,
             output_hidden_states=True,
-            **kwargs,
         )
         if labels is not None:
             embeddings = super_out.last_hidden_state
