@@ -89,6 +89,7 @@ from transformers import Gemma3nAudioEncoder, Gemma3nConfig
 from transformers import AutoFeatureExtractor, PreTrainedModel
 from transformers.models.gemma3n.modeling_gemma3n import Gemma3nMultimodalEmbedder
 from transformers.trainer_utils import get_last_checkpoint
+from transformers import TrainerCallback, TrainerState, TrainerControl
 import librosa
 import json
 import string
@@ -155,39 +156,73 @@ class DataTrainingArguments:
             "help": "The input training data file (a text file)."})
 
 class VectorQuantizer(nn.Module):
-    def __init__(self, embedding_dim, num_codes = 16384, commitment_cost=0.25):
+    def __init__(self, embedding_dim, num_codes=16384, commitment_cost=0.25,
+                 use_gumbel_softmax=True, temperature=1.0):
         super().__init__()
         self.embedding_dim = embedding_dim
         self.num_codes = num_codes
         self.commitment_cost = commitment_cost
+        self.use_gumbel_softmax = use_gumbel_softmax
+        self.temperature = temperature
 
         self.codebook = nn.Embedding(num_codes, embedding_dim)
-        self.codebook.weight.data.uniform_(-1 / num_codes, 1 / num_codes)
+        self.codebook.weight.data.uniform_(-1.0, 1.0)
 
-    def forward(self, inputs):
-        input_shape = inputs.shape
-        flat_inputs = inputs.view(-1, self.embedding_dim)
-
-        distances = (
-            torch.sum(flat_inputs**2, dim=1, keepdim=True)
-            - 2 * torch.matmul(flat_inputs, self.codebook.weight.T)
-            + torch.sum(self.codebook.weight**2, dim=1)
+        self.pre_vq = nn.Sequential(
+            nn.Linear(embedding_dim, embedding_dim),
+            nn.LayerNorm(embedding_dim),
         )
 
-        encoding_indices = torch.argmin(distances, dim=1).unsqueeze(1)
-        encodings = torch.zeros(encoding_indices.shape[0], self.num_codes, device=inputs.device, dtype=inputs.dtype)
-        encodings.scatter_(1, encoding_indices, 1)
+    def set_temperature(self, temperature: float):
+        self.temperature = temperature
 
-        quantized = torch.matmul(encodings, self.codebook.weight)
+    def forward(self, inputs):
+        with torch.no_grad():
+            self.codebook.weight.data = F.normalize(self.codebook.weight.data, p=2, dim=1)
 
+        inputs = self.pre_vq(inputs)
+        
+        input_shape = inputs.shape
+        flat_inputs = inputs.view(-1, self.embedding_dim)
+        flat_inputs = F.normalize(flat_inputs, p=2, dim=1)
+
+        # Compute distances
+        distances = (
+            torch.sum(flat_inputs ** 2, dim=1, keepdim=True)
+            - 2 * torch.matmul(flat_inputs, self.codebook.weight.T)
+            + torch.sum(self.codebook.weight ** 2, dim=1)
+        )
+        if self.training:
+            print("Temperature:", self.temperature)
+            if self.use_gumbel_softmax:
+                gumbel_noise = -torch.empty_like(distances).exponential_().log()
+                logits = -distances + gumbel_noise
+                probs = F.softmax(logits / self.temperature, dim=1)
+            else:
+                probs = F.softmax(-distances / self.temperature, dim=1)
+        else:
+            encoding_indices = torch.argmin(distances, dim=1).unsqueeze(1)
+            probs = torch.zeros(encoding_indices.shape[0], self.num_codes, device=inputs.device)
+            probs.scatter_(1, encoding_indices, 1.0)
+
+        avg_probs = probs.mean(dim=0)
+        perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
+        entropy_reg = torch.sum(avg_probs * torch.log(avg_probs + 1e-10))
+        num_active_codes = (avg_probs > 0).sum()
+
+        quantized = torch.matmul(probs, self.codebook.weight)
         quantized = quantized.view(*input_shape)
+
         e_latent_loss = F.mse_loss(quantized.detach(), inputs)
         q_latent_loss = F.mse_loss(quantized, inputs.detach())
         loss = q_latent_loss + self.commitment_cost * e_latent_loss
+        loss += -1.0 * entropy_reg 
 
         quantized = inputs + (quantized - inputs).detach()
 
-        return quantized, loss, encoding_indices.view(input_shape[:-1])
+        encoding_indices = torch.argmax(probs, dim=1).view(input_shape[:-1])  # optional
+
+        return quantized, loss, encoding_indices, perplexity, num_active_codes
 
 class Audio(PreTrainedModel):
     def __init__(self, config):
@@ -215,8 +250,14 @@ class Model(PreTrainedModel):
         self.encoder = GemmaAudio(config)
         out_features = self.encoder.model.embed_audio.embedding_projection.out_features
         self.vq = VectorQuantizer(out_features)
+        self.upsample = nn.ConvTranspose1d(
+            in_channels=out_features,
+            out_channels=out_features,
+            kernel_size=2,
+            stride=2
+        )
         self.transformer = nn.TransformerEncoder(
-            nn.TransformerEncoderLayer(d_model=out_features, nhead=8), num_layers=6
+            nn.TransformerEncoderLayer(d_model=out_features, nhead=8), num_layers=12
         )
         self.lm_head = nn.Linear(out_features, config.vocab_size)
         
@@ -225,9 +266,9 @@ class Model(PreTrainedModel):
             input_features = input_features,
             input_features_mask = input_features_mask,
         )
-        quantized, vq_loss, tokens = self.vq(output[0])
-        quantized = quantized.repeat_interleave(3, dim=1)
-        mask = (~output[1]).repeat_interleave(3, dim=1)
+        quantized, vq_loss, tokens, perplexity, num_active_codes = self.vq(output[0])
+        quantized = self.upsample(quantized.transpose(1, 2)).transpose(1, 2)
+        mask = (~output[1]).repeat_interleave(2, dim=1)
         out_transformer = self.transformer(quantized)
         logits = self.lm_head(out_transformer)
         if labels is None:
@@ -245,9 +286,29 @@ class Model(PreTrainedModel):
                 target_lengths = labels_lengths,
                 zero_infinity = True,
             )
-            print(ctc_loss, log_probs.shape, labels.shape)
+            metrics = {
+                'ctc_loss': ctc_loss,
+                'perplexity': perplexity,
+                'num_active_codes': num_active_codes,
+                'log_probs.shape': log_probs.shape,
+                'labels.shape': labels.shape,
+            }
+            print(metrics)
             return {'loss': ctc_loss + vq_loss}
 
+class TemperatureAnnealingCallback(TrainerCallback):
+    def __init__(self, vq_module, start_temp=1.0, end_temp=0.1, total_steps=10000):
+        self.vq_module = vq_module
+        self.start_temp = start_temp
+        self.end_temp = end_temp
+        self.total_steps = total_steps
+
+    def on_step_begin(self, args, state: TrainerState, control: TrainerControl, **kwargs):
+        step = state.global_step
+        fraction = min(step / self.total_steps, 1.0)
+        new_temp = self.start_temp * (1.0 - fraction) + self.end_temp * fraction
+        self.vq_module.set_temperature(new_temp)
+        
 def main():
 
     # See all possible arguments in src/transformers/training_args.py
@@ -357,6 +418,13 @@ def main():
         inputs = feature_extractor(audio, return_tensors = 'pt')
         return {'labels': padded_labels, **inputs}
 
+    anneal_callback = TemperatureAnnealingCallback(
+        vq_module=model.vq,
+        start_temp=1.0,
+        end_temp=0.1,
+        total_steps=10000
+    )
+
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -364,6 +432,7 @@ def main():
         eval_dataset=None,
         data_collator=collator,
         compute_metrics=None,
+        callbacks=[anneal_callback],
         preprocess_logits_for_metrics=None,
     )
 

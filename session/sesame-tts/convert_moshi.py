@@ -48,7 +48,7 @@ def loop(rows):
         audio_tensor = audio_tensor.squeeze(0)
         if sample_rate != mimi._sample_rate:
             audio_tensor = torchaudio.functional.resample(
-                audio_tensor, orig_freq=sample_rate, new_freq=generator.sample_rate
+                audio_tensor, orig_freq=sample_rate, new_freq=mimi.sample_rate
             )
         
         tokens = mimi.encode(audio_tensor.to('cuda').unsqueeze(0).unsqueeze(0))[0].cpu().numpy()
