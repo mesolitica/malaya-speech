@@ -321,7 +321,7 @@ class Model(GemmaWhisperForConditionalGeneration):
                 embeddings.to(torch.bfloat16), 
                 self.proj_out.weight.to(torch.bfloat16), 
                 labels, 
-                shift=True,
+                shift=False,
                 impl="cce_kahan_full_c"
             )
             return {'loss': auto_shift_loss}
@@ -357,7 +357,7 @@ def main():
             training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
         last_checkpoint = get_last_checkpoint(training_args.output_dir)
 
-    feature_extractor = AutoFeatureExtractor.from_pretrained('malaysia-ai/gemma-3n-e4b-it-audio-encoder')
+    feature_extractor = AutoFeatureExtractor.from_pretrained('mesolitica/gemma-3n-e4b-it-audio-encoder')
     tokenizer = WhisperTokenizerFast.from_pretrained(model_args.model_name_or_path)
 
     timestamps = [
@@ -372,15 +372,13 @@ def main():
         model_args.model_name_or_path,
         attn_implementation='sdpa',
     )
-    model.model.encoder = model.model.encoder.from_pretrained('malaysia-ai/gemma-3n-e4b-it-audio-encoder', trust_remote_code = True)
+    model.model.encoder = model.model.encoder.from_pretrained('mesolitica/gemma-3n-e4b-it-audio-encoder', trust_remote_code = True)
     for name, param in model.model.encoder.named_parameters():
         param.requires_grad = False
     
     print(model)
 
-    processor = WhisperProcessor.from_pretrained(
-        model_args.model_name_or_path,
-    )
+    processor = WhisperProcessor.from_pretrained(model_args.model_name_or_path)
     sampling_rate = feature_extractor.sampling_rate
 
     max_label_length = (
@@ -406,7 +404,7 @@ def main():
                 audio = self.audio.decode_example(
                     self.audio.encode_example(
                         self.data[item]['audio_filename']))['array']
-                input_str = self.data[item]['text']
+                input_str = '<|startoftranscript|>' + self.data[item]['text'] + tokenizer.eos_token
 
                 token_ids = tokenizer(input_str, add_special_tokens=False).input_ids
                 if len(token_ids) > max_label_length:
