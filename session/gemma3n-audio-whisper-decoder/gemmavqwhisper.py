@@ -172,7 +172,12 @@ class GemmaWhisper(WhisperPreTrainedModel):
         self.projection = nn.Linear(
             self.encoder.config.text_config.hidden_size, self.decoder.config.d_model)
         
+        self.post_projection = nn.Linear(
+            self.decoder.config.d_model, self.decoder.config.d_model)
+        self.post_layer_norm = nn.LayerNorm(self.decoder.config.d_model)
+        
         self.post_init()
+        self.init_quantize_layer()
     
     def init_quantize_layer(self, centroid_path = None):
         self.quantize_vocab_size = getattr(self.config, 'quantize_vocab_size', 32768)
@@ -188,9 +193,15 @@ class GemmaWhisper(WhisperPreTrainedModel):
 
         self.register_buffer("ema_count", torch.ones(self.quantize_vocab_size, dtype=torch.float))
         self.register_buffer("ema_weight", self.codebook.weight.data.clone().float())
-        self.quantize_ema_count = 0
-        self.quantize_restart_interval = getattr(self.config, 'quantize_restart_interval', 100)
-        self.total_code_usage = torch.zeros(self.quantize_vocab_size)
+        self.quantize_ema_count = 1
+
+        # self.quantize_update_interval = getattr(self.config, 'quantize_update_interval', 50)
+        # self.quantize_restart_interval = getattr(self.config, 'quantize_restart_interval', 50000000)
+
+        self.quantize_update_interval = getattr(self.config, 'quantize_update_interval', 50)
+        self.quantize_restart_interval = getattr(self.config, 'quantize_restart_interval', 500)
+
+        self.register_buffer("total_code_usage", torch.zeros(self.quantize_vocab_size))
 
 
     def apply_vq(self, hidden_states, attention_mask):
@@ -229,14 +240,13 @@ class GemmaWhisper(WhisperPreTrainedModel):
                 total_count + self.quantize_vocab_size * 1e-5) * total_count
             self.ema_weight = self.ema_weight * self.quantize_ema_decay + (
                 1 - self.quantize_ema_decay) * dw
-            if self.quantize_ema_count % 10 == 0:
+            if self.quantize_ema_count % self.quantize_update_interval == 0:
                 self.codebook.weight.data = self.ema_weight / self.ema_count.unsqueeze(1)
             self.quantize_loss = self.quantize_loss_scale * self.quantize_commit_coefficient * mse_loss_with_mask(
                                 hidden_states, quantized.detach(), attention_mask)
-
+            
+            self._maybe_restart_codes(hidden_flat, attention_mask)
             self.quantize_ema_count += 1
-            if self.quantize_ema_count > 500:
-                self._maybe_restart_codes(hidden_flat, attention_mask)
 
             hidden_states = hidden_states + (quantized - hidden_states).detach()
         else:
@@ -259,9 +269,10 @@ class GemmaWhisper(WhisperPreTrainedModel):
         update_indices = (ema_count_segment < threshold).nonzero()[:, 0] + start_idx
         num_update = update_indices.shape[0]
 
+        print('num_update', num_update)
+
         if num_update > 0:
             mask_flat = attention_mask.reshape(-1) > 0
-            print(mask_flat)
             hidden_selected = hidden_flat[mask_flat]
             chosen_indices = (
                 torch.randperm(len(hidden_selected), device=hidden_selected.device)[:num_update]
@@ -287,9 +298,9 @@ class GemmaWhisper(WhisperPreTrainedModel):
             torch.distributed.all_gather(hidden_update_list, hidden_update)
             hidden_update = torch.cat(hidden_update_list)
 
-            self.codebook.weight.data[update_indices] = hidden_update
+            self.codebook.weight.data[update_indices] = hidden_update.to(self.codebook.weight.data.dtype)
             self.ema_count[update_indices] = 1
-            self.ema_weight[update_indices] = hidden_update
+            self.ema_weight[update_indices] = hidden_update.to(self.ema_weight.dtype)
 
             if rank == 0:
                 print(f"[VQ] Restarted {len(update_indices)} dead codes.")
@@ -331,6 +342,8 @@ class GemmaWhisper(WhisperPreTrainedModel):
         
         hidden_states, indices = self.apply_vq(hidden_states, attention_mask)
         self.indices = indices
+
+        hidden_states = self.post_layer_norm(self.post_projection(hidden_states))
             
         decoder_outputs = self.decoder(
             input_ids=decoder_input_ids,
@@ -464,6 +477,7 @@ class Model(GemmaWhisperForConditionalGeneration):
                 shift=False,
                 impl="cce_kahan_full_c"
             )
+            self.ce_loss = auto_shift_loss
             return {'loss': auto_shift_loss + self.model.quantize_loss}
         return super_out
 
@@ -483,6 +497,7 @@ class Callback(TrainerCallback):
                 "quantize_perplexity": self.model.model.quantize_perplexity,
                 "num_active_codes": self.model.model.num_active_codes,
                 "total_code_usage": self.model.model.total_code_usage.sum().item(),
+                "ce_loss": self.model.ce_loss.item(),
             }, step=state.global_step)
 
 def main():
@@ -527,7 +542,7 @@ def main():
     tokenizer.add_tokens(timestamps)
 
     model = Model.from_pretrained(model_args.model_name_or_path, attn_implementation='sdpa')
-    model.model.init_quantize_layer('centroids.npy')
+    model.model.init_quantize_layer('centroids-v2.npy')
 
     for name, param in model.model.encoder.named_parameters():
         param.requires_grad = False
