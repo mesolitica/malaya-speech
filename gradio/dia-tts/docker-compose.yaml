@@ -1,0 +1,22 @@
+version: "3.3"
+
+services:
+  gradio-dia-tts:
+    build:
+      context: .
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["2"]
+              capabilities: [gpu]
+    container_name: gradio-dia-tts
+    ports:
+      - "7860:7860"
+    volumes:
+      - "~/.cache/huggingface:/root/.cache/huggingface"
+    environment:
+      - HOTLOAD=true
+      - PYTHONUNBUFFERED=1
+    command: python3 app.py
