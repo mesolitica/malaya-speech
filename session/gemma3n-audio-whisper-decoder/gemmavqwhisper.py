@@ -177,7 +177,12 @@ class GemmaWhisper(WhisperPreTrainedModel):
         self.post_layer_norm = nn.LayerNorm(self.decoder.config.d_model)
         
         self.post_init()
-        self.init_quantize_layer()
+    
+    def get_input_embeddings(self):
+        return self.decoder.embed_tokens
+
+    def set_input_embeddings(self, value):
+        self.decoder.embed_tokens = value
     
     def init_quantize_layer(self, centroid_path = None):
         self.quantize_vocab_size = getattr(self.config, 'quantize_vocab_size', 32768)
@@ -195,14 +200,10 @@ class GemmaWhisper(WhisperPreTrainedModel):
         self.register_buffer("ema_weight", self.codebook.weight.data.clone().float())
         self.quantize_ema_count = 1
 
-        # self.quantize_update_interval = getattr(self.config, 'quantize_update_interval', 50)
-        # self.quantize_restart_interval = getattr(self.config, 'quantize_restart_interval', 50000000)
-
         self.quantize_update_interval = getattr(self.config, 'quantize_update_interval', 50)
         self.quantize_restart_interval = getattr(self.config, 'quantize_restart_interval', 500)
 
         self.register_buffer("total_code_usage", torch.zeros(self.quantize_vocab_size))
-
 
     def apply_vq(self, hidden_states, attention_mask):
         batch_size, seq_len, dim = hidden_states.shape
@@ -387,6 +388,15 @@ class GemmaWhisperForConditionalGeneration(WhisperPreTrainedModel):
 
         self.post_init()
     
+    def get_output_embeddings(self):
+        return self.proj_out
+
+    def set_output_embeddings(self, new_embeddings):
+        self.proj_out = new_embeddings
+    
+    def get_input_embeddings(self) -> nn.Module:
+        return self.model.get_input_embeddings()
+    
     def forward(
         self,
         input_features = None,
@@ -546,6 +556,9 @@ def main():
 
     for name, param in model.model.encoder.named_parameters():
         param.requires_grad = False
+    
+    same = (model.proj_out.weight == model.model.decoder.embed_tokens.weight).float().mean().tolist()
+    assert same >= 0.99, "projection is not tied"
     
     processor = WhisperProcessor.from_pretrained('openai/whisper-large-v3-turbo')
     sampling_rate = feature_extractor.sampling_rate

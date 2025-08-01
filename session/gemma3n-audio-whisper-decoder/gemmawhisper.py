@@ -36,6 +36,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import transformers
+import librosa
 from torch.utils.data import DataLoader, Dataset
 from datasets import Audio
 from accelerate.logging import get_logger
@@ -159,6 +160,12 @@ class GemmaWhisper(WhisperPreTrainedModel):
             self.encoder.config.text_config.hidden_size, self.decoder.config.d_model)
         
         self.post_init()
+    
+    def get_input_embeddings(self):
+        return self.decoder.embed_tokens
+
+    def set_input_embeddings(self, value):
+        self.decoder.embed_tokens = value
         
     def forward(
         self,
@@ -233,6 +240,15 @@ class GemmaWhisperForConditionalGeneration(WhisperPreTrainedModel):
         self.max_target_positions = config.max_target_positions
 
         self.post_init()
+    
+    def get_output_embeddings(self):
+        return self.proj_out
+
+    def set_output_embeddings(self, new_embeddings):
+        self.proj_out = new_embeddings
+    
+    def get_input_embeddings(self) -> nn.Module:
+        return self.model.get_input_embeddings()
     
     def forward(
         self,
@@ -376,7 +392,8 @@ def main():
     for name, param in model.model.encoder.named_parameters():
         param.requires_grad = False
     
-    print(model)
+    same = (model.proj_out.weight == model.model.decoder.embed_tokens.weight).float().mean().tolist()
+    assert same >= 0.99, "projection is not tied"
 
     processor = WhisperProcessor.from_pretrained(model_args.model_name_or_path)
     sampling_rate = feature_extractor.sampling_rate
@@ -394,17 +411,14 @@ def main():
                     self.data = json.load(fopen)
             else:
                 self.data = LocalDataset(folder)
-            self.audio = Audio(sampling_rate=16000)
 
         def __len__(self):
             return len(self.data)
 
         def __getitem__(self, item):
             try:
-                audio = self.audio.decode_example(
-                    self.audio.encode_example(
-                        self.data[item]['audio_filename']))['array']
-                input_str = '<|startoftranscript|>' + self.data[item]['text'] + tokenizer.eos_token
+                audio = librosa.load(self.data[item]['audio_filename'], sr = 16000)[0]
+                input_str = self.data[item]['text']
 
                 token_ids = tokenizer(input_str, add_special_tokens=False).input_ids
                 if len(token_ids) > max_label_length:
