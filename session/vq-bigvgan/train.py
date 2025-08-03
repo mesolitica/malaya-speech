@@ -1,0 +1,612 @@
+import sys
+
+sys.path.insert(0, '/home/husein/ssd3/BigVGAN')
+
+from meldataset import get_mel_spectrogram
+import librosa
+import torch
+import json
+import bigvgan
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.distributed as dist
+
+from torch.nn import Conv1d, ConvTranspose1d, AvgPool1d, Conv2d
+from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
+from torch.utils.data import DataLoader
+from torch.cuda.amp import autocast, GradScaler
+from torch import nn, optim
+from transformers import get_linear_schedule_with_warmup
+from accelerate import skip_first_batches
+from env import AttrDict
+from tqdm import tqdm
+import os
+import wandb
+import time
+from glob import glob
+
+LRELU_SLOPE = 0.1
+
+def is_dist_initialized():
+    return dist.is_available() and dist.is_initialized()
+
+def mse_loss_with_mask(input, target, mask):
+    loss = torch.nn.functional.mse_loss(input, target, reduction='none')
+    loss = loss.mean(dim=-1)
+    loss = loss * mask
+    return loss.sum() / mask.sum()
+
+def slice_segments(x, ids_str, segment_size=4):
+    ret = torch.zeros_like(x[:, :, :segment_size])
+    for i in range(x.size(0)):
+        idx_str = ids_str[i]
+        idx_end = idx_str + segment_size
+        ret[i] = x[i, :, idx_str:idx_end]
+    return ret
+
+def rand_slice_segments(x, x_lengths=None, segment_size=4):
+    b, d, t = x.size()
+    if x_lengths is None:
+        x_lengths = t
+    ids_str_max = x_lengths - segment_size + 1
+    ids_str = (torch.rand([b]).to(device=x.device) * ids_str_max).to(dtype=torch.long)
+    ret = slice_segments(x, ids_str, segment_size)
+    return ret, ids_str
+
+def feature_loss(fmap_r, fmap_g):
+    loss = 0
+    for dr, dg in zip(fmap_r, fmap_g):
+        for rl, gl in zip(dr, dg):
+            rl = rl.float().detach()
+            gl = gl.float()
+            loss += torch.mean(torch.abs(rl - gl))
+
+    return loss * 2
+
+
+def discriminator_loss(disc_real_outputs, disc_generated_outputs):
+    loss = 0
+    r_losses = []
+    g_losses = []
+    for dr, dg in zip(disc_real_outputs, disc_generated_outputs):
+        dr = dr.float()
+        dg = dg.float()
+        r_loss = torch.mean((1-dr)**2)
+        g_loss = torch.mean(dg**2)
+        loss += (r_loss + g_loss)
+        r_losses.append(r_loss.item())
+        g_losses.append(g_loss.item())
+
+    return loss, r_losses, g_losses
+
+
+def generator_loss(disc_outputs):
+    loss = 0
+    gen_losses = []
+    for dg in disc_outputs:
+        dg = dg.float()
+        l = torch.mean((1-dg)**2)
+        gen_losses.append(l)
+        loss += l
+
+    return loss, gen_losses
+
+def get_padding(kernel_size, dilation=1):
+    return int((kernel_size*dilation - dilation)/2)
+
+class DiscriminatorP(torch.nn.Module):
+    def __init__(self, period, kernel_size=5, stride=3, use_spectral_norm=False):
+        super(DiscriminatorP, self).__init__()
+        self.period = period
+        self.use_spectral_norm = use_spectral_norm
+        norm_f = weight_norm if use_spectral_norm == False else spectral_norm
+        self.convs = nn.ModuleList([
+            norm_f(Conv2d(1, 32, (kernel_size, 1), (stride, 1), padding=(get_padding(kernel_size, 1), 0))),
+            norm_f(Conv2d(32, 128, (kernel_size, 1), (stride, 1), padding=(get_padding(kernel_size, 1), 0))),
+            norm_f(Conv2d(128, 512, (kernel_size, 1), (stride, 1), padding=(get_padding(kernel_size, 1), 0))),
+            norm_f(Conv2d(512, 1024, (kernel_size, 1), (stride, 1), padding=(get_padding(kernel_size, 1), 0))),
+            norm_f(Conv2d(1024, 1024, (kernel_size, 1), 1, padding=(get_padding(kernel_size, 1), 0))),
+        ])
+        self.conv_post = norm_f(Conv2d(1024, 1, (3, 1), 1, padding=(1, 0)))
+
+    def forward(self, x):
+        fmap = []
+
+        # 1d to 2d
+        b, c, t = x.shape
+        if t % self.period != 0:  # pad first
+            n_pad = self.period - (t % self.period)
+            x = F.pad(x, (0, n_pad), "reflect")
+            t = t + n_pad
+        x = x.view(b, c, t // self.period, self.period)
+
+        for l in self.convs:
+            x = l(x)
+            x = F.leaky_relu(x, LRELU_SLOPE)
+            fmap.append(x)
+        x = self.conv_post(x)
+        fmap.append(x)
+        x = torch.flatten(x, 1, -1)
+
+        return x, fmap
+
+
+class DiscriminatorS(torch.nn.Module):
+    def __init__(self, use_spectral_norm=False):
+        super(DiscriminatorS, self).__init__()
+        norm_f = weight_norm if use_spectral_norm == False else spectral_norm
+        self.convs = nn.ModuleList([
+            norm_f(Conv1d(1, 16, 15, 1, padding=7)),
+            norm_f(Conv1d(16, 64, 41, 4, groups=4, padding=20)),
+            norm_f(Conv1d(64, 256, 41, 4, groups=16, padding=20)),
+            norm_f(Conv1d(256, 1024, 41, 4, groups=64, padding=20)),
+            norm_f(Conv1d(1024, 1024, 41, 4, groups=256, padding=20)),
+            norm_f(Conv1d(1024, 1024, 5, 1, padding=2)),
+        ])
+        self.conv_post = norm_f(Conv1d(1024, 1, 3, 1, padding=1))
+
+    def forward(self, x):
+        fmap = []
+
+        for l in self.convs:
+            x = l(x)
+            x = F.leaky_relu(x, LRELU_SLOPE)
+            fmap.append(x)
+        x = self.conv_post(x)
+        fmap.append(x)
+        x = torch.flatten(x, 1, -1)
+
+        return x, fmap
+
+
+class MultiPeriodDiscriminator(torch.nn.Module):
+    def __init__(self, use_spectral_norm=False):
+        super(MultiPeriodDiscriminator, self).__init__()
+        periods = [2, 3, 5, 7, 11]
+
+        discs = [DiscriminatorS(use_spectral_norm=use_spectral_norm)]
+        discs = discs + [DiscriminatorP(i, use_spectral_norm=use_spectral_norm) for i in periods]
+        self.discriminators = nn.ModuleList(discs)
+
+    def forward(self, y, y_hat):
+        y_d_rs = []
+        y_d_gs = []
+        fmap_rs = []
+        fmap_gs = []
+        for i, d in enumerate(self.discriminators):
+            y_d_r, fmap_r = d(y)
+            y_d_g, fmap_g = d(y_hat)
+            y_d_rs.append(y_d_r)
+            y_d_gs.append(y_d_g)
+            fmap_rs.append(fmap_r)
+            fmap_gs.append(fmap_g)
+
+        return y_d_rs, y_d_gs, fmap_rs, fmap_gs
+    
+class VectorQuantizerEMA(nn.Module):
+    def __init__(
+        self, num_embeddings, embedding_dim, centroid_path=None):
+        super().__init__()
+        self.embedding_dim = embedding_dim
+        self.num_embeddings = num_embeddings
+
+        self.quantize_vocab_size = num_embeddings
+        self.quantize_ema_decay = 0.99
+        self.quantize_loss_scale = 10.0
+        self.quantize_commit_coefficient = 0.25
+        self.codebook = nn.Embedding(self.quantize_vocab_size, embedding_dim)
+        if centroid_path is not None:
+            init_codes = np.load(centroid_path)
+            self.codebook.weight.data.copy_(torch.from_numpy(init_codes))
+            print(f'loaded codebook weight from {centroid_path}')
+        self.codebook.weight.requires_grad = False
+
+        self.register_buffer("ema_count", torch.ones(self.quantize_vocab_size, dtype=torch.float))
+        self.register_buffer("ema_weight", self.codebook.weight.data.clone().float())
+        self.quantize_ema_count = 1
+
+        self.quantize_update_interval = 50
+        self.quantize_restart_interval = 500
+
+        self.register_buffer("total_code_usage", torch.zeros(self.quantize_vocab_size))
+
+        self.embedding = nn.Parameter(torch.randn(num_embeddings, embedding_dim))
+        self.register_buffer('ema_cluster_size', torch.zeros(num_embeddings))
+        self.register_buffer('ema_w', torch.randn(num_embeddings, embedding_dim))
+
+    def forward(self, z, attention_mask):
+        hidden_states = z
+        batch_size, seq_len, dim = hidden_states.shape
+        flat_hidden = hidden_states.reshape(-1, dim)
+        distances = (
+            flat_hidden.pow(2).sum(1, keepdim=True)
+            - 2 * torch.matmul(flat_hidden, self.codebook.weight.t())
+            + self.codebook.weight.pow(2).sum(1)
+        )
+
+        indices = torch.argmin(distances, dim=1)
+        print(indices)
+        quantized = self.codebook(indices).view(batch_size, seq_len, dim)
+
+        if self.training:
+            encodings = F.one_hot(indices, self.quantize_vocab_size).float()
+            encodings = encodings * attention_mask.reshape(-1, 1)
+            n = torch.sum(encodings, dim=0)
+            if is_dist_initialized():
+                torch.distributed.all_reduce(n, op=torch.distributed.ReduceOp.SUM)
+
+            p = n / n.sum()
+            self.quantize_perplexity = torch.exp(-torch.sum(p * torch.log(p + 1e-10))).item()
+            self.num_active_codes = (n > 0).sum().item()
+            self.total_code_usage[indices] = 1.0
+
+            hidden_flat = flat_hidden.detach()
+            dw = torch.matmul(encodings.t(), hidden_flat)
+            if is_dist_initialized():
+                torch.distributed.all_reduce(dw, op=torch.distributed.ReduceOp.SUM)
+
+            self.ema_count = self.ema_count * self.quantize_ema_decay + (
+                1 - self.quantize_ema_decay) * n
+            total_count = torch.sum(self.ema_count)
+            self.ema_count = (self.ema_count + 1e-5) / (
+                total_count + self.quantize_vocab_size * 1e-5) * total_count
+            self.ema_weight = self.ema_weight * self.quantize_ema_decay + (
+                1 - self.quantize_ema_decay) * dw
+            if self.quantize_ema_count % self.quantize_update_interval == 0:
+                self.codebook.weight.data = self.ema_weight / self.ema_count.unsqueeze(1)
+            self.quantize_loss = self.quantize_loss_scale * self.quantize_commit_coefficient * mse_loss_with_mask(
+                                hidden_states, quantized.detach(), attention_mask)
+            
+            self._maybe_restart_codes(hidden_flat, attention_mask)
+            self.quantize_ema_count += 1
+
+            hidden_states = hidden_states + (quantized - hidden_states).detach()
+        else:
+            hidden_states = quantized
+        
+        return hidden_states, indices
+    
+    def _maybe_restart_codes(self, hidden_flat, attention_mask):
+        if self.quantize_restart_interval is None:
+            return
+
+        if self.quantize_ema_count % self.quantize_restart_interval != 0:
+            return
+        
+        rank, world_size = torch.distributed.get_rank(), torch.distributed.get_world_size()
+        segment_vocab_size = self.quantize_vocab_size // world_size
+        start_idx = segment_vocab_size * rank
+        ema_count_segment = self.ema_count[start_idx: start_idx + segment_vocab_size]
+        threshold = self.quantize_ema_decay ** self.quantize_restart_interval
+        update_indices = (ema_count_segment < threshold).nonzero()[:, 0] + start_idx
+        num_update = update_indices.shape[0]
+
+        print('num_update', num_update)
+
+        if num_update > 0:
+            mask_flat = attention_mask.reshape(-1) > 0
+            hidden_selected = hidden_flat[mask_flat]
+            chosen_indices = (
+                torch.randperm(len(hidden_selected), device=hidden_selected.device)[:num_update]
+                if num_update <= len(hidden_selected)
+                else torch.randint(0, len(hidden_selected), (num_update,), device=hidden_selected.device)
+            )
+            hidden_update = hidden_selected[chosen_indices]
+
+            num_update = torch.as_tensor([num_update], dtype=torch.long, device=hidden_flat.device)
+            num_update_list = [torch.as_tensor([0], dtype=torch.long, device=hidden_flat.device)
+                               for _ in range(world_size)]
+            torch.distributed.all_gather(num_update_list, num_update)
+
+            update_indices_list = [
+                torch.zeros(num.item(), dtype=torch.long, device=hidden_flat.device)
+                for num in num_update_list]
+            torch.distributed.all_gather(update_indices_list, update_indices)
+            update_indices = torch.cat(update_indices_list)
+
+            hidden_update_list = [
+                torch.zeros(num.item(), hidden_flat.shape[-1], dtype=hidden_update.dtype,
+                            device=hidden_flat.device) for num in num_update_list]
+            torch.distributed.all_gather(hidden_update_list, hidden_update)
+            hidden_update = torch.cat(hidden_update_list)
+
+            self.codebook.weight.data[update_indices] = hidden_update.to(self.codebook.weight.data.dtype)
+            self.ema_count[update_indices] = 1
+            self.ema_weight[update_indices] = hidden_update.to(self.ema_weight.dtype)
+
+            if rank == 0:
+                print(f"[VQ] Restarted {len(update_indices)} dead codes.")
+    
+class TransformerDecoder(nn.Module):
+    def __init__(self, model_dim, output_dim, num_layers=12, nhead=8, dropout=0.1, max_len = 3000):
+        super().__init__()
+        assert model_dim % nhead == 0
+        self.nhead = nhead
+        self.head_dim = model_dim // nhead
+        self.projection = nn.Linear(output_dim, model_dim)
+        
+        self.pos_embedding = nn.Parameter(torch.randn(1, max_len, model_dim))
+
+        decoder_layer = nn.TransformerEncoderLayer(
+            d_model=model_dim,
+            nhead=nhead,
+            dim_feedforward=4 * model_dim,
+            dropout=dropout,
+            batch_first=True
+        )
+        self.decoder = nn.TransformerEncoder(decoder_layer, num_layers=num_layers)
+        self.output_proj = nn.Linear(model_dim, output_dim)
+
+    def forward(self, z):
+        z = self.projection(z)
+        B, T, D = z.shape
+        
+        z = z + self.pos_embedding[:, :T, :]
+
+        z = self.decoder(z)
+        return self.output_proj(z)
+    
+class VQMelTransformer(nn.Module):
+    def __init__(
+        self, 
+        mel_dim=100,
+        latent_dim=1536,
+        num_layers=12,
+        nhead=8,
+        num_embeddings=32768,
+    ):
+        super().__init__()
+        self.vq = VectorQuantizerEMA(num_embeddings, mel_dim)
+        self.decoder = TransformerDecoder(latent_dim, mel_dim, num_layers=num_layers, nhead=nhead)
+
+    def forward(self, mel, attention_mask):
+        mel = mel.permute(0, 2, 1)
+        z_q, indices = self.vq(mel, attention_mask)
+        recon = self.decoder(z_q)
+        return recon.permute(0, 2, 1), indices
+
+def load_hparams_from_json(path):
+    with open(path) as f:
+        data = f.read()
+    return AttrDict(json.loads(data))
+
+def clip_grad_value_(parameters, clip_value, norm_type=2):
+    if isinstance(parameters, torch.Tensor):
+        parameters = [parameters]
+    parameters = list(filter(lambda p: p.grad is not None, parameters))
+    norm_type = float(norm_type)
+    if clip_value is not None:
+        clip_value = float(clip_value)
+
+    total_norm = 0
+    for p in parameters:
+        param_norm = p.grad.data.norm(norm_type)
+        total_norm += param_norm.item() ** norm_type
+        if clip_value is not None:
+            p.grad.data.clamp_(min=-clip_value, max=clip_value)
+    total_norm = total_norm ** (1. / norm_type)
+    return total_norm
+
+def main():
+    h = load_hparams_from_json('bigvgan-config.json')
+
+    train_dataset = 'audio-files.json'
+    segment_size = 8192 // h.hop_size
+    warmup_steps = 1000
+    epoch = 2
+    log_interval = 5
+    save_interval = 1000
+    mel_ratio = 45
+    max_ckpt = 5
+    learning_rate = 2e-4
+    betas = [0.8, 0.99]
+    eps = 1e-9
+    batch_size = 4
+    num_workers = 5
+
+    device = 'cuda'
+    run_dir = 'checkpoint'
+    os.makedirs(run_dir, exist_ok = True)
+
+    class Dataset(torch.utils.data.Dataset):
+        def __init__(self, file):
+            with open(file) as fopen:
+                self.files = json.load(fopen)
+        
+        def __getitem__(self, idx):
+            try:
+                wav, _ = librosa.load(self.files[idx], sr=h.sampling_rate, mono=True)
+                return {
+                    'wav': torch.FloatTensor(wav),
+                    'length': len(wav)
+                }
+            except Exception as e:
+                print(e)
+        
+        def __len__(self):
+            return len(self.files)
+
+    def collator(batch):
+        batch = [b for b in batch if b is not None]
+        wavs = [b['wav'] for b in batch]
+        lengths = [b['length'] for b in batch]
+
+        wavs = torch.nn.utils.rnn.pad_sequence(
+            wavs, batch_first=True, padding_value=0.0, padding_side='right')
+
+        mels = []
+        for i in range(len(wavs)):
+            mel = get_mel_spectrogram(wavs[i][None], h)
+            mels.append(mel)
+        mels = torch.concat(mels)
+        lengths = torch.tensor(lengths) // h.hop_size
+        return {'mel': mels, 'lengths': lengths, 'wav': wavs}
+
+    vocoder = vocoder = bigvgan.BigVGAN.from_pretrained('nvidia/bigvgan_v2_24khz_100band_256x', use_cuda_kernel=False).to(torch.bfloat16)
+    _ = vocoder.to(device)
+    for p in vocoder.parameters():
+        p.requires_grad = False
+
+    net_g = VQMelTransformer().to(device)
+    net_d = MultiPeriodDiscriminator().to(device)
+    optim_g = torch.optim.AdamW(
+        net_g.parameters(),
+        learning_rate,
+        betas=betas,
+        eps=eps)
+    optim_d = torch.optim.AdamW(
+        net_d.parameters(),
+        learning_rate,
+        betas=betas,
+        eps=eps)
+
+    train_dataset = Dataset(train_dataset)
+    train_loader = DataLoader(
+        train_dataset, 
+        batch_size=batch_size,
+        num_workers=num_workers, 
+        shuffle=False, 
+        pin_memory=True,
+        collate_fn=collator
+    )
+    scaler = GradScaler(enabled=True)
+    
+    total_steps = epoch * len(train_loader)
+    scheduler_g = get_linear_schedule_with_warmup(optim_g, warmup_steps, total_steps)
+    scheduler_d = get_linear_schedule_with_warmup(optim_d, warmup_steps, total_steps)
+
+    step = 1
+    try:
+        """
+        ckpt = {
+            "net_g": net_g.state_dict(),
+            "net_d": net_d.state_dict(),
+            "optim_g": optim_g.state_dict(),
+            "optim_d": optim_d.state_dict(),
+            "scheduler_g": scheduler_g.state_dict(),
+            "scheduler_d": scheduler_d.state_dict(),
+            "scaler": scaler.state_dict(),
+            "step": step,
+        }
+        """
+        ckpts = sorted(glob(os.path.join(run_dir, "checkpoint_*.pt")), key=os.path.getmtime)
+        print(ckpts)
+        ckpt = torch.load(ckpts[-1], map_location=device)
+        net_g.load_state_dict(ckpt["net_g"])
+        net_d.load_state_dict(ckpt["net_d"])
+        optim_g.load_state_dict(ckpt["optim_g"])
+        optim_d.load_state_dict(ckpt["optim_d"])
+        scheduler_g.load_state_dict(ckpt["scheduler_g"])
+        scheduler_d.load_state_dict(ckpt["scheduler_d"])
+        scaler.load_state_dict(ckpt["scaler"])
+        step = ckpt["step"]
+        print(f'loaded checkpoint {ckpts[-1]}')
+    except Exception as e:
+        print(e)
+
+    time.sleep(5.0)
+
+    steps_trained_in_current_epoch = step % len(train_loader)
+    train_loader = skip_first_batches(train_loader, steps_trained_in_current_epoch)
+
+    pbar = tqdm(total=total_steps, initial=step)
+    iter_train_loader = iter(train_loader)
+    wandb.init()
+    while step < total_steps:
+        try:
+            batch = next(iter_train_loader)
+        except StopIteration:
+            iter_train_loader = iter(train_loader)
+            batch = next(iter_train_loader)
+
+        mel = batch["mel"].to(device)
+        wav = batch["wav"].to(device)
+        lengths = batch["lengths"].to(device)
+        max_len = lengths.max()
+        attention_mask = torch.arange(max_len, device = lengths.device).expand(lengths.shape[0], max_len) < lengths.unsqueeze(1)
+        attention_mask = attention_mask.int()
+
+        with autocast(dtype=torch.bfloat16, enabled=True):
+            outputs = net_g(mel, attention_mask)
+
+            y_hat_mel, ids_slice = rand_slice_segments(outputs[0], lengths, segment_size)
+            y_mel = slice_segments(mel, ids_slice, segment_size)
+            y = slice_segments(wav.unsqueeze(1), ids_slice * h.hop_size, segment_size * h.hop_size)
+
+            y_hat = vocoder(y_hat_mel.to(torch.bfloat16))
+            y_d_hat_r, y_d_hat_g, _, _ = net_d(y, y_hat.detach())
+            with autocast(enabled=False):
+                loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(y_d_hat_r, y_d_hat_g)
+                loss_disc_all = loss_disc
+
+        optim_d.zero_grad()
+        scaler.scale(loss_disc_all).backward()
+        scaler.unscale_(optim_d)
+        grad_norm_d = clip_grad_value_(net_d.parameters(), None)
+        scaler.step(optim_d)
+        scheduler_d.step()
+
+        with autocast(dtype=torch.bfloat16, enabled=True):
+            y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
+            with autocast(enabled=False):
+                loss_mel = F.l1_loss(y_mel, y_hat_mel) * mel_ratio
+                loss_fm = feature_loss(fmap_r, fmap_g)
+                loss_gen, losses_gen = generator_loss(y_d_hat_g)
+                loss_gen_all = loss_gen + loss_fm + loss_mel
+            
+        optim_g.zero_grad()
+        scaler.scale(loss_gen_all).backward()
+        scaler.unscale_(optim_g)
+        grad_norm_g = clip_grad_value_(net_g.parameters(), None)
+        scaler.step(optim_g)
+        scheduler_g.step()
+
+        scaler.update()
+
+        if step % log_interval == 0:
+            scalar_dict = {
+                "loss/g/total": loss_gen_all,
+                "loss/d/total": loss_disc_all,
+                "lr_g": scheduler_g.get_last_lr()[0],
+                "lr_d": scheduler_d.get_last_lr()[0],
+                "grad_norm_d": grad_norm_d,
+                "grad_norm_g": grad_norm_g,
+                "quantize_loss": net_g.vq.quantize_loss,
+                "quantize_perplexity": net_g.vq.quantize_perplexity,
+                "num_active_codes": net_g.vq.num_active_codes,
+                "total_code_usage": net_g.vq.total_code_usage.sum().item(),
+            }
+            scalar_dict.update({"loss/g/fm": loss_fm, "loss/g/mel": loss_mel})
+            scalar_dict.update({"loss/g/{}".format(i): v for i, v in enumerate(losses_gen)})
+            scalar_dict.update({"loss/d_r/{}".format(i): v for i, v in enumerate(losses_disc_r)})
+            scalar_dict.update({"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)})
+            scalar_dict['global_step'] = step
+            
+            wandb.log(scalar_dict)
+        
+        if step % save_interval == 0:
+            ckpt = {
+                "net_g": net_g.state_dict(),
+                "net_d": net_d.state_dict(),
+                "optim_g": optim_g.state_dict(),
+                "optim_d": optim_d.state_dict(),
+                "scheduler_g": scheduler_g.state_dict(),
+                "scheduler_d": scheduler_d.state_dict(),
+                "scaler": scaler.state_dict(),
+                "step": step,
+            }
+            path = os.path.join(run_dir, f"checkpoint_{step}.pt")
+            torch.save(ckpt, path)
+            print(f'save checkpoint {path}')
+            ckpts = sorted(glob(os.path.join(run_dir, "checkpoint_*.pt")), key=os.path.getmtime)
+            if len(ckpts) > max_ckpt:
+                to_delete = ckpts[0]
+                os.remove(to_delete)
+                print(f"Deleted old checkpoint: {to_delete}")
+        
+        step += 1
+        pbar.update(1)
+
+if __name__ == "__main__":
+    main()
