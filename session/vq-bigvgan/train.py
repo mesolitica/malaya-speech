@@ -389,6 +389,11 @@ def clip_grad_value_(parameters, clip_value, norm_type=2):
     return total_norm
 
 def main():
+    dist.init_process_group(backend="nccl", init_method="env://")
+    local_rank = int(os.environ["LOCAL_RANK"])
+    torch.cuda.set_device(local_rank)
+    device = torch.device("cuda", local_rank)
+
     h = load_hparams_from_json('bigvgan-config.json')
 
     train_dataset = 'audio-files.json'
@@ -405,7 +410,6 @@ def main():
     batch_size = 4
     num_workers = 5
 
-    device = 'cuda'
     run_dir = 'checkpoint'
     os.makedirs(run_dir, exist_ok = True)
 
@@ -450,6 +454,10 @@ def main():
 
     net_g = VQMelTransformer().to(device)
     net_d = MultiPeriodDiscriminator().to(device)
+
+    net_g = torch.nn.parallel.DistributedDataParallel(net_g, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
+    net_d = torch.nn.parallel.DistributedDataParallel(net_d, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
+
     optim_g = torch.optim.AdamW(
         net_g.parameters(),
         learning_rate,
@@ -462,13 +470,20 @@ def main():
         eps=eps)
 
     train_dataset = Dataset(train_dataset)
+    sampler = torch.utils.data.distributed.DistributedSampler(
+        train_dataset,
+        num_replicas=dist.get_world_size(),
+        rank=dist.get_rank(),
+        shuffle=True,
+        drop_last=True,
+    )
     train_loader = DataLoader(
-        train_dataset, 
+        train_dataset,
         batch_size=batch_size,
-        num_workers=num_workers, 
-        shuffle=False, 
+        num_workers=num_workers,
         pin_memory=True,
-        collate_fn=collator
+        sampler=sampler,
+        collate_fn=collator,
     )
     scaler = GradScaler(enabled=True)
     
@@ -490,8 +505,7 @@ def main():
             "step": step,
         }
         """
-        ckpts = sorted(glob(os.path.join(run_dir, "checkpoint_*.pt")), key=os.path.getmtime)
-        print(ckpts)
+        ckpts = sorted(glob(os.path.join(run_dir, f"checkpoint_{local_rank}_*.pt")), key=os.path.getmtime)
         ckpt = torch.load(ckpts[-1], map_location=device)
         net_g.load_state_dict(ckpt["net_g"])
         net_d.load_state_dict(ckpt["net_d"])
@@ -509,10 +523,16 @@ def main():
 
     steps_trained_in_current_epoch = step % len(train_loader)
     train_loader = skip_first_batches(train_loader, steps_trained_in_current_epoch)
+    sampler.set_epoch(step // len(train_loader))
 
     pbar = tqdm(total=total_steps, initial=step)
     iter_train_loader = iter(train_loader)
-    wandb.init()
+    
+    if dist.get_rank() == 0:
+        wandb.init()
+    else:
+        wandb.init(mode="disabled")
+
     while step < total_steps:
         try:
             batch = next(iter_train_loader)
@@ -564,7 +584,7 @@ def main():
 
         scaler.update()
 
-        if step % log_interval == 0:
+        if step % log_interval == 0 and dist.get_rank() == 0:
             scalar_dict = {
                 "loss/g/total": loss_gen_all,
                 "loss/d/total": loss_disc_all,
@@ -572,17 +592,16 @@ def main():
                 "lr_d": scheduler_d.get_last_lr()[0],
                 "grad_norm_d": grad_norm_d,
                 "grad_norm_g": grad_norm_g,
-                "quantize_loss": net_g.vq.quantize_loss,
-                "quantize_perplexity": net_g.vq.quantize_perplexity,
-                "num_active_codes": net_g.vq.num_active_codes,
-                "total_code_usage": net_g.vq.total_code_usage.sum().item(),
+                "quantize_loss": net_g.module.vq.quantize_loss,
+                "quantize_perplexity": net_g.module.vq.quantize_perplexity,
+                "num_active_codes": net_g.module.vq.num_active_codes,
+                "total_code_usage": net_g.module.vq.total_code_usage.sum().item(),
             }
             scalar_dict.update({"loss/g/fm": loss_fm, "loss/g/mel": loss_mel})
             scalar_dict.update({"loss/g/{}".format(i): v for i, v in enumerate(losses_gen)})
             scalar_dict.update({"loss/d_r/{}".format(i): v for i, v in enumerate(losses_disc_r)})
             scalar_dict.update({"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)})
-            scalar_dict['global_step'] = step
-            
+            scalar_dict['global_step'] = step 
             wandb.log(scalar_dict)
         
         if step % save_interval == 0:
@@ -596,7 +615,7 @@ def main():
                 "scaler": scaler.state_dict(),
                 "step": step,
             }
-            path = os.path.join(run_dir, f"checkpoint_{step}.pt")
+            path = os.path.join(run_dir, f"checkpoint_{local_rank}_{step}.pt")
             torch.save(ckpt, path)
             print(f'save checkpoint {path}')
             ckpts = sorted(glob(os.path.join(run_dir, "checkpoint_*.pt")), key=os.path.getmtime)
