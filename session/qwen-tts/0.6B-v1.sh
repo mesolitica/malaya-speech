@@ -6,8 +6,8 @@ python3 qwen3_multipacking_distilcodec_flash.py \
 --per_device_train_batch_size 24 \
 --gradient_accumulation_steps 1 \
 --output_dir Malaysian-TTS-0.6B-v1 \
---bf16 --do_train --do_eval false --num_train_epochs 10 \
---train_file "tokenized-4k-qwen3-stage2/tokenized-0" \
+--bf16 --do_train --do_eval false --num_train_epochs 20 \
+--train_file "tokenized-4k-qwen3-stage2-v2/tokenized-0" \
 --logging_steps 1 \
 --learning_rate 2e-5 \
 --warmup_steps 0 \

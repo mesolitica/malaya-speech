@@ -210,8 +210,8 @@ class Model(Qwen3ForCausalLM):
         if labels is not None:
             embeddings = super_out.last_hidden_state
             auto_shift_loss = linear_cross_entropy(
-                embeddings.to(torch.bfloat16), 
-                self.lm_head.weight.to(torch.bfloat16), 
+                embeddings,
+                self.lm_head,
                 labels, 
                 shift=True,
                 impl="cce_kahan_full_c"
