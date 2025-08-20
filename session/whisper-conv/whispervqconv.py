@@ -484,8 +484,8 @@ class Model(WhisperForConditionalGeneration):
         if labels is not None:
             embeddings = super_out.last_hidden_state
             auto_shift_loss = linear_cross_entropy(
-                embeddings.to(torch.bfloat16), 
-                self.proj_out.weight.to(torch.bfloat16), 
+                embeddings,
+                self.proj_out.weight,
                 labels, 
                 shift=False,
                 impl="cce_kahan_full_c"
