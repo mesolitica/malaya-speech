@@ -480,6 +480,7 @@ class Model(WhisperForConditionalGeneration):
             attention_mask=attention_mask, 
             decoder_input_ids=decoder_input_ids,
             output_hidden_states=True,
+            use_cache=False,
         )
         if labels is not None:
             embeddings = super_out.last_hidden_state
