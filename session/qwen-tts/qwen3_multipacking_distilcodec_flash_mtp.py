@@ -196,8 +196,9 @@ class DataTrainingArguments:
     )
 
 class Model(Qwen3ForCausalLM):
-    def __init__(self, config):
+    def __init__(self, config, num_future_tokens=3):
         super().__init__(config)
+        self.num_future_tokens = num_future_tokens
         
     def forward(self, input_ids, attention_mask = None, position_ids = None, labels = None, **kwargs):
         super_out = self.model.forward(
@@ -209,14 +210,23 @@ class Model(Qwen3ForCausalLM):
         )
         if labels is not None:
             embeddings = super_out.last_hidden_state
-            auto_shift_loss = linear_cross_entropy(
-                embeddings, 
-                self.lm_head.weight, 
-                labels, 
-                shift=True,
-                impl="cce_kahan_full_c"
-            )
-            return {'loss': auto_shift_loss}
+
+            losses = 0
+            for k in range(1, self.num_future_tokens + 1):
+                if labels.size(1) <= k:
+                    continue
+                logits_k = embeddings[:, :-k, :]
+                labels_k = labels[:, k:]
+            
+                auto_shift_loss = linear_cross_entropy(
+                    logits_k,
+                    self.lm_head.weight,
+                    labels_k, 
+                    shift=False,
+                    impl="cce_kahan_full_c"
+                )
+                losses += auto_shift_loss
+            return {'loss': losses / self.num_future_tokens}
         return super_out
 
 def main():
