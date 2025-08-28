@@ -150,6 +150,7 @@ class Model(WhisperForConditionalGeneration):
             attention_mask=attention_mask, 
             decoder_input_ids=decoder_input_ids,
             output_hidden_states=True,
+            use_cache=False,
         )
         if labels is not None:
             embeddings = super_out.last_hidden_state
@@ -289,8 +290,6 @@ def main():
                 token_ids = tokenizer(input_str, add_special_tokens=False).input_ids
                 if len(token_ids) > max_label_length:
                     return None
-
-                print(audio.shape)
                 
                 d = {
                     'input_features': audio,
