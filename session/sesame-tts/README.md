@@ -18,7 +18,12 @@ Permutation, Moshi tokens and sorted multipacking pushed to [mesolitica/Malaysia
 
 ## Prepare podcast dataset
 
-1. We post calculate speaker similarity using NEMO titanet-large for permutation voice conversion, [podcast/prepare-stage2.ipynb](podcast/prepare-stage2.ipynb).
+1. We post calculate speaker similarity using NEMO titanet-large for permutation voice conversion, [podcast/prepare-stage2.ipynb](podcast/prepare-stage2.ipynb), or run the script,
+
+```bash
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
+python3 permutate.py --replication=20
+```
 
 2. After that we did the same silent trimming, convert to audio tokens and multipacking.
 
