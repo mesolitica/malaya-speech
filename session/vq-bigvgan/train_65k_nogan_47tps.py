@@ -266,13 +266,13 @@ def main():
     train_dataset = 'audio-files.json'
     segment_size = (h.sampling_rate * 3) // h.hop_size
     warmup_steps = 2000
-    epoch = 2
+    epoch = 10
     log_interval = 5
     save_interval = 1000
     mel_ratio = 45
     max_ckpt = 5
     learning_rate_generator = 2e-5
-    batch_size = 8
+    batch_size = 48
     num_workers = 5
     debug = False
 
@@ -290,7 +290,7 @@ def main():
                 if (len(wav) / h.sampling_rate) < 2:
                     return
 
-                segment_length = h.sampling_rate * 15
+                segment_length = h.sampling_rate * 12
                 if len(wav) > segment_length:
                     max_start = len(wav) - segment_length
                     start = random.randint(0, max_start)
