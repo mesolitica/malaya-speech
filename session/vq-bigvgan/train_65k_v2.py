@@ -1,15 +1,28 @@
 import sys
 
 sys.path.insert(0, '/home/jovyan/BigVGAN')
+sys.path.insert(0, '/home/ubuntu/BigVGAN')
 sys.path.insert(0, '/home/husein/ssd3/BigVGAN')
 
 from meldataset import get_mel_spectrogram
-from loss import MultiScaleMelSpectrogramLoss
+from bigvgan import BigVGAN
+from discriminators import (
+    MultiPeriodDiscriminator,
+    MultiResolutionDiscriminator,
+    MultiBandDiscriminator,
+    MultiScaleSubbandCQTDiscriminator,
+)
+from loss import (
+    feature_loss,
+    generator_loss,
+    discriminator_loss,
+    MultiScaleMelSpectrogramLoss,
+)
+import itertools
 import soundfile as sf
 import librosa
 import torch
 import json
-import bigvgan
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -33,6 +46,12 @@ from glob import glob
 
 def is_dist_initialized():
     return dist.is_available() and dist.is_initialized()
+
+def mse_loss_with_mask(input, target, mask):
+    loss = torch.nn.functional.mse_loss(input, target, reduction='none')
+    loss = loss.mean(dim=-1)
+    loss = loss * mask
+    return loss.sum() / mask.sum()
 
 def mse_loss_with_mask(input, target, mask):
     loss = torch.nn.functional.mse_loss(input, target, reduction='none')
@@ -189,9 +208,9 @@ class VectorQuantizerEMA(nn.Module):
 
             if rank == 0:
                 print(f"[VQ] Restarted {len(update_indices)} dead codes.")
-    
+
 class TransformerDecoder(nn.Module):
-    def __init__(self, model_dim, output_dim, num_layers=12, nhead=8, dropout=0.1, max_len = 3000):
+    def __init__(self, model_dim, output_dim, num_layers=12, nhead=8, dropout=0.0, max_len = 3000):
         super().__init__()
         assert model_dim % nhead == 0
         self.nhead = nhead
@@ -210,10 +229,7 @@ class TransformerDecoder(nn.Module):
         )
         self.decoder = nn.TransformerEncoder(decoder_layer, num_layers=num_layers)
         self.output_proj = nn.Linear(model_dim, output_dim)
-        kernel_size = 4
-        stride = 2
-        pad = (kernel_size - 1) // 2
-        self.conv = torch.nn.ConvTranspose1d(model_dim, model_dim, kernel_size, stride = stride, padding = pad)
+
 
     def forward(self, z, attention_mask=None):
         z = self.projection(z)
@@ -227,8 +243,6 @@ class TransformerDecoder(nn.Module):
         z = self.decoder(z, src_key_padding_mask=~(attention_mask.bool()))
 
         z = z * attention_mask.unsqueeze(-1)
-
-        z = self.conv(z.permute(0, 2, 1)).permute(0, 2, 1)
         return self.output_proj(z)
     
 class VQMelTransformer(nn.Module):
@@ -264,19 +278,20 @@ def main():
     h = load_hparams_from_json('bigvgan-config.json')
 
     train_dataset = 'audio-files.json'
-    segment_size = (h.sampling_rate * 3) // h.hop_size
+    segment_size = (h.sampling_rate * 1) // h.hop_size
     warmup_steps = 2000
-    epoch = 10
+    epoch = 5
     log_interval = 5
     save_interval = 1000
-    mel_ratio = 45
     max_ckpt = 5
-    learning_rate_generator = 2e-5
-    batch_size = 48
+    learning_rate_generator = 5e-5
+    learning_rate = 5e-5
+    grad_norm = 1.0
+    batch_size = 20
     num_workers = 5
     debug = False
 
-    run_dir = 'checkpoint-65k-47tps-v2'
+    run_dir = 'checkpoint-65k-v2'
     os.makedirs(run_dir, exist_ok = True)
 
     class Dataset(torch.utils.data.Dataset):
@@ -322,14 +337,35 @@ def main():
         if mels.shape[-1] % 2 != 0:
             print('not even')
             mels = F.pad(mels, (0, 1, 0, 0, 0, 0))
-
+        
         lengths = torch.tensor(lengths) // h.hop_size
         return {'mel': mels, 'lengths': lengths, 'wav': wavs}
 
+    vocoder = BigVGAN.from_pretrained('nvidia/bigvgan_v2_24khz_100band_256x', use_cuda_kernel=False).to(torch.bfloat16)
+    _ = vocoder.to(device)
+    for p in vocoder.parameters():
+        p.requires_grad = False
+
     net_g = VQMelTransformer().to(device)
+    print(sum(p.numel() for p in net_g.parameters()))
+    time.sleep(5.0)
+    
+    mpd = MultiPeriodDiscriminator(h).to(device)
+    mrd = MultiScaleSubbandCQTDiscriminator(h).to(device)
+
     net_g = torch.nn.parallel.DistributedDataParallel(
         net_g, 
         device_ids=[local_rank], 
+        output_device=local_rank, 
+        find_unused_parameters=True,
+    )
+    mpd = torch.nn.parallel.DistributedDataParallel(
+        mpd, device_ids=[local_rank], 
+        output_device=local_rank, 
+        find_unused_parameters=True,
+    )
+    mrd = torch.nn.parallel.DistributedDataParallel(
+        mrd, device_ids=[local_rank], 
         output_device=local_rank, 
         find_unused_parameters=True,
     )
@@ -337,6 +373,9 @@ def main():
     optim_g = torch.optim.AdamW(
         (p for p in net_g.parameters() if p.requires_grad),
         learning_rate_generator)
+    optim_d = torch.optim.AdamW(
+        itertools.chain(mrd.parameters(), mpd.parameters()),
+        learning_rate)
 
     train_dataset = Dataset(train_dataset)
     sampler = torch.utils.data.distributed.DistributedSampler(
@@ -357,6 +396,7 @@ def main():
     
     total_steps = epoch * len(train_loader)
     scheduler_g = get_linear_schedule_with_warmup(optim_g, warmup_steps, total_steps)
+    scheduler_d = get_linear_schedule_with_warmup(optim_d, warmup_steps, total_steps)
 
     fn_mel_loss_multiscale = MultiScaleMelSpectrogramLoss(
         sampling_rate=h.sampling_rate
@@ -367,14 +407,16 @@ def main():
         ckpts = sorted(glob(os.path.join(run_dir, f"checkpoint_{local_rank}_*.pt")), key=os.path.getmtime)
         ckpt = torch.load(ckpts[-1], map_location=device)
         net_g.load_state_dict(ckpt["net_g"])
+        mpd.load_state_dict(ckpt["mpd"])
+        mrd.load_state_dict(ckpt["mrd"])
         optim_g.load_state_dict(ckpt["optim_g"])
+        optim_d.load_state_dict(ckpt["optim_d"])
         scheduler_g.load_state_dict(ckpt["scheduler_g"])
+        scheduler_d.load_state_dict(ckpt["scheduler_d"])
         step = ckpt["step"]
         print(f'loaded checkpoint {ckpts[-1]}')
     except Exception as e:
         print(e)
-
-    time.sleep(5.0)
 
     steps_trained_in_current_epoch = step % len(train_loader)
     train_loader = skip_first_batches(train_loader, steps_trained_in_current_epoch)
@@ -406,66 +448,90 @@ def main():
         attention_mask = torch.arange(mel.shape[-1], device = lengths.device).expand(lengths.shape[0], mel.shape[-1]) < lengths.unsqueeze(1)
         attention_mask = attention_mask.float()
 
-        mel_ = F.interpolate(mel, scale_factor=0.5, mode="linear", align_corners=False)
-        attention_mask = F.interpolate(attention_mask.unsqueeze(1), scale_factor=0.5, mode="linear", align_corners=False)[:,0]
-
         with autocast(dtype=torch.bfloat16, enabled=True):
-            outputs = net_g(mel_, attention_mask)
+            outputs = net_g(mel, attention_mask)
 
             y_hat_mel, ids_slice = rand_slice_segments(outputs[0], lengths, segment_size)
             y_mel = slice_segments(mel, ids_slice, segment_size)
+            y = slice_segments(wav.unsqueeze(1), ids_slice * h.hop_size, segment_size * h.hop_size)
+
+            print(outputs[0].shape, mel.shape)
 
             if dist.get_rank() == 0:
                 print(y_mel.min(), y_mel.max(), y_hat_mel.min(), y_hat_mel.max())
-        
+            
+            y_hat = vocoder(y_hat_mel)
+            y = y[:,:,:y_hat.shape[-1]]
+            print(y.shape, y_hat.shape)
+            y_df_hat_r, y_df_hat_g, _, _ = mpd(y, y_hat.detach())
             with autocast(dtype=torch.bfloat16, enabled=False):
-                print(y_mel.shape, y_hat_mel.shape)
-                min_len = min(y_mel.shape[-1], y_hat_mel.shape[-1])
-                y_mel = y_mel[..., :min_len]
-                y_hat_mel = y_hat_mel[..., :min_len]
+                loss_disc_f, losses_disc_f_r, losses_disc_f_g = discriminator_loss(
+                    y_df_hat_r, y_df_hat_g
+                )
+            
+            y_ds_hat_r, y_ds_hat_g, _, _ = mrd(y, y_hat.detach())
+            with autocast(dtype=torch.bfloat16, enabled=False):
+                loss_disc_s, losses_disc_s_r, losses_disc_s_g = discriminator_loss(
+                    y_ds_hat_r, y_ds_hat_g
+                )
+                loss_disc_all = loss_disc_s + loss_disc_f
 
-                loss_mel = F.l1_loss(y_mel, y_hat_mel)
-                loss_gen_all = loss_mel + net_g.module.vq.quantize_loss
+        optim_d.zero_grad()
+        loss_disc_all.backward()
+        grad_norm_mpd = torch.nn.utils.clip_grad_norm_(mpd.parameters(), grad_norm)
+        grad_norm_mrd = torch.nn.utils.clip_grad_norm_(mrd.parameters(), grad_norm)
+        optim_d.step()
+        scheduler_d.step()
+
+        with autocast(dtype=torch.bfloat16, enabled=True):
+            y_df_hat_r, y_df_hat_g, fmap_f_r, fmap_f_g = mpd(y, y_hat)
+            with autocast(dtype=torch.bfloat16, enabled=False):
+                loss_fm_f = feature_loss(fmap_f_r, fmap_f_g)
+                loss_gen_f, losses_gen_f = generator_loss(y_df_hat_g)
+
+            y_ds_hat_r, y_ds_hat_g, fmap_s_r, fmap_s_g = mrd(y, y_hat)
+            with autocast(dtype=torch.bfloat16, enabled=False):
+                loss_fm_s = feature_loss(fmap_s_r, fmap_s_g)
+                loss_gen_s, losses_gen_s = generator_loss(y_ds_hat_g)
+                # loss_mel = fn_mel_loss_multiscale(y, y_hat) * 45.0
+                loss_mel = F.l1_loss(y_mel, y_hat_mel) * 45.0
+                loss_gen_all = (
+                    loss_gen_s + loss_gen_f + loss_fm_s + loss_fm_f + loss_mel
+                )
 
         optim_g.zero_grad()
-        if torch.isnan(loss_gen_all).any() or torch.isinf(loss_gen_all).any():
-            print("NaN in loss!")
-            for name, p in net_g.named_parameters():
-                if torch.isnan(p).any() or torch.isinf(p).any():
-                    print(f"NaN in param {name}")
-
-            for name, p in net_g.named_parameters():
-                if p.grad is not None and (torch.isnan(p.grad).any() or torch.isinf(p.grad).any()):
-                    print(f"NaN/Inf gradient in {name}")
-    
-            return
-
         loss_gen_all.backward()
-        grad_norm_g = torch.nn.utils.clip_grad_norm_(net_g.parameters(), 1.0)
+        grad_norm_g = torch.nn.utils.clip_grad_norm_(net_g.parameters(), grad_norm)
         optim_g.step()
         scheduler_g.step()
-
+        
         if step % log_interval == 0 and dist.get_rank() == 0:
             scalar_dict = {
-                "grad_norm_g": grad_norm_g,
+                "loss/g/total": loss_gen_all,
+                "loss/d/total": loss_disc_all,
                 "lr_g": scheduler_g.get_last_lr()[0],
+                "lr_d": scheduler_d.get_last_lr()[0],
+                "grad_norm_mpd": grad_norm_mpd,
+                "grad_norm_mrd": grad_norm_mrd,
+                "grad_norm_g": grad_norm_g,
                 "quantize_loss": net_g.module.vq.quantize_loss,
                 "quantize_perplexity": net_g.module.vq.quantize_perplexity,
                 "num_active_codes": net_g.module.vq.num_active_codes,
                 "total_code_usage": net_g.module.vq.total_code_usage.sum().item(),
-                "loss/g/mel": loss_mel,
-                "global_step": step,
             }
-            try:
-                wandb.log(scalar_dict)
-            except:
-                pass
+            scalar_dict.update({"loss/g/fm": loss_fm_s, "loss/g/mel": loss_mel})
+            scalar_dict['global_step'] = step 
+            wandb.log(scalar_dict)
         
         if step % save_interval == 0:
             ckpt = {
                 "net_g": net_g.state_dict(),
+                "mpd": mpd.state_dict(),
+                "mrd": mrd.state_dict(),
                 "optim_g": optim_g.state_dict(),
+                "optim_d": optim_d.state_dict(),
                 "scheduler_g": scheduler_g.state_dict(),
+                "scheduler_d": scheduler_d.state_dict(),
                 "step": step,
             }
             path = os.path.join(run_dir, f"checkpoint_{local_rank}_{step}.pt")

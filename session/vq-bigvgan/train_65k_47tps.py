@@ -5,6 +5,7 @@ sys.path.insert(0, '/home/husein/ssd3/BigVGAN')
 
 from meldataset import get_mel_spectrogram
 from loss import MultiScaleMelSpectrogramLoss
+import soundfile as sf
 import librosa
 import torch
 import json
@@ -23,14 +24,12 @@ from transformers import get_linear_schedule_with_warmup
 from accelerate import skip_first_batches
 from env import AttrDict
 from tqdm import tqdm
+import random
 import os
 import wandb
 import time
 import numpy as np
-import random
 from glob import glob
-
-LRELU_SLOPE = 0.1
 
 def is_dist_initialized():
     return dist.is_available() and dist.is_initialized()
@@ -187,7 +186,7 @@ class MultiPeriodDiscriminator(torch.nn.Module):
             fmap_gs.append(fmap_g)
 
         return y_d_rs, y_d_gs, fmap_rs, fmap_gs
-    
+
 class VectorQuantizerEMA(nn.Module):
     def __init__(
         self, num_embeddings, embedding_dim, centroid_path=None):
@@ -386,23 +385,6 @@ def load_hparams_from_json(path):
         data = f.read()
     return AttrDict(json.loads(data))
 
-def clip_grad_value_(parameters, clip_value, norm_type=2):
-    if isinstance(parameters, torch.Tensor):
-        parameters = [parameters]
-    parameters = list(filter(lambda p: p.grad is not None, parameters))
-    norm_type = float(norm_type)
-    if clip_value is not None:
-        clip_value = float(clip_value)
-
-    total_norm = 0
-    for p in parameters:
-        param_norm = p.grad.data.norm(norm_type)
-        total_norm += param_norm.item() ** norm_type
-        if clip_value is not None:
-            p.grad.data.clamp_(min=-clip_value, max=clip_value)
-    total_norm = total_norm ** (1. / norm_type)
-    return total_norm
-
 def main():
     dist.init_process_group(backend="nccl", init_method="env://")
     local_rank = int(os.environ["LOCAL_RANK"])
@@ -412,17 +394,19 @@ def main():
     h = load_hparams_from_json('bigvgan-config.json')
 
     train_dataset = 'audio-files.json'
-    segment_size = (h.sampling_rate * 1) // h.hop_size
-    warmup_steps = 1000
-    epoch = 2
+    segment_size = (h.sampling_rate * 3) // h.hop_size
+    warmup_steps = 2000
+    epoch = 10
+    accum_steps = 4
     log_interval = 5
     save_interval = 1000
     mel_ratio = 45
     max_ckpt = 5
-    learning_rate = 2e-5
     learning_rate_generator = 2e-5
-    batch_size = 20
+    learning_rate = 2e-5
+    batch_size = 2
     num_workers = 5
+    debug = False
 
     run_dir = 'checkpoint-65k-47tps'
     os.makedirs(run_dir, exist_ok = True)
@@ -437,11 +421,13 @@ def main():
                 wav, _ = librosa.load(self.files[idx], sr=h.sampling_rate, mono=True)
                 if (len(wav) / h.sampling_rate) < 2:
                     return
+
                 segment_length = h.sampling_rate * 12
                 if len(wav) > segment_length:
                     max_start = len(wav) - segment_length
                     start = random.randint(0, max_start)
                     wav = wav[start:start + segment_length]
+                
                 return {
                     'wav': torch.FloatTensor(wav),
                     'length': len(wav)
@@ -468,10 +454,14 @@ def main():
         if mels.shape[-1] % 2 != 0:
             print('not even')
             mels = F.pad(mels, (0, 1, 0, 0, 0, 0))
+
         lengths = torch.tensor(lengths) // h.hop_size
         return {'mel': mels, 'lengths': lengths, 'wav': wavs}
 
-    vocoder = bigvgan.BigVGAN.from_pretrained('nvidia/bigvgan_v2_24khz_100band_256x', use_cuda_kernel=False).to(torch.bfloat16)
+    vocoder = bigvgan.BigVGAN.from_pretrained(
+        'nvidia/bigvgan_v2_24khz_100band_256x', 
+        use_cuda_kernel=False,
+    ).to(torch.bfloat16)
     _ = vocoder.to(device)
     for p in vocoder.parameters():
         p.requires_grad = False
@@ -479,8 +469,18 @@ def main():
     net_g = VQMelTransformer().to(device)
     net_d = MultiPeriodDiscriminator().to(device)
 
-    net_g = torch.nn.parallel.DistributedDataParallel(net_g, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
-    net_d = torch.nn.parallel.DistributedDataParallel(net_d, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
+    net_g = torch.nn.parallel.DistributedDataParallel(
+        net_g, 
+        device_ids=[local_rank], 
+        output_device=local_rank, 
+        find_unused_parameters=True,
+    )
+    net_d = torch.nn.parallel.DistributedDataParallel(
+        net_d, 
+        device_ids=[local_rank], 
+        output_device=local_rank, 
+        find_unused_parameters=True,
+    )
 
     optim_g = torch.optim.AdamW(
         (p for p in net_g.parameters() if p.requires_grad),
@@ -516,17 +516,6 @@ def main():
 
     step = 1
     try:
-        """
-        ckpt = {
-            "net_g": net_g.state_dict(),
-            "net_d": net_d.state_dict(),
-            "optim_g": optim_g.state_dict(),
-            "optim_d": optim_d.state_dict(),
-            "scheduler_g": scheduler_g.state_dict(),
-            "scheduler_d": scheduler_d.state_dict(),
-            "step": step,
-        }
-        """
         ckpts = sorted(glob(os.path.join(run_dir, f"checkpoint_{local_rank}_*.pt")), key=os.path.getmtime)
         ckpt = torch.load(ckpts[-1], map_location=device)
         net_g.load_state_dict(ckpt["net_g"])
@@ -554,6 +543,11 @@ def main():
     else:
         wandb.init(mode="disabled")
 
+    accumulated_loss_disc = 0.0
+    accumulated_loss_gen = 0.0
+    accumulated_loss_mel = 0.0
+    accumulated_loss_fm = 0.0
+
     while step < total_steps:
         try:
             batch = next(iter_train_loader)
@@ -562,9 +556,13 @@ def main():
             batch = next(iter_train_loader)
 
         mel = batch["mel"].to(device)
+
+        if torch.isnan(mel).any() or torch.isinf(mel).any():
+            print("Bad batch detected")
+            return
+
         wav = batch["wav"].to(device)
         lengths = batch["lengths"].to(device)
-        max_len = lengths.max()
         attention_mask = torch.arange(mel.shape[-1], device = lengths.device).expand(lengths.shape[0], mel.shape[-1]) < lengths.unsqueeze(1)
         attention_mask = attention_mask.float()
 
@@ -576,55 +574,76 @@ def main():
 
             y_hat_mel, ids_slice = rand_slice_segments(outputs[0], lengths, segment_size)
             y_mel = slice_segments(mel, ids_slice, segment_size)
-            y = slice_segments(wav.unsqueeze(1), ids_slice * h.hop_size, segment_size * h.hop_size)
 
             y_hat = vocoder(y_hat_mel)
             y_d_hat_r, y_d_hat_g, _, _ = net_d(y, y_hat.detach())
+
+            if dist.get_rank() == 0:
+                print(y_mel.min(), y_mel.max(), y_hat_mel.min(), y_hat_mel.max())
+
             with autocast(dtype=torch.bfloat16, enabled=False):
                 loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(y_d_hat_r, y_d_hat_g)
-                loss_disc_all = loss_disc
+                loss_disc_all = loss_disc / accum_steps
+
+        accumulated_loss_disc += loss_disc_all.item()
+        loss_disc_all.backward()
+
+        if (step % accum_steps == 0) or (step == total_steps):
+            grad_norm_d = torch.nn.utils.clip_grad_norm_(net_d.parameters(), 1.0)
+            optim_d.step()
+            optim_d.zero_grad()
+            scheduler_d.step()
 
         with autocast(dtype=torch.bfloat16, enabled=True):
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
+        
             with autocast(dtype=torch.bfloat16, enabled=False):
-                
-                lambda_melloss = h.get("lambda_melloss", 45.0)
-                loss_mel = fn_mel_loss_multiscale(y, y_hat) * lambda_melloss
-                loss_fm = feature_loss(fmap_r, fmap_g)
-                loss_gen, losses_gen = generator_loss(y_d_hat_g)
-                loss_gen_all = loss_gen + loss_fm + loss_mel + net_g.module.vq.quantize_loss
-            
-        optim_g.zero_grad()
+                print(y_mel.shape, y_hat_mel.shape)
+                min_len = min(y_mel.shape[-1], y_hat_mel.shape[-1])
+                y_mel = y_mel[..., :min_len]
+                y_hat_mel = y_hat_mel[..., :min_len]
+                loss_mel = F.l1_loss(y_mel, y_hat_mel)
+                loss_gen_all = loss_mel
+                vq_loss = net_g.module.vq.quantize_loss
+                loss_gen_all = (loss_gen + loss_fm + loss_mel + vq_loss) / accum_steps
+
+        accumulated_loss_gen += loss_gen_all.item()
+        accumulated_loss_mel += (loss_mel / accum_steps).item()
+        accumulated_loss_fm += (loss_fm / accum_steps).item()
+
         loss_gen_all.backward()
-        grad_norm_g = torch.nn.utils.clip_grad_norm_(net_g.parameters(), 1.0)
-        optim_g.step()
-        scheduler_g.step()
 
-        optim_d.zero_grad()
-        loss_disc_all.backward()
-        grad_norm_d = torch.nn.utils.clip_grad_norm_(net_d.parameters(), 1.0)
-        optim_d.step()
-        scheduler_d.step()
-
-        if step % log_interval == 0 and dist.get_rank() == 0:
+        if step % (log_interval * accum_steps) == 0 and dist.get_rank() == 0:
             scalar_dict = {
-                "loss/g/total": loss_gen_all,
-                "loss/d/total": loss_disc_all,
+                "loss/g/total": accumulated_loss_gen,
+                "loss/d/total": accumulated_loss_disc,
+                "loss/g/fm": accumulated_loss_fm,
+                "loss/g/mel": accumulated_loss_mel,
                 "lr_g": scheduler_g.get_last_lr()[0],
                 "lr_d": scheduler_d.get_last_lr()[0],
                 "grad_norm_d": grad_norm_d,
                 "grad_norm_g": grad_norm_g,
-                "quantize_loss": net_g.module.vq.quantize_loss,
-                "quantize_perplexity": net_g.module.vq.quantize_perplexity,
-                "num_active_codes": net_g.module.vq.num_active_codes,
-                "total_code_usage": net_g.module.vq.total_code_usage.sum().item(),
             }
-            scalar_dict.update({"loss/g/fm": loss_fm, "loss/g/mel": loss_mel})
+            
+            if hasattr(net_g.module.vq, 'quantize_loss'):
+                scalar_dict["quantize_loss"] = net_g.module.vq.quantize_loss
+            if hasattr(net_g.module.vq, 'quantize_perplexity'):
+                scalar_dict["quantize_perplexity"] = net_g.module.vq.quantize_perplexity
+            if hasattr(net_g.module.vq, 'num_active_codes'):
+                scalar_dict["num_active_codes"] = net_g.module.vq.num_active_codes
+            if hasattr(net_g.module.vq, 'total_code_usage'):
+                scalar_dict["total_code_usage"] = net_g.module.vq.total_code_usage.sum().item()
+            
             scalar_dict.update({"loss/g/{}".format(i): v for i, v in enumerate(losses_gen)})
             scalar_dict.update({"loss/d_r/{}".format(i): v for i, v in enumerate(losses_disc_r)})
             scalar_dict.update({"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)})
             scalar_dict['global_step'] = step 
             wandb.log(scalar_dict)
+            
+            accumulated_loss_disc = 0.0
+            accumulated_loss_gen = 0.0
+            accumulated_loss_mel = 0.0
+            accumulated_loss_fm = 0.0
         
         if step % save_interval == 0:
             ckpt = {
