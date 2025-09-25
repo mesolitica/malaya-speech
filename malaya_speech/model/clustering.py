@@ -189,9 +189,6 @@ class HiddenMarkovModelClustering:
         result: np.array
         """
 
-        if len(X) <= self.max_clusters:
-            raise ValueError('sample size must bigger than `max_cluster`')
-
         num_embeddings = len(X)
 
         if self.metric == 'cosine':

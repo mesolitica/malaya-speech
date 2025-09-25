@@ -28,6 +28,13 @@ rejected = [
     'terima kasih kerana menonton',
     'terima kasih',
     'thank you for watching',
+    'thank you',
+    'you',
+    'yeah',
+    'check',
+    'fifty-four',
+    'amen',
+    'thank you very much',
 ]
 
 def new_path(f):
@@ -133,7 +140,7 @@ def loop(indices_device_pair):
                         'target_text': speakers[speaker][row_]['transcription'],
                     })
 
-            data.extend(random.sample(data_, min(len(data_), 30)))
+            data.extend(data_)
 
         os.makedirs(os.path.split(filename_done)[0], exist_ok = True)
         with open(filename_done, 'w') as fopen:
@@ -167,7 +174,9 @@ def main(
                 json.load(fopen)
                 continue
         except:
-            filtered.append(file)
+            pass
+            
+        filtered.append(file)
     
     df_split = list(chunks(filtered, devices))
 

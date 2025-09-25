@@ -25,7 +25,12 @@ OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
 python3 permutate.py --replication=20
 ```
 
-2. After that we did the same silent trimming, convert to audio tokens and multipacking.
+2. After that we did the same silent trimming, convert to audio tokens and multipacking,
+
+```bash
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
+python3 trim_silence.py --replication=20
+```
 
 ## Finetuning
 

@@ -1,22 +1,41 @@
 import sys
 
 sys.path.insert(0, '/home/jovyan/BigVGAN')
+sys.path.insert(0, '/home/ubuntu/BigVGAN')
 sys.path.insert(0, '/home/husein/ssd3/BigVGAN')
 
 from meldataset import get_mel_spectrogram
-from loss import MultiScaleMelSpectrogramLoss
+from bigvgan import BigVGAN
+from discriminators import (
+    MultiPeriodDiscriminator,
+    MultiResolutionDiscriminator,
+    MultiBandDiscriminator,
+    MultiScaleSubbandCQTDiscriminator,
+)
+from loss import (
+    feature_loss,
+    generator_loss,
+    discriminator_loss,
+    MultiScaleMelSpectrogramLoss,
+)
+import itertools
 import soundfile as sf
 import librosa
 import torch
 import json
-import bigvgan
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.distributed as dist
 
-from torch.nn import Conv1d, ConvTranspose1d, AvgPool1d, Conv2d
-from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
+from transformers import AutoFeatureExtractor, HubertModel
+from x_transformers.x_transformers import RotaryEmbedding
+from torch.nn.utils.rnn import pad_sequence
+from dit import (
+    ConvPositionEmbedding,
+    Block
+)
+
 from torch.utils.data import DataLoader
 from torch.cuda.amp import autocast
 from torch import nn, optim
@@ -40,6 +59,12 @@ def mse_loss_with_mask(input, target, mask):
     loss = loss * mask
     return loss.sum() / mask.sum()
 
+def mse_loss_with_mask(input, target, mask):
+    loss = torch.nn.functional.mse_loss(input, target, reduction='none')
+    loss = loss.mean(dim=-1)
+    loss = loss * mask
+    return loss.sum() / mask.sum()
+
 def slice_segments(x, ids_str, segment_size=4):
     ret = torch.zeros_like(x[:, :, :segment_size])
     for i in range(x.size(0)):
@@ -56,135 +81,6 @@ def rand_slice_segments(x, x_lengths=None, segment_size=4):
     ids_str = (torch.rand([b]).to(device=x.device) * ids_str_max).to(dtype=torch.long)
     ret = slice_segments(x, ids_str, segment_size)
     return ret, ids_str
-
-def feature_loss(fmap_r, fmap_g):
-    loss = 0
-    for dr, dg in zip(fmap_r, fmap_g):
-        for rl, gl in zip(dr, dg):
-            rl = rl.float().detach()
-            gl = gl.float()
-            loss += torch.mean(torch.abs(rl - gl))
-
-    return loss * 2
-
-def discriminator_loss(disc_real_outputs, disc_generated_outputs):
-    loss = 0
-    r_losses = []
-    g_losses = []
-    for dr, dg in zip(disc_real_outputs, disc_generated_outputs):
-        dr = dr.float()
-        dg = dg.float()
-        r_loss = torch.mean((1-dr)**2)
-        g_loss = torch.mean(dg**2)
-        loss += (r_loss + g_loss)
-        r_losses.append(r_loss.item())
-        g_losses.append(g_loss.item())
-
-    return loss, r_losses, g_losses
-
-
-def generator_loss(disc_outputs):
-    loss = 0
-    gen_losses = []
-    for dg in disc_outputs:
-        dg = dg.float()
-        l = torch.mean((1-dg)**2)
-        gen_losses.append(l)
-        loss += l
-
-    return loss, gen_losses
-
-def get_padding(kernel_size, dilation=1):
-    return int((kernel_size*dilation - dilation)/2)
-
-class DiscriminatorP(torch.nn.Module):
-    def __init__(self, period, kernel_size=5, stride=3, use_spectral_norm=False):
-        super(DiscriminatorP, self).__init__()
-        self.period = period
-        self.use_spectral_norm = use_spectral_norm
-        norm_f = weight_norm if use_spectral_norm == False else spectral_norm
-        self.convs = nn.ModuleList([
-            norm_f(Conv2d(1, 32, (kernel_size, 1), (stride, 1), padding=(get_padding(kernel_size, 1), 0))),
-            norm_f(Conv2d(32, 128, (kernel_size, 1), (stride, 1), padding=(get_padding(kernel_size, 1), 0))),
-            norm_f(Conv2d(128, 512, (kernel_size, 1), (stride, 1), padding=(get_padding(kernel_size, 1), 0))),
-            norm_f(Conv2d(512, 1024, (kernel_size, 1), (stride, 1), padding=(get_padding(kernel_size, 1), 0))),
-            norm_f(Conv2d(1024, 1024, (kernel_size, 1), 1, padding=(get_padding(kernel_size, 1), 0))),
-        ])
-        self.conv_post = norm_f(Conv2d(1024, 1, (3, 1), 1, padding=(1, 0)))
-
-    def forward(self, x):
-        fmap = []
-
-        # 1d to 2d
-        b, c, t = x.shape
-        if t % self.period != 0:  # pad first
-            n_pad = self.period - (t % self.period)
-            x = F.pad(x, (0, n_pad), "reflect")
-            t = t + n_pad
-        x = x.view(b, c, t // self.period, self.period)
-
-        for l in self.convs:
-            x = l(x)
-            x = F.leaky_relu(x, LRELU_SLOPE)
-            fmap.append(x)
-        x = self.conv_post(x)
-        fmap.append(x)
-        x = torch.flatten(x, 1, -1)
-
-        return x, fmap
-
-
-class DiscriminatorS(torch.nn.Module):
-    def __init__(self, use_spectral_norm=False):
-        super(DiscriminatorS, self).__init__()
-        norm_f = weight_norm if use_spectral_norm == False else spectral_norm
-        self.convs = nn.ModuleList([
-            norm_f(Conv1d(1, 16, 15, 1, padding=7)),
-            norm_f(Conv1d(16, 64, 41, 4, groups=4, padding=20)),
-            norm_f(Conv1d(64, 256, 41, 4, groups=16, padding=20)),
-            norm_f(Conv1d(256, 1024, 41, 4, groups=64, padding=20)),
-            norm_f(Conv1d(1024, 1024, 41, 4, groups=256, padding=20)),
-            norm_f(Conv1d(1024, 1024, 5, 1, padding=2)),
-        ])
-        self.conv_post = norm_f(Conv1d(1024, 1, 3, 1, padding=1))
-
-    def forward(self, x):
-        fmap = []
-
-        for l in self.convs:
-            x = l(x)
-            x = F.leaky_relu(x, LRELU_SLOPE)
-            fmap.append(x)
-        x = self.conv_post(x)
-        fmap.append(x)
-        x = torch.flatten(x, 1, -1)
-
-        return x, fmap
-
-
-class MultiPeriodDiscriminator(torch.nn.Module):
-    def __init__(self, use_spectral_norm=False):
-        super(MultiPeriodDiscriminator, self).__init__()
-        periods = [2, 3, 5, 7, 11]
-
-        discs = [DiscriminatorS(use_spectral_norm=use_spectral_norm)]
-        discs = discs + [DiscriminatorP(i, use_spectral_norm=use_spectral_norm) for i in periods]
-        self.discriminators = nn.ModuleList(discs)
-
-    def forward(self, y, y_hat):
-        y_d_rs = []
-        y_d_gs = []
-        fmap_rs = []
-        fmap_gs = []
-        for i, d in enumerate(self.discriminators):
-            y_d_r, fmap_r = d(y)
-            y_d_g, fmap_g = d(y_hat)
-            y_d_rs.append(y_d_r)
-            y_d_gs.append(y_d_g)
-            fmap_rs.append(fmap_r)
-            fmap_gs.append(fmap_g)
-
-        return y_d_rs, y_d_gs, fmap_rs, fmap_gs
 
 class VectorQuantizerEMA(nn.Module):
     def __init__(
@@ -221,6 +117,8 @@ class VectorQuantizerEMA(nn.Module):
         hidden_states = z
         batch_size, seq_len, dim = hidden_states.shape
         flat_hidden = hidden_states.reshape(-1, dim)
+
+        # compute distances
         distances = (
             flat_hidden.pow(2).sum(1, keepdim=True)
             - 2 * torch.matmul(flat_hidden, self.codebook.weight.t())
@@ -231,42 +129,67 @@ class VectorQuantizerEMA(nn.Module):
         quantized = self.codebook(indices).view(batch_size, seq_len, dim)
 
         if self.training:
-            encodings = F.one_hot(indices, self.quantize_vocab_size).float()
-            encodings = encodings * attention_mask.reshape(-1, 1)
-            n = torch.sum(encodings, dim=0)
+            mask_flat = attention_mask.reshape(-1) > 0
+            indices_masked = indices[mask_flat]
+            hidden_masked = flat_hidden[mask_flat]
+
+            n = torch.bincount(indices_masked,
+                            minlength=self.quantize_vocab_size)
+
             if is_dist_initialized():
                 torch.distributed.all_reduce(n, op=torch.distributed.ReduceOp.SUM)
 
-            p = n / n.sum()
-            self.quantize_perplexity = torch.exp(-torch.sum(p * torch.log(p + 1e-10))).item()
+            p = n.float() / n.sum().clamp(min=1)
+            self.quantize_perplexity = torch.exp(
+                -torch.sum(p * torch.log(p + 1e-10))
+            ).item()
             self.num_active_codes = (n > 0).sum().item()
-            self.total_code_usage[indices] = 1.0
 
-            hidden_flat = flat_hidden.detach()
-            dw = torch.matmul(encodings.t(), hidden_flat)
+            self.total_code_usage[indices_masked] = 1.0
+
+            dw = torch.zeros(
+                self.quantize_vocab_size,
+                dim,
+                device=hidden_masked.device,
+                dtype=hidden_masked.dtype,
+            )
+            dw.index_add_(0, indices_masked, hidden_masked)
+
             if is_dist_initialized():
                 torch.distributed.all_reduce(dw, op=torch.distributed.ReduceOp.SUM)
 
+            n = n.to(self.ema_count.dtype)
+            dw = dw.to(self.ema_weight.dtype)
+
             self.ema_count = self.ema_count * self.quantize_ema_decay + (
-                1 - self.quantize_ema_decay) * n
+                1 - self.quantize_ema_decay
+            ) * n
             total_count = torch.sum(self.ema_count)
             self.ema_count = (self.ema_count + 1e-5) / (
-                total_count + self.quantize_vocab_size * 1e-5) * total_count
+                total_count + self.quantize_vocab_size * 1e-5
+            ) * total_count
+
             self.ema_weight = self.ema_weight * self.quantize_ema_decay + (
-                1 - self.quantize_ema_decay) * dw
+                1 - self.quantize_ema_decay
+            ) * dw
+
             if self.quantize_ema_count % self.quantize_update_interval == 0:
                 self.codebook.weight.data = self.ema_weight / self.ema_count.unsqueeze(1)
-            self.quantize_loss = self.quantize_loss_scale * self.quantize_commit_coefficient * mse_loss_with_mask(
-                                hidden_states, quantized.detach(), attention_mask)
-            
-            self._maybe_restart_codes(hidden_flat, attention_mask)
+
+            self.quantize_loss = (
+                self.quantize_loss_scale
+                * self.quantize_commit_coefficient
+                * mse_loss_with_mask(hidden_states, quantized.detach(), attention_mask)
+            )
+            self._maybe_restart_codes(flat_hidden.detach(), attention_mask)
             self.quantize_ema_count += 1
 
             hidden_states = hidden_states + (quantized - hidden_states).detach()
         else:
             hidden_states = quantized
-        
+
         return hidden_states, indices
+
     
     def _maybe_restart_codes(self, hidden_flat, attention_mask):
         if self.quantize_restart_interval is None:
@@ -319,64 +242,108 @@ class VectorQuantizerEMA(nn.Module):
             if rank == 0:
                 print(f"[VQ] Restarted {len(update_indices)} dead codes.")
     
-class TransformerDecoder(nn.Module):
-    def __init__(self, model_dim, output_dim, num_layers=12, nhead=8, dropout=0.1, max_len = 3000):
+class InputEmbedding(nn.Module):
+    def __init__(self, mel_dim, out_dim):
         super().__init__()
-        assert model_dim % nhead == 0
-        self.nhead = nhead
-        self.head_dim = model_dim // nhead
-        self.projection = nn.Linear(output_dim, model_dim)
-        
-        self.pos_embedding = nn.Parameter(torch.randn(1, max_len, model_dim))
+        self.proj = nn.Linear(mel_dim, out_dim)
+        self.conv_pos_embed = ConvPositionEmbedding(dim=out_dim)
 
-        decoder_layer = nn.TransformerEncoderLayer(
-            d_model=model_dim,
-            nhead=nhead,
-            dim_feedforward=4 * model_dim,
-            dropout=dropout,
-            batch_first=True,
-            activation="gelu",
+    def forward(self, x: torch.Tensor):
+        x = self.proj(x)
+        x = self.conv_pos_embed(x) + x
+        return x
+
+class DiT(nn.Module):
+    def __init__(
+        self,
+        *,
+        dim,
+        input_dim,
+        depth=8,
+        heads=8,
+        dim_head=64,
+        dropout=0.1,
+        ff_mult=4,
+        mel_dim=100,     
+        qk_norm=None,
+        pe_attn_head=None,
+        attn_backend="torch",  # "torch" | "flash_attn"
+        attn_mask_enabled=False,
+        long_skip_connection=False,
+        checkpoint_activations=False,
+    ):
+        super().__init__()
+
+        self.input_embed = InputEmbedding(input_dim, dim)
+        self.rotary_embed = RotaryEmbedding(dim_head)
+
+        self.transformer_blocks = nn.ModuleList(
+            [
+                Block(
+                    dim=dim,
+                    heads=heads,
+                    dim_head=dim_head,
+                    ff_mult=ff_mult,
+                    dropout=dropout,
+                    qk_norm=qk_norm,
+                    pe_attn_head=pe_attn_head,
+                    attn_backend=attn_backend,
+                    attn_mask_enabled=attn_mask_enabled,
+                )
+                for _ in range(depth)
+            ]
         )
-        self.decoder = nn.TransformerEncoder(decoder_layer, num_layers=num_layers)
-        self.output_proj = nn.Linear(model_dim, output_dim)
-        kernel_size = 4
-        stride = 2
-        pad = (kernel_size - 1) // 2
-        self.conv = torch.nn.ConvTranspose1d(model_dim, model_dim, kernel_size, stride = stride, padding = pad)
 
-    def forward(self, z, attention_mask=None):
-        z = self.projection(z)
-        B, T, D = z.shape
+        self.long_skip_connection = nn.Linear(dim * 2, dim, bias=False) if long_skip_connection else None
+        self.norm_out = nn.LayerNorm(dim, elementwise_affine=False, eps=1e-6)
+        self.proj_out = nn.Linear(dim, mel_dim)
+        self.checkpoint_activations = checkpoint_activations
 
-        pos_emb = self.pos_embedding[:, :T, :]
-        pos_emb = pos_emb * attention_mask.unsqueeze(-1)
-        
-        z = z + pos_emb
+        self.initialize_weights()
 
-        z = self.decoder(z, src_key_padding_mask=~(attention_mask.bool()))
+    def initialize_weights(self):
+        nn.init.constant_(self.proj_out.weight, 0)
+        nn.init.constant_(self.proj_out.bias, 0)
 
-        z = z * attention_mask.unsqueeze(-1)
+    def forward(
+        self,
+        x: torch.Tensor, 
+        mask: torch.Tensor | None = None,
+    ):
+        batch, seq_len = x.shape[0], x.shape[1]
+        x = self.input_embed(x)
 
-        z = self.conv(z.permute(0, 2, 1)).permute(0, 2, 1)
-        return self.output_proj(z)
-    
+        rope = self.rotary_embed.forward_from_seq_len(seq_len)
+
+        if self.long_skip_connection is not None:
+            residual = x
+
+        for block in self.transformer_blocks:
+            if self.checkpoint_activations:
+                x = torch.utils.checkpoint.checkpoint(block, x, mask, rope, use_reentrant=False)
+            else:
+                x = block(x, mask=mask, rope=rope)
+
+        if self.long_skip_connection is not None:
+            x = self.long_skip_connection(torch.cat((x, residual), dim=-1))
+
+        x = self.norm_out(x)
+        return self.proj_out(x)
+
 class VQMelTransformer(nn.Module):
     def __init__(
         self, 
-        mel_dim=100,
-        latent_dim=1536,
-        num_layers=12,
-        nhead=8,
         num_embeddings=65536,
     ):
         super().__init__()
-        self.vq = VectorQuantizerEMA(num_embeddings, mel_dim, centroid_path='centroids-v2-65k.npy')
-        self.decoder = TransformerDecoder(latent_dim, mel_dim, num_layers=num_layers, nhead=nhead)
+        self.dit = DiT(dim=1024, input_dim=768, depth=22, heads=16)
+        self.vq = VectorQuantizerEMA(num_embeddings, 768, centroid_path='centroids-v2-65k.npy')
 
-    def forward(self, mel, attention_mask):
-        mel = mel.permute(0, 2, 1)
-        z_q, indices = self.vq(mel, attention_mask)
-        recon = self.decoder(z_q, attention_mask=attention_mask)
+    def forward(self, mel, frame_mask, attention_mask):
+        z_q, indices = self.vq(mel, frame_mask)
+        # z_q = F.interpolate(z_q.permute(0, 2, 1), scale_factor=1.2554112554112553, mode="linear")
+        z_q = F.interpolate(z_q.permute(0, 2, 1), size=attention_mask.shape[1], mode="linear")
+        recon = self.dit(z_q.permute(0, 2, 1), mask=attention_mask)
         return recon.permute(0, 2, 1), indices
 
 def load_hparams_from_json(path):
@@ -393,23 +360,64 @@ def main():
     h = load_hparams_from_json('bigvgan-config.json')
 
     train_dataset = 'audio-files.json'
-    segment_size = (h.sampling_rate * 3) // h.hop_size
+    segment_size = (h.sampling_rate * 1) // h.hop_size
     warmup_steps = 2000
-    epoch = 10
-    accum_steps = 4
+    epoch = 5
     log_interval = 5
     save_interval = 1000
-    mel_ratio = 45
     max_ckpt = 5
-    learning_rate_generator = 2e-5
-    learning_rate = 2e-5
-    batch_size = 2
+    learning_rate_generator = 5e-5
+    learning_rate = 5e-5
+    grad_norm = 1.0
+    batch_size = 18
     num_workers = 5
     debug = False
 
-    run_dir = 'checkpoint-65k-47tps'
+    run_dir = 'convnext_65k'
     os.makedirs(run_dir, exist_ok = True)
 
+    vocoder = BigVGAN.from_pretrained('nvidia/bigvgan_v2_24khz_100band_256x', use_cuda_kernel=False).to(torch.bfloat16)
+    _ = vocoder.to(device)
+    for p in vocoder.parameters():
+        p.requires_grad = False
+
+    net_g = VQMelTransformer().to(device)
+    hubert = HubertModel.from_pretrained("utter-project/mHuBERT-147").to(torch.bfloat16)
+    _ = hubert.to(device)
+    for p in hubert.parameters():
+        p.requires_grad = False
+    processor = AutoFeatureExtractor.from_pretrained("utter-project/mHuBERT-147")
+
+    print(sum(p.numel() for p in net_g.parameters()))
+    time.sleep(5.0)
+    
+    mpd = MultiPeriodDiscriminator(h).to(device)
+    mrd = MultiScaleSubbandCQTDiscriminator(h).to(device)
+
+    net_g = torch.nn.parallel.DistributedDataParallel(
+        net_g, 
+        device_ids=[local_rank], 
+        output_device=local_rank, 
+        find_unused_parameters=True,
+    )
+    mpd = torch.nn.parallel.DistributedDataParallel(
+        mpd, device_ids=[local_rank], 
+        output_device=local_rank, 
+        find_unused_parameters=True,
+    )
+    mrd = torch.nn.parallel.DistributedDataParallel(
+        mrd, device_ids=[local_rank], 
+        output_device=local_rank, 
+        find_unused_parameters=True,
+    )
+
+    optim_g = torch.optim.AdamW(
+        (p for p in net_g.parameters() if p.requires_grad),
+        learning_rate_generator)
+    optim_d = torch.optim.AdamW(
+        itertools.chain(mrd.parameters(), mpd.parameters()),
+        learning_rate)
+    
     class Dataset(torch.utils.data.Dataset):
         def __init__(self, file):
             with open(file) as fopen:
@@ -442,6 +450,14 @@ def main():
         wavs = [b['wav'] for b in batch]
         lengths = [b['length'] for b in batch]
 
+        inputs = processor(
+            [w.numpy() for w in wavs], 
+            sampling_rate=processor.sampling_rate, 
+            return_tensors='pt', 
+            padding=True,
+            return_attention_mask=True,
+        )
+
         wavs = torch.nn.utils.rnn.pad_sequence(
             wavs, batch_first=True, padding_value=0.0, padding_side='right')
 
@@ -453,41 +469,10 @@ def main():
         if mels.shape[-1] % 2 != 0:
             print('not even')
             mels = F.pad(mels, (0, 1, 0, 0, 0, 0))
-
+        
         lengths = torch.tensor(lengths) // h.hop_size
-        return {'mel': mels, 'lengths': lengths, 'wav': wavs}
-
-    vocoder = bigvgan.BigVGAN.from_pretrained(
-        'nvidia/bigvgan_v2_24khz_100band_256x', 
-        use_cuda_kernel=False,
-    ).to(torch.bfloat16)
-    _ = vocoder.to(device)
-    for p in vocoder.parameters():
-        p.requires_grad = False
-
-    net_g = VQMelTransformer().to(device)
-    net_d = MultiPeriodDiscriminator().to(device)
-
-    net_g = torch.nn.parallel.DistributedDataParallel(
-        net_g, 
-        device_ids=[local_rank], 
-        output_device=local_rank, 
-        find_unused_parameters=True,
-    )
-    net_d = torch.nn.parallel.DistributedDataParallel(
-        net_d, 
-        device_ids=[local_rank], 
-        output_device=local_rank, 
-        find_unused_parameters=True,
-    )
-
-    optim_g = torch.optim.AdamW(
-        (p for p in net_g.parameters() if p.requires_grad),
-        learning_rate_generator)
-    optim_d = torch.optim.AdamW(
-        net_d.parameters(),
-        learning_rate)
-
+        return {'mel': mels, 'lengths': lengths, 'wav': wavs, **inputs}
+    
     train_dataset = Dataset(train_dataset)
     sampler = torch.utils.data.distributed.DistributedSampler(
         train_dataset,
@@ -518,7 +503,8 @@ def main():
         ckpts = sorted(glob(os.path.join(run_dir, f"checkpoint_{local_rank}_*.pt")), key=os.path.getmtime)
         ckpt = torch.load(ckpts[-1], map_location=device)
         net_g.load_state_dict(ckpt["net_g"])
-        net_d.load_state_dict(ckpt["net_d"])
+        mpd.load_state_dict(ckpt["mpd"])
+        mrd.load_state_dict(ckpt["mrd"])
         optim_g.load_state_dict(ckpt["optim_g"])
         optim_d.load_state_dict(ckpt["optim_d"])
         scheduler_g.load_state_dict(ckpt["scheduler_g"])
@@ -527,8 +513,6 @@ def main():
         print(f'loaded checkpoint {ckpts[-1]}')
     except Exception as e:
         print(e)
-
-    time.sleep(5.0)
 
     steps_trained_in_current_epoch = step % len(train_loader)
     train_loader = skip_first_batches(train_loader, steps_trained_in_current_epoch)
@@ -541,11 +525,6 @@ def main():
         wandb.init()
     else:
         wandb.init(mode="disabled")
-
-    accumulated_loss_disc = 0.0
-    accumulated_loss_gen = 0.0
-    accumulated_loss_mel = 0.0
-    accumulated_loss_fm = 0.0
 
     while step < total_steps:
         try:
@@ -562,92 +541,94 @@ def main():
 
         wav = batch["wav"].to(device)
         lengths = batch["lengths"].to(device)
+        input_values = batch['input_values'].to(device)
+        attention_mask_ = batch['attention_mask'].to(device)
         attention_mask = torch.arange(mel.shape[-1], device = lengths.device).expand(lengths.shape[0], mel.shape[-1]) < lengths.unsqueeze(1)
-        attention_mask = attention_mask.float()
-
-        mel_ = F.interpolate(mel, scale_factor=0.5, mode="linear", align_corners=False)
-        attention_mask = F.interpolate(attention_mask.unsqueeze(1), scale_factor=0.5, mode="linear", align_corners=False)[:,0]
 
         with autocast(dtype=torch.bfloat16, enabled=True):
-            outputs = net_g(mel_, attention_mask)
+            z_q = hubert(input_values=input_values, attention_mask=attention_mask_).last_hidden_state
+            frame_mask = F.interpolate(
+                attention_mask_.unsqueeze(1).float(),
+                size=z_q.shape[1],
+                mode="nearest"
+            )
+            outputs = net_g(z_q, frame_mask, attention_mask)
 
             y_hat_mel, ids_slice = rand_slice_segments(outputs[0], lengths, segment_size)
             y_mel = slice_segments(mel, ids_slice, segment_size)
+            y = slice_segments(wav.unsqueeze(1), ids_slice * h.hop_size, segment_size * h.hop_size)
 
-            y_hat = vocoder(y_hat_mel)
-            y_d_hat_r, y_d_hat_g, _, _ = net_d(y, y_hat.detach())
+            print(outputs[0].shape, mel.shape)
 
             if dist.get_rank() == 0:
                 print(y_mel.min(), y_mel.max(), y_hat_mel.min(), y_hat_mel.max())
-
+            
+            y_hat = vocoder(y_hat_mel)
+            y = y[:,:,:y_hat.shape[-1]]
+            print(y.shape, y_hat.shape)
+            y_df_hat_r, y_df_hat_g, _, _ = mpd(y, y_hat.detach())
             with autocast(dtype=torch.bfloat16, enabled=False):
-                loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(y_d_hat_r, y_d_hat_g)
-                loss_disc_all = loss_disc / accum_steps
+                loss_disc_f, losses_disc_f_r, losses_disc_f_g = discriminator_loss(
+                    y_df_hat_r, y_df_hat_g
+                )
+            
+            y_ds_hat_r, y_ds_hat_g, _, _ = mrd(y, y_hat.detach())
+            with autocast(dtype=torch.bfloat16, enabled=False):
+                loss_disc_s, losses_disc_s_r, losses_disc_s_g = discriminator_loss(
+                    y_ds_hat_r, y_ds_hat_g
+                )
+                loss_disc_all = loss_disc_s + loss_disc_f
 
-        accumulated_loss_disc += loss_disc_all.item()
+        optim_d.zero_grad()
         loss_disc_all.backward()
-
-        if (step % accum_steps == 0) or (step == total_steps):
-            grad_norm_d = torch.nn.utils.clip_grad_norm_(net_d.parameters(), 1.0)
-            optim_d.step()
-            optim_d.zero_grad()
-            scheduler_d.step()
+        grad_norm_mpd = torch.nn.utils.clip_grad_norm_(mpd.parameters(), grad_norm)
+        grad_norm_mrd = torch.nn.utils.clip_grad_norm_(mrd.parameters(), grad_norm)
+        optim_d.step()
+        scheduler_d.step()
 
         with autocast(dtype=torch.bfloat16, enabled=True):
-            y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
-        
+            y_df_hat_r, y_df_hat_g, fmap_f_r, fmap_f_g = mpd(y, y_hat)
             with autocast(dtype=torch.bfloat16, enabled=False):
-                print(y_mel.shape, y_hat_mel.shape)
-                min_len = min(y_mel.shape[-1], y_hat_mel.shape[-1])
-                y_mel = y_mel[..., :min_len]
-                y_hat_mel = y_hat_mel[..., :min_len]
-                loss_mel = F.l1_loss(y_mel, y_hat_mel)
-                loss_gen_all = loss_mel
-                vq_loss = net_g.module.vq.quantize_loss
-                loss_gen_all = (loss_gen + loss_fm + loss_mel + vq_loss) / accum_steps
+                loss_fm_f = feature_loss(fmap_f_r, fmap_f_g)
+                loss_gen_f, losses_gen_f = generator_loss(y_df_hat_g)
 
-        accumulated_loss_gen += loss_gen_all.item()
-        accumulated_loss_mel += (loss_mel / accum_steps).item()
-        accumulated_loss_fm += (loss_fm / accum_steps).item()
+            y_ds_hat_r, y_ds_hat_g, fmap_s_r, fmap_s_g = mrd(y, y_hat)
+            with autocast(dtype=torch.bfloat16, enabled=False):
+                loss_fm_s = feature_loss(fmap_s_r, fmap_s_g)
+                loss_gen_s, losses_gen_s = generator_loss(y_ds_hat_g)
+                # loss_mel = fn_mel_loss_multiscale(y, y_hat) * 45.0
+                loss_mel = F.l1_loss(y_mel, y_hat_mel) * 45.0
+                loss_gen_all = loss_gen_s + loss_gen_f + loss_fm_s + loss_fm_f + loss_mel
 
+        optim_g.zero_grad()
         loss_gen_all.backward()
-
-        if step % (log_interval * accum_steps) == 0 and dist.get_rank() == 0:
+        grad_norm_g = torch.nn.utils.clip_grad_norm_(net_g.parameters(), grad_norm)
+        optim_g.step()
+        scheduler_g.step()
+        
+        if step % log_interval == 0 and dist.get_rank() == 0:
             scalar_dict = {
-                "loss/g/total": accumulated_loss_gen,
-                "loss/d/total": accumulated_loss_disc,
-                "loss/g/fm": accumulated_loss_fm,
-                "loss/g/mel": accumulated_loss_mel,
+                "loss/g/total": loss_gen_all,
+                "loss/d/total": loss_disc_all,
                 "lr_g": scheduler_g.get_last_lr()[0],
                 "lr_d": scheduler_d.get_last_lr()[0],
-                "grad_norm_d": grad_norm_d,
+                "grad_norm_mpd": grad_norm_mpd,
+                "grad_norm_mrd": grad_norm_mrd,
                 "grad_norm_g": grad_norm_g,
+                "quantize_loss": net_g.module.vq.quantize_loss,
+                "quantize_perplexity": net_g.module.vq.quantize_perplexity,
+                "num_active_codes": net_g.module.vq.num_active_codes,
+                "total_code_usage": net_g.module.vq.total_code_usage.sum().item(),
             }
-            
-            if hasattr(net_g.module.vq, 'quantize_loss'):
-                scalar_dict["quantize_loss"] = net_g.module.vq.quantize_loss
-            if hasattr(net_g.module.vq, 'quantize_perplexity'):
-                scalar_dict["quantize_perplexity"] = net_g.module.vq.quantize_perplexity
-            if hasattr(net_g.module.vq, 'num_active_codes'):
-                scalar_dict["num_active_codes"] = net_g.module.vq.num_active_codes
-            if hasattr(net_g.module.vq, 'total_code_usage'):
-                scalar_dict["total_code_usage"] = net_g.module.vq.total_code_usage.sum().item()
-            
-            scalar_dict.update({"loss/g/{}".format(i): v for i, v in enumerate(losses_gen)})
-            scalar_dict.update({"loss/d_r/{}".format(i): v for i, v in enumerate(losses_disc_r)})
-            scalar_dict.update({"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)})
+            scalar_dict.update({"loss/g/fm": loss_fm_s, "loss/g/mel": loss_mel})
             scalar_dict['global_step'] = step 
             wandb.log(scalar_dict)
-            
-            accumulated_loss_disc = 0.0
-            accumulated_loss_gen = 0.0
-            accumulated_loss_mel = 0.0
-            accumulated_loss_fm = 0.0
         
         if step % save_interval == 0:
             ckpt = {
                 "net_g": net_g.state_dict(),
-                "net_d": net_d.state_dict(),
+                "mpd": mpd.state_dict(),
+                "mrd": mrd.state_dict(),
                 "optim_g": optim_g.state_dict(),
                 "optim_d": optim_d.state_dict(),
                 "scheduler_g": scheduler_g.state_dict(),

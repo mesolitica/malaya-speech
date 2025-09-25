@@ -15,7 +15,6 @@ huseinzol05/chunk-20s
 huggingface-cli download mesolitica/VQ-65k-BigVGAN-47TPS audio-files.json \
 --local-dir './'
 
-
 wget https://gist.githubusercontent.com/huseinzol05/2e26de4f3b29d99e993b349864ab6c10/raw/9b2251f3ff958770215d70c8d82d311f82791b78/unzip.py
 python3 unzip.py
 
